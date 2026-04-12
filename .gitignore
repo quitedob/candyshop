@@ -1,0 +1,107 @@
+# 推荐 .gitignore 内容 — 包含你要忽略的目录和常用模式
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+nul
+# Test binary, built with `go test`
+*.test
+CLAUDE.md
+# Output of the go coverage tool
+*.out
+coverage.html
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+frontend/.output/
+frontend/.nuxt/
+frontend/node_modules/
+# Environment variables
+.env
+.env.local
+.env.*.local
+docs/
+.github/
+# IDE
+.vscode/
+.idea/
+.cursor/
+*.swp
+*.swo
+*~
+.claude/
+.kiro/
+.gemini/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude AI / Kiro / Cursor / Codex / Gemini
+.claude/
+.kiro/
+.cursor/
+.codex/
+.gemini/
+go_cache/
+go_cache/**
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+
+# Config overrides
+config.local.yaml
+config.*.yaml
+!config.yaml
+
+# Additional common patterns
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Node.js (frontend)
+vue/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Frontend projects
+frontend/ed-admin/node_modules/
+frontend/ed-admin/.idea/
+frontend/ed-admin/.vscode/
+frontend/ed-admin/.claude/
+frontend/ed-admin/.kiro/
+frontend/ed-admin/dist/
+
+frontend/ed-user/node_modules/
+frontend/ed-user/.idea/
+frontend/ed-user/.vscode/
+frontend/ed-user/.claude/
+frontend/ed-user/.kiro/
+frontend/ed-user/.nuxt/
+frontend/ed-user/dist/
+
+# Docker
+.dockerignore
+
+# Air live reload
+tmp/

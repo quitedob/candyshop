@@ -1,0 +1,69 @@
+{
+  "home": {
+    "hero": {
+      "title": "专业OEM糖果制造商",
+      "subtitle": "为全球品牌提供优质贴牌软糖、硬糖、充气糖果、太妃糖及代可可脂巧克力",
+      "cta_primary": "获取报价",
+      "cta_secondary": "浏览产品"
+    },
+    "categories": {
+      "title": "产品分类",
+      "subtitle": "探索我们丰富的糖果产品系列"
+    },
+    "trust": {
+      "title": "选择我们的理由",
+      "subtitle": "全球领先品牌的信赖之选",
+      "expert_team": "专业团队",
+      "expert_team_desc": "150+名专业技术人员",
+      "capacity_desc": "日产量100吨",
+      "export_desc": "出口50+国家"
+    },
+    "certifications": {
+      "title": "质量认证",
+      "subtitle": "致力于最高的食品安全和质量标准",
+      "haccp_desc": "食品安全管理体系",
+      "iso_desc": "食品安全标准",
+      "brc_desc": "食品安全A级",
+      "halal_desc": "清真认证"
+    },
+    "featured": {
+      "title": "热销产品",
+      "subtitle": "深受全球客户喜爱的畅销产品"
+    },
+    "oem": {
+      "title": "OEM贴牌解决方案",
+      "subtitle": "通过我们的定制制造实现您的品牌愿景",
+      "cta": "了解更多",
+      "feature1": "定制配方开发",
+      "feature2": "贴牌包装设计",
+      "feature3": "低起订量1000件起",
+      "feature4": "快速交货2-4周",
+      "feature5": "样品确认流程"
+    },
+    "global": {
+      "title": "全球业务",
+      "subtitle": "出口至欧洲、美洲和亚洲市场",
+      "north_america": "北美",
+      "north_america_countries": "美国、加拿大、墨西哥",
+      "europe": "欧洲",
+      "europe_countries": "英国、德国、法国、意大利",
+      "southeast_asia": "东南亚",
+      "southeast_asia_countries": "新加坡、泰国、马来西亚",
+      "middle_east": "中东",
+      "middle_east_countries": "阿联酋、沙特、卡塔尔"
+    },
+    "faq": {
+      "title": "常见问题",
+      "subtitle": "关于我们服务的常见问题解答",
+      "view_all": "查看全部",
+      "q1": "您的最小起订量(MOQ)是多少？",
+      "a1": "我们的MOQ因产品类型而异，标准产品从1000件起，定制OEM订单通常从3000件起。",
+      "q2": "交货期需要多长时间？",
+      "a2": "标准订单需要2-3周，定制OEM订单通常需要4-6周，具体取决于复杂程度。",
+      "q3": "您提供样品吗？",
+      "a3": "是的，我们提供样品供质量评估。样品费用在下单后可退还。",
+      "q4": "您有哪些认证？",
+      "a4": "我们拥有HACCP、ISO22000、BRC A级和清真认证。我们的产品符合国际食品安全标准。"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "legal": {
+    "privacy_title": "Privacy Policy",
+    "terms_title": "Terms of Service",
+    "last_updated": "Last updated: {date}",
+    "privacy": {
+      "intro_title": "1. Introduction",
+      "intro": "Welcome to CandyPro. We respect your privacy and are committed to protecting your personal data.",
+      "data_collect_title": "2. Data We Collect",
+      "data_collect_desc": "We may collect, use, store and transfer different kinds of personal data about you which we have grouped together as follows:",
+      "identity_data": "Identity Data includes first name, last name, username or similar identifier.",
+      "contact_data": "Contact Data includes billing address, delivery address, email address and telephone numbers.",
+      "use_data_title": "3. How We Use Your Data",
+      "use_data_desc": "We will only use your personal data when the law allows us to. Most commonly, we will use your personal data in the following circumstances:",
+      "use_contract": "Where we need to perform the contract we are about to enter into or have entered into with you.",
+      "use_legitimate": "Where it is necessary for our legitimate interests (or those of a third party) and your interests and fundamental rights do not override those interests.",
+      "use_legal": "Where we need to comply with a legal obligation."
+    },
+    "terms": {
+      "accept_title": "1. Acceptance of Terms",
+      "accept_desc": "By accessing and using this website, you accept and agree to be bound by the terms and provision of this agreement.",
+      "license_title": "2. Use License",
+      "license_desc": "Permission is granted to temporarily download one copy of the materials (information or software) on CandyPro's website for personal, non-commercial transitory viewing only.",
+      "limitations_title": "3. Limitations",
+      "limitations_desc": "In no event shall CandyPro or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on CandyPro's website.",
+      "revisions_title": "4. Revisions and Errata",
+      "revisions_desc": "The materials appearing on CandyPro's website could include technical, typographical, or photographic errors. CandyPro does not warrant that any of the materials on its website are accurate, complete, or current."
+    }
+  }
+}

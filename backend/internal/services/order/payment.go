@@ -1,0 +1,119 @@
+package order
+
+import (
+	modelsOrder "candypro/api/internal/models/order"
+	"context"
+	"fmt"
+)
+
+type paymentRepository interface {
+	FindByOrderID(ctx context.Context, orderID string) ([]modelsOrder.Payment, error)
+	FindByID(ctx context.Context, id string) (*modelsOrder.Payment, error)
+	Create(ctx context.Context, payment *modelsOrder.Payment) error
+	Update(ctx context.Context, payment *modelsOrder.Payment) error
+	ConfirmPayment(ctx context.Context, id, confirmedBy string) error
+	UpdateStatus(ctx context.Context, id, status string) error
+}
+
+// PaymentService handles payment business logic.
+type PaymentService struct {
+	repo      paymentRepository
+	orderRepo orderRepository
+}
+
+// NewPaymentService creates a new PaymentService.
+func NewPaymentService(repo paymentRepository, orderRepo orderRepository) *PaymentService {
+	return &PaymentService{repo: repo, orderRepo: orderRepo}
+}
+
+// GetPaymentsByOrder returns all payments for an order.
+func (s *PaymentService) GetPaymentsByOrder(ctx context.Context, orderID string) ([]modelsOrder.Payment, error) {
+	return s.repo.FindByOrderID(ctx, orderID)
+}
+
+// GetPayment returns a single payment by ID.
+func (s *PaymentService) GetPayment(ctx context.Context, id string) (*modelsOrder.Payment, error) {
+	return s.repo.FindByID(ctx, id)
+}
+
+// CreatePayment creates a new payment record.
+func (s *PaymentService) CreatePayment(ctx context.Context, payment *modelsOrder.Payment) error {
+	if payment.Status == "" {
+		payment.Status = "pending"
+	}
+	return s.repo.Create(ctx, payment)
+}
+
+// ConfirmPayment confirms a payment and updates the order's payment status.
+func (s *PaymentService) ConfirmPayment(ctx context.Context, paymentID, confirmedBy string) error {
+	payment, err := s.repo.FindByID(ctx, paymentID)
+	if err != nil {
+		return fmt.Errorf("payment not found: %w", err)
+	}
+	if payment.Status != "pending" {
+		return fmt.Errorf("payment cannot be confirmed: current status is '%s'", payment.Status)
+	}
+
+	if err := s.repo.ConfirmPayment(ctx, paymentID, confirmedBy); err != nil {
+		return err
+	}
+
+	// Update order payment status
+	return s.updateOrderPaymentStatus(ctx, payment.OrderID)
+}
+
+// RefundPayment marks a payment as refunded and updates order status.
+func (s *PaymentService) RefundPayment(ctx context.Context, paymentID string) error {
+	payment, err := s.repo.FindByID(ctx, paymentID)
+	if err != nil {
+		return fmt.Errorf("payment not found: %w", err)
+	}
+	if payment.Status != "confirmed" {
+		return fmt.Errorf("only confirmed payments can be refunded: current status is '%s'", payment.Status)
+	}
+
+	if err := s.repo.UpdateStatus(ctx, paymentID, "refunded"); err != nil {
+		return err
+	}
+
+	return s.updateOrderPaymentStatus(ctx, payment.OrderID)
+}
+
+// updateOrderPaymentStatus recalculates the order payment status based on its payments.
+func (s *PaymentService) updateOrderPaymentStatus(ctx context.Context, orderID string) error {
+	order, err := s.orderRepo.FindByID(ctx, orderID)
+	if err != nil {
+		return err
+	}
+
+	payments, err := s.repo.FindByOrderID(ctx, orderID)
+	if err != nil {
+		return err
+	}
+
+	confirmedTotal := 0.0
+	hasRefunded := false
+	for _, p := range payments {
+		if p.Status == "confirmed" {
+			confirmedTotal += p.Amount
+		}
+		if p.Status == "refunded" {
+			hasRefunded = true
+		}
+	}
+
+	newStatus := "unpaid"
+	if hasRefunded && confirmedTotal == 0 {
+		newStatus = "refunded"
+	} else if confirmedTotal >= order.TotalAmount {
+		newStatus = "paid"
+	} else if confirmedTotal > 0 {
+		newStatus = "partial"
+	}
+
+	if order.PaymentStatus != newStatus {
+		order.PaymentStatus = newStatus
+		return s.orderRepo.Update(ctx, order)
+	}
+	return nil
+}

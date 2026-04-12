@@ -1,0 +1,24 @@
+{
+  "nav": {
+    "home": "Home",
+    "products": "Products",
+    "oem": "OEM & Solutions",
+    "factory": "Factory & Quality",
+    "cases": "Cases & Clients",
+    "blog": "Blog",
+    "about": "About",
+    "contact": "Contact"
+  },
+  "footer": {
+    "tagline": "Your Trusted Partner in Candy Manufacturing",
+    "quick_links": "Quick Links",
+    "products": "Products",
+    "services": "Services",
+    "support": "Support",
+    "legal": "Legal",
+    "privacy_policy": "Privacy Policy",
+    "terms_of_service": "Terms of Service",
+    "cookie_policy": "Cookie Policy",
+    "copyright": "© {year} Candy Manufacturing Co. All rights reserved."
+  }
+}

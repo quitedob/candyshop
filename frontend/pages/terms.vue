@@ -1,0 +1,59 @@
+<template>
+  <div class="legal-page">
+    <!-- Breadcrumb -->
+    <div class="container pt-8">
+      <Breadcrumb :items="[{ label: t('legal.terms_title') }]" />
+    </div>
+
+    <div class="container section">
+      <h1 class="text-4xl font-bold mb-4">{{ t('legal.terms_title') }}</h1>
+      <p class="text-gray-500 mb-8">{{ t('legal.last_updated', { date: new Date().toLocaleDateString() }) }}</p>
+
+      <div class="legal-content prose max-w-none">
+        <h2>{{ t('legal.terms.accept_title') }}</h2>
+        <p>{{ t('legal.terms.accept_desc') }}</p>
+
+        <h2>{{ t('legal.terms.license_title') }}</h2>
+        <p>{{ t('legal.terms.license_desc') }}</p>
+
+        <h2>{{ t('legal.terms.limitations_title') }}</h2>
+        <p>{{ t('legal.terms.limitations_desc') }}</p>
+
+        <h2>{{ t('legal.terms.revisions_title') }}</h2>
+        <p>{{ t('legal.terms.revisions_desc') }}</p>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { useI18n } from '#i18n'
+
+const { t } = useI18n()
+
+useSeo({
+  title: `Terms of Service | ${t('seo.default_title')}`
+})
+</script>
+
+<style scoped>
+.legal-page {
+  padding-top: calc(var(--header-height) + var(--spacing-md));
+}
+.legal-content h2 {
+  font-size: 1.5rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: var(--color-primary);
+}
+.legal-content p, .legal-content li {
+  color: var(--color-text-light);
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
+}
+.legal-content ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+</style>

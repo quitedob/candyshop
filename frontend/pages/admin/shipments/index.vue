@@ -1,0 +1,380 @@
+<template>
+  <div>
+    <div class="sm:flex sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">{{ t('admin.shipments.title') }}</h1>
+        <p class="mt-1 text-sm text-gray-600">{{ t('admin.shipments.description') }}</p>
+      </div>
+      <div class="mt-4 sm:mt-0 flex items-center gap-3">
+        <button @click="exportShipments" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+          <Icon name="heroicons:arrow-down-tray" class="h-4 w-4" />
+          {{ t('admin.shipments.export') }}
+        </button>
+        <button @click="openCreateModal" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+          <Icon name="heroicons:plus" class="h-4 w-4" />
+          {{ t('admin.shipments.new_shipment') }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div v-for="stat in statsCards" :key="stat.label" class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500">{{ stat.label }}</p>
+            <p class="mt-1 text-2xl font-bold" :class="stat.color">{{ stat.value }}</p>
+          </div>
+          <div :class="`h-12 w-12 rounded-lg ${stat.bgColor} flex items-center justify-center`">
+            <Icon :name="stat.icon" class="h-6 w-6" :class="stat.color" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div class="flex flex-wrap items-center gap-4">
+        <div class="flex-1 min-w-[200px]">
+          <div class="relative">
+            <Icon name="heroicons:magnifying-glass" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input v-model="searchQuery" type="text" :placeholder="t('admin.shipments.search')" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+        </div>
+        <select v-model="statusFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="all">{{ t('admin.shipments.filter_all') }}</option>
+          <option value="pending">{{ t('admin.shipments.status_pending') }}</option>
+          <option value="in_transit">{{ t('admin.shipments.status_in_transit') }}</option>
+          <option value="delivered">{{ t('admin.shipments.status_delivered') }}</option>
+          <option value="exception">{{ t('admin.shipments.status_exception') }}</option>
+        </select>
+        <input v-model="dateFrom" type="date" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <input v-model="dateTo" type="date" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+    </div>
+
+    <!-- Shipments Table -->
+    <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.shipments.col_tracking') }}</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.shipments.col_order') }}</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.shipments.col_carrier') }}</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.shipments.col_destination') }}</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.shipments.col_eta') }}</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.shipments.col_status') }}</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.shipments.col_actions') }}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 bg-white">
+            <tr v-if="pending">
+              <td colspan="7" class="px-6 py-10 text-center text-sm text-gray-500">{{ t('admin.shipments.loading') }}</td>
+            </tr>
+            <tr v-else-if="error">
+              <td colspan="7" class="px-6 py-10 text-center text-sm text-red-600">{{ error }}</td>
+            </tr>
+            <tr v-else-if="filteredShipments.length === 0">
+              <td colspan="7" class="px-6 py-10 text-center text-sm text-gray-500">{{ t('admin.shipments.no_data') }}</td>
+            </tr>
+            <tr v-else v-for="shipment in filteredShipments" :key="shipment.id" class="hover:bg-gray-50 transition-colors">
+              <td class="px-6 py-4">
+                <div>
+                  <span class="font-mono font-medium text-gray-900">{{ shipment.trackingNumber }}</span>
+                  <p class="text-xs text-gray-500 mt-0.5">{{ shipment.trackingProvider || 'Standard' }}</p>
+                </div>
+              </td>
+              <td class="px-6 py-4 text-sm">
+                <NuxtLink :to="`/admin/orders/${shipment.orderId}`" class="text-blue-600 hover:text-blue-900">
+                  #{{ shipment.orderNumber || shipment.orderId?.substring(0, 8) }}
+                </NuxtLink>
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-600">{{ shipment.carrier || '-' }}</td>
+              <td class="px-6 py-4 text-sm text-gray-600">
+                <div>{{ shipment.destination?.city }}, {{ shipment.destination?.country }}</div>
+                <div class="text-xs text-gray-400">{{ shipment.destination?.recipientName }}</div>
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-600">
+                <div>{{ shipment.estimatedDelivery ? new Date(shipment.estimatedDelivery).toLocaleDateString() : '-' }}</div>
+                <div v-if="shipment.actualDelivery" class="text-xs text-emerald-600">Delivered: {{ new Date(shipment.actualDelivery).toLocaleDateString() }}</div>
+              </td>
+              <td class="px-6 py-4">
+                <span :class="statusBadgeClass(shipment.status)" class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold">
+                  {{ formatStatus(shipment.status) }}
+                </span>
+              </td>
+              <td class="px-6 py-4 text-sm">
+                <button @click="viewDetails(shipment)" class="text-blue-600 hover:text-blue-900 mr-3">{{ t('admin.shipments.view') }}</button>
+                <button @click="openEditModal(shipment)" class="text-gray-600 hover:text-gray-900">{{ t('admin.shipments.edit') }}</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="pagination" class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+        <div class="text-sm text-gray-600">
+          {{ t('admin.shipments.showing', { from: ((page - 1) * pageSize) + 1, to: Math.min(page * pageSize, pagination.total), total: pagination.total }) }}
+        </div>
+        <div class="flex items-center gap-2">
+          <button @click="prevPage" :disabled="page <= 1" class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ t('admin.shipments.previous') }}
+          </button>
+          <button @click="nextPage" :disabled="page >= pagination.totalPages" class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ t('admin.shipments.next') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create/Edit Modal -->
+    <div v-if="showModal" class="fixed inset-0 z-50 overflow-y-auto">
+      <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="closeModal"></div>
+        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:max-w-2xl sm:align-middle">
+          <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+            <h3 class="text-lg font-semibold text-white">{{ editingId ? t('admin.shipments.edit_shipment') : t('admin.shipments.create_shipment') }}</h3>
+          </div>
+          <form @submit.prevent="saveShipment" class="p-6 space-y-4">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.order') }}</label>
+                <select v-model="form.orderId" required class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">{{ t('admin.shipments.select_order') }}</option>
+                  <option v-for="order in orders" :key="order.id" :value="order.id">
+                    #{{ order.orderNumber || order.id.substring(0, 8) }} - {{ order.user?.firstName }} {{ order.user?.lastName }}
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.carrier') }}</label>
+                <select v-model="form.carrier" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">Standard</option>
+                  <option value="dhl">DHL</option>
+                  <option value="fedex">FedEx</option>
+                  <option value="ups">UPS</option>
+                  <option value="usps">USPS</option>
+                  <option value="ems">EMS</option>
+                  <option value="sea">Sea Freight</option>
+                  <option value="air">Air Freight</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.tracking_number') }}</label>
+                <input v-model="form.trackingNumber" type="text" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.status') }}</label>
+                <select v-model="form.status" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="pending">Pending</option>
+                  <option value="in_transit">In Transit</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="exception">Exception</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.estimated_delivery') }}</label>
+                <input v-model="form.estimatedDelivery" type="date" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.actual_delivery') }}</label>
+                <input v-model="form.actualDelivery" type="date" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.notes') }}</label>
+              <textarea v-model="form.notes" rows="2" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            </div>
+            <div v-if="formError" class="text-sm text-red-600">{{ formError }}</div>
+            <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
+              <button type="button" @click="closeModal" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100">
+                {{ t('admin.shipments.cancel') }}
+              </button>
+              <button type="submit" :disabled="saving" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
+                <Icon v-if="saving" name="heroicons:arrow-path" class="h-4 w-4 animate-spin" />
+                {{ t('admin.shipments.save') }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Details Modal -->
+    <div v-if="showDetailsModal" class="fixed inset-0 z-50 overflow-y-auto">
+      <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showDetailsModal = false"></div>
+        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:max-w-3xl sm:align-middle">
+          <div class="bg-gradient-to-r from-gray-700 to-gray-900 px-6 py-4 flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-semibold text-white">{{ t('admin.shipments.shipment_details') }}</h3>
+              <p class="text-sm text-gray-300 mt-0.5">{{ selectedShipment?.trackingNumber }}</p>
+            </div>
+            <button @click="showDetailsModal = false" class="text-gray-300 hover:text-white">
+              <Icon name="heroicons:x-mark" class="h-5 w-5" />
+            </button>
+          </div>
+          <div v-if="selectedShipment" class="p-6">
+            <!-- Timeline -->
+            <div class="mb-6">
+              <h4 class="text-sm font-semibold text-gray-900 mb-4">{{ t('admin.shipments.tracking_history') }}</h4>
+              <div class="relative">
+                <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                <div class="space-y-6">
+                  <div v-for="(event, idx) in selectedShipment.events || []" :key="idx" class="relative flex items-start gap-4 pl-10">
+                    <div class="absolute left-2.5 w-3 h-3 rounded-full bg-blue-600 border-2 border-white"></div>
+                    <div>
+                      <p class="font-medium text-gray-900">{{ event.status }}</p>
+                      <p class="text-sm text-gray-500">{{ event.location }}</p>
+                      <p class="text-xs text-gray-400 mt-1">{{ new Date(event.timestamp).toLocaleString() }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive, computed, onMounted } from 'vue'
+
+definePageMeta({ layout: 'admin', middleware: ['auth'] })
+
+const api = useApi()
+const { t } = useI18n()
+
+const shipments = ref<any[]>([])
+const orders = ref<any[]>([])
+const pagination = ref<any>(null)
+const pending = ref(true)
+const error = ref('')
+const page = ref(1)
+const pageSize = 20
+
+const searchQuery = ref('')
+const statusFilter = ref('all')
+const dateFrom = ref('')
+const dateTo = ref('')
+
+const showModal = ref(false)
+const editingId = ref('')
+const saving = ref(false)
+const formError = ref('')
+const showDetailsModal = ref(false)
+const selectedShipment = ref<any>(null)
+
+const form = reactive({
+  orderId: '', carrier: '', trackingNumber: '', status: 'pending',
+  estimatedDelivery: '', actualDelivery: '', notes: ''
+})
+
+const statsCards = computed(() => {
+  const all = shipments.value.length
+  const pend = shipments.value.filter(s => s.status === 'pending').length
+  const inTransit = shipments.value.filter(s => s.status === 'in_transit').length
+  const delivered = shipments.value.filter(s => s.status === 'delivered').length
+  return [
+    { label: t('admin.shipments.total'), value: all, icon: 'heroicons:truck', color: 'text-blue-600', bgColor: 'bg-blue-50' },
+    { label: t('admin.shipments.pending'), value: pend, icon: 'heroicons:clock', color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
+    { label: t('admin.shipments.in_transit'), value: inTransit, icon: 'heroicons:arrows-right-left', color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
+    { label: t('admin.shipments.delivered'), value: delivered, icon: 'heroicons:check-circle', color: 'text-emerald-600', bgColor: 'bg-emerald-50' }
+  ]
+})
+
+const filteredShipments = computed(() => shipments.value.filter(s => {
+  const matchesSearch = !searchQuery.value ||
+    s.trackingNumber?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    s.orderNumber?.toLowerCase().includes(searchQuery.value.toLowerCase())
+  const matchesStatus = statusFilter.value === 'all' || s.status === statusFilter.value
+  return matchesSearch && matchesStatus
+}))
+
+const fetchShipments = async () => {
+  pending.value = true; error.value = ''
+  try {
+    const res = await api.get<any>('/admin/shipments', { page: page.value, limit: pageSize })
+    shipments.value = res.data || []
+    pagination.value = res.pagination
+  } catch (err: any) {
+    error.value = err?.message || 'Failed to fetch shipments'
+  } finally { pending.value = false }
+}
+
+const fetchOrders = async () => {
+  try {
+    const res = await api.get<any>('/admin/orders?limit=100')
+    orders.value = res.data || []
+  } catch { orders.value = [] }
+}
+
+const openCreateModal = () => {
+  editingId.value = ''
+  Object.assign(form, { orderId: '', carrier: '', trackingNumber: '', status: 'pending', estimatedDelivery: '', actualDelivery: '', notes: '' })
+  formError.value = ''; showModal.value = true
+}
+
+const openEditModal = (shipment: any) => {
+  editingId.value = shipment.id
+  Object.assign(form, {
+    orderId: shipment.orderId || '', carrier: shipment.carrier || '',
+    trackingNumber: shipment.trackingNumber || '', status: shipment.status || 'pending',
+    estimatedDelivery: shipment.estimatedDelivery ? shipment.estimatedDelivery.split('T')[0] : '',
+    actualDelivery: shipment.actualDelivery ? shipment.actualDelivery.split('T')[0] : '',
+    notes: shipment.notes || ''
+  })
+  formError.value = ''; showModal.value = true
+}
+
+const closeModal = () => { showModal.value = false; saving.value = false }
+
+const saveShipment = async () => {
+  saving.value = true; formError.value = ''
+  try {
+    if (editingId.value) {
+      await api.put(`/admin/shipments/${editingId.value}`, form)
+    } else {
+      await api.post('/admin/shipments', form)
+    }
+    closeModal(); await fetchShipments()
+  } catch (err: any) {
+    formError.value = err?.message || 'Failed to save shipment'
+  } finally { saving.value = false }
+}
+
+const viewDetails = (shipment: any) => { selectedShipment.value = shipment; showDetailsModal.value = true }
+
+const exportShipments = () => {
+  const csv = [
+    ['Tracking', 'Order', 'Carrier', 'Destination', 'Status', 'ETA', 'Delivered'].join(','),
+    ...filteredShipments.value.map(s => [
+      s.trackingNumber, s.orderNumber || s.orderId, s.carrier || 'Standard',
+      `"${s.destination?.city || ''}, ${s.destination?.country || ''}"`, s.status,
+      s.estimatedDelivery || '', s.actualDelivery || ''
+    ].join(','))
+  ].join('\n')
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a'); a.href = url
+  a.download = `shipments-${new Date().toISOString().split('T')[0]}.csv`; a.click()
+}
+
+const statusBadgeClass = (status: string) => {
+  if (status === 'pending') return 'bg-yellow-100 text-yellow-800'
+  if (status === 'in_transit') return 'bg-indigo-100 text-indigo-800'
+  if (status === 'delivered') return 'bg-emerald-100 text-emerald-800'
+  if (status === 'exception') return 'bg-red-100 text-red-800'
+  return 'bg-gray-100 text-gray-800'
+}
+
+const formatStatus = (status: string) => status?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown'
+const prevPage = () => { if (page.value > 1) { page.value -= 1; fetchShipments() } }
+const nextPage = () => { if (pagination.value && page.value < pagination.value.totalPages) { page.value += 1; fetchShipments() } }
+
+onMounted(() => { fetchShipments(); fetchOrders() })
+</script>

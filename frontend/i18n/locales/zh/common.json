@@ -1,0 +1,58 @@
+{
+  "skip_to_content": "跳转到主要内容",
+  "loading": "加载中...",
+  "whatsapp": {
+    "us": "WhatsApp咨询",
+    "message": "您好，我对您的OEM糖果服务很感兴趣。能提供更多信息吗？"
+  },
+  "pagination": {
+    "prev": "上一页",
+    "next": "下一页",
+    "page": "第 {current} 页 / 共 {total} 页",
+    "showing": "显示第 {from} 到 {to} 项 / 共 {total} 项产品"
+  },
+  "errors": {
+    "404": {
+      "title": "页面未找到",
+      "description": "抱歉，您访问的页面不存在。",
+      "back_home": "返回首页"
+    },
+    "500": {
+      "title": "服务器错误",
+      "description": "抱歉，服务器出现问题。请稍后再试。",
+      "refresh": "刷新页面"
+    },
+    "default": "发生错误",
+    "goHome": "返回首页",
+    "tryAgain": "重试"
+  },
+  "validation": {
+    "required": {
+      "companyName": "公司名称是必填项",
+      "contactPerson": "联系人是必填项",
+      "email": "电子邮箱是必填项"
+    },
+    "email": "邮箱格式不正确",
+    "phone": "电话号码格式不正确",
+    "minLength": {
+      "companyName": "公司名称至少需要 {min} 个字符",
+      "contactPerson": "联系人至少需要 {min} 个字符"
+    },
+    "pattern": {
+      "default": "格式不正确"
+    },
+    "invalid": {
+      "default": "输入无效"
+    }
+  },
+  "offline_message": "请检查您的网络连接并重试。",
+  "common": {
+    "previous": "上一页",
+    "next": "下一页",
+    "cancel": "取消",
+    "save": "保存",
+    "edit": "编辑",
+    "delete": "删除",
+    "loading": "加载中..."
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "legal": {
+    "privacy_title": "隐私政策",
+    "terms_title": "服务条款",
+    "last_updated": "最后更新：{date}",
+    "privacy": {
+      "intro_title": "1. 引言",
+      "intro": "欢迎访问 CandyPro。我们尊重您的隐私，并致力于保护您的个人数据。",
+      "data_collect_title": "2. 我们收集的数据",
+      "data_collect_desc": "我们可能会收集、使用、存储和传输关于您的不同类型的个人数据，具体分类如下：",
+      "identity_data": "身份数据包括名字、姓氏、用户名或类似标识符。",
+      "contact_data": "联系数据包括账单地址、收货地址、电子邮箱和电话号码。",
+      "use_data_title": "3. 我们如何使用您的数据",
+      "use_data_desc": "我们仅在法律允许的情况下使用您的个人数据。最常见的使用场景包括：",
+      "use_contract": "在我们即将与您签订或已经签订的合同中需要履行义务时。",
+      "use_legitimate": "在我们（或第三方）的合法利益需要时，且您的利益和基本权利不会被侵犯。",
+      "use_legal": "在我们需要遵守法律义务时。"
+    },
+    "terms": {
+      "accept_title": "1. 条款接受",
+      "accept_desc": "访问和使用本网站即表示您接受并同意受本协议条款的约束。",
+      "license_title": "2. 使用许可",
+      "license_desc": "您被授权临时下载 CandyPro 网站上的材料（信息或软件）的一份副本，仅供个人、非商业性的临时浏览使用。",
+      "limitations_title": "3. 责任限制",
+      "limitations_desc": "在任何情况下，CandyPro 或其供应商均不对因使用或无法使用 CandyPro 网站上的材料而产生的任何损害（包括但不限于数据丢失、利润损失或业务中断造成的损害）承担责任。",
+      "revisions_title": "4. 修订与勘误",
+      "revisions_desc": "CandyPro 网站上的材料可能包含技术、排版或摄影错误。CandyPro 不保证其网站上的任何材料是准确、完整或最新的。"
+    }
+  }
+}

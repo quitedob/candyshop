@@ -1,0 +1,58 @@
+{
+  "skip_to_content": "Skip to main content",
+  "loading": "Loading...",
+  "whatsapp": {
+    "us": "WhatsApp Us",
+    "message": "Hi, I'm interested in your OEM candy services. Can you provide more information?"
+  },
+  "pagination": {
+    "prev": "Previous",
+    "next": "Next",
+    "page": "Page {current} of {total}",
+    "showing": "Showing {from} to {to} of {total} products"
+  },
+  "errors": {
+    "404": {
+      "title": "Page Not Found",
+      "description": "Sorry, the page you are looking for doesn't exist.",
+      "back_home": "Back to Home"
+    },
+    "500": {
+      "title": "Server Error",
+      "description": "Something went wrong on our end. Please try again later.",
+      "refresh": "Refresh Page"
+    },
+    "default": "An error occurred",
+    "goHome": "Go to Home",
+    "tryAgain": "Try Again"
+  },
+  "validation": {
+    "required": {
+      "companyName": "Company Name is required",
+      "contactPerson": "Contact Person is required",
+      "email": "Email is required"
+    },
+    "email": "Invalid email format",
+    "phone": "Invalid phone format",
+    "minLength": {
+      "companyName": "Company Name must be at least {min} characters",
+      "contactPerson": "Contact Person must be at least {min} characters"
+    },
+    "pattern": {
+      "default": "Invalid format"
+    },
+    "invalid": {
+      "default": "Invalid input"
+    }
+  },
+  "offline_message": "Please check your internet connection and try again.",
+  "common": {
+    "previous": "Previous",
+    "next": "Next",
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "loading": "Loading..."
+  }
+}

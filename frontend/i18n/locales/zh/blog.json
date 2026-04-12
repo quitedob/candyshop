@@ -1,0 +1,24 @@
+{
+  "blog": {
+    "title": "新闻资讯",
+    "categories": {
+      "compliance": "合规知识",
+      "product_knowledge": "产品知识",
+      "packaging": "包装趋势",
+      "market_insights": "市场洞察"
+    },
+    "read_more": "阅读更多",
+    "related_articles": "相关文章",
+    "share": "分享文章",
+    "table_of_contents": "目录"
+  },
+  "blog_extra": {
+    "featured": "精选",
+    "stay_updated": "保持关注",
+    "subscribe_desc": "获取最新的行业洞察和合规动态",
+    "email_placeholder": "输入您的邮箱",
+    "all_posts": "全部文章",
+    "loading_posts": "正在加载文章...",
+    "no_posts": "该分类下暂无文章。"
+  }
+}

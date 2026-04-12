@@ -1,0 +1,583 @@
+<template>
+  <div class="blog-page">
+    <!-- Breadcrumb -->
+    <div class="container">
+      <Breadcrumb :items="[{ label: t('nav.blog') }]" />
+    </div>
+
+    <!-- Hero -->
+    <section class="blog-hero section">
+      <div class="container">
+        <div class="blog-hero__inner">
+          <h1 class="blog-hero__title">{{ t('blog.title') }}</h1>
+          <p class="blog-hero__subtitle">
+            {{ t('blog_extra.subscribe_desc') }}
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Categories -->
+    <section class="categories section-sm">
+      <div class="container">
+        <div class="categories__inner">
+          <button
+            class="category-tab"
+            :class="{ 'category-tab--active': !activeCategory }"
+            @click="setCategory('')"
+          >
+            {{ t('blog_extra.all_posts') }}
+          </button>
+          <button
+            v-for="cat in categories"
+            :key="cat.id"
+            class="category-tab"
+            :class="{ 'category-tab--active': activeCategory === cat.id }"
+            @click="setCategory(cat.id)"
+          >
+            {{ cat.name }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured Post -->
+    <article
+      v-if="featuredPost && !activeCategory"
+      class="featured-post section"
+    >
+      <div class="container">
+        <NuxtLink
+          :to="localePath(`/blog/${featuredPost.slug}`)"
+          class="featured-post__inner"
+        >
+          <div class="featured-post__image">
+            <img :src="featuredPost.thumbnail" :alt="featuredPost.title" />
+            <span class="featured-post__badge">{{ t('blog_extra.featured') }}</span>
+          </div>
+          <div class="featured-post__content">
+            <span class="featured-post__category">{{ getCategoryName(featuredPost.category) }}</span>
+            <h2 class="featured-post__title">{{ featuredPost.title }}</h2>
+            <p class="featured-post__excerpt">{{ featuredPost.excerpt }}</p>
+            <div class="featured-post__meta">
+              <span class="featured-post__author">
+                <Icon name="lucide:user" size="14" />
+                {{ featuredPost.author.name }}
+              </span>
+              <span class="featured-post__date">
+                <Icon name="lucide:calendar" size="14" />
+                {{ formatDate(featuredPost.publishedAt) }}
+              </span>
+              <span class="featured-post__read-time">
+                <Icon name="lucide:clock" size="14" />
+                {{ featuredPost.readTime }} min read
+              </span>
+            </div>
+          </div>
+        </NuxtLink>
+      </div>
+    </article>
+
+    <!-- Posts Grid -->
+    <section class="posts section">
+      <div class="container">
+        <div v-if="pending" class="posts__empty">
+          <p>
+            {{ t('blog_extra.loading_posts') }}
+          </p>
+        </div>
+
+        <div v-else-if="filteredPosts.length === 0" class="posts__empty">
+          <p>{{ t('blog_extra.no_posts') }}</p>
+        </div>
+
+        <div v-else class="posts__grid">
+          <article
+            v-for="post in pagedPosts"
+            :key="post.id"
+            class="post-card"
+          >
+            <NuxtLink :to="localePath(`/blog/${post.slug}`)" class="post-card__link">
+              <div class="post-card__image">
+                <img :src="post.thumbnail || '/images/blog-placeholder.jpg'" :alt="post.title" />
+                <span class="post-card__category">{{ getCategoryName(post.category) }}</span>
+              </div>
+              <div class="post-card__content">
+                <h3 class="post-card__title">{{ post.title }}</h3>
+                <p class="post-card__excerpt">{{ post.excerpt }}</p>
+                <div class="post-card__meta">
+                  <span>{{ formatDate(post.publishedAt) }}</span>
+                  <span>{{ post.readTime }} min read</span>
+                </div>
+              </div>
+            </NuxtLink>
+          </article>
+        </div>
+
+        <!-- Pagination -->
+        <div v-if="totalPages > 1" class="posts__pagination">
+          <button
+            class="pagination__btn"
+            :disabled="currentPage === 1"
+            @click="goToPage(currentPage - 1)"
+          >
+            {{ t('pagination.prev') }}
+          </button>
+
+          <div class="pagination__pages">
+            <button
+              v-for="page in visiblePages"
+              :key="page"
+              class="pagination__page"
+              :class="{ 'pagination__page--active': page === currentPage }"
+              @click="goToPage(page)"
+            >
+              {{ page }}
+            </button>
+          </div>
+
+          <button
+            class="pagination__btn"
+            :disabled="currentPage === totalPages"
+            @click="goToPage(currentPage + 1)"
+          >
+            {{ t('pagination.next') }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Newsletter -->
+    <section class="newsletter section bg-alt">
+      <div class="container container-narrow">
+        <div class="newsletter__inner">
+          <h2>{{ t('blog_extra.stay_updated') }}</h2>
+          <p>{{ t('blog_extra.subscribe_desc') }}</p>
+          <form class="newsletter__form" @submit.prevent="subscribeNewsletter">
+            <input
+              type="email"
+              v-model="newsletterEmail"
+              :placeholder="t('blog_extra.email_placeholder')"
+              required
+              class="newsletter__input"
+            />
+            <button type="submit" class="btn btn-primary">Subscribe</button>
+          </form>
+          <p v-if="newsletterMessage" class="newsletter__message">{{ newsletterMessage }}</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import { useI18n, useLocalePath } from '#i18n'
+
+const { t } = useI18n()
+const localePath = useLocalePath()
+const { getPosts } = useApi()
+
+const activeCategory = ref('')
+const currentPage = ref(1)
+const limit = 9
+const newsletterEmail = ref('')
+const newsletterMessage = ref('')
+
+const { data: postsResponse, pending } = await useAsyncData('blog-posts-all', async () => {
+  return await getPosts({ page: 1, limit: 200 })
+})
+
+const allPosts = computed(() => {
+  const posts = (postsResponse.value?.data || []) as any[]
+  return [...posts].sort((a, b) => {
+    return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+  })
+})
+
+const mapCategoryName = (categoryId: string) => {
+  const mapping: Record<string, string> = {
+    compliance: t('blog.categories.compliance'),
+    product_knowledge: t('blog.categories.product_knowledge'),
+    packaging: t('blog.categories.packaging'),
+    market_insights: t('blog.categories.market_insights')
+  }
+  return mapping[categoryId] || categoryId
+}
+
+const categories = computed(() => {
+  const unique = Array.from(new Set(allPosts.value.map((post) => post.category).filter(Boolean)))
+  return unique.map((id) => ({ id, name: mapCategoryName(id) }))
+})
+
+const featuredPost = computed(() => {
+  if (activeCategory.value || allPosts.value.length === 0) {
+    return null
+  }
+  return allPosts.value[0]
+})
+
+const filteredPosts = computed(() => {
+  let posts = allPosts.value
+  if (activeCategory.value) {
+    posts = posts.filter(p => p.category === activeCategory.value)
+  }
+  if (!activeCategory.value && featuredPost.value) {
+    return posts.slice(1)
+  }
+  return posts
+})
+
+const totalPages = computed(() => Math.ceil(filteredPosts.value.length / limit))
+
+const pagedPosts = computed(() => {
+  const start = (currentPage.value - 1) * limit
+  const end = start + limit
+  return filteredPosts.value.slice(start, end)
+})
+
+const visiblePages = computed(() => {
+  const pages: number[] = []
+  const showPages = 5
+  let start = Math.max(1, currentPage.value - Math.floor(showPages / 2))
+  let end = Math.min(totalPages.value, start + showPages - 1)
+
+  if (end - start < showPages - 1) {
+    start = Math.max(1, end - showPages + 1)
+  }
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+
+  return pages
+})
+
+const getCategoryName = (categoryId: string) => {
+  return mapCategoryName(categoryId)
+}
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+const setCategory = (categoryId: string) => {
+  activeCategory.value = categoryId
+}
+
+const goToPage = (page: number) => {
+  if (page < 1 || page > totalPages.value) return
+  currentPage.value = page
+}
+
+const subscribeNewsletter = async () => {
+  const email = newsletterEmail.value.trim()
+  if (!email) {
+    newsletterMessage.value = 'Please enter a valid email address.'
+    return
+  }
+
+  newsletterMessage.value = 'Redirecting to contact form...'
+  await navigateTo(localePath(`/contact?email=${encodeURIComponent(email)}&source=blog-newsletter`))
+}
+
+watch(activeCategory, () => {
+  currentPage.value = 1
+})
+
+// SEO
+useSeo({
+  title: `${t('nav.blog')} | ${t('seo.default_title')}`,
+  description: 'Industry insights, compliance knowledge, and product expertise for candy manufacturers.',
+  ogType: 'website'
+})
+</script>
+
+<style scoped>
+.blog-hero__inner {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.blog-hero__title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  margin-bottom: var(--spacing-md);
+}
+
+.blog-hero__subtitle {
+  font-size: var(--text-lg);
+  color: var(--color-text-light);
+}
+
+/* Categories */
+.categories__inner {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.category-tab {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  background-color: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.category-tab:hover {
+  border-color: var(--color-accent);
+}
+
+.category-tab--active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+/* Featured Post */
+.featured-post__inner {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-2xl);
+  text-decoration: none;
+  color: inherit;
+}
+
+@media (min-width: 1024px) {
+  .featured-post__inner {
+    grid-template-columns: 1.5fr 1fr;
+  }
+}
+
+.featured-post__image {
+  position: relative;
+  aspect-ratio: 16/9;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.featured-post__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+
+.featured-post__inner:hover .featured-post__image img {
+  transform: scale(1.03);
+}
+
+.featured-post__badge {
+  position: absolute;
+  top: var(--spacing-md);
+  left: var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-md);
+  background-color: var(--color-highlight);
+  color: white;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+}
+
+.featured-post__content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.featured-post__category {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  background-color: var(--color-bg-alt);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent);
+  margin-bottom: var(--spacing-md);
+}
+
+.featured-post__title {
+  font-size: var(--text-3xl);
+  margin-bottom: var(--spacing-md);
+}
+
+.featured-post__excerpt {
+  font-size: var(--text-lg);
+  color: var(--color-text-light);
+  line-height: 1.6;
+  margin-bottom: var(--spacing-xl);
+}
+
+.featured-post__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-lg);
+  font-size: var(--text-sm);
+  color: var(--color-text-light);
+}
+
+.featured-post__meta span {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* Posts Grid */
+.posts__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-3xl);
+}
+
+.post-card__link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.post-card__image {
+  position: relative;
+  aspect-ratio: 16/10;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: var(--spacing-md);
+  background-color: var(--color-bg-alt);
+}
+
+.post-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-base);
+}
+
+.post-card:hover .post-card__image img {
+  transform: scale(1.05);
+}
+
+.post-card__category {
+  position: absolute;
+  top: var(--spacing-sm);
+  left: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-sm);
+  color: var(--color-primary);
+}
+
+.post-card__title {
+  font-size: var(--text-xl);
+  margin-bottom: var(--spacing-sm);
+}
+
+.post-card__excerpt {
+  font-size: var(--text-sm);
+  color: var(--color-text-light);
+  line-height: 1.6;
+  margin-bottom: var(--spacing-md);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.post-card__meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-xs);
+  color: var(--color-text-light);
+}
+
+/* Pagination */
+.posts__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+}
+
+.pagination__btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.pagination__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination__pages {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.pagination__page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.pagination__page--active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+/* Newsletter */
+.newsletter__inner {
+  text-align: center;
+}
+
+.newsletter__inner h2 {
+  margin-bottom: var(--spacing-md);
+}
+
+.newsletter__inner p {
+  color: var(--color-text-light);
+  margin-bottom: var(--spacing-xl);
+}
+
+.newsletter__form {
+  display: flex;
+  gap: var(--spacing-sm);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.newsletter__input {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.newsletter__message {
+  margin-top: var(--spacing-md);
+  color: var(--color-primary);
+}
+
+.posts__empty {
+  text-align: center;
+  padding: var(--spacing-5xl) var(--spacing-lg);
+  color: var(--color-text-light);
+}
+</style>

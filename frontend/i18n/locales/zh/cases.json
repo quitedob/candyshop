@@ -1,0 +1,26 @@
+{
+  "cases": {
+    "title": "成功案例",
+    "subtitle": "值得信赖的全球品牌伙伴",
+    "view_case": "查看案例",
+    "client": "客户",
+    "project": "项目",
+    "solution": "解决方案",
+    "result": "成果"
+  },
+  "cases_detail": {
+    "loading": "正在加载案例...",
+    "not_found": "案例未找到",
+    "not_found_desc": "您请求的案例不存在或暂不可用。",
+    "back": "返回案例列表",
+    "result": "项目成果",
+    "challenge": "面临的挑战",
+    "solution": "我们的方案",
+    "services": "提供的服务",
+    "gallery": "项目图集",
+    "timeline": "项目时间线",
+    "similar": "类似案例",
+    "cta_title": "准备好书写您的成功故事了吗？",
+    "cta_subtitle": "让我们一起探讨如何帮助您的品牌取得类似的成果。"
+  }
+}

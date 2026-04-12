@@ -1,0 +1,53 @@
+{
+  "product": {
+    "categories_title": "浏览分类",
+    "categories": {
+      "gummy_candy": "软糖",
+      "hard_candy": "硬糖",
+      "aerated_candy": "充气糖果",
+      "toffee_candy": "太妃糖",
+      "compound_chocolate": "代可可脂巧克力"
+    },
+    "category_descriptions": {
+      "gummy_candy": "各种形状、口味和质地的优质软糖，完美适合贴牌生产。",
+      "hard_candy": "经典硬糖，色彩鲜艳，口味持久。",
+      "aerated_candy": "轻盈蓬松的充气糖果，独特的口感体验。",
+      "toffee_candy": "浓郁黄油太妃糖，顺滑焦糖风味。",
+      "compound_chocolate": "性价比高的巧克力替代品，口感绝佳。"
+    },
+    "oem_available": "支持OEM",
+    "inquire_now": "立即咨询",
+    "download_catalog": "下载目录",
+    "request_sample": "申请样品",
+    "view_details": "查看详情",
+    "view_products": "查看产品",
+    "browse_all": "浏览我们完整的优质糖果产品系列",
+    "need_custom": "需要定制方案？",
+    "oem_description": "我们专注于OEM和贴牌生产，让您的糖果愿景成为现实。",
+    "products": "个产品",
+    "specifications": "规格参数",
+    "packaging": "包装",
+    "flavors": "口味",
+    "shapes": "形状",
+    "certifications": "认证",
+    "applications": "应用场景",
+    "related_products": "相关产品",
+    "no_products": "未找到产品",
+    "try_different_filters": "请尝试调整筛选条件或浏览其他分类"
+  },
+  "filters": {
+    "title": "筛选产品",
+    "all": "全部产品",
+    "sugar_free": "无糖",
+    "halal": "清真",
+    "filled": "夹心",
+    "4d": "4D",
+    "organic": "有机",
+    "vitamin": "维生素强化",
+    "color": "颜色",
+    "flavor": "口味",
+    "shape": "形状",
+    "packaging": "包装",
+    "clear": "清除筛选"
+  }
+}

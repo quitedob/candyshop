@@ -1,0 +1,24 @@
+{
+  "blog": {
+    "title": "Blog & Resources",
+    "categories": {
+      "compliance": "Compliance",
+      "product_knowledge": "Product Knowledge",
+      "packaging": "Packaging Trends",
+      "market_insights": "Market Insights"
+    },
+    "read_more": "Read More",
+    "related_articles": "Related Articles",
+    "share": "Share Article",
+    "table_of_contents": "Table of Contents"
+  },
+  "blog_extra": {
+    "featured": "Featured",
+    "stay_updated": "Stay Updated",
+    "subscribe_desc": "Get the latest industry insights and compliance updates delivered to your inbox",
+    "email_placeholder": "Enter your email",
+    "all_posts": "All Posts",
+    "loading_posts": "Loading posts...",
+    "no_posts": "No posts found in this category."
+  }
+}

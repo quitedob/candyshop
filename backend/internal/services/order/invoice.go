@@ -1,0 +1,106 @@
+package order
+
+import (
+	modelsOrder "candypro/api/internal/models/order"
+	"context"
+	"errors"
+	"strings"
+	"time"
+)
+
+type invoiceRepository interface {
+	FindAll(ctx context.Context, page, pageSize int, status string) ([]modelsOrder.Invoice, int64, error)
+	FindByID(ctx context.Context, id string) (*modelsOrder.Invoice, error)
+	FindByOrderID(ctx context.Context, orderID string) ([]modelsOrder.Invoice, error)
+	Create(ctx context.Context, invoice *modelsOrder.Invoice) error
+	Update(ctx context.Context, invoice *modelsOrder.Invoice) error
+	Delete(ctx context.Context, id string) error
+	Stats(ctx context.Context) (map[string]int64, error)
+}
+
+// InvoiceService provides invoice business logic.
+type InvoiceService struct {
+	repo invoiceRepository
+}
+
+// NewInvoiceService creates an InvoiceService.
+func NewInvoiceService(repo invoiceRepository) *InvoiceService {
+	return &InvoiceService{repo: repo}
+}
+
+// ListInvoices returns paginated invoices.
+func (s *InvoiceService) ListInvoices(ctx context.Context, page, limit int, status string) ([]modelsOrder.Invoice, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+	return s.repo.FindAll(ctx, page, limit, status)
+}
+
+// GetInvoice returns a single invoice by ID.
+func (s *InvoiceService) GetInvoice(ctx context.Context, id string) (*modelsOrder.Invoice, error) {
+	return s.repo.FindByID(ctx, id)
+}
+
+// GetByOrderID returns all invoices for an order.
+func (s *InvoiceService) GetByOrderID(ctx context.Context, orderID string) ([]modelsOrder.Invoice, error) {
+	return s.repo.FindByOrderID(ctx, orderID)
+}
+
+// CreateInvoice creates a new invoice with defaults applied.
+func (s *InvoiceService) CreateInvoice(ctx context.Context, invoice *modelsOrder.Invoice) error {
+	if invoice.Type == "" {
+		invoice.Type = modelsOrder.InvoiceTypeCommercial
+	}
+	if invoice.Status == "" {
+		invoice.Status = modelsOrder.InvoiceStatusDraft
+	}
+	if invoice.Currency == "" {
+		invoice.Currency = "USD"
+	}
+	invoice.TotalAmount = invoice.Amount + invoice.TaxAmount
+	return s.repo.Create(ctx, invoice)
+}
+
+// UpdateInvoice saves changes to an existing invoice.
+func (s *InvoiceService) UpdateInvoice(ctx context.Context, invoice *modelsOrder.Invoice) error {
+	invoice.TotalAmount = invoice.Amount + invoice.TaxAmount
+	return s.repo.Update(ctx, invoice)
+}
+
+// SendInvoice marks an invoice as sent.
+func (s *InvoiceService) SendInvoice(ctx context.Context, id string) (*modelsOrder.Invoice, error) {
+	invoice, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if invoice.Status == modelsOrder.InvoiceStatusVoided {
+		return nil, errors.New("cannot send a voided invoice")
+	}
+	now := time.Now()
+	invoice.Status = modelsOrder.InvoiceStatusSent
+	invoice.SentAt = &now
+	if err := s.repo.Update(ctx, invoice); err != nil {
+		return nil, err
+	}
+	return invoice, nil
+}
+
+// DeleteInvoice removes an invoice (only drafts may be deleted).
+func (s *InvoiceService) DeleteInvoice(ctx context.Context, id string) error {
+	invoice, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if strings.ToLower(invoice.Status) != modelsOrder.InvoiceStatusDraft {
+		return errors.New("only draft invoices can be deleted")
+	}
+	return s.repo.Delete(ctx, id)
+}
+
+// GetStats returns counts grouped by status.
+func (s *InvoiceService) GetStats(ctx context.Context) (map[string]int64, error) {
+	return s.repo.Stats(ctx)
+}

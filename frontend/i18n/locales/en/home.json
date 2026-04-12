@@ -1,0 +1,69 @@
+{
+  "home": {
+    "hero": {
+      "title": "Professional OEM Candy Manufacturer",
+      "subtitle": "Premium Quality Private Label Gummy, Hard Candy, Aerated Candy, Toffee & Compound Chocolate for Global Brands",
+      "cta_primary": "Get Quote",
+      "cta_secondary": "View Products"
+    },
+    "categories": {
+      "title": "Product Categories",
+      "subtitle": "Explore our comprehensive range of confectionery products"
+    },
+    "trust": {
+      "title": "Why Choose Us",
+      "subtitle": "Trusted by leading brands worldwide",
+      "expert_team": "Expert Team",
+      "expert_team_desc": "150+ skilled professionals",
+      "capacity_desc": "100 tons daily output",
+      "export_desc": "50+ export countries"
+    },
+    "certifications": {
+      "title": "Quality Certifications",
+      "subtitle": "Committed to the highest standards of food safety and quality",
+      "haccp_desc": "Food Safety Management",
+      "iso_desc": "Food Safety Standard",
+      "brc_desc": "Food Safety Grade A",
+      "halal_desc": "Halal Certified"
+    },
+    "featured": {
+      "title": "Featured Products",
+      "subtitle": "Our best-selling items loved by clients worldwide"
+    },
+    "oem": {
+      "title": "OEM & Private Label Solutions",
+      "subtitle": "Bring your brand vision to life with our custom manufacturing",
+      "cta": "Learn More",
+      "feature1": "Custom formula development",
+      "feature2": "Private label packaging",
+      "feature3": "Low MOQ from 1000 pcs",
+      "feature4": "Fast lead time 2-4 weeks",
+      "feature5": "Sample approval process"
+    },
+    "global": {
+      "title": "Global Reach",
+      "subtitle": "Exporting to markets across Europe, Americas, and Asia",
+      "north_america": "North America",
+      "north_america_countries": "USA, Canada, Mexico",
+      "europe": "Europe",
+      "europe_countries": "UK, Germany, France, Italy",
+      "southeast_asia": "Southeast Asia",
+      "southeast_asia_countries": "Singapore, Thailand, Malaysia",
+      "middle_east": "Middle East",
+      "middle_east_countries": "UAE, Saudi Arabia, Qatar"
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "subtitle": "Quick answers to common questions about our services",
+      "view_all": "View All FAQs",
+      "q1": "What is your minimum order quantity (MOQ)?",
+      "a1": "Our MOQ varies by product type, starting from 1,000 pieces for standard items and 3,000 pieces for custom OEM orders.",
+      "q2": "How long is your lead time?",
+      "a2": "Standard orders take 2-3 weeks, while custom OEM orders typically require 4-6 weeks depending on complexity.",
+      "q3": "Do you provide samples?",
+      "a3": "Yes, we provide samples for quality evaluation. Sample fees are refundable upon placing a bulk order.",
+      "q4": "What certifications do you have?",
+      "a4": "We are HACCP, ISO22000, BRC Grade A, and Halal certified. Our products meet international food safety standards."
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "nav": {
+    "home": "首页",
+    "products": "产品中心",
+    "oem": "OEM定制",
+    "factory": "工厂实力",
+    "cases": "案例客户",
+    "blog": "新闻资讯",
+    "about": "关于我们",
+    "contact": "联系我们"
+  },
+  "footer": {
+    "tagline": "您值得信赖的糖果制造伙伴",
+    "quick_links": "快速链接",
+    "products": "产品",
+    "services": "服务",
+    "support": "支持",
+    "legal": "法律",
+    "privacy_policy": "隐私政策",
+    "terms_of_service": "服务条款",
+    "cookie_policy": "Cookie政策",
+    "copyright": "© {year} 糖果制造有限公司 版权所有"
+  }
+}
