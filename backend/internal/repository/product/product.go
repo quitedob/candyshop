@@ -20,11 +20,11 @@ func NewProductRepository(db *gorm.DB) *ProductRepository {
 
 // FindAll returns paginated products with optional filters.
 func (r *ProductRepository) FindAll(ctx context.Context, page, limit int, categorySlug string) ([]modelsProduct.Product, int64, error) {
-	return r.FindAllFiltered(ctx, page, limit, false, false, false, "", "", 0, 0)
+	return r.FindAllFiltered(ctx, page, limit, false, false, false, "", "", 0, 0, categorySlug)
 }
 
 // FindAllFiltered returns paginated products with full filter support.
-func (r *ProductRepository) FindAllFiltered(ctx context.Context, page, limit int, halal, oemOnly, featuredOnly bool, search, sort string, minMOQ, maxMOQ int) ([]modelsProduct.Product, int64, error) {
+func (r *ProductRepository) FindAllFiltered(ctx context.Context, page, limit int, halal, oemOnly, featuredOnly bool, search, sort string, minMOQ, maxMOQ int, categorySlug ...string) ([]modelsProduct.Product, int64, error) {
 	var products []modelsProduct.Product
 	var total int64
 
@@ -42,6 +42,9 @@ func (r *ProductRepository) FindAllFiltered(ctx context.Context, page, limit int
 	}
 	if featuredOnly {
 		query = query.Where("featured = true")
+	}
+	if len(categorySlug) > 0 && categorySlug[0] != "" {
+		query = query.Where("category_slug = ?", categorySlug[0])
 	}
 	if minMOQ > 0 {
 		query = query.Where("moq >= ?", minMOQ)

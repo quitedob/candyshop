@@ -100,13 +100,21 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const { user } = useAuth()
 const { t } = useI18n()
+const route = useRoute()
 const { submitCustomerInquiry } = useApi()
+
+// Pre-fill product name from query params
+const prefillProducts = computed(() => {
+  const name = route.query.name as string
+  const products = route.query.products as string
+  return name || products || ''
+})
 
 const form = reactive({
   companyName: user.value?.company || '',
   contactPerson: `${user.value?.firstName || ''} ${user.value?.lastName || ''}`.trim(),
   email: user.value?.email || '',
-  interestedProducts: '',
+  interestedProducts: prefillProducts.value,
   estimatedQuantity: '',
   oemNeeded: false,
   expectedDelivery: '',

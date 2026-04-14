@@ -322,7 +322,7 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
     if (route.query.message) state.message = String(route.query.message)
   }
 
-  return {
+  return reactive({
     // State
     state,
     isSubmitting,
@@ -339,7 +339,7 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
     removeFile,
     submit,
     populateFromQuery
-  }
+  })
 }
 
 /**
@@ -348,9 +348,17 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
 export const useQuickInquiry = () => {
   const { $localePath } = useNuxtApp()
   const localePath = $localePath || useLocalePath()
-  
+
   const openInquiry = (product?: { name: string; category: string }, isSample = false) => {
     const router = useRouter()
+    const route = useRoute()
+    const { isAuthenticated } = useAuth()
+
+    // Redirect to login if not authenticated
+    if (!isAuthenticated.value) {
+      router.push({ path: localePath('/auth/login'), query: { redirect: route.fullPath } })
+      return
+    }
 
     // Build query params for pre-filled form
     const query: Record<string, string> = {}

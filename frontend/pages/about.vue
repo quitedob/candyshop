@@ -147,7 +147,7 @@ const certifications = [
     description: t('about.cert_desc.haccp'),
     issuer: 'SGS',
     validUntil: '2027',
-    badgeUrl: '/certificates/haccp-badge.png',
+    badgeUrl: '/certificates/haccp-badge.svg',
     certificateUrl: '/certificates/haccp.pdf'
   },
   {
@@ -156,7 +156,7 @@ const certifications = [
     description: t('about.cert_desc.iso'),
     issuer: 'BSI',
     validUntil: '2027',
-    badgeUrl: '/certificates/iso-badge.png',
+    badgeUrl: '/certificates/iso-badge.svg',
     certificateUrl: '/certificates/iso22000.pdf'
   },
   {
@@ -165,7 +165,7 @@ const certifications = [
     description: t('about.cert_desc.brc'),
     issuer: 'BRC',
     validUntil: '2026',
-    badgeUrl: '/certificates/brc-badge.png',
+    badgeUrl: '/certificates/brc-badge.svg',
     certificateUrl: '/certificates/brc.pdf'
   },
   {
@@ -174,7 +174,7 @@ const certifications = [
     description: t('about.cert_desc.halal'),
     issuer: 'IFRC',
     validUntil: '2027',
-    badgeUrl: '/certificates/halal-badge.png',
+    badgeUrl: '/certificates/halal-badge.svg',
     certificateUrl: '/certificates/halal.pdf'
   }
 ]

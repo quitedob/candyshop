@@ -40,6 +40,15 @@
           </button>
         </div>
       </div>
+      <div v-if="order.status === 'pending'" class="mx-6 mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+        <div class="flex items-start gap-3">
+          <Icon name="heroicons:clock" class="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p class="text-sm font-medium text-blue-800">Your order request has been received.</p>
+            <p class="mt-1 text-sm text-blue-700">Our sales team will contact you within 24 hours to confirm order details, pricing, and delivery schedule.</p>
+          </div>
+        </div>
+      </div>
       <div class="px-6 py-6">
         <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
           <div class="sm:col-span-1">

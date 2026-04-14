@@ -1,7 +1,7 @@
 export default defineI18nConfig(() => ({
   legacy: false,
   globalInjection: true,
-  locale: 'en',
+  locale: 'zh',
   fallbackLocale: 'en',
   availableLocales: ['en', 'zh'],
   modifiers: {

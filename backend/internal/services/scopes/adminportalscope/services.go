@@ -4,11 +4,13 @@ import (
 	"candypro/api/internal/config"
 	repositoryCommon "candypro/api/internal/repository/common"
 	auth "candypro/api/internal/services/auth"
+	activitylogSvc "candypro/api/internal/services/activitylog"
 	content "candypro/api/internal/services/content"
 	inquiry "candypro/api/internal/services/inquiry"
 	oem "candypro/api/internal/services/oem"
 	order "candypro/api/internal/services/order"
 	product "candypro/api/internal/services/product"
+	systemsettingSvc "candypro/api/internal/services/systemsetting"
 	trade "candypro/api/internal/services/trade"
 	user "candypro/api/internal/services/user"
 )
@@ -29,6 +31,8 @@ type Services struct {
 	Trade          *trade.TradeService
 	Shipment       *trade.ShipmentService
 	TradeDocDetail *trade.TradeDocumentDetailService
+	ActivityLog    *activitylogSvc.ActivityLogService
+	SystemSetting  *systemsettingSvc.SystemSettingService
 }
 
 func New(repos *repositoryCommon.AdminPortalRepositories, cfg *config.Config, authSvc *auth.AuthService) *Services {
@@ -54,5 +58,7 @@ func New(repos *repositoryCommon.AdminPortalRepositories, cfg *config.Config, au
 		Trade:          trade.NewTradeService(repos.Trade),
 		Shipment:       trade.NewShipmentService(repos.Shipment),
 		TradeDocDetail: trade.NewTradeDocumentDetailService(repos.TradeDocDetail),
+		ActivityLog:    activitylogSvc.NewActivityLogService(repos.ActivityLog),
+		SystemSetting:  systemsettingSvc.NewSystemSettingService(repos.SystemSetting),
 	}
 }

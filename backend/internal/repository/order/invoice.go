@@ -110,3 +110,63 @@ func generateInvoiceNo(invoiceType string) string {
 	}
 	return fmt.Sprintf("%s-%s-%06d", prefix, time.Now().UTC().Format("200601"), time.Now().UnixNano()%1000000)
 }
+
+// SumByStatus returns total amount for invoices of a given status.
+func (r *InvoiceRepository) SumByStatus(ctx context.Context, status string) (float64, error) {
+	var result struct {
+		Amount float64
+	}
+	if err := r.db.WithContext(ctx).
+		Model(&modelsOrder.Invoice{}).
+		Where("status = ?", status).
+		Select("COALESCE(SUM(total_amount), 0) AS amount").
+		Scan(&result).Error; err != nil {
+		return 0, err
+	}
+	return result.Amount, nil
+}
+
+// OverdueCount counts invoices past their due date with status not 'paid' or 'voided'.
+func (r *InvoiceRepository) OverdueCount(ctx context.Context) (int64, error) {
+	var result struct {
+		Count int64
+	}
+	if err := r.db.WithContext(ctx).
+		Model(&modelsOrder.Invoice{}).
+		Where("due_date IS NOT NULL AND due_date < NOW() AND status NOT IN ?", []string{"paid", "voided"}).
+		Select("COUNT(*) AS count").
+		Scan(&result).Error; err != nil {
+		return 0, err
+	}
+	return result.Count, nil
+}
+
+// OverdueTotal returns total amount of overdue invoices.
+func (r *InvoiceRepository) OverdueTotal(ctx context.Context) (float64, error) {
+	var result struct {
+		Amount float64
+	}
+	if err := r.db.WithContext(ctx).
+		Model(&modelsOrder.Invoice{}).
+		Where("due_date IS NOT NULL AND due_date < NOW() AND status NOT IN ?", []string{"paid", "voided"}).
+		Select("COALESCE(SUM(total_amount), 0) AS amount").
+		Scan(&result).Error; err != nil {
+		return 0, err
+	}
+	return result.Amount, nil
+}
+
+// FindByStatus returns invoices filtered by status with pagination.
+func (r *InvoiceRepository) FindByStatus(ctx context.Context, status string, page, limit int) ([]modelsOrder.Invoice, int64, error) {
+	var invoices []modelsOrder.Invoice
+	var total int64
+	query := r.db.WithContext(ctx).Model(&modelsOrder.Invoice{}).Where("status = ?", status)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	offset := (page - 1) * limit
+	if err := query.Offset(offset).Limit(limit).Order("created_at desc").Find(&invoices).Error; err != nil {
+		return nil, 0, err
+	}
+	return invoices, total, nil
+}

@@ -51,7 +51,7 @@
               <span class="customer-header__user-name hide-mobile">{{ user?.firstName }}</span>
             </div>
 
-            <!-- Cart Badge -->
+            <!-- Cart / Order Request -->
             <NuxtLink :to="localePath('/customer/cart')" class="customer-header__cart">
               <Icon name="heroicons:shopping-bag" class="customer-header__cart-icon" />
               <span v-if="cartCount > 0" class="customer-header__cart-badge">{{ cartCount }}</span>
@@ -122,18 +122,17 @@ const isScrolled = ref(false)
 const isMenuOpen = ref(false)
 const cartCount = ref(0)
 
-// Fetch cart count from API
 const api = useApi()
 const fetchCartCount = async () => {
   try {
     const res = await api.getCart()
-    cartCount.value = res?.itemCount ?? 0
+    cartCount.value = res?.items?.length ?? 0
   } catch {
     cartCount.value = 0
   }
 }
 
-// Refresh cart count and close mobile menu on route change
+// Close mobile menu and refresh cart on route change
 watch(() => route.path, (newPath) => {
   isMenuOpen.value = false
   if (newPath.includes('/cart') || newPath.includes('/products') || newPath.includes('/orders')) {
@@ -145,9 +144,9 @@ watch(() => route.path, (newPath) => {
 const navigation = [
   { key: 'customer.nav.dashboard', href: '/customer/dashboard' },
   { key: 'customer.nav.products', href: '/customer/products' },
-  { key: 'customer.nav.cart', href: '/customer/cart' },
-  { key: 'customer.nav.orders', href: '/customer/orders' },
   { key: 'customer.nav.inquiries', href: '/customer/inquiries' },
+  { key: 'customer.nav.orders', href: '/customer/orders' },
+  { key: 'customer.nav.cart', href: '/customer/cart' },
   { key: 'customer.nav.oemProjects', href: '/customer/oem-projects' },
   { key: 'customer.nav.quotes', href: '/customer/quotes' },
   { key: 'customer.nav.trades', href: '/customer/trades' },

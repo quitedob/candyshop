@@ -22,6 +22,7 @@ type inquiryRepository interface {
 	CountAll(ctx context.Context) (int64, error)
 	CountByStatus(ctx context.Context, status string) (int64, error)
 	FindRecent(ctx context.Context, limit int) ([]modelsProduct.Inquiry, error)
+	ConversionByMonth(ctx context.Context, months int) ([]map[string]interface{}, error)
 }
 
 // sanitizeEmailField sanitizes input for email body to prevent injection and abuse.
@@ -221,4 +222,14 @@ func (s *InquiryService) CountInquiriesByStatus(ctx context.Context, status stri
 // GetRecentInquiries returns latest inquiries.
 func (s *InquiryService) GetRecentInquiries(ctx context.Context, limit int) ([]modelsProduct.Inquiry, error) {
 	return s.repo.FindRecent(ctx, limit)
+}
+
+// GetConversionByMonth returns monthly inquiry conversion data.
+func (s *InquiryService) GetConversionByMonth(ctx context.Context, months int) ([]map[string]interface{}, error) {
+	return s.repo.ConversionByMonth(ctx, months)
+}
+
+// ConversionByMonth returns monthly inquiry conversion data (alias for handler compatibility).
+func (s *InquiryService) ConversionByMonth(ctx context.Context, months int) ([]map[string]interface{}, error) {
+	return s.repo.ConversionByMonth(ctx, months)
 }

@@ -1,7 +1,7 @@
 <template>
   <div class="product-card">
     <NuxtLink
-      :to="localePath(`/products/${product.category}/${product.slug}`)"
+      :to="localePath(`/products/${product.categorySlug || product.category}/${product.slug}`)"
       class="product-card__link"
     >
       <!-- Image -->
@@ -69,12 +69,11 @@
         </div>
 
         <button
-          class="product-card__order-btn"
-          :class="{ 'product-card__order-btn--pending': isPending }"
-          :disabled="isCtaDisabled"
-          @click.prevent.stop="handleOrderCTA"
+          class="product-card__inquiry-btn"
+          @click.prevent.stop="openInquiry"
         >
-          {{ orderCtaLabel }}
+          <Icon name="lucide:message-circle" size="16" />
+          {{ $t('product.inquire_now') }}
         </button>
       </div>
     </NuxtLink>
@@ -91,6 +90,7 @@ interface Product {
   name: string
   summary: string
   category: string
+  categorySlug?: string
   thumbnail?: string
   oemAvailable?: boolean
   halalCertified?: boolean
@@ -113,8 +113,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { isAuthenticated, isAdmin, isPending } = useAuth()
-const api = useApi()
 
 const FALLBACK = '/images/categories/gummy-candy.jpg'
 const imgSrc = ref(props.product.thumbnail || FALLBACK)
@@ -132,18 +130,6 @@ const hasBadges = computed(() => {
 })
 
 const { openInquiry: triggerInquiry } = useQuickInquiry()
-const addingToCart = ref(false)
-
-const orderCtaLabel = computed(() => {
-  if (!isAuthenticated.value) return t('product.register_to_order')
-  if (isPending.value) return t('product.pending_approval')
-  if (isAdmin.value) return t('nav.admin_panel')
-  return t('customer.products.add_to_cart')
-})
-
-const isCtaDisabled = computed(() => {
-  return isPending.value || addingToCart.value
-})
 
 const openInquiry = () => {
   emit('inquire', props.product)
@@ -153,36 +139,6 @@ const openInquiry = () => {
 const requestSample = () => {
   emit('sample', props.product)
   triggerInquiry(props.product, true)
-}
-
-const handleOrderCTA = async () => {
-  if (!isAuthenticated.value) {
-    await navigateTo(localePath('/auth/register'))
-    return
-  }
-
-  if (isPending.value) {
-    return
-  }
-
-  if (isAdmin.value) {
-    await navigateTo(localePath('/admin'))
-    return
-  }
-
-  addingToCart.value = true
-  try {
-    await api.addToCart(props.product.id, {
-      quantity: props.product.moq || 1,
-      unitPrice: props.product.unitPrice || 0,
-      specifications: ''
-    })
-    await navigateTo(localePath('/customer/cart'))
-  } catch {
-    await navigateTo(localePath(`/customer/products/${props.product.slug || props.product.id}`))
-  } finally {
-    addingToCart.value = false
-  }
 }
 </script>
 
@@ -322,34 +278,27 @@ const handleOrderCTA = async () => {
   padding: var(--spacing-md);
 }
 
-.product-card__order-btn {
+.product-card__inquiry-btn {
   width: 100%;
   margin-top: var(--spacing-md);
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: var(--spacing-xs);
   padding: 0.875rem 1rem;
   border: none;
   border-radius: var(--radius-md);
-  background: var(--color-primary);
+  background: var(--color-highlight);
   color: white;
   font-weight: 600;
+  font-size: var(--text-sm);
   cursor: pointer;
   transition: all var(--transition-fast);
 }
 
-.product-card__order-btn:hover:not(:disabled) {
+.product-card__inquiry-btn:hover {
   background: var(--color-accent);
-}
-
-.product-card__order-btn:disabled {
-  opacity: 0.7;
-  cursor: wait;
-}
-
-.product-card__order-btn--pending {
-  background: var(--color-text-light);
-  cursor: not-allowed;
+  transform: translateY(-1px);
 }
 
 .product-card__title {

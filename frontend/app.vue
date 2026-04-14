@@ -11,7 +11,9 @@
     <!-- Main content -->
     <main id="main-content">
       <NuxtErrorBoundary>
-        <NuxtPage />
+        <NuxtLayout>
+          <NuxtPage />
+        </NuxtLayout>
         <template #error="{ error, clearError }">
           <div class="error-boundary">
             <p>{{ error.message || 'Something went wrong' }}</p>

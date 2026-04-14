@@ -96,7 +96,7 @@ const { getCategories, getProducts } = useApi()
 
 const orderingCtaPath = computed(() => {
   if (isAuthenticated.value) {
-    return localePath(isAdmin.value ? '/admin' : '/customer/products')
+    return localePath(isAdmin.value ? '/admin' : '/contact')
   }
   return localePath('/auth/register')
 })
@@ -109,7 +109,7 @@ const orderingCtaLabel = computed(() => {
     return t('product.pending_approval')
   }
   if (isAuthenticated.value) {
-    return t('customer.products.add_to_cart')
+    return t('product.inquire_now')
   }
   return t('product.register_to_order')
 })
@@ -136,7 +136,7 @@ const categories = computed(() => {
     slug: category.slug,
     name: category.name || t(`product.categories.${category.slug.replace(/-/g, '_')}`),
     count: category.productCount || 0,
-    description: category.description || t(`product.category_descriptions.${category.slug}`),
+    description: category.description || t(`product.category_descriptions.${category.slug.replace(/-/g, '_')}`),
     image: category.thumbnail || `/images/categories/${category.slug}.jpg`
   }))
 })

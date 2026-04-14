@@ -133,27 +133,38 @@
             </div>
           </div>
 
-          <!-- Add to Cart / Inquiry -->
-          <div class="flex gap-3">
-            <button @click="addToCart" :disabled="addingToCart" class="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-200 disabled:opacity-50 flex items-center justify-center gap-2">
-              <Icon v-if="addingToCart" name="heroicons:arrow-path" class="h-5 w-5 animate-spin" />
-              <Icon v-else name="heroicons:shopping-bag" class="h-5 w-5" />
-              {{ addingToCart ? t('customer.products.adding') : t('customer.products.add_to_cart') }}
+          <!-- Actions: Inquire + Place Order -->
+          <div class="space-y-3">
+            <button @click="submitOrderRequest" :disabled="submitting" class="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-200 disabled:opacity-50 flex items-center justify-center gap-2">
+              <Icon v-if="submitting" name="heroicons:arrow-path" class="h-5 w-5 animate-spin" />
+              <Icon v-else name="heroicons:paper-airplane" class="h-5 w-5" />
+              {{ submitting ? t('customer.products.submitting') : t('customer.products.submit_request') }}
             </button>
-            <NuxtLink :to="`/customer/inquiries/new?product=${product.id}`" class="px-6 py-3 border-2 border-blue-600 text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
-              <Icon name="heroicons:chat-bubble-left" class="h-5 w-5" />
-              {{ t('customer.products.inquire') }}
-            </NuxtLink>
+            <div class="flex gap-3">
+              <NuxtLink :to="`/customer/inquiries/new?product=${product.id}&name=${encodeURIComponent(product.name)}`" class="flex-1 py-3 border-2 border-orange-500 text-orange-600 font-semibold rounded-xl hover:bg-orange-50 transition-colors flex items-center justify-center gap-2">
+                <Icon name="heroicons:chat-bubble-left" class="h-5 w-5" />
+                {{ t('customer.products.inquire') }}
+              </NuxtLink>
+              <NuxtLink v-if="product.oemAvailable" to="/customer/oem-projects/new" class="px-6 py-3 border-2 border-blue-600 text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
+                <Icon name="heroicons:sparkles" class="h-5 w-5" />
+                OEM
+              </NuxtLink>
+            </div>
           </div>
 
-          <!-- Success Message -->
+          <!-- Success: We will contact you -->
           <Transition name="slide-up">
-            <div v-if="showSuccess" class="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3">
-              <Icon name="heroicons:check-circle" class="h-5 w-5 text-emerald-600" />
-              <span class="text-emerald-700">{{ t('customer.products.added_to_cart') }}</span>
-              <NuxtLink to="/customer/cart" class="ml-auto text-sm font-medium text-emerald-700 hover:text-emerald-800">
-                {{ t('customer.products.view_cart') }} →
-              </NuxtLink>
+            <div v-if="showSuccess" class="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+              <div class="flex items-start gap-3">
+                <Icon name="heroicons:check-circle" class="h-6 w-6 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p class="font-semibold text-emerald-800">{{ t('customer.products.order_submitted') }}</p>
+                  <p class="text-sm text-emerald-700 mt-1">{{ t('customer.products.will_contact') }}</p>
+                  <NuxtLink to="/customer/orders" class="inline-flex items-center gap-1 mt-2 text-sm font-medium text-emerald-700 hover:text-emerald-800">
+                    {{ t('customer.nav.orders') }} →
+                  </NuxtLink>
+                </div>
+              </div>
             </div>
           </Transition>
 
@@ -239,11 +250,11 @@ const product = ref<any>(null)
 const pending = ref(true)
 const error = ref('')
 const quantity = ref(1)
-const addingToCart = ref(false)
-const showSuccess = ref(false)
 const selectedImage = ref('')
 const contractPrice = ref<number | null>(null)
 const loadingPrice = ref(false)
+const submitting = ref(false)
+const showSuccess = ref(false)
 
 // SKU variants
 const variants = ref<any[]>([])
@@ -319,20 +330,34 @@ const fetchContractPrice = async () => {
 // Re-fetch price when quantity changes (tier pricing)
 watch(quantity, () => { fetchContractPrice() })
 
-const addToCart = async () => {
-  addingToCart.value = true
+const submitOrderRequest = async () => {
+  submitting.value = true
   try {
-    await api.addToCart(product.value.id, {
-      quantity: quantity.value,
-      unitPrice: displayPrice.value,
-      specifications: ''
+    // Create order directly with the selected product
+    await api.createOrder({
+      items: [{
+        productId: product.value.id,
+        quantity: quantity.value,
+        unitPrice: displayPrice.value,
+        specifications: selectedVariant.value?.sku || ''
+      }],
+      shippingAddress: {} as any
     })
     showSuccess.value = true
-    setTimeout(() => { showSuccess.value = false }, 5000)
   } catch (err: any) {
-    alert(err?.message || 'Failed to add to cart')
+    // Fallback: add to cart then navigate to cart
+    try {
+      await api.addToCart(product.value.id, {
+        quantity: quantity.value,
+        unitPrice: displayPrice.value,
+        specifications: selectedVariant.value?.sku || ''
+      })
+      await navigateTo('/customer/cart')
+    } catch (cartErr: any) {
+      alert(cartErr?.message || 'Failed to submit order request')
+    }
   } finally {
-    addingToCart.value = false
+    submitting.value = false
   }
 }
 

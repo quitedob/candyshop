@@ -124,6 +124,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&modelsProduct.PriceRule{},
 		&modelsProduct.ProcessControl{},
 		&modelsCommon.ActivityLog{},
+		&modelsCommon.SystemSetting{},
 		&modelsTrade.ComplianceRequirement{},
 	}
 	for _, model := range phase1 {

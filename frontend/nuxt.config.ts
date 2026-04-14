@@ -63,7 +63,8 @@ export default defineNuxtConfig({
           'en/admin.json',
           'en/customer.json',
           'en/legal.json',
-          'en/seo.json'
+          'en/seo.json',
+          'en/about.json'
         ],
         name: 'English'
       },
@@ -84,14 +85,15 @@ export default defineNuxtConfig({
           'zh/admin.json',
           'zh/customer.json',
           'zh/legal.json',
-          'zh/seo.json'
+          'zh/seo.json',
+          'zh/about.json'
         ],
         name: '中文'
       }
     ],
     lazy: true,
     langDir: 'locales',
-    defaultLocale: 'en',
+    defaultLocale: 'zh',
     strategy: 'prefix_except_default',
     seo: false,
     detectBrowserLanguage: false,

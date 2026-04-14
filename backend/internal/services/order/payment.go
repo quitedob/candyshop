@@ -13,6 +13,8 @@ type paymentRepository interface {
 	Update(ctx context.Context, payment *modelsOrder.Payment) error
 	ConfirmPayment(ctx context.Context, id, confirmedBy string) error
 	UpdateStatus(ctx context.Context, id, status string) error
+	CountByStatus(ctx context.Context, status string) (int64, error)
+	StatusBreakdown(ctx context.Context) (map[string]int64, error)
 }
 
 // PaymentService handles payment business logic.
@@ -116,4 +118,14 @@ func (s *PaymentService) updateOrderPaymentStatus(ctx context.Context, orderID s
 		return s.orderRepo.Update(ctx, order)
 	}
 	return nil
+}
+
+// CountByStatus returns count of payments with given status.
+func (s *PaymentService) CountByStatus(ctx context.Context, status string) (int64, error) {
+	return s.repo.CountByStatus(ctx, status)
+}
+
+// StatusBreakdown returns payment counts grouped by status.
+func (s *PaymentService) StatusBreakdown(ctx context.Context) (map[string]int64, error) {
+	return s.repo.StatusBreakdown(ctx)
 }

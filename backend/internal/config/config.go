@@ -170,6 +170,7 @@ func parseCORSOrigins() []string {
 	return []string{
 		getEnv("FRONTEND_URL", "http://localhost:3000"),
 		"http://localhost:3001",
+		"http://localhost:3002",
 	}
 }
 

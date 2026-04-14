@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6c3483"/>
+      <stop offset="100%" style="stop-color:#a569bd"/>
+    </linearGradient>
+  </defs>
+  <circle cx="100" cy="100" r="95" fill="url(#bg)" stroke="#5b2c6f" stroke-width="3"/>
+  <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+  <text x="100" y="72" text-anchor="middle" font-family="Arial,sans-serif" font-size="22" font-weight="bold" fill="#fff">BRC</text>
+  <line x1="50" y1="82" x2="150" y2="82" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+  <text x="100" y="102" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="rgba(255,255,255,0.85)">BRITISH RETAIL</text>
+  <text x="100" y="116" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="rgba(255,255,255,0.85)">CONSORTIUM</text>
+  <rect x="80" y="40" width="40" height="24" rx="4" fill="#f1c40f"/>
+  <text x="100" y="57" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#6c3483">A</text>
+  <text x="100" y="140" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="bold" fill="#f1c40f">GRADE A</text>
+  <text x="100" y="155" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="bold" fill="#f1c40f">CERTIFIED</text>
+  <text x="100" y="170" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" fill="rgba(255,255,255,0.6)">BRC Global Standard</text>
+</svg>

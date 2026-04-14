@@ -16,6 +16,10 @@ type invoiceRepository interface {
 	Update(ctx context.Context, invoice *modelsOrder.Invoice) error
 	Delete(ctx context.Context, id string) error
 	Stats(ctx context.Context) (map[string]int64, error)
+	SumByStatus(ctx context.Context, status string) (float64, error)
+	OverdueCount(ctx context.Context) (int64, error)
+	OverdueTotal(ctx context.Context) (float64, error)
+	FindByStatus(ctx context.Context, status string, page, limit int) ([]modelsOrder.Invoice, int64, error)
 }
 
 // InvoiceService provides invoice business logic.
@@ -103,4 +107,34 @@ func (s *InvoiceService) DeleteInvoice(ctx context.Context, id string) error {
 // GetStats returns counts grouped by status.
 func (s *InvoiceService) GetStats(ctx context.Context) (map[string]int64, error) {
 	return s.repo.Stats(ctx)
+}
+
+// SumByStatus returns total amount for invoices of a given status.
+func (s *InvoiceService) SumByStatus(ctx context.Context, status string) (float64, error) {
+	return s.repo.SumByStatus(ctx, status)
+}
+
+// GetOverdueCount counts overdue invoices.
+func (s *InvoiceService) GetOverdueCount(ctx context.Context) (int64, error) {
+	return s.repo.OverdueCount(ctx)
+}
+
+// GetOverdueTotal returns total amount of overdue invoices.
+func (s *InvoiceService) GetOverdueTotal(ctx context.Context) (float64, error) {
+	return s.repo.OverdueTotal(ctx)
+}
+
+// GetInvoicesByStatus returns invoices filtered by status with pagination.
+func (s *InvoiceService) GetInvoicesByStatus(ctx context.Context, status string, page, limit int) ([]modelsOrder.Invoice, int64, error) {
+	return s.repo.FindByStatus(ctx, status, page, limit)
+}
+
+// SumOverdue returns total amount of overdue invoices (alias for handler compatibility).
+func (s *InvoiceService) SumOverdue(ctx context.Context) (float64, error) {
+	return s.repo.OverdueTotal(ctx)
+}
+
+// FindByStatus returns invoices filtered by status with pagination (alias for handler compatibility).
+func (s *InvoiceService) FindByStatus(ctx context.Context, status string, page, limit int) ([]modelsOrder.Invoice, int64, error) {
+	return s.repo.FindByStatus(ctx, status, page, limit)
 }

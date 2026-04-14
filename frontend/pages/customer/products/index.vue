@@ -68,10 +68,10 @@
                 <Icon v-else name="heroicons:sparkles" class="h-4 w-4" />
                 {{ aiLoading ? t('customer.products.ai_thinking') : t('customer.products.ai_recommend') }}
               </button>
-              <button v-if="aiResults.length" @click="addAllToCart" :disabled="addingAll"
-                class="px-5 py-2 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-600 disabled:opacity-50 transition-colors flex items-center gap-2 text-sm">
-                <Icon name="heroicons:shopping-bag" class="h-4 w-4" />
-                {{ addingAll ? t('customer.products.ai_adding') : t('customer.products.ai_add_all', { count: aiResults.length }) }}
+              <button v-if="aiResults.length" @click="inquireAllAI"
+                class="px-5 py-2 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-600 transition-colors flex items-center gap-2 text-sm">
+                <Icon name="heroicons:chat-bubble-left" class="h-4 w-4" />
+                {{ t('customer.products.ai_inquire_all', { count: aiResults.length }) }}
               </button>
               <p v-if="aiError" class="text-red-300 text-sm">{{ aiError }}</p>
             </div>
@@ -106,10 +106,10 @@
                         <Icon name="heroicons:plus" class="h-3 w-3" />
                       </button>
                     </div>
-                    <button @click="addOneToCart(item)"
-                      class="ml-auto px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors">
-                      {{ t('customer.products.add_to_cart') }}
-                    </button>
+                    <NuxtLink :to="`/customer/inquiries/new?product=${item.id}&name=${encodeURIComponent(item.name)}`"
+                      class="ml-auto px-3 py-1.5 bg-orange-500 text-white text-xs font-medium rounded-lg hover:bg-orange-600 transition-colors">
+                      {{ t('customer.products.inquire') }}
+                    </NuxtLink>
                   </div>
                 </div>
               </div>
@@ -294,9 +294,9 @@
                       </p>
                     </div>
                     <div class="flex gap-2">
-                      <button @click="addToCart(product)" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors" :title="t('customer.products.add_to_cart')">
-                        <Icon name="heroicons:shopping-bag" class="h-5 w-5" />
-                      </button>
+                      <NuxtLink :to="`/customer/inquiries/new?product=${product.id}&name=${encodeURIComponent(product.name)}`" class="p-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors" :title="t('customer.products.inquire')">
+                        <Icon name="heroicons:chat-bubble-left" class="h-5 w-5" />
+                      </NuxtLink>
                       <NuxtLink :to="`/customer/products/${product.slug || product.id}`" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
                         {{ t('customer.products.view_details') }}
                       </NuxtLink>
@@ -325,14 +325,11 @@
       </div>
     </div>
 
-    <!-- Quick Add Toast -->
+    <!-- Quick Notification Toast -->
     <Transition name="slide-up">
       <div v-if="showToast" class="fixed bottom-6 right-6 bg-emerald-600 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 z-50">
         <Icon name="heroicons:check-circle" class="h-5 w-5" />
         {{ toastMessage }}
-        <NuxtLink to="/customer/cart" class="ml-2 px-3 py-1 bg-emerald-500 rounded-lg text-sm hover:bg-emerald-400">
-          {{ t('customer.products.view_cart') }}
-        </NuxtLink>
       </div>
     </Transition>
   </div>
@@ -402,34 +399,9 @@ const runAIRecommend = async () => {
   }
 }
 
-const addOneToCart = async (item: any) => {
-  try {
-    await api.addToCart(item.id, {
-      quantity: item.quantity,
-      unitPrice: item.unitPrice || 0,
-      specifications: item.specifications || '',
-    })
-    showNotification(`${item.name} ${t('customer.products.added_to_cart')}`)
-  } catch (err: any) {
-    showNotification(err?.message || t('customer.products.add_error'), true)
-  }
-}
-
-const addAllToCart = async () => {
-  addingAll.value = true
-  let added = 0
-  for (const item of aiResults.value) {
-    try {
-      await api.addToCart(item.id, {
-        quantity: item.quantity,
-        unitPrice: item.unitPrice || 0,
-        specifications: item.specifications || '',
-      })
-      added++
-    } catch { /* continue */ }
-  }
-  addingAll.value = false
-  showNotification(t('customer.products.ai_added_count', { count: added }))
+const inquireAllAI = () => {
+  const names = aiResults.value.map(item => item.name).join(', ')
+  navigateTo(`/customer/inquiries/new?products=${encodeURIComponent(names)}`)
 }
 
 const searchQuery = ref('')
@@ -490,19 +462,6 @@ const fetchCategories = async () => {
     categories.value = res || []
   } catch {
     categories.value = []
-  }
-}
-
-const addToCart = async (product: any) => {
-  try {
-    await api.addToCart(product.id, {
-      quantity: product.moq || 1,
-      unitPrice: product.unitPrice || 0,
-      specifications: ''
-    })
-    showNotification(t('customer.products.added_to_cart'))
-  } catch (err: any) {
-    showNotification(err?.message || t('customer.products.add_error'), true)
   }
 }
 

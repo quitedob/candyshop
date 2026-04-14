@@ -134,3 +134,32 @@ func (r *InquiryRepository) FindRecent(ctx context.Context, limit int) ([]models
 	}
 	return inquiries, nil
 }
+
+// ConversionByMonth returns monthly inquiry conversion data (total, won) for the last N months.
+func (r *InquiryRepository) ConversionByMonth(ctx context.Context, months int) ([]map[string]interface{}, error) {
+	type row struct {
+		Month string
+		Total int64
+		Won   int64
+	}
+	var rows []row
+	if err := r.db.WithContext(ctx).
+		Model(&modelsProduct.Inquiry{}).
+		Select("TO_CHAR(created_at, 'YYYY-MM') AS month, COUNT(*) AS total, COUNT(*) FILTER (WHERE status = 'won') AS won").
+		Where("created_at >= NOW() - INTERVAL '? months'", months).
+		Group("month").
+		Order("month").
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	result := make([]map[string]interface{}, len(rows))
+	for i, row := range rows {
+		result[i] = map[string]interface{}{
+			"month": row.Month,
+			"total": row.Total,
+			"won":   row.Won,
+		}
+	}
+	return result, nil
+}

@@ -69,3 +69,39 @@ func (r *PaymentRepository) UpdateStatus(ctx context.Context, id, status string)
 			"updated_at": now,
 		}).Error
 }
+
+// CountByStatus returns count of payments with given status.
+func (r *PaymentRepository) CountByStatus(ctx context.Context, status string) (int64, error) {
+	var result struct {
+		Count int64
+	}
+	if err := r.db.WithContext(ctx).
+		Model(&modelsOrder.Payment{}).
+		Where("status = ?", status).
+		Select("COUNT(*) AS count").
+		Scan(&result).Error; err != nil {
+		return 0, err
+	}
+	return result.Count, nil
+}
+
+// StatusBreakdown returns payment counts grouped by status.
+func (r *PaymentRepository) StatusBreakdown(ctx context.Context) (map[string]int64, error) {
+	type row struct {
+		Status string
+		Count  int64
+	}
+	var rows []row
+	if err := r.db.WithContext(ctx).
+		Model(&modelsOrder.Payment{}).
+		Select("status, COUNT(*) AS count").
+		Group("status").
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	m := make(map[string]int64, len(rows))
+	for _, r := range rows {
+		m[r.Status] = r.Count
+	}
+	return m, nil
+}

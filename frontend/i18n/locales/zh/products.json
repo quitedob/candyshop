@@ -6,22 +6,28 @@
       "hard_candy": "硬糖",
       "aerated_candy": "充气糖果",
       "toffee_candy": "太妃糖",
-      "compound_chocolate": "代可可脂巧克力"
+      "compound_chocolate": "代可可脂巧克力",
+      "licorice": "甘草糖",
+      "sour_candies": "酸味糖果"
     },
     "category_descriptions": {
       "gummy_candy": "各种形状、口味和质地的优质软糖，完美适合贴牌生产。",
       "hard_candy": "经典硬糖，色彩鲜艳，口味持久。",
       "aerated_candy": "轻盈蓬松的充气糖果，独特的口感体验。",
       "toffee_candy": "浓郁黄油太妃糖，顺滑焦糖风味。",
-      "compound_chocolate": "性价比高的巧克力替代品，口感绝佳。"
+      "compound_chocolate": "性价比高的巧克力替代品，口感绝佳。",
+      "licorice": "传统与现代甘草糖，风味浓郁，口感嚼劲十足。",
+      "sour_candies": "酸甜可口的涂层糖果，浓郁水果风味。"
     },
     "oem_available": "支持OEM",
     "inquire_now": "立即咨询",
+    "place_order": "立即下单",
     "download_catalog": "下载目录",
     "request_sample": "申请样品",
     "view_details": "查看详情",
     "view_products": "查看产品",
     "browse_all": "浏览我们完整的优质糖果产品系列",
+    "all_products": "全部产品",
     "need_custom": "需要定制方案？",
     "oem_description": "我们专注于OEM和贴牌生产，让您的糖果愿景成为现实。",
     "products": "个产品",

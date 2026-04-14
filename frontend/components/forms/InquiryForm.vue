@@ -20,15 +20,14 @@
     </div>
 
     <!-- Success Message -->
-    <Transition name="success-pop">
-      <div v-if="form.isSubmitted" class="inquiry-form__success">
-        <div class="inquiry-form__success-icon">
-          <Icon name="lucide:check-circle" size="48" />
-        </div>
-        <h3>{{ $t('form.success').split('.')[0] }}</h3>
-        <p>{{ $t('form.success') }}</p>
+    <div v-if="form.isSubmitted" class="inquiry-form__success">
+      <div class="inquiry-form__success-icon">
+        <Icon name="lucide:check-circle" size="48" />
       </div>
-      <div v-else class="inquiry-form__fields">
+      <h3>{{ $t('form.success').split('.')[0] }}</h3>
+      <p>{{ $t('form.success') }}</p>
+    </div>
+    <div v-else class="inquiry-form__fields">
       <!-- Company Information -->
       <div class="inquiry-form__section">
         <h4 class="inquiry-form__section-title">{{ $t('contact.title') }}</h4>
@@ -203,12 +202,11 @@
         </p>
       </div>
     </div>
-    </Transition>
   </form>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useInquiry } from '~/composables/useInquiry'
 
 interface Props {
@@ -288,6 +286,19 @@ if (props.productSlug) {
     ? form.state.message
     : `Product: ${props.productName || props.productSlug}${props.category ? ` (${props.category})` : ''}`
 }
+
+// Ensure the form never shows a stale submitted state from a previous navigation or SSR
+onMounted(() => {
+  form.isSubmitted = false
+  // Re-apply pre-fill after mount (reset clears it)
+  if (props.productName) {
+    productsInput.value = props.productName
+    form.state.interestedProducts = [props.productName]
+  }
+  if (props.productSlug) {
+    form.state.message = `Product: ${props.productName || props.productSlug}${props.category ? ` (${props.category})` : ''}`
+  }
+})
 
 // Handle form submission
 const handleSubmit = async () => {

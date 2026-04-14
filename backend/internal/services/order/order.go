@@ -30,6 +30,11 @@ type orderRepository interface {
 	SumTotalAmount(ctx context.Context) (float64, error)
 	SumTotalAmountSince(ctx context.Context, since time.Time) (float64, error)
 	FindRecent(ctx context.Context, limit int) ([]modelsOrder.Order, error)
+	RevenueByMonth(ctx context.Context, months int) ([]map[string]interface{}, error)
+	OrderCountByMonth(ctx context.Context, months int) ([]map[string]interface{}, error)
+	TopProductsByRevenue(ctx context.Context, limit int) ([]map[string]interface{}, error)
+	DistinctOrderingUsers(ctx context.Context, since time.Time) (int64, error)
+	RevenueByDay(ctx context.Context, days int) ([]map[string]interface{}, error)
 }
 
 // OrderService handles order business logic.
@@ -298,4 +303,44 @@ CandyPro OEM Team`,
 	}
 
 	return "", ""
+}
+
+// GetRevenueByMonth returns monthly revenue for the last N months.
+func (s *OrderService) GetRevenueByMonth(ctx context.Context, months int) ([]map[string]interface{}, error) {
+	return s.repo.RevenueByMonth(ctx, months)
+}
+
+// RevenueByMonth returns monthly revenue for the last N months (alias for handler compatibility).
+func (s *OrderService) RevenueByMonth(ctx context.Context, months int) ([]map[string]interface{}, error) {
+	return s.repo.RevenueByMonth(ctx, months)
+}
+
+// GetOrderCountByMonth returns monthly order counts for the last N months.
+func (s *OrderService) GetOrderCountByMonth(ctx context.Context, months int) ([]map[string]interface{}, error) {
+	return s.repo.OrderCountByMonth(ctx, months)
+}
+
+// OrderCountByMonth returns monthly order counts for the last N months (alias for handler compatibility).
+func (s *OrderService) OrderCountByMonth(ctx context.Context, months int) ([]map[string]interface{}, error) {
+	return s.repo.OrderCountByMonth(ctx, months)
+}
+
+// GetTopProductsByRevenue returns top products ranked by revenue.
+func (s *OrderService) GetTopProductsByRevenue(ctx context.Context, limit int) ([]map[string]interface{}, error) {
+	return s.repo.TopProductsByRevenue(ctx, limit)
+}
+
+// TopProductsByRevenue returns top products ranked by revenue (alias for handler compatibility).
+func (s *OrderService) TopProductsByRevenue(ctx context.Context, limit int) ([]map[string]interface{}, error) {
+	return s.repo.TopProductsByRevenue(ctx, limit)
+}
+
+// GetDistinctOrderingUsers counts unique users who placed orders since a date.
+func (s *OrderService) GetDistinctOrderingUsers(ctx context.Context, since time.Time) (int64, error) {
+	return s.repo.DistinctOrderingUsers(ctx, since)
+}
+
+// GetRevenueByDay returns daily revenue for the last N days.
+func (s *OrderService) GetRevenueByDay(ctx context.Context, days int) ([]map[string]interface{}, error) {
+	return s.repo.RevenueByDay(ctx, days)
 }

@@ -74,6 +74,17 @@
 
       <!-- User Profile -->
       <div class="admin-sidebar__footer">
+        <!-- Language Switcher -->
+        <div v-if="!isCollapsed" class="admin-sidebar__lang">
+          <button
+            :class="['admin-sidebar__lang-btn', { 'admin-sidebar__lang-btn--active': locale === 'zh' }]"
+            @click="switchLocale('zh')"
+          >中文</button>
+          <button
+            :class="['admin-sidebar__lang-btn', { 'admin-sidebar__lang-btn--active': locale === 'en' }]"
+            @click="switchLocale('en')"
+          >EN</button>
+        </div>
         <div class="admin-sidebar__user">
           <div class="admin-sidebar__user-avatar">{{ userInitials }}</div>
           <div v-if="!isCollapsed" class="admin-sidebar__user-info">
@@ -102,7 +113,7 @@ import { ref, computed, onMounted } from 'vue'
 
 const { user, logout } = useAuth()
 const route = useRoute()
-const { t } = useI18n()
+const { t, locale, setLocale } = useI18n()
 
 const isCollapsed = ref(false)
 const isSuperAdmin = computed(() => user.value?.role === 'superadmin')
@@ -122,6 +133,8 @@ const mainNav = [
 
 // Management Navigation
 const managementNav = [
+  { key: 'admin.nav.analytics', href: '/admin/analytics', icon: 'heroicons:chart-bar' },
+  { key: 'admin.nav.financial', href: '/admin/financial', icon: 'heroicons:banknotes' },
   { key: 'admin.nav.inventory', href: '/admin/inventory', icon: 'heroicons:archive-box' },
   { key: 'admin.nav.shipments', href: '/admin/shipments', icon: 'heroicons:truck' },
   { key: 'admin.nav.invoices', href: '/admin/invoices', icon: 'heroicons:document-text' },
@@ -135,6 +148,10 @@ const managementNav = [
 // Super Admin Navigation
 const superAdminNav = [
   { key: 'admin.nav.users', href: '/admin/users', icon: 'heroicons:users' },
+  { key: 'admin.nav.staff', href: '/admin/staff', icon: 'heroicons:user-group' },
+  { key: 'admin.nav.certifications', href: '/admin/certifications', icon: 'heroicons:shield-check' },
+  { key: 'admin.nav.auditLog', href: '/admin/audit-log', icon: 'heroicons:clock' },
+  { key: 'admin.nav.settings', href: '/admin/settings', icon: 'heroicons:cog-6-tooth' },
   { key: 'admin.nav.content', href: '/admin/content', icon: 'heroicons:newspaper' },
 ]
 
@@ -148,6 +165,10 @@ const isActive = (href) => {
 
 const handleLogout = async () => {
   await logout()
+}
+
+const switchLocale = (code) => {
+  setLocale(code)
 }
 
 // Persist collapse state
@@ -310,6 +331,36 @@ watch(isCollapsed, (val) => {
 .admin-sidebar__footer {
   padding: var(--spacing-md);
   border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Language Switcher */
+.admin-sidebar__lang {
+  display: flex;
+  gap: 4px;
+  margin-bottom: var(--spacing-sm);
+  background: rgba(255,255,255,0.08);
+  border-radius: var(--radius-md);
+  padding: 3px;
+}
+
+.admin-sidebar__lang-btn {
+  flex: 1;
+  padding: 4px 0;
+  border-radius: calc(var(--radius-md) - 2px);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: rgba(255,255,255,0.5);
+  transition: all var(--transition-fast);
+  text-align: center;
+}
+
+.admin-sidebar__lang-btn:hover {
+  color: rgba(255,255,255,0.8);
+}
+
+.admin-sidebar__lang-btn--active {
+  background: rgba(255,255,255,0.15);
+  color: white;
 }
 
 .admin-sidebar__user {

@@ -63,11 +63,21 @@
 
             <!-- Quick Actions -->
             <div class="product-header__actions">
-              <button class="btn btn-highlight btn-lg" :disabled="addingToCart || isPending" @click="handleOrderAction">
-                {{ orderCtaLabel }}
-              </button>
-              <button class="btn btn-outline btn-lg" @click="openInquiryModal">
+              <button v-if="isAuthenticated" class="btn btn-highlight btn-lg" @click="openInquiryModal">
+                <Icon name="lucide:message-circle" size="20" />
                 {{ $t('product.inquire_now') }}
+              </button>
+              <NuxtLink v-else :to="localePath(`/auth/login?redirect=${encodeURIComponent(route.fullPath)}`)" class="btn btn-highlight btn-lg">
+                <Icon name="lucide:message-circle" size="20" />
+                {{ $t('product.inquire_now') }}
+              </NuxtLink>
+              <NuxtLink v-if="isAuthenticated && !isAdmin" :to="localePath(`/customer/products/${product.id || product.slug}`)" class="btn btn-outline btn-lg">
+                <Icon name="lucide:shopping-bag" size="20" />
+                {{ $t('product.place_order') }}
+              </NuxtLink>
+              <button v-else class="btn btn-outline btn-lg" @click="openInquiryModal">
+                <Icon name="lucide:package" size="20" />
+                {{ $t('product.request_sample') }}
               </button>
             </div>
 
@@ -185,11 +195,14 @@
 
     <!-- Sticky Inquiry CTA (Mobile) -->
     <div class="sticky-cta hide-desktop">
-      <button class="sticky-cta__whatsapp" :disabled="addingToCart || isPending" @click="handleOrderAction">
-        {{ orderCtaLabel }}
-      </button>
-      <button class="sticky-cta__inquire" @click="openInquiryModal">
+      <NuxtLink v-if="isAuthenticated" class="sticky-cta__inquire" @click.prevent="openInquiryModal">
         {{ $t('product.inquire_now') }}
+      </NuxtLink>
+      <NuxtLink v-else :to="localePath(`/auth/login?redirect=${encodeURIComponent(route.fullPath)}`)" class="sticky-cta__inquire">
+        {{ $t('product.inquire_now') }}
+      </NuxtLink>
+      <button class="sticky-cta__whatsapp" @click="openInquiryModal">
+        {{ $t('product.request_sample') }}
       </button>
     </div>
 
@@ -234,7 +247,6 @@ const { getProduct, getRelatedProducts } = api
 // State
 const activeTab = ref('description')
 const isInquiryOpen = ref(false)
-const addingToCart = ref(false)
 
 // Route params
 const categorySlug = computed(() => route.params.category as string)
@@ -250,15 +262,9 @@ const { data: productData, status: productStatus, refresh: refreshProduct } = aw
 
 const product = computed(() => productData.value || {})
 
-const orderCtaLabel = computed(() => {
-  if (!isAuthenticated.value) return t('product.register_to_order')
-  if (isPending.value) return t('product.pending_approval')
-  if (isAdmin.value) return t('nav.admin_panel')
-  return t('customer.products.add_to_cart')
-})
-
 const categoryName = computed(() => {
-  const key = `product.categories.${product.value.category}`
+  const slugKey = (product.value.categorySlug || product.value.category || '').replace(/-/g, '_')
+  const key = `product.categories.${slugKey}`
   return t(key, product.value.category)
 })
 
@@ -396,39 +402,15 @@ const scenarios = [
   }
 ]
 
-const handleOrderAction = async () => {
-  if (!isAuthenticated.value) {
-    await navigateTo(localePath('/auth/register'))
-    return
-  }
-
-  if (isPending.value) {
-    return
-  }
-
-  if (isAdmin.value) {
-    await navigateTo(localePath('/admin'))
-    return
-  }
-
-  addingToCart.value = true
-  try {
-    await api.addToCart(product.value.id, {
-      quantity: product.value.moq || 1,
-      unitPrice: product.value.unitPrice || 0,
-      specifications: ''
-    })
-    await navigateTo(localePath('/customer/cart'))
-  } catch {
-    await navigateTo(localePath(`/customer/products/${product.value.slug || product.value.id}`))
-  } finally {
-    addingToCart.value = false
-  }
-}
-
 // Modal functions
 const openInquiryModal = () => {
-  isInquiryOpen.value = true
+  const productName = product.value.name || ''
+  const inquiryPath = localePath(`/customer/inquiries/new?name=${encodeURIComponent(productName)}`)
+  if (isAuthenticated.value) {
+    navigateTo(inquiryPath)
+  } else {
+    navigateTo(localePath(`/auth/login?redirect=${encodeURIComponent(inquiryPath)}`))
+  }
 }
 
 const closeInquiryModal = () => {
@@ -436,6 +418,10 @@ const closeInquiryModal = () => {
 }
 
 const handleInquire = (product: any) => {
+  if (!isAuthenticated.value) {
+    router.push({ path: localePath('/auth/login'), query: { redirect: route.fullPath } })
+    return
+  }
   router.push({
     path: localePath('/contact'),
     query: { product: product.name }
@@ -443,6 +429,10 @@ const handleInquire = (product: any) => {
 }
 
 const handleSample = (product: any) => {
+  if (!isAuthenticated.value) {
+    router.push({ path: localePath('/auth/login'), query: { redirect: route.fullPath } })
+    return
+  }
   router.push({
     path: localePath('/contact'),
     query: { product: product.name, sample: 'true' }

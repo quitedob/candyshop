@@ -25,7 +25,18 @@
               <h2>{{ t('form.title') }}</h2>
               <p>{{ t('form.subtitle') }}</p>
 
-              <InquiryForm />
+              <ClientOnly>
+                <InquiryForm
+                  :product-name="productFromQuery"
+                  :category="categoryFromQuery"
+                />
+                <template #fallback>
+                  <div class="form-loading">
+                    <div class="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent mx-auto" />
+                    <p style="margin-top: 12px; color: var(--color-text-light);">Loading form...</p>
+                  </div>
+                </template>
+              </ClientOnly>
             </div>
           </div>
 
@@ -226,6 +237,10 @@ import { useI18n, useLocalePath } from '#i18n'
 const { t, tm, rt } = useI18n()
 const localePath = useLocalePath()
 const config = useRuntimeConfig()
+const route = useRoute()
+
+const productFromQuery = computed(() => (route.query.product as string) || undefined)
+const categoryFromQuery = computed(() => (route.query.category as string) || undefined)
 
 const openFaq = ref(0)
 

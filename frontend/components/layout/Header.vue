@@ -249,7 +249,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useI18n, useLocalePath, useSwitchLocalePath } from '#i18n'
 
-const { t, locale } = useI18n()
+const { t, locale, setLocale } = useI18n()
 const localePath = useLocalePath()
 const switchLocalePath = useSwitchLocalePath()
 const route = useRoute()
@@ -340,9 +340,7 @@ const saveLocale = (newLocale: string) => {
 // Switch locale with persistence
 const switchLocale = async (newLocale: string) => {
   saveLocale(newLocale)
-  // Navigate to the localized path
-  const path = switchLocalePath(newLocale)
-  await navigateTo(path)
+  await setLocale(newLocale)
 }
 
 // Toggle mobile menu

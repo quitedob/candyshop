@@ -7,7 +7,7 @@ import (
 
 type productRepository interface {
 	FindAll(ctx context.Context, page, limit int, categorySlug string) ([]modelsProduct.Product, int64, error)
-	FindAllFiltered(ctx context.Context, page, limit int, halal, oemOnly, featuredOnly bool, search, sort string, minMOQ, maxMOQ int) ([]modelsProduct.Product, int64, error)
+	FindAllFiltered(ctx context.Context, page, limit int, halal, oemOnly, featuredOnly bool, search, sort string, minMOQ, maxMOQ int, categorySlug ...string) ([]modelsProduct.Product, int64, error)
 	FindBySlug(ctx context.Context, slug string) (*modelsProduct.Product, error)
 	FindByID(ctx context.Context, id string) (*modelsProduct.Product, error)
 	FindFeatured(ctx context.Context, limit int) ([]modelsProduct.Product, error)

@@ -87,6 +87,24 @@ func (h *Handler) GetDashboardStats(c *gin.Context) {
 		return
 	}
 
+	// Enriched stats
+	activeCustomers, _ := h.services.Order.GetDistinctOrderingUsers(ctx, monthStart)
+
+	var avgOrderValue float64
+	if totalOrders > 0 {
+		avgOrderValue = totalSales / float64(totalOrders)
+	}
+
+	conversionRate := 0.0
+	if totalInquiries > 0 {
+		convertedInquiries, cerr := h.services.Inquiry.CountInquiriesByStatus(ctx, "converted")
+		if cerr == nil {
+			conversionRate = float64(convertedInquiries) / float64(totalInquiries) * 100
+		}
+	}
+
+	revenueByDay, _ := h.services.Order.GetRevenueByDay(ctx, 30)
+
 	recentActivity, err := h.buildRecentActivities(ctx, 10)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{Error: "internal_error", Message: "Failed to load recent activity"})
@@ -102,6 +120,10 @@ func (h *Handler) GetDashboardStats(c *gin.Context) {
 		"pendingInquiries": pendingInquiries,
 		"totalSales":       totalSales,
 		"revenueThisMonth": revenueThisMonth,
+		"activeCustomers":  activeCustomers,
+		"avgOrderValue":    avgOrderValue,
+		"conversionRate":   conversionRate,
+		"revenueByDay":     revenueByDay,
 		"recentActivity":   recentActivity,
 	})
 }

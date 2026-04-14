@@ -160,4 +160,24 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.GET("/oem-projects/:id", h.AdminPortal.AdminGetOEMProject)
 	group.PUT("/oem-projects/:id", h.AdminPortal.AdminUpdateOEMProject)
 	group.PUT("/oem-projects/:id/status", h.AdminPortal.AdminUpdateOEMStatus)
-}
+
+		// Reports
+		group.GET("/reports/revenue-trends", h.AdminPortal.GetRevenueTrends)
+		group.GET("/reports/order-trends", h.AdminPortal.GetOrderTrends)
+		group.GET("/reports/top-products", h.AdminPortal.GetTopProducts)
+		group.GET("/reports/conversion-trends", h.AdminPortal.GetConversionTrends)
+
+		// Financial
+		group.GET("/financial/overview", h.AdminPortal.GetFinancialOverview)
+		group.GET("/financial/outstanding-invoices", h.AdminPortal.GetOutstandingInvoices)
+		group.GET("/financial/payment-breakdown", h.AdminPortal.GetPaymentBreakdown)
+
+		// Staff & Audit
+		group.GET("/staff", h.AdminPortal.GetStaffList)
+		group.GET("/staff/:id/activity", h.AdminPortal.GetStaffActivity)
+		group.GET("/audit-log", h.AdminPortal.GetAuditLog)
+
+		// Settings
+		group.GET("/settings", h.AdminPortal.GetSettings)
+		group.PUT("/settings/:key", h.AdminPortal.UpdateSetting)
+	}

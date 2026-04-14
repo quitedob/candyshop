@@ -73,6 +73,10 @@ func (f *fakeProductRepo) FindVariantsByProductID(ctx context.Context, productID
 	return []modelsProduct.ProductVariant{}, nil
 }
 
+func (f *fakeProductRepo) FindAllFiltered(ctx context.Context, page, limit int, halal, oemOnly, featuredOnly bool, search, sort string, minMOQ, maxMOQ int, categorySlug ...string) ([]modelsProduct.Product, int64, error) {
+	return []modelsProduct.Product{}, 0, nil
+}
+
 type fakeInquiryRepo struct{}
 
 func (f *fakeInquiryRepo) Create(ctx context.Context, inquiry *modelsProduct.Inquiry) error {
@@ -104,6 +108,10 @@ func (f *fakeInquiryRepo) CountByStatus(ctx context.Context, status string) (int
 }
 func (f *fakeInquiryRepo) FindRecent(ctx context.Context, limit int) ([]modelsProduct.Inquiry, error) {
 	return []modelsProduct.Inquiry{}, nil
+}
+
+func (f *fakeInquiryRepo) ConversionByMonth(ctx context.Context, months int) ([]map[string]interface{}, error) {
+	return []map[string]interface{}{}, nil
 }
 
 type fakeOrderRepo struct {
@@ -185,6 +193,26 @@ func (f *fakeOrderRepo) SumTotalAmountSince(ctx context.Context, since time.Time
 }
 func (f *fakeOrderRepo) FindRecent(ctx context.Context, limit int) ([]modelsOrder.Order, error) {
 	return []modelsOrder.Order{}, nil
+}
+
+func (f *fakeOrderRepo) RevenueByMonth(ctx context.Context, months int) ([]map[string]interface{}, error) {
+	return []map[string]interface{}{}, nil
+}
+
+func (f *fakeOrderRepo) OrderCountByMonth(ctx context.Context, months int) ([]map[string]interface{}, error) {
+	return []map[string]interface{}{}, nil
+}
+
+func (f *fakeOrderRepo) TopProductsByRevenue(ctx context.Context, limit int) ([]map[string]interface{}, error) {
+	return []map[string]interface{}{}, nil
+}
+
+func (f *fakeOrderRepo) DistinctOrderingUsers(ctx context.Context, since time.Time) (int64, error) {
+	return 0, nil
+}
+
+func (f *fakeOrderRepo) RevenueByDay(ctx context.Context, days int) ([]map[string]interface{}, error) {
+	return []map[string]interface{}{}, nil
 }
 
 func TestCustomerCreateOrder_ComplianceViolation(t *testing.T) {

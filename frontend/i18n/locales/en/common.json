@@ -24,7 +24,8 @@
     },
     "default": "An error occurred",
     "goHome": "Go to Home",
-    "tryAgain": "Try Again"
+    "tryAgain": "Try Again",
+    "retry": "Try again"
   },
   "validation": {
     "required": {

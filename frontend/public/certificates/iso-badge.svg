@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1b4332"/>
+      <stop offset="100%" style="stop-color:#2d6a4f"/>
+    </linearGradient>
+  </defs>
+  <circle cx="100" cy="100" r="95" fill="url(#bg)" stroke="#143d2b" stroke-width="3"/>
+  <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+  <text x="100" y="68" text-anchor="middle" font-family="Arial,sans-serif" font-size="22" font-weight="bold" fill="#fff">ISO</text>
+  <text x="100" y="90" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" font-weight="bold" fill="#fff">22000</text>
+  <line x1="50" y1="98" x2="150" y2="98" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+  <text x="100" y="115" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" fill="rgba(255,255,255,0.85)">FOOD SAFETY</text>
+  <text x="100" y="127" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" fill="rgba(255,255,255,0.85)">MANAGEMENT SYSTEM</text>
+  <circle cx="100" cy="50" r="18" fill="none" stroke="#f1c40f" stroke-width="2"/>
+  <text x="100" y="55" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="bold" fill="#f1c40f">FSMS</text>
+  <text x="100" y="155" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="bold" fill="#f1c40f">CERTIFIED</text>
+  <text x="100" y="170" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" fill="rgba(255,255,255,0.6)">BSI Verified</text>
+</svg>

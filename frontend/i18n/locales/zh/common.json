@@ -24,7 +24,8 @@
     },
     "default": "发生错误",
     "goHome": "返回首页",
-    "tryAgain": "重试"
+    "tryAgain": "重试",
+    "retry": "重试"
   },
   "validation": {
     "required": {

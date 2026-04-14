@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a5276"/>
+      <stop offset="100%" style="stop-color:#2e86c1"/>
+    </linearGradient>
+  </defs>
+  <circle cx="100" cy="100" r="95" fill="url(#bg)" stroke="#1a3c5e" stroke-width="3"/>
+  <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+  <text x="100" y="72" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" font-weight="bold" fill="#fff">HACCP</text>
+  <line x1="50" y1="82" x2="150" y2="82" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+  <text x="100" y="102" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="rgba(255,255,255,0.85)">HAZARD ANALYSIS</text>
+  <text x="100" y="115" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="rgba(255,255,255,0.85)">CRITICAL CONTROL</text>
+  <text x="100" y="128" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="rgba(255,255,255,0.85)">POINTS</text>
+  <path d="M100 38 L108 52 L124 54 L113 65 L116 81 L100 73 L84 81 L87 65 L76 54 L92 52 Z" fill="#f1c40f"/>
+  <text x="100" y="155" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="bold" fill="#f1c40f">CERTIFIED</text>
+  <text x="100" y="170" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" fill="rgba(255,255,255,0.6)">SGS Verified</text>
+</svg>

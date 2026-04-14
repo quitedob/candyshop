@@ -352,20 +352,17 @@ const { getCategories, getFeaturedProducts } = useApi()
 
 const orderingCtaPath = computed(() => {
   if (isAuthenticated.value) {
-    return localePath(isAdmin.value ? '/admin' : '/customer/products')
+    return localePath('/contact')
   }
   return localePath('/auth/register')
 })
 
 const orderingCtaLabel = computed(() => {
-  if (isAuthenticated.value && isAdmin.value) {
-    return t('nav.admin_panel')
-  }
   if (isPending.value) {
     return t('product.pending_approval')
   }
   if (isAuthenticated.value) {
-    return t('customer.products.add_to_cart')
+    return t('product.inquire_now')
   }
   return t('product.register_to_order')
 })

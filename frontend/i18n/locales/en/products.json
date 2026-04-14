@@ -6,22 +6,28 @@
       "hard_candy": "Hard Candy",
       "aerated_candy": "Aerated Candy",
       "toffee_candy": "Toffee Candy",
-      "compound_chocolate": "Compound Chocolate"
+      "compound_chocolate": "Compound Chocolate",
+      "licorice": "Licorice Candy",
+      "sour_candies": "Sour Candies"
     },
     "category_descriptions": {
       "gummy_candy": "Premium gummy candies in various shapes, flavors, and textures. Perfect for private label.",
       "hard_candy": "Classic hard candies with vibrant colors and long-lasting flavors.",
       "aerated_candy": "Light and airy candies with unique textures and mouthfeel.",
       "toffee_candy": "Rich, buttery toffees with smooth caramel flavors.",
-      "compound_chocolate": "Cost-effective chocolate alternatives with excellent taste and texture."
+      "compound_chocolate": "Cost-effective chocolate alternatives with excellent taste and texture.",
+      "licorice": "Traditional and modern licorice varieties. Rich flavors with chewy texture.",
+      "sour_candies": "Tangy and sour coated candies with intense fruit flavors."
     },
     "oem_available": "OEM Available",
     "inquire_now": "Inquire Now",
+    "place_order": "Place Order",
     "download_catalog": "Download Catalog",
     "request_sample": "Request Sample",
     "view_details": "View Details",
     "view_products": "View Products",
     "browse_all": "Browse our complete range of premium candy products",
+    "all_products": "All Products",
     "need_custom": "Need Custom Solutions?",
     "oem_description": "We specialize in OEM and private label manufacturing. Let us bring your candy vision to life.",
     "products": "products",

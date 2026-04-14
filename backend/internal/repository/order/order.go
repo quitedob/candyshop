@@ -8,6 +8,7 @@ import (
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"gorm.io/gorm"
@@ -99,7 +100,7 @@ func (r *OrderRepository) CreateWithStockReservation(ctx context.Context, order 
 
 // Update updates an order
 func (r *OrderRepository) Update(ctx context.Context, order *modelsOrder.Order) error {
-	return r.db.WithContext(ctx).Save(order).Error
+	return r.db.WithContext(ctx).Omit("User", "Inquiry").Save(order).Error
 }
 
 // UpdateWithStockAdjustment updates an order and adjusts stock atomically.
@@ -314,4 +315,144 @@ func (r *OrderRepository) FindRecent(ctx context.Context, limit int) ([]modelsOr
 		return nil, err
 	}
 	return orders, nil
+}
+
+// RevenueByMonth returns monthly revenue for the last N months.
+func (r *OrderRepository) RevenueByMonth(ctx context.Context, months int) ([]map[string]interface{}, error) {
+	type row struct {
+		Month   string
+		Revenue float64
+	}
+	var rows []row
+	if err := r.db.WithContext(ctx).
+		Model(&modelsOrder.Order{}).
+		Select("TO_CHAR(created_at, 'YYYY-MM') AS month, COALESCE(SUM(total_amount), 0) AS revenue").
+		Where("created_at >= NOW() - INTERVAL '? months' AND status != 'cancelled'", months).
+		Group("month").
+		Order("month").
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	result := make([]map[string]interface{}, len(rows))
+	for i, row := range rows {
+		result[i] = map[string]interface{}{
+			"month":   row.Month,
+			"revenue": row.Revenue,
+		}
+	}
+	return result, nil
+}
+
+// OrderCountByMonth returns monthly order counts for the last N months.
+func (r *OrderRepository) OrderCountByMonth(ctx context.Context, months int) ([]map[string]interface{}, error) {
+	type row struct {
+		Month string
+		Count int64
+	}
+	var rows []row
+	if err := r.db.WithContext(ctx).
+		Model(&modelsOrder.Order{}).
+		Select("TO_CHAR(created_at, 'YYYY-MM') AS month, COUNT(*) AS count").
+		Where("created_at >= NOW() - INTERVAL '? months' AND status != 'cancelled'", months).
+		Group("month").
+		Order("month").
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	result := make([]map[string]interface{}, len(rows))
+	for i, row := range rows {
+		result[i] = map[string]interface{}{
+			"month": row.Month,
+			"count": row.Count,
+		}
+	}
+	return result, nil
+}
+
+// TopProductsByRevenue analyzes order items to find top products by revenue.
+func (r *OrderRepository) TopProductsByRevenue(ctx context.Context, limit int) ([]map[string]interface{}, error) {
+	var orders []modelsOrder.Order
+	if err := r.db.WithContext(ctx).
+		Where("status != ?", "cancelled").
+		Order("created_at DESC").
+		Limit(500).
+		Find(&orders).Error; err != nil {
+		return nil, err
+	}
+
+	productMap := make(map[string]float64)
+	for _, order := range orders {
+		for _, item := range order.Items {
+			productMap[item.ProductID] += float64(item.Quantity) * item.UnitPrice
+		}
+	}
+
+	type productRevenue struct {
+		ProductID string
+		Revenue   float64
+	}
+	var products []productRevenue
+	for id, rev := range productMap {
+		products = append(products, productRevenue{ProductID: id, Revenue: rev})
+	}
+
+	sort.Slice(products, func(i, j int) bool {
+		return products[i].Revenue > products[j].Revenue
+	})
+
+	if limit > len(products) {
+		limit = len(products)
+	}
+	result := make([]map[string]interface{}, limit)
+	for i := 0; i < limit; i++ {
+		result[i] = map[string]interface{}{
+			"productId": products[i].ProductID,
+			"revenue":   products[i].Revenue,
+		}
+	}
+	return result, nil
+}
+
+// DistinctOrderingUsers counts unique users who placed orders since a date.
+func (r *OrderRepository) DistinctOrderingUsers(ctx context.Context, since time.Time) (int64, error) {
+	var result struct {
+		Count int64
+	}
+	if err := r.db.WithContext(ctx).
+		Model(&modelsOrder.Order{}).
+		Where("created_at >= ?", since).
+		Select("COUNT(DISTINCT user_id) AS count").
+		Scan(&result).Error; err != nil {
+		return 0, err
+	}
+	return result.Count, nil
+}
+
+// RevenueByDay returns daily revenue for the last N days.
+func (r *OrderRepository) RevenueByDay(ctx context.Context, days int) ([]map[string]interface{}, error) {
+	type row struct {
+		Date    string
+		Revenue float64
+	}
+	var rows []row
+	if err := r.db.WithContext(ctx).
+		Model(&modelsOrder.Order{}).
+		Select("DATE(created_at) AS date, COALESCE(SUM(total_amount), 0) AS revenue").
+		Where("created_at >= NOW() - INTERVAL '? days' AND status != 'cancelled'", days).
+		Group("date").
+		Order("date").
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	result := make([]map[string]interface{}, len(rows))
+	for i, row := range rows {
+		result[i] = map[string]interface{}{
+			"date":    row.Date,
+			"revenue": row.Revenue,
+		}
+	}
+	return result, nil
 }

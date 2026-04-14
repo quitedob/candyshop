@@ -216,6 +216,7 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 		inquiryID := strings.TrimSpace(*req.InquiryID)
 		if inquiryID == "" {
 			order.InquiryID = nil
+			order.Inquiry = nil
 		} else {
 			if _, inquiryErr := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID); inquiryErr != nil {
 				c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{

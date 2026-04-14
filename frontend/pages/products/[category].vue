@@ -152,7 +152,7 @@
           </button>
         </div>
 
-        <div class="products__info">
+        <div v-if="total > 0" class="products__info">
           {{ $t('pagination.showing').replace('{from}', String((currentPage - 1) * limit + 1))
             .replace('{to}', String(Math.min(currentPage * limit, total)))
             .replace('{total}', String(total)) }}
@@ -267,6 +267,7 @@ const route = useRoute()
 const router = useRouter()
 const config = useRuntimeConfig()
 const { getProducts, getCategory } = useApi()
+const { isAuthenticated } = useAuth()
 
 // State
 const currentPage = ref(1)
@@ -314,7 +315,32 @@ const { data: productsData, status: productsStatus, refresh: refreshProducts } =
   }
 )
 
-const products = computed(() => productsData.value?.data || [])
+const products = computed(() => {
+  const all = productsData.value?.data || []
+  if (!activeFilters.value.length) return all
+  return all.filter(p => {
+    return activeFilters.value.every(filter => {
+      if (filter === 'halal') return p.halalCertified
+      if (filter === 'sugar-free') {
+        const text = `${p.name} ${p.summary || ''} ${p.description || ''}`.toLowerCase()
+        return text.includes('sugar-free') || text.includes('sugar free') || text.includes('无糖')
+      }
+      if (filter === '4d') {
+        const text = `${p.name} ${p.summary || ''}`.toLowerCase()
+        return text.includes('4d') || text.includes('4-d')
+      }
+      if (filter === 'filled') {
+        const text = `${p.name} ${p.summary || ''} ${p.description || ''}`.toLowerCase()
+        return text.includes('filled') || text.includes('filling') || text.includes('夹心')
+      }
+      if (filter === 'vitamin') {
+        const text = `${p.name} ${p.summary || ''} ${p.description || ''}`.toLowerCase()
+        return text.includes('vitamin') || text.includes('维生素')
+      }
+      return true
+    })
+  })
+})
 const total = computed(() => productsData.value?.pagination?.total || 0)
 const totalPages = computed(() => productsData.value?.pagination?.totalPages || 1)
 
@@ -340,7 +366,9 @@ const relatedCategories = computed(() => {
     { slug: 'hard-candy', name: t('product.categories.hard_candy'), productCount: 85 },
     { slug: 'aerated-candy', name: t('product.categories.aerated_candy'), productCount: 45 },
     { slug: 'toffee-candy', name: t('product.categories.toffee_candy'), productCount: 35 },
-    { slug: 'compound-chocolate', name: t('product.categories.compound_chocolate'), productCount: 60 }
+    { slug: 'compound-chocolate', name: t('product.categories.compound_chocolate'), productCount: 60 },
+    { slug: 'licorice', name: t('product.categories.licorice'), productCount: 25 },
+    { slug: 'sour-candies', name: t('product.categories.sour_candies'), productCount: 40 }
   ]
   return allCategories.filter(c => c.slug !== categorySlug.value)
 })
@@ -382,7 +410,7 @@ const visiblePages = computed(() => {
 const goToPage = (page: number) => {
   if (page < 1 || page > totalPages.value) return
   currentPage.value = page
-  refresh()
+  refreshProducts()
 }
 
 const toggleFilter = (filterId: string) => {
@@ -392,13 +420,10 @@ const toggleFilter = (filterId: string) => {
   } else {
     activeFilters.value.splice(index, 1)
   }
-  // Trigger filter refresh
-  refresh()
 }
 
 const clearFilters = () => {
   activeFilters.value = []
-  refresh()
 }
 
 const toggleFAQ = (index: number) => {
@@ -406,6 +431,10 @@ const toggleFAQ = (index: number) => {
 }
 
 const handleInquire = (product: any) => {
+  if (!isAuthenticated.value) {
+    router.push({ path: localePath('/auth/login'), query: { redirect: route.fullPath } })
+    return
+  }
   router.push({
     path: localePath('/contact'),
     query: { product: product.name }
@@ -413,6 +442,10 @@ const handleInquire = (product: any) => {
 }
 
 const handleSample = (product: any) => {
+  if (!isAuthenticated.value) {
+    router.push({ path: localePath('/auth/login'), query: { redirect: route.fullPath } })
+    return
+  }
   router.push({
     path: localePath('/contact'),
     query: { product: product.name, sample: 'true' }
