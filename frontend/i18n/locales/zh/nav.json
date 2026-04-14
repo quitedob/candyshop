@@ -7,7 +7,16 @@
     "cases": "案例客户",
     "blog": "新闻资讯",
     "about": "关于我们",
-    "contact": "联系我们"
+    "contact": "联系我们",
+    "sign_in": "登录",
+    "register": "注册",
+    "my_account": "我的账户",
+    "admin_panel": "管理后台",
+    "order_now": "立即下单",
+    "register_to_order": "注册后下单",
+    "pending_approval": "审核中",
+    "customer_portal": "客户门户",
+    "back_to_site": "返回官网"
   },
   "footer": {
     "tagline": "您值得信赖的糖果制造伙伴",
@@ -19,6 +28,8 @@
     "privacy_policy": "隐私政策",
     "terms_of_service": "服务条款",
     "cookie_policy": "Cookie政策",
-    "copyright": "© {year} 糖果制造有限公司 版权所有"
+    "copyright": "© {year} 糖果制造有限公司 版权所有",
+    "customer_portal": "客户门户",
+    "sign_in": "登录 / 注册"
   }
 }

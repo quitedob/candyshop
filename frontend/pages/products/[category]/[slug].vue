@@ -63,10 +63,9 @@
 
             <!-- Quick Actions -->
             <div class="product-header__actions">
-              <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-highlight btn-lg">
-                <WhatsAppIcon size="20" />
-                {{ $t('whatsapp.us') }}
-              </a>
+              <button class="btn btn-highlight btn-lg" :disabled="addingToCart || isPending" @click="handleOrderAction">
+                {{ orderCtaLabel }}
+              </button>
               <button class="btn btn-outline btn-lg" @click="openInquiryModal">
                 {{ $t('product.inquire_now') }}
               </button>
@@ -186,10 +185,9 @@
 
     <!-- Sticky Inquiry CTA (Mobile) -->
     <div class="sticky-cta hide-desktop">
-      <a :href="whatsappUrl" class="sticky-cta__whatsapp">
-        <WhatsAppIcon size="20" />
-        {{ $t('whatsapp.us') }}
-      </a>
+      <button class="sticky-cta__whatsapp" :disabled="addingToCart || isPending" @click="handleOrderAction">
+        {{ orderCtaLabel }}
+      </button>
       <button class="sticky-cta__inquire" @click="openInquiryModal">
         {{ $t('product.inquire_now') }}
       </button>
@@ -229,12 +227,14 @@ const { t, locale } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
 const router = useRouter()
-const config = useRuntimeConfig()
-const { getProduct, getRelatedProducts } = useApi()
+const { isAuthenticated, isAdmin, isPending } = useAuth()
+const api = useApi()
+const { getProduct, getRelatedProducts } = api
 
 // State
 const activeTab = ref('description')
 const isInquiryOpen = ref(false)
+const addingToCart = ref(false)
 
 // Route params
 const categorySlug = computed(() => route.params.category as string)
@@ -249,6 +249,13 @@ const { data: productData, status: productStatus, refresh: refreshProduct } = aw
 )
 
 const product = computed(() => productData.value || {})
+
+const orderCtaLabel = computed(() => {
+  if (!isAuthenticated.value) return t('product.register_to_order')
+  if (isPending.value) return t('product.pending_approval')
+  if (isAdmin.value) return t('nav.admin_panel')
+  return t('customer.products.add_to_cart')
+})
 
 const categoryName = computed(() => {
   const key = `product.categories.${product.value.category}`
@@ -389,12 +396,35 @@ const scenarios = [
   }
 ]
 
-// WhatsApp URL
-const whatsappUrl = computed(() => {
-  const number = config.public.whatsappNumber
-  const message = encodeURIComponent(`Hi, I'm interested in "${product.value.name}". Can you provide pricing and MOQ information?`)
-  return `https://wa.me/${number}?text=${message}`
-})
+const handleOrderAction = async () => {
+  if (!isAuthenticated.value) {
+    await navigateTo(localePath('/auth/register'))
+    return
+  }
+
+  if (isPending.value) {
+    return
+  }
+
+  if (isAdmin.value) {
+    await navigateTo(localePath('/admin'))
+    return
+  }
+
+  addingToCart.value = true
+  try {
+    await api.addToCart(product.value.id, {
+      quantity: product.value.moq || 1,
+      unitPrice: product.value.unitPrice || 0,
+      specifications: ''
+    })
+    await navigateTo(localePath('/customer/cart'))
+  } catch {
+    await navigateTo(localePath(`/customer/products/${product.value.slug || product.value.id}`))
+  } finally {
+    addingToCart.value = false
+  }
+}
 
 // Modal functions
 const openInquiryModal = () => {

@@ -64,6 +64,16 @@
       "a3": "Yes, we provide samples for quality evaluation. Sample fees are refundable upon placing a bulk order.",
       "q4": "What certifications do you have?",
       "a4": "We are HACCP, ISO22000, BRC Grade A, and Halal certified. Our products meet international food safety standards."
+    },
+    "how_to_order": {
+      "title": "How to Order",
+      "subtitle": "Place your B2B order in 3 simple steps",
+      "step1_title": "Browse & Select",
+      "step1_desc": "Explore our product catalog and find the right candy products for your market.",
+      "step2_title": "Register & Get Approved",
+      "step2_desc": "Create your B2B account and get verified by our team — usually within 24 hours.",
+      "step3_title": "Order & Track",
+      "step3_desc": "Add products to cart, checkout, and track your order from production to delivery."
     }
   }
 }

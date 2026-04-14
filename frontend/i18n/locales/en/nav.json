@@ -7,7 +7,16 @@
     "cases": "Cases & Clients",
     "blog": "Blog",
     "about": "About",
-    "contact": "Contact"
+    "contact": "Contact",
+    "sign_in": "Sign In",
+    "register": "Register",
+    "my_account": "My Account",
+    "admin_panel": "Admin Panel",
+    "order_now": "Start Ordering",
+    "register_to_order": "Register to Order",
+    "pending_approval": "Pending Approval",
+    "customer_portal": "Customer Portal",
+    "back_to_site": "Back to Website"
   },
   "footer": {
     "tagline": "Your Trusted Partner in Candy Manufacturing",
@@ -19,6 +28,8 @@
     "privacy_policy": "Privacy Policy",
     "terms_of_service": "Terms of Service",
     "cookie_policy": "Cookie Policy",
-    "copyright": "© {year} Candy Manufacturing Co. All rights reserved."
+    "copyright": "© {year} Candy Manufacturing Co. All rights reserved.",
+    "customer_portal": "Customer Portal",
+    "sign_in": "Sign In / Register"
   }
 }

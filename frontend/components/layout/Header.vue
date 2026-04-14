@@ -117,9 +117,23 @@
               </svg>
               <span>{{ $t('whatsapp.us') }}</span>
             </a>
-            <NuxtLink :to="localePath('/contact')" class="btn btn-highlight btn-sm">
-              {{ $t('form.submit') }}
-            </NuxtLink>
+            <!-- Auth-conditional CTAs -->
+            <template v-if="!isAuthenticated">
+              <NuxtLink :to="localePath('/auth/login')" class="btn btn-ghost btn-sm">
+                {{ $t('nav.sign_in') }}
+              </NuxtLink>
+              <NuxtLink :to="localePath('/auth/register')" class="btn btn-highlight btn-sm">
+                {{ $t('nav.register') }}
+              </NuxtLink>
+            </template>
+            <template v-else>
+              <NuxtLink
+                :to="localePath(isAdmin ? '/admin' : '/customer/dashboard')"
+                class="btn btn-highlight btn-sm"
+              >
+                {{ $t(isAdmin ? 'nav.admin_panel' : 'nav.my_account') }}
+              </NuxtLink>
+            </template>
           </div>
 
           <!-- Mobile Menu Toggle -->
@@ -208,9 +222,23 @@
             <span>{{ $t('whatsapp.us') }}</span>
           </a>
 
-          <NuxtLink :to="localePath('/contact')" class="btn btn-highlight btn-sm" @click="closeMenu">
-            {{ $t('form.submit') }}
-          </NuxtLink>
+          <template v-if="!isAuthenticated">
+            <NuxtLink :to="localePath('/auth/login')" class="btn btn-ghost btn-sm" @click="closeMenu">
+              {{ $t('nav.sign_in') }}
+            </NuxtLink>
+            <NuxtLink :to="localePath('/auth/register')" class="btn btn-highlight btn-sm" @click="closeMenu">
+              {{ $t('nav.register') }}
+            </NuxtLink>
+          </template>
+          <template v-else>
+            <NuxtLink
+              :to="localePath(isAdmin ? '/admin' : '/customer/dashboard')"
+              class="btn btn-highlight btn-sm"
+              @click="closeMenu"
+            >
+              {{ $t(isAdmin ? 'nav.admin_panel' : 'nav.my_account') }}
+            </NuxtLink>
+          </template>
         </div>
       </nav>
     </div>
@@ -226,11 +254,24 @@ const localePath = useLocalePath()
 const switchLocalePath = useSwitchLocalePath()
 const route = useRoute()
 const config = useRuntimeConfig()
+const { isAuthenticated, isAdmin, initAuth } = useAuth()
 
 // State
 const isScrolled = ref(false)
 const isMenuOpen = ref(false)
 const menuToggleRef = ref<HTMLButtonElement | null>(null)
+
+// Initialise auth state and set up scroll listener + saved locale
+onMounted(() => {
+  initAuth()
+
+  const savedLocale = getSavedLocale()
+  if (savedLocale && savedLocale !== locale.value) {
+    locale.value = savedLocale
+  }
+
+  window.addEventListener('scroll', handleScroll)
+})
 
 // Navigation items
 const navItems = [
@@ -303,17 +344,6 @@ const switchLocale = async (newLocale: string) => {
   const path = switchLocalePath(newLocale)
   await navigateTo(path)
 }
-
-// Initialize locale from saved preference
-onMounted(() => {
-  const savedLocale = getSavedLocale()
-  if (savedLocale && savedLocale !== locale.value) {
-    locale.value = savedLocale
-  }
-
-  // Set up scroll handler
-  window.addEventListener('scroll', handleScroll)
-})
 
 // Toggle mobile menu
 const toggleMenu = () => {

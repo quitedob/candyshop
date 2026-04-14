@@ -286,10 +286,20 @@ const { data: categoryData, status: categoryStatus, refresh: refreshCategory } =
   }
 )
 
-const category = computed(() => categoryData.value || {
-  name: t(`product.categories.${categorySlug.value.replace(/-/g, '_')}`) || categorySlug.value,
-  description: '',
-  productCount: 0
+const category = computed(() => {
+  const data = categoryData.value
+  if (!data) {
+    return {
+      name: t(`product.categories.${categorySlug.value.replace(/-/g, '_')}`) || categorySlug.value,
+      description: '',
+      productCount: 0,
+      image: `/images/categories/${categorySlug.value}.jpg`
+    }
+  }
+  return {
+    ...data,
+    image: data.thumbnail || `/images/categories/${categorySlug.value}.jpg`
+  }
 })
 
 // Fetch products

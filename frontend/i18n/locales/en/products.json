@@ -33,7 +33,9 @@
     "applications": "Applications",
     "related_products": "Related Products",
     "no_products": "No products found",
-    "try_different_filters": "Try adjusting your filters or browse other categories"
+    "try_different_filters": "Try adjusting your filters or browse other categories",
+    "register_to_order": "Register to Order",
+    "pending_approval": "Pending Approval"
   },
   "filters": {
     "title": "Filter Products",

@@ -19,6 +19,31 @@
     </div>
     
     <template v-else>
+      <!-- Pending Approval Card -->
+      <div v-if="isPending" class="pending-card">
+        <div class="pending-card__icon">
+          <Icon name="heroicons:clock" class="h-8 w-8" />
+        </div>
+        <div class="pending-card__content">
+          <h3 class="pending-card__title">{{ t('customer.pending.dashboard_title') }}</h3>
+          <p class="pending-card__message">{{ t('customer.pending.dashboard_message') }}</p>
+          <div class="pending-card__steps">
+            <div class="pending-card__step">
+              <Icon name="heroicons:eye" class="h-5 w-5" />
+              <span>{{ t('customer.pending.step_browse') }}</span>
+            </div>
+            <div class="pending-card__step">
+              <Icon name="heroicons:shield-check" class="h-5 w-5" />
+              <span>{{ t('customer.pending.step_review') }}</span>
+            </div>
+            <div class="pending-card__step">
+              <Icon name="heroicons:shopping-bag" class="h-5 w-5" />
+              <span>{{ t('customer.pending.step_order') }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="bg-white overflow-hidden shadow rounded-lg mb-8">
         <div class="px-4 py-5 sm:p-6">
           <div class="flex items-center">
@@ -137,7 +162,7 @@ import { ref, onMounted } from 'vue'
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const { t } = useI18n()
-const { user } = useAuth()
+const { user, isPending } = useAuth()
 const api = useApi()
 const tts = useTTS()
 
@@ -156,4 +181,76 @@ onMounted(async () => {
   } finally { pending.value = false }
 })
 </script>
+
+<style scoped>
+.pending-card {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px solid #f59e0b;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.pending-card__icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  background: #f59e0b;
+  color: white;
+  border-radius: 9999px;
+}
+
+.pending-card__title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: 0.25rem;
+}
+
+.pending-card__message {
+  font-size: 0.875rem;
+  color: #a16207;
+  margin-bottom: 1rem;
+}
+
+.pending-card__steps {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.pending-card__step {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #92400e;
+}
+
+.pending-card__step svg {
+  color: #f59e0b;
+}
+
+@media (max-width: 640px) {
+  .pending-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .pending-card__icon {
+    margin: 0 auto;
+  }
+
+  .pending-card__steps {
+    justify-content: center;
+  }
+}
+</style>
 

@@ -46,6 +46,14 @@
       "placed_on": "Placed on",
       "no_orders": "You haven't placed any orders yet."
     },
+    "pending": {
+      "banner": "Your account is pending approval. Browsing is available, ordering will unlock once approved.",
+      "dashboard_title": "Account Pending Approval",
+      "dashboard_message": "Our team is reviewing your B2B account. You'll be able to place orders once approved.",
+      "step_browse": "Browse products",
+      "step_review": "Under review",
+      "step_order": "Start ordering"
+    },
     "profile": {
       "title": "Account Profile",
       "subtitle": "Personal details and preferences.",

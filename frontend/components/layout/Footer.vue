@@ -108,6 +108,9 @@
               <li>
                 <NuxtLink :to="localePath('/blog')">{{ $t('nav.blog') }}</NuxtLink>
               </li>
+              <li>
+                <NuxtLink :to="portalLink">{{ portalLabel }}</NuxtLink>
+              </li>
             </ul>
           </div>
 
@@ -218,6 +221,7 @@ import { useI18n, useLocalePath } from '#i18n'
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
 const config = useRuntimeConfig()
+const { isAuthenticated, isAdmin } = useAuth()
 
 // Current year for copyright
 const currentYear = computed(() => new Date().getFullYear())
@@ -239,6 +243,20 @@ const whatsappUrl = computed(() => {
   const number = config.public.whatsappNumber
   const message = encodeURIComponent(t('whatsapp.message'))
   return `https://wa.me/${number}?text=${message}`
+})
+
+const portalLink = computed(() => {
+  if (isAuthenticated.value) {
+    return localePath(isAdmin.value ? '/admin' : '/customer/products')
+  }
+  return localePath('/auth/login')
+})
+
+const portalLabel = computed(() => {
+  if (isAuthenticated.value) {
+    return t('footer.customer_portal')
+  }
+  return t('footer.sign_in')
 })
 
 // Switch locale

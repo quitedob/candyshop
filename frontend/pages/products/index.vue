@@ -30,7 +30,7 @@
             class="category-card"
           >
             <div class="category-card__image">
-              <img :src="category.thumbnail" :alt="category.name" loading="lazy" />
+              <img :src="category.image" :alt="category.name" loading="lazy" />
               <div class="category-card__overlay">
                 <span class="category-card__arrow">
                   <Icon name="lucide:arrow-right" size="24" />
@@ -69,10 +69,13 @@
           <h2>{{ $t('product.need_custom') }}</h2>
           <p>{{ $t('product.oem_description') }}</p>
           <div class="cta-actions">
-            <NuxtLink :to="localePath('/oem-solutions')" class="btn btn-highlight btn-lg">
+            <NuxtLink :to="orderingCtaPath" class="btn btn-highlight btn-lg">
+              {{ orderingCtaLabel }}
+            </NuxtLink>
+            <NuxtLink :to="localePath('/oem-solutions')" class="btn btn-outline btn-lg">
               {{ $t('nav.oem') }}
             </NuxtLink>
-            <NuxtLink :to="localePath('/contact')" class="btn btn-outline btn-lg">
+            <NuxtLink :to="localePath('/contact')" class="btn btn-ghost btn-lg">
               {{ $t('contact.send_inquiry') }}
             </NuxtLink>
           </div>
@@ -88,7 +91,28 @@ import { useI18n, useLocalePath } from '#i18n'
 
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
+const { isAuthenticated, isAdmin, isPending } = useAuth()
 const { getCategories, getProducts } = useApi()
+
+const orderingCtaPath = computed(() => {
+  if (isAuthenticated.value) {
+    return localePath(isAdmin.value ? '/admin' : '/customer/products')
+  }
+  return localePath('/auth/register')
+})
+
+const orderingCtaLabel = computed(() => {
+  if (isAuthenticated.value && isAdmin.value) {
+    return t('nav.admin_panel')
+  }
+  if (isPending.value) {
+    return t('product.pending_approval')
+  }
+  if (isAuthenticated.value) {
+    return t('customer.products.add_to_cart')
+  }
+  return t('product.register_to_order')
+})
 
 const { data: categoriesData, status: categoriesStatus, refresh: refreshCategories } = await useAsyncData(
   () => `products-categories-${locale.value}`,

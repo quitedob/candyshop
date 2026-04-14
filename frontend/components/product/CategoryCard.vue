@@ -51,7 +51,7 @@ const props = defineProps<Props>()
 
 const localePath = useLocalePath()
 
-const FALLBACK = '/images/hero-candy.jpg'
+const FALLBACK = '/images/categories/gummy-candy.jpg'
 const imgSrc = ref(props.category.image || FALLBACK)
 
 watch(() => props.category.image, (val) => {

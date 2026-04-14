@@ -1,5 +1,15 @@
 <template>
   <div class="customer-layout">
+    <!-- Pending Approval Banner -->
+    <div v-if="isPending" class="pending-banner">
+      <div class="container">
+        <div class="pending-banner__inner">
+          <Icon name="heroicons:clock" class="pending-banner__icon" />
+          <span>{{ t('customer.pending.banner') }}</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Header -->
     <header class="customer-header" :class="{ 'customer-header--scrolled': isScrolled }">
       <div class="container">
@@ -103,7 +113,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 
-const { user, logout } = useAuth()
+const { user, logout, isPending } = useAuth()
 const route = useRoute()
 const localePath = useLocalePath()
 const { t } = useI18n()
@@ -200,6 +210,32 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* Pending Banner */
+.pending-banner {
+  position: sticky;
+  top: 0;
+  z-index: calc(var(--z-sticky) + 1);
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-bottom: 1px solid #f59e0b;
+}
+
+.pending-banner__inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: #92400e;
+}
+
+.pending-banner__icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
 .customer-layout {
   min-height: 100vh;
   background-color: var(--color-bg);

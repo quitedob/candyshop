@@ -33,7 +33,9 @@
     "applications": "应用场景",
     "related_products": "相关产品",
     "no_products": "未找到产品",
-    "try_different_filters": "请尝试调整筛选条件或浏览其他分类"
+    "try_different_filters": "请尝试调整筛选条件或浏览其他分类",
+    "register_to_order": "注册后下单",
+    "pending_approval": "审核中"
   },
   "filters": {
     "title": "筛选产品",

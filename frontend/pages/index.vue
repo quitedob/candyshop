@@ -22,9 +22,9 @@
           </p>
 
           <div class="hero__actions">
-            <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-highlight btn-lg">
-              {{ $t('home.hero.cta_primary') }}
-            </a>
+            <NuxtLink :to="orderingCtaPath" class="btn btn-highlight btn-lg">
+              {{ orderingCtaLabel }}
+            </NuxtLink>
             <NuxtLink :to="localePath('/products')" class="btn btn-outline btn-lg">
               {{ $t('home.hero.cta_secondary') }}
             </NuxtLink>
@@ -181,6 +181,55 @@
       </div>
     </section>
 
+    <!-- How to Order -->
+    <section class="how-to-order section">
+      <div class="container">
+        <div class="section-header">
+          <h2>{{ $t('home.how_to_order.title') }}</h2>
+          <p>{{ $t('home.how_to_order.subtitle') }}</p>
+        </div>
+
+        <div class="how-to-order__steps">
+          <div class="how-to-order__step">
+            <div class="how-to-order__step-number">1</div>
+            <div class="how-to-order__step-icon">
+              <Icon name="lucide:search" size="28" />
+            </div>
+            <h3 class="how-to-order__step-title">{{ $t('home.how_to_order.step1_title') }}</h3>
+            <p class="how-to-order__step-desc">{{ $t('home.how_to_order.step1_desc') }}</p>
+          </div>
+          <div class="how-to-order__connector">
+            <Icon name="lucide:chevron-right" size="24" />
+          </div>
+          <div class="how-to-order__step">
+            <div class="how-to-order__step-number">2</div>
+            <div class="how-to-order__step-icon">
+              <Icon name="lucide:user-plus" size="28" />
+            </div>
+            <h3 class="how-to-order__step-title">{{ $t('home.how_to_order.step2_title') }}</h3>
+            <p class="how-to-order__step-desc">{{ $t('home.how_to_order.step2_desc') }}</p>
+          </div>
+          <div class="how-to-order__connector">
+            <Icon name="lucide:chevron-right" size="24" />
+          </div>
+          <div class="how-to-order__step">
+            <div class="how-to-order__step-number">3</div>
+            <div class="how-to-order__step-icon">
+              <Icon name="lucide:truck" size="28" />
+            </div>
+            <h3 class="how-to-order__step-title">{{ $t('home.how_to_order.step3_title') }}</h3>
+            <p class="how-to-order__step-desc">{{ $t('home.how_to_order.step3_desc') }}</p>
+          </div>
+        </div>
+
+        <div class="how-to-order__cta">
+          <NuxtLink :to="orderingCtaPath" class="btn btn-highlight btn-lg">
+            {{ orderingCtaLabel }}
+          </NuxtLink>
+        </div>
+      </div>
+    </section>
+
     <!-- OEM Teaser -->
     <section class="oem-teaser section">
       <div class="container">
@@ -274,11 +323,14 @@
           <p>{{ $t('form.subtitle') }}</p>
 
           <div class="cta__actions">
-            <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-highlight btn-lg">
+            <NuxtLink :to="orderingCtaPath" class="btn btn-highlight btn-lg">
+              {{ orderingCtaLabel }}
+            </NuxtLink>
+            <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-lg">
               <WhatsAppIcon size="20" />
               {{ $t('whatsapp.us') }}
             </a>
-            <NuxtLink :to="localePath('/contact')" class="btn btn-outline btn-lg">
+            <NuxtLink :to="localePath('/contact')" class="btn btn-ghost btn-lg">
               {{ $t('contact.send_inquiry') }}
             </NuxtLink>
           </div>
@@ -295,7 +347,28 @@ import { useI18n, useLocalePath } from '#i18n'
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
 const config = useRuntimeConfig()
+const { isAuthenticated, isAdmin, isPending } = useAuth()
 const { getCategories, getFeaturedProducts } = useApi()
+
+const orderingCtaPath = computed(() => {
+  if (isAuthenticated.value) {
+    return localePath(isAdmin.value ? '/admin' : '/customer/products')
+  }
+  return localePath('/auth/register')
+})
+
+const orderingCtaLabel = computed(() => {
+  if (isAuthenticated.value && isAdmin.value) {
+    return t('nav.admin_panel')
+  }
+  if (isPending.value) {
+    return t('product.pending_approval')
+  }
+  if (isAuthenticated.value) {
+    return t('customer.products.add_to_cart')
+  }
+  return t('product.register_to_order')
+})
 
 // WhatsApp URL
 const whatsappUrl = computed(() => {
@@ -317,7 +390,7 @@ const categories = computed(() => {
     to: `/products/${category.slug}`,
     name: category.name || t(`product.categories.${category.slug.replace(/-/g, '_')}`),
     count: category.productCount || 0,
-    image: category.thumbnail || `/images/hero-candy.jpg`
+    image: category.thumbnail || `/images/categories/${category.slug}.jpg`
   }))
 })
 
@@ -718,6 +791,86 @@ useSeo({
 
 .featured__actions {
   text-align: center;
+}
+
+/* How to Order */
+.how-to-order__steps {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: var(--spacing-2xl);
+}
+
+.how-to-order__step {
+  flex: 1;
+  max-width: 300px;
+  text-align: center;
+  padding: var(--spacing-xl);
+  position: relative;
+}
+
+.how-to-order__step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--color-highlight);
+  color: white;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  margin-bottom: var(--spacing-md);
+}
+
+.how-to-order__step-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background-color: var(--color-bg-alt);
+  border-radius: var(--radius-xl);
+  color: var(--color-highlight);
+  margin-bottom: var(--spacing-md);
+}
+
+.how-to-order__step-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.how-to-order__step-desc {
+  font-size: var(--text-sm);
+  color: var(--color-text-light);
+  line-height: 1.6;
+}
+
+.how-to-order__connector {
+  display: flex;
+  align-items: center;
+  padding-top: 100px;
+  color: var(--color-border);
+}
+
+.how-to-order__cta {
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .how-to-order__steps {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .how-to-order__connector {
+    transform: rotate(90deg);
+    padding-top: 0;
+    margin: calc(-1 * var(--spacing-sm)) 0;
+  }
 }
 
 /* OEM Teaser */

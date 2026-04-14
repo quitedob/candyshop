@@ -60,6 +60,10 @@ export const useAuth = () => {
     isAuthenticated.value && (user.value?.role === 'admin' || user.value?.role === 'superadmin')
   )
 
+  const isPending = computed(() =>
+    isAuthenticated.value && user.value?.status === 'pending'
+  )
+
   const clearAuthState = () => {
     token.value = null
     refreshToken.value = null
@@ -244,6 +248,7 @@ export const useAuth = () => {
     token,
     isAuthenticated,
     isAdmin,
+    isPending,
     login,
     register,
     logout,

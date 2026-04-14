@@ -167,10 +167,10 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	if user.Status != "active" {
+	if user.Status == "suspended" || user.Status == "deleted" {
 		c.JSON(http.StatusForbidden, modelsProduct.ErrorResponse{
 			Error:   "forbidden",
-			Message: "Account is not active",
+			Message: "Account is " + user.Status,
 		})
 		return
 	}
@@ -212,11 +212,13 @@ func (h *Handler) Login(c *gin.Context) {
 		"token_type":    "Bearer",
 		"expires_in":    h.cfg.JWT.AccessTokenDuration * 60,
 		"user": gin.H{
-			"id":        user.ID,
-			"email":     user.Email,
-			"firstName": user.FirstName,
-			"lastName":  user.LastName,
-			"role":      user.Role.Name,
+			"id":            user.ID,
+			"email":         user.Email,
+			"firstName":     user.FirstName,
+			"lastName":      user.LastName,
+			"role":          user.Role.Name,
+			"status":        user.Status,
+			"emailVerified": user.EmailVerified,
 		},
 	})
 }
@@ -262,10 +264,10 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 	}
 
 	// R4-08: Reject refresh for suspended/deleted users
-	if user.Status != "active" {
+	if user.Status == "suspended" || user.Status == "deleted" {
 		c.JSON(http.StatusForbidden, modelsProduct.ErrorResponse{
 			Error:   "forbidden",
-			Message: "Account is not active",
+			Message: "Account is " + user.Status,
 		})
 		return
 	}
@@ -525,6 +527,7 @@ func (h *Handler) VerifyEmail(c *gin.Context) {
 	now := time.Now()
 	user.EmailVerified = true
 	user.EmailVerifiedAt = &now
+	user.Status = "active"
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {
 		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
 			Error:   "internal_error",

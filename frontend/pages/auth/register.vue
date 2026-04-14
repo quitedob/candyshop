@@ -77,7 +77,7 @@ import { reactive, ref } from 'vue'
 
 definePageMeta({
   layout: 'auth',
-  middleware: ['auth']
+  middleware: ['guest']
 })
 
 const { register } = useAuth()
@@ -102,9 +102,7 @@ const handleRegister = async () => {
   try {
     await register(form)
     success.value = true
-    setTimeout(() => {
-      navigateTo('/auth/login')
-    }, 1500)
+    // Do not auto-redirect — user must verify email first
   } catch (err: any) {
     error.value = err.message || 'Failed to register account'
   } finally {

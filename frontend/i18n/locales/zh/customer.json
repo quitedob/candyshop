@@ -46,6 +46,14 @@
       "placed_on": "下单时间",
       "no_orders": "您还没有下过订单。"
     },
+    "pending": {
+      "banner": "您的账户正在审核中。您可以浏览产品，审核通过后即可下单。",
+      "dashboard_title": "账户审核中",
+      "dashboard_message": "我们的团队正在审核您的B2B账户。审核通过后，您将可以下单采购。",
+      "step_browse": "浏览产品",
+      "step_review": "审核中",
+      "step_order": "开始下单"
+    },
     "profile": {
       "title": "账户资料",
       "subtitle": "个人信息和偏好设置。",
