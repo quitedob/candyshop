@@ -8,6 +8,7 @@ import (
 	product "candypro/api/internal/services/product"
 	search "candypro/api/internal/services/search"
 	trade "candypro/api/internal/services/trade"
+	user "candypro/api/internal/services/user"
 )
 
 type Services struct {
@@ -16,6 +17,7 @@ type Services struct {
 	Product *product.ProductService
 	Search  *search.SearchService
 	Trade   *trade.TradeService
+	User    *user.UserService
 }
 
 func New(repos *repositoryCommon.SystemRepositories, cfg *config.Config, searchSvc *search.SearchService) *Services {
@@ -29,5 +31,6 @@ func New(repos *repositoryCommon.SystemRepositories, cfg *config.Config, searchS
 		Product: product.NewProductService(repos.Product),
 		Search:  searchSvc,
 		Trade:   trade.NewTradeService(repos.Trade),
+		User:    user.NewUserService(repos.User),
 	}
 }

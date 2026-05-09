@@ -22,7 +22,7 @@
           <!-- Total Users -->
           <div class="relative bg-white pt-5 px-4 pb-12 sm:pt-6 sm:px-6 shadow rounded-lg overflow-hidden">
             <dt>
-              <div class="absolute bg-blue-500 rounded-md p-3">
+              <div class="absolute bg-orange-500 rounded-md p-3">
                 <Icon name="heroicons:users" class="h-6 w-6 text-white" />
               </div>
               <p class="ml-16 text-sm font-medium text-gray-500 truncate">{{ t('admin.dashboard.total_users') }}</p>
@@ -55,14 +55,14 @@
           <!-- Total Inquiries -->
           <div class="relative bg-white pt-5 px-4 pb-12 sm:pt-6 sm:px-6 shadow rounded-lg overflow-hidden">
             <dt>
-              <div class="absolute bg-indigo-500 rounded-md p-3">
+              <div class="absolute bg-orange-500 rounded-md p-3">
                 <Icon name="heroicons:inbox-in" class="h-6 w-6 text-white" />
               </div>
               <p class="ml-16 text-sm font-medium text-gray-500 truncate">{{ t('admin.dashboard.total_inquiries') }}</p>
             </dt>
             <dd class="ml-16 pb-6 flex items-baseline sm:pb-7">
               <p class="text-2xl font-semibold text-gray-900">{{ stats.totalInquiries }}</p>
-              <p class="ml-2 flex items-baseline text-sm font-semibold text-indigo-600">
+              <p class="ml-2 flex items-baseline text-sm font-semibold text-orange-600">
                 {{ stats.pendingInquiries }} {{ t('admin.dashboard.pending') }}
               </p>
             </dd>
@@ -97,7 +97,7 @@
           <!-- Active Customers -->
           <div class="relative bg-white pt-5 px-4 pb-12 sm:pt-6 sm:px-6 shadow rounded-lg overflow-hidden">
             <dt>
-              <div class="absolute bg-violet-500 rounded-md p-3">
+              <div class="absolute bg-orange-500 rounded-md p-3">
                 <Icon name="heroicons:user-group" class="h-6 w-6 text-white" />
               </div>
               <p class="ml-16 text-sm font-medium text-gray-500 truncate">{{ t('admin.dashboard.active_customers') }}</p>
@@ -242,7 +242,7 @@ const loadData = async () => {
   try {
     stats.value = await api.get<any>('/admin/dashboard/stats')
   } catch (err: any) {
-    error.value = err?.message || 'Failed to load dashboard data'
+    error.value = err?.message || t('admin.dashboard.error')
   } finally {
     pending.value = false
   }

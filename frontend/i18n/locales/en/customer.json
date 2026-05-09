@@ -5,6 +5,7 @@
     "nav": {
       "dashboard": "Dashboard",
       "products": "Products",
+      "logout": "Log out",
       "cart": "Order Requests",
       "orders": "My Orders",
       "inquiries": "My Inquiries",
@@ -16,7 +17,14 @@
       "shipments": "Shipment Tracking",
       "company": "Company Profile",
       "pricing": "My Pricing",
-      "profile": "Profile"
+      "profile": "Profile",
+      "help": "Help",
+      "resources": "Resources"
+    },
+    "a11y": {
+      "openMenu": "Open navigation menu",
+      "closeMenu": "Close navigation menu",
+      "cart": "Order requests and shopping cart"
     },
     "page_titles": {
       "dashboard": "Dashboard",
@@ -29,7 +37,9 @@
       "shipments": "Shipment Tracking",
       "company": "Company Profile",
       "pricing": "My Pricing",
-      "profile": "Account Profile"
+      "profile": "Account Profile",
+      "help": "Help Center",
+      "resources": "Resources"
     },
     "dashboard": {
       "loading": "Loading your dashboard...",
@@ -121,7 +131,20 @@
       "compliance_no_evidence": "No official-domain compliance evidence was recorded for this draft. Confirm only after manual compliance review.",
       "compliance_ack": "I have manually reviewed destination-country compliance requirements and accept responsibility to proceed.",
       "confirming": "Confirming...",
-      "confirm_order": "Confirm Order"
+      "confirm_order": "Confirm Order",
+      "detail_title": "Order #{id}",
+      "payment_status_unpaid": "Unpaid",
+      "payment_status_paid": "Paid",
+      "payment_status_refunded": "Refunded",
+      "pending_request_title": "Your order request has been received.",
+      "pending_request_body": "Our sales team will contact you within 24 hours to confirm order details, pricing, and delivery schedule.",
+      "error_compliance_ack": "Please confirm manual compliance review before proceeding.",
+      "error_select_file": "Please select a file to upload.",
+      "payment_method_bank": "Bank Transfer",
+      "payment_method_swift": "SWIFT Transfer",
+      "payment_method_other": "Other",
+      "spec_na": "N/A",
+      "date_na": "N/A"
     },
     "orders_new": {
       "ai_title": "AI Assisted Order Draft",
@@ -129,6 +152,9 @@
       "order_intention": "Order Intention",
       "order_intention_placeholder": "Example: Need halal fruit gummies for Saudi retail, private label, shelf life 12 months.",
       "target_country": "Target Country",
+      "target_country_placeholder": "e.g. Saudi Arabia",
+      "ai_no_products_matched": "No products matched your request.",
+      "ai_draft_generated": "AI draft generated.",
       "requested_quantity": "Requested Quantity",
       "budget": "Budget (Optional)",
       "currency": "Currency",
@@ -291,7 +317,15 @@
       "doc_status": "Status",
       "view": "View",
       "compliance_title": "Compliance & Certifications",
-      "compliance_pending": "Compliance checks will appear here once verified by AI."
+      "compliance_pending": "Compliance checks will appear here once verified by AI.",
+      "doc_pi": "Proforma Invoice",
+      "doc_ci": "Commercial Invoice",
+      "doc_bl": "Bill of Lading",
+      "doc_sc": "Sales Contract",
+      "doc_pl": "Packing List",
+      "doc_coo": "Certificate of Origin",
+      "doc_hc": "Health Certificate",
+      "agent_ai": "AI"
     },
     "notifications": {
       "title": "Notifications",
@@ -368,6 +402,30 @@
       "submit": "Submit Project",
       "project_created": "Project created successfully!"
     },
+    "help": {
+      "title": "Help Center",
+      "subtitle": "Quick links for ordering, compliance, and support.",
+      "link_cart": "Order request (cart)",
+      "desc_cart": "Submit SKU selections for sales review.",
+      "link_orders": "My orders",
+      "desc_orders": "Track status from pending to production and shipping.",
+      "link_inquiry": "New inquiry",
+      "desc_inquiry": "Start a custom OEM or bulk quote conversation.",
+      "link_faq": "FAQ (public site)",
+      "link_contact": "Contact us"
+    },
+    "resources": {
+      "title": "B2B Resources",
+      "subtitle": "Quality, OEM capabilities, case studies, and industry articles.",
+      "factory": "Factory & quality",
+      "factory_desc": "Production capacity and quality systems.",
+      "oem": "OEM solutions",
+      "oem_desc": "Private label and customization options.",
+      "cases": "Client case studies",
+      "cases_desc": "Reference projects by region and channel.",
+      "blog": "Blog & insights",
+      "blog_desc": "Regulatory and market trends for confectionery."
+    },
     "cart": {
       "title": "Order Request",
       "subtitle": "Review your selected products and submit your order request. Our team will contact you to confirm details.",
@@ -395,6 +453,11 @@
       "ai_assist": "AI Order Assist",
       "compliance_note": "All orders are subject to compliance verification for destination country.",
       "tbd": "TBD",
+      "default_category": "Confectionery",
+      "unit_price_per": "{currency} {price} / unit",
+      "units_count": "{count} units",
+      "badge_halal": "Halal",
+      "badge_oem": "OEM",
       "subtotal_label": "Subtotal",
       "tax_shipping_note": "Tax and shipping will be confirmed by the sales team in the proforma invoice.",
       "retry": "Retry",
@@ -406,7 +469,16 @@
       "cleared": "Cart cleared",
       "clear_error": "Failed to clear cart",
       "processing": "Processing...",
-      "checkout_error": "Checkout failed"
+      "checkout_error": "Checkout failed",
+      "checkout_success": "Order submitted successfully",
+      "checkout_review_title": "Review before continuing",
+      "checkout_review_subtitle": "Your order was created. Please confirm you have read the notices below.",
+      "checkout_destination": "Destination",
+      "checkout_compliance_section": "Compliance notices",
+      "checkout_inventory_section": "Pricing, inventory, and stock notices",
+      "checkout_review_stay": "Stay on cart",
+      "checkout_review_continue": "View order",
+      "checkout_review_order_created": "Order created. Cart refreshed — you can open your order from My Orders."
     },
     "invoices": {
       "no_invoices": "No invoices found.",
@@ -421,7 +493,8 @@
       "amount": "Total Amount",
       "due_date": "Due Date",
       "issued_date": "Issued Date",
-      "notes": "Notes"
+      "notes": "Notes",
+      "not_found": "Invoice not found."
     },
     "shipments": {
       "subtitle": "Track shipment status for all your active trades.",
@@ -476,6 +549,15 @@
       "sort_moq_low": "MOQ: Low to High",
       "sort_moq_high": "MOQ: High to Low",
       "featured": "Featured",
+      "halal_certified": "Halal Certified",
+      "moq_units": "{count} units",
+      "select_flavor": "Flavor",
+      "select_weight": "Weight / pack size",
+      "sku_label": "SKU:",
+      "flavors": "Flavors",
+      "shapes": "Shapes",
+      "oem_private_label_hint": "Custom private-label options available. Contact us for OEM pricing and requirements.",
+      "oem_short": "OEM",
       "unit_price": "Unit Price",
       "add_to_cart": "Add to Order",
       "place_order": "Place Order",

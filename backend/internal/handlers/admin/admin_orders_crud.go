@@ -1,9 +1,11 @@
 package admin
 
 import (
+	"errors"
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
 	"candypro/api/internal/utils"
+	orderSvc "candypro/api/internal/services/order"
 	"fmt"
 	"net/http"
 	"strings"
@@ -42,6 +44,8 @@ type adminUpdateOrderRequest struct {
 	Currency        *string                  `json:"currency"`
 	TrackingNumber  *string                  `json:"trackingNumber"`
 	ShippingAddress *modelsOrder.Address     `json:"shippingAddress"`
+	// FinancialAdjustmentReason 在订单已处于 confirmed+ 且修改金额/税/运费/币种/行时必填
+	FinancialAdjustmentReason string `json:"financialAdjustmentReason"`
 }
 
 // AdminCreateOrder creates a new order.
@@ -138,12 +142,12 @@ func (h *Handler) AdminCreateOrder(c *gin.Context) {
 	if req.ShippingAddress != nil {
 		order.ShippingAddress = *req.ShippingAddress
 	}
-	if requiresFullPrepaymentCountry(order.ShippingAddress.Country) &&
+	if h.requiresFullPrepaymentForOrder(c.Request.Context(), order.ShippingAddress.Country, order.UserID) &&
 		requiresPaidBeforeExecution(order.Status) &&
 		!isPaidInFull(order.PaymentStatus) {
 		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
 			Error:   "payment_policy_violation",
-			Message: "Full prepayment is required before moving India/Pakistan orders to confirmed/production/shipping stages",
+			Message: "Full prepayment is required for this order before it can be moved to execution stages",
 		})
 		return
 	}
@@ -155,7 +159,7 @@ func (h *Handler) AdminCreateOrder(c *gin.Context) {
 		createErr = h.services.Order.CreateOrder(c.Request.Context(), order)
 	}
 	if createErr != nil {
-		if strings.Contains(strings.ToLower(createErr.Error()), "insufficient stock") {
+		if errors.Is(createErr, modelsOrder.ErrInsufficientStock) {
 			c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
 				Error:   "inventory_violation",
 				Message: "Inventory changed while creating order. Please retry with latest stock.",
@@ -190,6 +194,7 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 	}
 	previousStatus := strings.ToLower(strings.TrimSpace(order.Status))
 	originalItems := append(modelsOrder.OrderItemArray{}, order.Items...)
+	origFin := orderSvc.SnapshotOrderFinancial(order)
 
 	var req adminUpdateOrderRequest
 	if !utils.BindJSONOrInvalidRequest(c, &req) {
@@ -281,15 +286,39 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 		}
 	}
 
-	if requiresFullPrepaymentCountry(order.ShippingAddress.Country) &&
+	if h.requiresFullPrepaymentForOrder(c.Request.Context(), order.ShippingAddress.Country, order.UserID) &&
 		requiresPaidBeforeExecution(order.Status) &&
 		!isPaidInFull(order.PaymentStatus) {
 		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
 			Error:   "payment_policy_violation",
-			Message: "Full prepayment is required before moving India/Pakistan orders to confirmed/production/shipping stages",
+			Message: "Full prepayment is required for this order before it can be moved to execution stages",
 		})
 		return
 	}
+
+	// Credit limit check for company NET terms
+	company := h.resolveUserCompany(c, order.UserID)
+	if company != nil && requiresPaidBeforeExecution(currentStatus) && !isPaidInFull(order.PaymentStatus) {
+		if !requiresPrepaymentByTerms(company.PaymentTerms) && company.CreditLimit > 0 && order.TotalAmount > company.CreditLimit {
+			c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
+				Error:   "credit_limit_exceeded",
+				Message: "Order amount exceeds the customer's credit limit",
+			})
+			return
+		}
+	}
+
+	newFin := orderSvc.SnapshotOrderFinancial(order)
+	if orderSvc.OrderFinancialChanged(origFin, newFin) && orderSvc.OrderStatusRequiresFinancialReason(previousStatus) {
+		if strings.TrimSpace(req.FinancialAdjustmentReason) == "" {
+			c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
+				Error:   "financial_adjustment_reason_required",
+				Message: "Changing order financial fields while the order is confirmed (or later) requires financialAdjustmentReason for audit.",
+			})
+			return
+		}
+	}
+
 	if previousStatus != "cancelled" && currentStatus == "cancelled" && order.StockReserved {
 		order.UpdatedAt = time.Now()
 		if err := h.services.Order.ReleaseOrderStock(c.Request.Context(), order); err != nil {
@@ -299,6 +328,11 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 			})
 			return
 		}
+		h.syncOrderFinancialSideEffects(c, order, origFin, newFin, previousStatus, req.FinancialAdjustmentReason)
+		if previousStatus != currentStatus && order.User != nil {
+			h.services.Order.SendOrderStatusEmail(order, order.User.Email,
+				order.User.FirstName+" "+order.User.LastName, currentStatus)
+		}
 		c.JSON(http.StatusOK, order)
 		return
 	}
@@ -306,7 +340,7 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 		stockAdjustment := calculateStockAdjustment(originalItems, order.Items)
 		order.UpdatedAt = time.Now()
 		if err := h.services.Order.UpdateOrderWithStockAdjustment(c.Request.Context(), order, stockAdjustment); err != nil {
-			if strings.Contains(strings.ToLower(err.Error()), "insufficient stock") {
+			if errors.Is(err, modelsOrder.ErrInsufficientStock) {
 				c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
 					Error:   "inventory_violation",
 					Message: "Inventory changed while updating order items. Please retry with latest stock.",
@@ -318,6 +352,11 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 				Message: "Failed to update order with inventory adjustment",
 			})
 			return
+		}
+		h.syncOrderFinancialSideEffects(c, order, origFin, newFin, previousStatus, req.FinancialAdjustmentReason)
+		if previousStatus != currentStatus && order.User != nil {
+			h.services.Order.SendOrderStatusEmail(order, order.User.Email,
+				order.User.FirstName+" "+order.User.LastName, currentStatus)
 		}
 		c.JSON(http.StatusOK, order)
 		return
@@ -343,7 +382,27 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 		return
 	}
 
+	h.syncOrderFinancialSideEffects(c, order, origFin, newFin, previousStatus, req.FinancialAdjustmentReason)
+	if previousStatus != currentStatus && order.User != nil {
+		h.services.Order.SendOrderStatusEmail(order, order.User.Email,
+			order.User.FirstName+" "+order.User.LastName, currentStatus)
+	}
 	c.JSON(http.StatusOK, order)
+}
+
+// syncOrderFinancialSideEffects 订单金额变更后同步贸易主单并写审计
+func (h *Handler) syncOrderFinancialSideEffects(c *gin.Context, order *modelsOrder.Order, origFin, newFin orderSvc.OrderFinancialSnapshot, previousStatus, reason string) {
+	if h.services == nil || order == nil {
+		return
+	}
+	if !orderSvc.OrderFinancialChanged(origFin, newFin) {
+		return
+	}
+	_ = h.services.Trade.SyncTradeTotalFromOrder(c.Request.Context(), order)
+	if orderSvc.OrderStatusRequiresFinancialReason(previousStatus) && strings.TrimSpace(reason) != "" {
+		actor := adminActorID(c)
+		_ = h.services.Invoice.RecordOrderFinancialAdjustment(c.Request.Context(), order.ID, actor, reason, origFin, newFin)
+	}
 }
 
 // AdminDeleteOrder deletes an order.

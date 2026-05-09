@@ -3,6 +3,10 @@ package product
 import (
 	modelsProduct "candypro/api/internal/models/product"
 	"context"
+	"encoding/json"
+	"strings"
+
+	ordersvc "candypro/api/internal/services/order"
 )
 
 type productRepository interface {
@@ -16,6 +20,19 @@ type productRepository interface {
 	Update(ctx context.Context, product *modelsProduct.Product) error
 	Delete(ctx context.Context, id string) error
 	FindVariantsByProductID(ctx context.Context, productID string) ([]modelsProduct.ProductVariant, error)
+	FindMarketProfilesForProducts(ctx context.Context, productIDs []string, marketCode string) ([]modelsProduct.ProductMarketProfile, error)
+	UpsertProductMarketProfile(ctx context.Context, row *modelsProduct.ProductMarketProfile) error
+	FindMarketCostStacksForProduct(ctx context.Context, productID string) ([]modelsProduct.ProductMarketCostStack, error)
+	UpsertProductMarketCostStack(ctx context.Context, row *modelsProduct.ProductMarketCostStack) error
+	ListWarehouses(ctx context.Context) ([]modelsProduct.Warehouse, error)
+	SaveWarehouse(ctx context.Context, w *modelsProduct.Warehouse) error
+	UpsertWarehouseStock(ctx context.Context, row *modelsProduct.WarehouseStock) error
+	SaveOEMProjectInventoryHold(ctx context.Context, row *modelsProduct.OEMProjectInventoryHold) error
+	ListOEMInventoryHoldsByProject(ctx context.Context, projectID string) ([]modelsProduct.OEMProjectInventoryHold, error)
+	SumActiveOEMHoldsForProduct(ctx context.Context, productID string) (int64, error)
+	ListChannelInventoriesForProduct(ctx context.Context, productID string) ([]modelsProduct.ChannelInventory, error)
+	FindChannelInventory(ctx context.Context, productID, channelCode string) (*modelsProduct.ChannelInventory, error)
+	UpsertChannelInventory(ctx context.Context, row *modelsProduct.ChannelInventory) error
 }
 
 // ProductService handles product business logic.
@@ -132,4 +149,92 @@ func (s *ProductService) DeleteProduct(ctx context.Context, id string) error {
 // GetProductVariants returns active SKU variants for a product.
 func (s *ProductService) GetProductVariants(ctx context.Context, productID string) ([]modelsProduct.ProductVariant, error) {
 	return s.repo.FindVariantsByProductID(ctx, productID)
+}
+
+// ValidateComplianceWithMarketProfiles 目的国合规：基线规则 + 可配置市场画像
+func (s *ProductService) ValidateComplianceWithMarketProfiles(ctx context.Context, country string, products []modelsProduct.Product) ordersvc.ComplianceValidationResult {
+	ids := make([]string, 0, len(products))
+	for _, p := range products {
+		if id := strings.TrimSpace(p.ID); id != "" {
+			ids = append(ids, id)
+		}
+	}
+	mc := ordersvc.ComplianceProfileMarketCode(country)
+	profiles, err := s.repo.FindMarketProfilesForProducts(ctx, ids, mc)
+	if err != nil || len(profiles) == 0 {
+		return ordersvc.ValidateCountryComplianceRules(country, products)
+	}
+	return ordersvc.ValidateCountryComplianceRulesWithProfiles(country, products, profiles)
+}
+
+// ListWarehouses 仓库列表（跨境）
+func (s *ProductService) ListWarehouses(ctx context.Context) ([]modelsProduct.Warehouse, error) {
+	return s.repo.ListWarehouses(ctx)
+}
+
+// SaveWarehouse 保存仓库
+func (s *ProductService) SaveWarehouse(ctx context.Context, w *modelsProduct.Warehouse) error {
+	return s.repo.SaveWarehouse(ctx, w)
+}
+
+// UpsertWarehouseStock 写入仓库存
+func (s *ProductService) UpsertWarehouseStock(ctx context.Context, row *modelsProduct.WarehouseStock) error {
+	return s.repo.UpsertWarehouseStock(ctx, row)
+}
+
+// FindMarketProfilesForProducts 查询市场画像
+func (s *ProductService) FindMarketProfilesForProducts(ctx context.Context, productIDs []string, marketCode string) ([]modelsProduct.ProductMarketProfile, error) {
+	return s.repo.FindMarketProfilesForProducts(ctx, productIDs, marketCode)
+}
+
+// UpsertProductMarketProfile 保存市场画像
+func (s *ProductService) UpsertProductMarketProfile(ctx context.Context, row *modelsProduct.ProductMarketProfile) error {
+	return s.repo.UpsertProductMarketProfile(ctx, row)
+}
+
+// FindMarketCostStacksForProduct 目的国成本栈
+func (s *ProductService) FindMarketCostStacksForProduct(ctx context.Context, productID string) ([]modelsProduct.ProductMarketCostStack, error) {
+	return s.repo.FindMarketCostStacksForProduct(ctx, productID)
+}
+
+// UpsertProductMarketCostStack 保存成本栈
+func (s *ProductService) UpsertProductMarketCostStack(ctx context.Context, row *modelsProduct.ProductMarketCostStack) error {
+	return s.repo.UpsertProductMarketCostStack(ctx, row)
+}
+
+// SaveOEMProjectInventoryHold OEM 成品预留
+func (s *ProductService) SaveOEMProjectInventoryHold(ctx context.Context, row *modelsProduct.OEMProjectInventoryHold) error {
+	return s.repo.SaveOEMProjectInventoryHold(ctx, row)
+}
+
+// ListOEMInventoryHoldsByProject 列出项目预留
+func (s *ProductService) ListOEMInventoryHoldsByProject(ctx context.Context, projectID string) ([]modelsProduct.OEMProjectInventoryHold, error) {
+	return s.repo.ListOEMInventoryHoldsByProject(ctx, projectID)
+}
+
+// BuildPricingCostContextJSON 供 AI 报价注入的成本栈摘要（只读）
+func (s *ProductService) BuildPricingCostContextJSON(ctx context.Context, productID, marketCode string) (string, error) {
+	stacks, err := s.repo.FindMarketCostStacksForProduct(ctx, productID)
+	if err != nil {
+		return "", err
+	}
+	mc := strings.ToUpper(strings.TrimSpace(marketCode))
+	var pick *modelsProduct.ProductMarketCostStack
+	for i := range stacks {
+		if strings.ToUpper(strings.TrimSpace(stacks[i].MarketCode)) == mc {
+			pick = &stacks[i]
+			break
+		}
+	}
+	if pick == nil && len(stacks) > 0 {
+		pick = &stacks[0]
+	}
+	if pick == nil {
+		return "{}", nil
+	}
+	b, err := json.Marshal(pick)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }

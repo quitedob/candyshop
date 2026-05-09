@@ -14,9 +14,11 @@ import (
 // --- Trade Document CRUD (TradeDocument envelope) ---
 
 type adminCreateTradeDocumentRequest struct {
-	Type      string `json:"type" binding:"required"`
-	DocNumber string `json:"docNumber"`
-	Status    string `json:"status"`
+	Type            string  `json:"type" binding:"required"`
+	DocNumber       string  `json:"docNumber"`
+	Status          string  `json:"status"`
+	SourceOrderID   *string `json:"sourceOrderId"`
+	LineageSource   string  `json:"lineageSource"`
 }
 
 // AdminCreateTradeDocument creates a new trade document for a transaction.
@@ -49,6 +51,16 @@ func (h *Handler) AdminCreateTradeDocument(c *gin.Context) {
 	}
 	if doc.Status == "" {
 		doc.Status = modelsTrade.TradeStatusDraft
+	}
+	if req.SourceOrderID != nil {
+		if so := strings.TrimSpace(*req.SourceOrderID); so != "" {
+			doc.SourceOrderID = &so
+		}
+	}
+	if ls := strings.TrimSpace(req.LineageSource); ls != "" {
+		doc.LineageSource = ls
+	} else if doc.SourceOrderID != nil {
+		doc.LineageSource = "order_derived"
 	}
 
 	if err := h.services.Trade.AddDocument(c.Request.Context(), doc); err != nil {

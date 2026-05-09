@@ -17,7 +17,7 @@
           @click="switchTab(tab.key)"
           :class="[
             activeTab === tab.key
-              ? 'border-blue-500 text-blue-600'
+              ? 'border-orange-500 text-orange-600'
               : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
             'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium'
           ]"
@@ -55,7 +55,7 @@
                 :id="`setting-${setting.key}`"
                 v-model="setting.editValue"
                 type="text"
-                class="block w-full max-w-lg rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="block w-full max-w-lg rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 :disabled="savingKey === setting.key"
               />
             </div>
@@ -65,7 +65,7 @@
               type="button"
               @click="saveSetting(setting)"
               :disabled="savingKey === setting.key || setting.editValue === setting.value"
-              class="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              class="inline-flex items-center gap-1.5 px-3 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Icon v-if="savingKey === setting.key" name="heroicons:arrow-path" class="h-4 w-4 animate-spin" />
               <Icon v-else name="heroicons:check" class="h-4 w-4" />
@@ -127,7 +127,7 @@ const fetchSettings = async () => {
       category: s.category || ''
     }))
   } catch (err: any) {
-    loadError.value = err?.message || 'Failed to fetch settings'
+    loadError.value = err?.message || t('errors.api.load_failed')
   } finally {
     loading.value = false
   }
@@ -154,7 +154,7 @@ const saveSetting = async (setting: Setting) => {
     savedKeys[setting.key] = true
     setTimeout(() => { savedKeys[setting.key] = false }, 3000)
   } catch (err: any) {
-    saveErrors[setting.key] = err?.message || 'Failed to save setting'
+    saveErrors[setting.key] = err?.message || t('errors.api.save_failed')
   } finally {
     savingKey.value = null
   }

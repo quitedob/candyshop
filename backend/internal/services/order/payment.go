@@ -2,7 +2,10 @@ package order
 
 import (
 	modelsOrder "candypro/api/internal/models/order"
+	orderrepo "candypro/api/internal/repository/order"
+	"candypro/api/internal/utils"
 	"context"
+	"errors"
 	"fmt"
 )
 
@@ -12,6 +15,7 @@ type paymentRepository interface {
 	Create(ctx context.Context, payment *modelsOrder.Payment) error
 	Update(ctx context.Context, payment *modelsOrder.Payment) error
 	ConfirmPayment(ctx context.Context, id, confirmedBy string) error
+	MarkPaymentRefunded(ctx context.Context, id string) error
 	UpdateStatus(ctx context.Context, id, status string) error
 	CountByStatus(ctx context.Context, status string) (int64, error)
 	StatusBreakdown(ctx context.Context) (map[string]int64, error)
@@ -57,6 +61,9 @@ func (s *PaymentService) ConfirmPayment(ctx context.Context, paymentID, confirme
 	}
 
 	if err := s.repo.ConfirmPayment(ctx, paymentID, confirmedBy); err != nil {
+		if errors.Is(err, orderrepo.ErrPaymentStateMismatch) {
+			return fmt.Errorf("payment cannot be confirmed: not pending or already processed")
+		}
 		return err
 	}
 
@@ -74,7 +81,10 @@ func (s *PaymentService) RefundPayment(ctx context.Context, paymentID string) er
 		return fmt.Errorf("only confirmed payments can be refunded: current status is '%s'", payment.Status)
 	}
 
-	if err := s.repo.UpdateStatus(ctx, paymentID, "refunded"); err != nil {
+	if err := s.repo.MarkPaymentRefunded(ctx, paymentID); err != nil {
+		if errors.Is(err, orderrepo.ErrPaymentStateMismatch) {
+			return fmt.Errorf("payment cannot be refunded: not in confirmed state or concurrent update")
+		}
 		return err
 	}
 
@@ -107,7 +117,7 @@ func (s *PaymentService) updateOrderPaymentStatus(ctx context.Context, orderID s
 	newStatus := "unpaid"
 	if hasRefunded && confirmedTotal == 0 {
 		newStatus = "refunded"
-	} else if confirmedTotal >= order.TotalAmount {
+	} else if utils.MoneyCoversTotal(confirmedTotal, order.TotalAmount) {
 		newStatus = "paid"
 	} else if confirmedTotal > 0 {
 		newStatus = "partial"

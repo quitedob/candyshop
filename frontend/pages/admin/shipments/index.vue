@@ -10,7 +10,7 @@
           <Icon name="heroicons:arrow-down-tray" class="h-4 w-4" />
           {{ t('admin.shipments.export') }}
         </button>
-        <button @click="openCreateModal" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+        <button @click="openCreateModal" class="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors">
           <Icon name="heroicons:plus" class="h-4 w-4" />
           {{ t('admin.shipments.new_shipment') }}
         </button>
@@ -38,18 +38,18 @@
         <div class="flex-1 min-w-[200px]">
           <div class="relative">
             <Icon name="heroicons:magnifying-glass" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input v-model="searchQuery" type="text" :placeholder="t('admin.shipments.search')" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input v-model="searchQuery" type="text" :placeholder="t('admin.shipments.search')" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </div>
         </div>
-        <select v-model="statusFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <select v-model="statusFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
           <option value="all">{{ t('admin.shipments.filter_all') }}</option>
           <option value="pending">{{ t('admin.shipments.status_pending') }}</option>
           <option value="in_transit">{{ t('admin.shipments.status_in_transit') }}</option>
           <option value="delivered">{{ t('admin.shipments.status_delivered') }}</option>
           <option value="exception">{{ t('admin.shipments.status_exception') }}</option>
         </select>
-        <input v-model="dateFrom" type="date" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-        <input v-model="dateTo" type="date" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <input v-model="dateFrom" type="date" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        <input v-model="dateTo" type="date" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
       </div>
     </div>
 
@@ -86,7 +86,7 @@
                 </div>
               </td>
               <td class="px-6 py-4 text-sm">
-                <NuxtLink :to="`/admin/orders/${shipment.orderId}`" class="text-blue-600 hover:text-blue-900">
+                <NuxtLink :to="localePath(`/admin/orders/${shipment.orderId}`)" class="text-orange-600 hover:text-orange-900">
                   #{{ shipment.orderNumber || shipment.orderId?.substring(0, 8) }}
                 </NuxtLink>
               </td>
@@ -105,7 +105,7 @@
                 </span>
               </td>
               <td class="px-6 py-4 text-sm">
-                <button @click="viewDetails(shipment)" class="text-blue-600 hover:text-blue-900 mr-3">{{ t('admin.shipments.view') }}</button>
+                <button @click="viewDetails(shipment)" class="text-orange-600 hover:text-orange-900 mr-3">{{ t('admin.shipments.view') }}</button>
                 <button @click="openEditModal(shipment)" class="text-gray-600 hover:text-gray-900">{{ t('admin.shipments.edit') }}</button>
               </td>
             </tr>
@@ -134,14 +134,14 @@
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="closeModal"></div>
         <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:max-w-2xl sm:align-middle">
-          <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+          <div class="bg-gradient-to-r from-orange-500 to-amber-600 px-6 py-4">
             <h3 class="text-lg font-semibold text-white">{{ editingId ? t('admin.shipments.edit_shipment') : t('admin.shipments.create_shipment') }}</h3>
           </div>
           <form @submit.prevent="saveShipment" class="p-6 space-y-4">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.order') }}</label>
-                <select v-model="form.orderId" required class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select v-model="form.orderId" required class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
                   <option value="">{{ t('admin.shipments.select_order') }}</option>
                   <option v-for="order in orders" :key="order.id" :value="order.id">
                     #{{ order.orderNumber || order.id.substring(0, 8) }} - {{ order.user?.firstName }} {{ order.user?.lastName }}
@@ -150,7 +150,7 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.carrier') }}</label>
-                <select v-model="form.carrier" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select v-model="form.carrier" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
                   <option value="">Standard</option>
                   <option value="dhl">DHL</option>
                   <option value="fedex">FedEx</option>
@@ -163,11 +163,11 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.tracking_number') }}</label>
-                <input v-model="form.trackingNumber" type="text" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input v-model="form.trackingNumber" type="text" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.status') }}</label>
-                <select v-model="form.status" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select v-model="form.status" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
                   <option value="pending">Pending</option>
                   <option value="in_transit">In Transit</option>
                   <option value="delivered">Delivered</option>
@@ -176,23 +176,23 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.estimated_delivery') }}</label>
-                <input v-model="form.estimatedDelivery" type="date" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input v-model="form.estimatedDelivery" type="date" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.actual_delivery') }}</label>
-                <input v-model="form.actualDelivery" type="date" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input v-model="form.actualDelivery" type="date" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.notes') }}</label>
-              <textarea v-model="form.notes" rows="2" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+              <textarea v-model="form.notes" rows="2" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
             </div>
             <div v-if="formError" class="text-sm text-red-600">{{ formError }}</div>
             <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
               <button type="button" @click="closeModal" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100">
                 {{ t('admin.shipments.cancel') }}
               </button>
-              <button type="submit" :disabled="saving" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
+              <button type="submit" :disabled="saving" class="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50 flex items-center gap-2">
                 <Icon v-if="saving" name="heroicons:arrow-path" class="h-4 w-4 animate-spin" />
                 {{ t('admin.shipments.save') }}
               </button>
@@ -224,7 +224,7 @@
                 <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
                 <div class="space-y-6">
                   <div v-for="(event, idx) in selectedShipment.events || []" :key="idx" class="relative flex items-start gap-4 pl-10">
-                    <div class="absolute left-2.5 w-3 h-3 rounded-full bg-blue-600 border-2 border-white"></div>
+                    <div class="absolute left-2.5 w-3 h-3 rounded-full bg-orange-600 border-2 border-white"></div>
                     <div>
                       <p class="font-medium text-gray-900">{{ event.status }}</p>
                       <p class="text-sm text-gray-500">{{ event.location }}</p>
@@ -248,6 +248,7 @@ definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
+const localePath = useLocalePath()
 
 const shipments = ref<any[]>([])
 const orders = ref<any[]>([])
@@ -280,9 +281,9 @@ const statsCards = computed(() => {
   const inTransit = shipments.value.filter(s => s.status === 'in_transit').length
   const delivered = shipments.value.filter(s => s.status === 'delivered').length
   return [
-    { label: t('admin.shipments.total'), value: all, icon: 'heroicons:truck', color: 'text-blue-600', bgColor: 'bg-blue-50' },
+    { label: t('admin.shipments.total'), value: all, icon: 'heroicons:truck', color: 'text-orange-600', bgColor: 'bg-orange-50' },
     { label: t('admin.shipments.pending'), value: pend, icon: 'heroicons:clock', color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
-    { label: t('admin.shipments.in_transit'), value: inTransit, icon: 'heroicons:arrows-right-left', color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
+    { label: t('admin.shipments.in_transit'), value: inTransit, icon: 'heroicons:arrows-right-left', color: 'text-orange-600', bgColor: 'bg-amber-50' },
     { label: t('admin.shipments.delivered'), value: delivered, icon: 'heroicons:check-circle', color: 'text-emerald-600', bgColor: 'bg-emerald-50' }
   ]
 })
@@ -302,7 +303,7 @@ const fetchShipments = async () => {
     shipments.value = res.data || []
     pagination.value = res.pagination
   } catch (err: any) {
-    error.value = err?.message || 'Failed to fetch shipments'
+    error.value = err?.message || t('errors.api.load_failed')
   } finally { pending.value = false }
 }
 
@@ -343,7 +344,7 @@ const saveShipment = async () => {
     }
     closeModal(); await fetchShipments()
   } catch (err: any) {
-    formError.value = err?.message || 'Failed to save shipment'
+    formError.value = err?.message || t('errors.api.save_failed')
   } finally { saving.value = false }
 }
 
@@ -366,7 +367,7 @@ const exportShipments = () => {
 
 const statusBadgeClass = (status: string) => {
   if (status === 'pending') return 'bg-yellow-100 text-yellow-800'
-  if (status === 'in_transit') return 'bg-indigo-100 text-indigo-800'
+  if (status === 'in_transit') return 'bg-amber-100 text-amber-800'
   if (status === 'delivered') return 'bg-emerald-100 text-emerald-800'
   if (status === 'exception') return 'bg-red-100 text-red-800'
   return 'bg-gray-100 text-gray-800'

@@ -222,7 +222,7 @@ export const useApi = () => {
     } catch (err: unknown) {
       const error = err as { statusCode?: number; data?: { message?: string } }
       const apiError: ApiError = {
-        message: t('errors.default') || 'An error occurred',
+        message: t('errors.default'),
         statusCode: error?.statusCode
       }
 
@@ -402,7 +402,7 @@ export const useApi = () => {
     } catch (err: unknown) {
       const error = err as { statusCode?: number; data?: { message?: string } }
       const apiError: ApiError = {
-        message: t('form.error') || 'Submission failed',
+        message: t('form.error'),
         statusCode: error?.statusCode
       }
 

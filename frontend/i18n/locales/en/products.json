@@ -1,5 +1,7 @@
 {
   "product": {
+    "price_from": "From",
+    "price_per_unit": "/pc",
     "categories_title": "Browse Categories",
     "categories": {
       "gummy_candy": "Gummy Candy",
@@ -36,12 +38,21 @@
     "flavors": "Flavors",
     "shapes": "Shapes",
     "certifications": "Certifications",
+    "shelf_life": "Shelf Life",
+    "storage": "Storage",
     "applications": "Applications",
     "related_products": "Related Products",
     "no_products": "No products found",
     "try_different_filters": "Try adjusting your filters or browse other categories",
     "register_to_order": "Register to Order",
-    "pending_approval": "Pending Approval"
+    "pending_approval": "Pending Approval",
+    "category_placeholder_lead": "2–4 weeks",
+    "category_placeholder_capacity": "10–20 tons",
+    "category_placeholder_packaging": "Bag, jar, gift box",
+    "category_placeholder_moq": "1,000 pcs",
+    "faq_moq_answer_default": "Our minimum order quantity starts from 1,000 pieces for standard items.",
+    "faq_lead_answer_default": "Standard orders take 2–3 weeks; custom OEM orders typically take 4–6 weeks.",
+    "faq_cert_answer": "We are HACCP, ISO 22000, BRC Grade A, and Halal certified."
   },
   "filters": {
     "title": "Filter Products",

@@ -36,6 +36,18 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 	group.GET("/oem-projects", h.UserPortal.CustomerGetOEMProjects)
 	group.GET("/oem-projects/:id", h.UserPortal.CustomerGetOEMProject)
 
+	// 下单/购物车写入：在 handler 内校验 active 或 KYB_BYPASS_MAX_ORDER_USD 小额免审
+	group.POST("/orders", h.UserPortal.CustomerCreateOrder)
+	group.POST("/orders/ai-assist", h.System.CustomerAIAssistOrder)
+	group.POST("/orders/:id/confirm", h.UserPortal.CustomerConfirmOrder)
+	group.POST("/orders/:id/cancel", h.UserPortal.CustomerCancelOrder)
+	group.GET("/orders/:id/payments/:paymentId/file", h.UserPortal.CustomerDownloadPaymentProofFile)
+	group.POST("/cart/items", h.UserPortal.CustomerAddToCart)
+	group.PUT("/cart/items/:itemId", h.UserPortal.CustomerUpdateCartItem)
+	group.DELETE("/cart/items/:itemId", h.UserPortal.CustomerRemoveCartItem)
+	group.DELETE("/cart", h.UserPortal.CustomerClearCart)
+	group.POST("/cart/checkout", h.UserPortal.CustomerCheckoutCart)
+
 	// Invoices (read-only for customer)
 	group.GET("/invoices", h.UserPortal.CustomerGetInvoices)
 	group.GET("/invoices/:id", h.UserPortal.CustomerGetInvoice)
@@ -43,6 +55,7 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 	// Company profile
 	group.GET("/company", h.UserPortal.CustomerGetCompany)
 	group.PUT("/company", h.UserPortal.CustomerUpdateCompany)
+	group.GET("/company/kyb-document-file", h.UserPortal.CustomerDownloadKYBDocumentFile)
 
 	// Pricing
 	group.GET("/price-list", h.UserPortal.CustomerGetMyPriceList)
@@ -60,27 +73,18 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 
 	// Shipment tracking (read-only for customer)
 	group.GET("/trades/:id/shipments", h.UserPortal.CustomerGetTradeShipments)
+	group.GET("/trades/:id/shipments/:shipmentId/timeline", h.UserPortal.CustomerGetShipmentTimeline)
+	group.GET("/trades/:id/timeline", h.UserPortal.CustomerGetTradeTimeline)
 
 	// Write operations require active user status (KYB gate)
 	activeGuard := group.Group("")
 	activeGuard.Use(middleware.RequireActiveUser(db))
 	{
-		activeGuard.POST("/orders", h.UserPortal.CustomerCreateOrder)
-		activeGuard.POST("/orders/ai-assist", h.System.CustomerAIAssistOrder)
-		activeGuard.POST("/orders/:id/confirm", h.UserPortal.CustomerConfirmOrder)
-		activeGuard.POST("/orders/:id/cancel", h.UserPortal.CustomerCancelOrder)
 		activeGuard.POST("/orders/:id/payments", h.UserPortal.CustomerUploadPaymentProof)
 		activeGuard.POST("/inquiries", h.UserPortal.CustomerCreateInquiry)
 		activeGuard.PUT("/inquiries/:id", h.UserPortal.CustomerUpdateInquiry)
 		activeGuard.POST("/trades", h.UserPortal.CustomerCreateTradeTransaction)
 		activeGuard.POST("/oem-projects", h.UserPortal.CustomerCreateOEMProject)
-
-		// Cart write operations
-		activeGuard.POST("/cart/items", h.UserPortal.CustomerAddToCart)
-		activeGuard.PUT("/cart/items/:itemId", h.UserPortal.CustomerUpdateCartItem)
-		activeGuard.DELETE("/cart/items/:itemId", h.UserPortal.CustomerRemoveCartItem)
-		activeGuard.DELETE("/cart", h.UserPortal.CustomerClearCart)
-		activeGuard.POST("/cart/checkout", h.UserPortal.CustomerCheckoutCart)
 
 		// KYB document upload
 		activeGuard.POST("/company/kyb-document", h.UserPortal.CustomerUploadKYBDocument)

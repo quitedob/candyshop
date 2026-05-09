@@ -46,7 +46,7 @@
 
           <!-- Content -->
           <div class="article__content">
-            <div class="prose">{{ post.content }}</div>
+            <div class="prose" v-html="renderedContent"></div>
           </div>
 
           <!-- Tags -->
@@ -162,6 +162,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { marked } from 'marked'
 import { useI18n, useLocalePath } from '#i18n'
 
 const { t } = useI18n()
@@ -184,6 +185,12 @@ const { data: relatedData } = await useAsyncData(
   async () => await getRelatedPosts(slug.value, 3),
   { watch: [slug] }
 )
+
+const renderedContent = computed(() => {
+  const raw = post.value?.content || ''
+  if (!raw) return ''
+  try { return marked.parse(raw) } catch { return raw }
+})
 
 const post = computed(() => {
   return postData.value || {

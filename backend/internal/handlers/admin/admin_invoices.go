@@ -1,8 +1,12 @@
 package admin
 
 import (
+	"errors"
+	"fmt"
+
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
+	orderSvc "candypro/api/internal/services/order"
 	"candypro/api/internal/utils"
 	"net/http"
 	"strings"
@@ -57,6 +61,7 @@ func (h *Handler) AdminGetInvoice(c *gin.Context) {
 
 type adminCreateInvoiceRequest struct {
 	OrderID   string   `json:"orderId"`
+	TradeID   *uint    `json:"tradeId"`
 	Type      string   `json:"type"`
 	Amount    float64  `json:"amount" binding:"required"`
 	TaxAmount float64  `json:"taxAmount"`
@@ -77,8 +82,14 @@ func (h *Handler) AdminCreateInvoice(c *gin.Context) {
 		return
 	}
 
+	if req.Amount < 0 || req.TaxAmount < 0 {
+		utils.InvalidRequestResponse(c, "amount and taxAmount cannot be negative")
+		return
+	}
+
 	invoice := &modelsOrder.Invoice{
 		OrderID:   req.OrderID,
+		TradeID:   req.TradeID,
 		Type:      req.Type,
 		Amount:    req.Amount,
 		TaxAmount: req.TaxAmount,
@@ -87,9 +98,15 @@ func (h *Handler) AdminCreateInvoice(c *gin.Context) {
 		Items:     req.Items,
 	}
 	if req.DueDate != nil {
-		if t, err := time.Parse(time.RFC3339, *req.DueDate); err == nil {
-			invoice.DueDate = &t
+		parsed, parseErr := parseOptionalNullableTime(*req.DueDate, "dueDate")
+		if parseErr != nil {
+			c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
+				Error:   "invalid_request",
+				Message: parseErr.Error(),
+			})
+			return
 		}
+		invoice.DueDate = parsed
 	}
 
 	if err := h.services.Invoice.CreateInvoice(c.Request.Context(), invoice); err != nil {
@@ -113,44 +130,77 @@ func (h *Handler) AdminUpdateInvoice(c *gin.Context) {
 	}
 
 	var req struct {
-		Amount    *float64 `json:"amount"`
-		TaxAmount *float64 `json:"taxAmount"`
-		Currency  string   `json:"currency"`
-		Notes     string   `json:"notes"`
-		Items     string   `json:"items"`
-		DueDate   *string  `json:"dueDate"`
+		Amount           *float64 `json:"amount"`
+		TaxAmount        *float64 `json:"taxAmount"`
+		Currency         string   `json:"currency"`
+		Notes            string   `json:"notes"`
+		Items            string   `json:"items"`
+		DueDate          *string  `json:"dueDate"`
+		AdjustmentReason string   `json:"adjustmentReason"`
 	}
 	if !utils.BindJSONOrInvalidRequest(c, &req) {
 		return
 	}
 
-	// N-12: Only update fields that are explicitly provided (use pointers)
-	if req.Amount != nil && *req.Amount > 0 {
-		invoice.Amount = *req.Amount
+	before := *invoice
+	after := *invoice
+
+	// Update amount: allow any non-negative value including 0
+	if req.Amount != nil {
+		if *req.Amount < 0 {
+			utils.InvalidRequestResponse(c, "amount cannot be negative")
+			return
+		}
+		after.Amount = *req.Amount
 	}
 	if req.TaxAmount != nil {
-		invoice.TaxAmount = *req.TaxAmount
+		if *req.TaxAmount < 0 {
+			utils.InvalidRequestResponse(c, "taxAmount cannot be negative")
+			return
+		}
+		after.TaxAmount = *req.TaxAmount
 	}
 	if req.Currency != "" {
-		invoice.Currency = req.Currency
+		after.Currency = req.Currency
 	}
-	if req.Notes != "" {
-		invoice.Notes = req.Notes
+	// Notes/Items: empty string = clear (intentional)
+	if req.Notes != "" || (req.Notes == "" && len(c.Request.URL.Query()) > 0) {
+		after.Notes = req.Notes
 	}
 	if req.Items != "" {
-		invoice.Items = req.Items
+		after.Items = req.Items
 	}
+	// DueDate: omitted = unchanged, "" = clear, RFC3339 = set, invalid = 400
 	if req.DueDate != nil {
-		if t, parseErr := time.Parse(time.RFC3339, *req.DueDate); parseErr == nil {
-			invoice.DueDate = &t
+		parsed, parseErr := parseOptionalNullableTime(*req.DueDate, "dueDate")
+		if parseErr != nil {
+			c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
+				Error:   "invalid_request",
+				Message: parseErr.Error(),
+			})
+			return
 		}
+		after.DueDate = parsed
 	}
 
-	if err := h.services.Invoice.UpdateInvoice(c.Request.Context(), invoice); err != nil {
+	actor := ""
+	if v, ok := c.Get("userID"); ok {
+		if s, ok := v.(string); ok {
+			actor = strings.TrimSpace(s)
+		}
+	}
+	if err := h.services.Invoice.ValidateAndPersistInvoiceUpdate(c.Request.Context(), &before, &after, actor, strings.TrimSpace(req.AdjustmentReason)); err != nil {
+		if errors.Is(err, orderSvc.ErrAdjustmentReasonRequired) {
+			c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
+				Error:   "adjustment_reason_required",
+				Message: err.Error(),
+			})
+			return
+		}
 		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to update invoice")
 		return
 	}
-	c.JSON(http.StatusOK, invoice)
+	c.JSON(http.StatusOK, &after)
 }
 
 // AdminSendInvoice marks an invoice as sent.
@@ -194,4 +244,19 @@ func (h *Handler) AdminGetInvoiceStats(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, stats)
+}
+
+// parseOptionalNullableTime handles the tri-state date semantics:
+//   - empty string → nil (clear the field)
+//   - valid RFC3339 → parsed time
+//   - invalid non-empty string → error
+func parseOptionalNullableTime(raw string, fieldName string) (*time.Time, error) {
+	if strings.TrimSpace(raw) == "" {
+		return nil, nil
+	}
+	t, err := time.Parse(time.RFC3339, raw)
+	if err != nil {
+		return nil, fmt.Errorf("%s must be a valid RFC3339 timestamp or empty string, got: %q", fieldName, raw)
+	}
+	return &t, nil
 }

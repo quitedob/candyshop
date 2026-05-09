@@ -1,73 +1,73 @@
 <template>
-  <div class="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-    <div class="sm:mx-auto sm:w-full sm:max-w-md">
-      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-        {{ $t('auth.register_title') }}
-      </h2>
-      <p class="mt-2 text-center text-sm text-gray-600">
-        {{ $t('auth.register_already') }}
-        <NuxtLink to="/auth/login" class="font-medium text-blue-600 hover:text-blue-500">
-          {{ $t('auth.register_sign_in') }}
+  <div class="auth-page">
+    <div class="auth-page__container auth-page__container--wide">
+      <div class="auth-page__header">
+        <NuxtLink :to="localePath('/')" class="auth-page__logo">
+          <svg viewBox="0 0 180 40" fill="none" class="auth-page__logo-svg">
+            <circle cx="20" cy="20" r="16" fill="var(--color-highlight)" opacity="0.2"/>
+            <path d="M14 20C14 16.6863 16.6863 14 20 14C23.3137 14 26 16.6863 26 20C26 23.3137 23.3137 26 20 26C16.6863 26 14 23.3137 14 20Z" stroke="var(--color-highlight)" stroke-width="2.5"/>
+            <circle cx="17" cy="17" r="2" fill="var(--color-accent)"/>
+            <circle cx="23" cy="23" r="2" fill="var(--color-primary)"/>
+            <text x="45" y="27" font-family="Georgia, serif" font-size="18" font-weight="500" fill="var(--color-primary)">CandyPro</text>
+            <text x="145" y="27" font-family="system-ui, sans-serif" font-size="10" font-weight="600" fill="var(--color-accent)">OEM</text>
+          </svg>
         </NuxtLink>
-      </p>
-    </div>
+        <h1 class="auth-page__title">{{ $t('auth.register_title') }}</h1>
+        <p class="auth-page__subtitle">
+          {{ $t('auth.register_already') }}
+          <NuxtLink :to="localePath('/auth/login')" class="auth-page__link">
+            {{ $t('auth.register_sign_in') }}
+          </NuxtLink>
+        </p>
+      </div>
 
-    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-lg">
-      <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-        <form class="space-y-6" @submit.prevent="handleRegister">
-          <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
-            <div>
-              <label for="first-name" class="block text-sm font-medium text-gray-700">{{ $t('auth.first_name') }}</label>
-              <div class="mt-1">
-                <input id="first-name" v-model="form.firstName" type="text" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-              </div>
+      <div class="auth-card">
+        <form class="auth-form" @submit.prevent="handleRegister">
+          <div class="auth-row-2">
+            <div class="auth-field">
+              <label for="first-name" class="auth-label">{{ $t('auth.first_name') }}</label>
+              <input id="first-name" v-model="form.firstName" type="text" required autocomplete="given-name" class="auth-input" />
             </div>
-
-            <div>
-              <label for="last-name" class="block text-sm font-medium text-gray-700">{{ $t('auth.last_name') }}</label>
-              <div class="mt-1">
-                <input id="last-name" v-model="form.lastName" type="text" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label for="company-name" class="block text-sm font-medium text-gray-700">{{ $t('auth.company_name') }}</label>
-            <div class="mt-1">
-              <input id="company-name" v-model="form.companyName" type="text" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+            <div class="auth-field">
+              <label for="last-name" class="auth-label">{{ $t('auth.last_name') }}</label>
+              <input id="last-name" v-model="form.lastName" type="text" required autocomplete="family-name" class="auth-input" />
             </div>
           </div>
 
-          <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">{{ $t('auth.business_email') }}</label>
-            <div class="mt-1">
-              <input id="email" v-model="form.email" type="email" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-            </div>
+          <div class="auth-field">
+            <label for="company-name" class="auth-label">{{ $t('auth.company_name') }}</label>
+            <input id="company-name" v-model="form.companyName" type="text" required autocomplete="organization" class="auth-input" />
           </div>
 
-          <div>
-            <label for="password" class="block text-sm font-medium text-gray-700">{{ $t('auth.password') }}</label>
-            <div class="mt-1">
-              <input id="password" v-model="form.password" type="password" required minlength="8" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-            </div>
-            <p class="mt-2 text-xs text-gray-500">{{ $t('auth.password_min_length') }}</p>
+          <div class="auth-field">
+            <label for="email" class="auth-label">{{ $t('auth.business_email') }}</label>
+            <input id="email" v-model="form.email" type="email" required autocomplete="email" class="auth-input" />
           </div>
 
-          <div>
-            <button type="submit" :disabled="loading" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
-              <span v-if="loading">{{ $t('auth.registering') }}</span>
-              <span v-else>{{ $t('auth.create_account') }}</span>
-            </button>
+          <div class="auth-field">
+            <label for="password" class="auth-label">{{ $t('auth.password') }}</label>
+            <input id="password" v-model="form.password" type="password" required minlength="8" autocomplete="new-password" class="auth-input" />
+            <p class="auth-help">{{ $t('auth.password_min_length') }}</p>
           </div>
 
-          <div v-if="error" class="mt-4 text-sm text-red-600 text-center">
+          <button type="submit" :disabled="loading" class="auth-btn">
+            <span v-if="loading" class="auth-spinner" aria-hidden="true" />
+            <span v-if="loading" class="sr-only">{{ $t('auth.registering') }}</span>
+            <span v-else>{{ $t('auth.create_account') }}</span>
+          </button>
+
+          <div v-if="error" class="auth-alert auth-alert--error" role="alert">
             {{ error }}
           </div>
-          <div v-if="success" class="mt-4 text-sm text-green-600 text-center">
+          <div v-if="success" class="auth-alert auth-alert--success" role="status">
             {{ $t('auth.register_success') }}
           </div>
         </form>
       </div>
+
+      <p class="auth-page__footer">
+        © {{ new Date().getFullYear() }} {{ $t('auth.footer_rights') }}
+      </p>
     </div>
   </div>
 </template>
@@ -81,6 +81,8 @@ definePageMeta({
 })
 
 const { register } = useAuth()
+const localePath = useLocalePath()
+const { t } = useI18n()
 
 const form = reactive({
   firstName: '',
@@ -101,10 +103,9 @@ const handleRegister = async () => {
 
   try {
     await register(form)
-    success.value = true
-    // Do not auto-redirect — user must verify email first
+    await navigateTo(localePath('/auth/check-email') + '?email=' + encodeURIComponent(form.email))
   } catch (err: any) {
-    error.value = err.message || 'Failed to register account'
+    error.value = err.message || t('auth.errors.register_failed')
   } finally {
     loading.value = false
   }

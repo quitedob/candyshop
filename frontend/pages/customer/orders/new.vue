@@ -1,7 +1,7 @@
 ﻿<template>
   <div class="space-y-6">
     <div class="flex items-center justify-between">
-      <NuxtLink to="/customer/orders" class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-500">
+      <NuxtLink :to="localePath('/customer/orders')" class="inline-flex items-center text-sm font-medium text-orange-600 hover:text-orange-500">
         <Icon name="heroicons:arrow-left" class="mr-1 h-4 w-4" />
         {{ t('customer.common.back_to_orders') }}
       </NuxtLink>
@@ -9,46 +9,46 @@
 
     <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
       <section class="rounded-lg border border-blue-200 bg-white shadow-sm">
-        <div class="border-b border-blue-100 bg-blue-50 px-5 py-4">
+        <div class="border-b border-orange-100 bg-orange-50 px-5 py-4">
           <h2 class="text-lg font-semibold text-blue-900">{{ t('customer.orders_new.ai_title') }}</h2>
-          <p class="mt-1 text-sm text-blue-800">{{ t('customer.orders_new.ai_desc') }}</p>
+          <p class="mt-1 text-sm text-orange-800">{{ t('customer.orders_new.ai_desc') }}</p>
         </div>
         <div class="space-y-4 px-5 py-5">
           <div>
             <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.order_intention') }}</label>
-            <textarea v-model="aiForm.prompt" rows="4" :placeholder="t('customer.orders_new.order_intention_placeholder')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            <textarea v-model="aiForm.prompt" rows="4" :placeholder="t('customer.orders_new.order_intention_placeholder')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
           </div>
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.target_country') }}</label>
-              <input v-model="aiForm.targetCountry" type="text" placeholder="e.g. Saudi Arabia" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              <input v-model="aiForm.targetCountry" type="text" :placeholder="t('customer.orders_new.target_country_placeholder')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.requested_quantity') }}</label>
-              <input v-model.number="aiForm.quantity" type="number" min="1" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              <input v-model.number="aiForm.quantity" type="number" min="1" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.budget') }}</label>
-              <input v-model.number="aiForm.budget" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              <input v-model.number="aiForm.budget" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.currency') }}</label>
-              <input v-model="aiForm.currency" type="text" placeholder="USD" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm uppercase focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              <input v-model="aiForm.currency" type="text" :placeholder="t('common.defaults.currency')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm uppercase focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.estimated_tax') }}</label>
-              <input v-model.number="aiForm.taxAmount" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              <input v-model.number="aiForm.taxAmount" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.estimated_shipping') }}</label>
-              <input v-model.number="aiForm.shippingAmount" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              <input v-model.number="aiForm.shippingAmount" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
             </div>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.additional_requirements') }}</label>
-            <textarea v-model="aiForm.additionalRequirements" rows="3" :placeholder="t('customer.orders_new.additional_requirements_placeholder')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            <textarea v-model="aiForm.additionalRequirements" rows="3" :placeholder="t('customer.orders_new.additional_requirements_placeholder')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
           </div>
-          <button :disabled="aiSubmitting" @click="submitAIDraft" class="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60">
+          <button :disabled="aiSubmitting" @click="submitAIDraft" class="inline-flex items-center rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-60">
             <Icon name="heroicons:sparkles" class="mr-1.5 h-4 w-4" />
             {{ aiSubmitting ? t('customer.orders_new.generating') : t('customer.orders_new.generate_ai') }}
           </button>
@@ -68,25 +68,25 @@
         <div class="grid grid-cols-1 gap-4 px-5 py-5 sm:grid-cols-2">
           <div class="sm:col-span-2">
             <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.street') }}</label>
-            <input v-model="shippingAddress.street" type="text" :class="[fieldErrors.street ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300', 'mt-1 w-full rounded-md px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500']" />
+            <input v-model="shippingAddress.street" type="text" :class="[fieldErrors.street ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300', 'mt-1 w-full rounded-md px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500']" />
             <p v-if="fieldErrors.street" class="mt-1 text-xs text-red-600">{{ fieldErrors.street }}</p>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.city') }}</label>
-            <input v-model="shippingAddress.city" type="text" :class="[fieldErrors.city ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300', 'mt-1 w-full rounded-md px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500']" />
+            <input v-model="shippingAddress.city" type="text" :class="[fieldErrors.city ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300', 'mt-1 w-full rounded-md px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500']" />
             <p v-if="fieldErrors.city" class="mt-1 text-xs text-red-600">{{ fieldErrors.city }}</p>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.state') }}</label>
-            <input v-model="shippingAddress.state" type="text" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            <input v-model="shippingAddress.state" type="text" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.zip_code') }}</label>
-            <input v-model="shippingAddress.zipCode" type="text" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            <input v-model="shippingAddress.zipCode" type="text" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.country') }}</label>
-            <input v-model="shippingAddress.country" type="text" :class="[fieldErrors.country ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300', 'mt-1 w-full rounded-md px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500']" />
+            <input v-model="shippingAddress.country" type="text" :class="[fieldErrors.country ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300', 'mt-1 w-full rounded-md px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500']" />
             <p v-if="fieldErrors.country" class="mt-1 text-xs text-red-600">{{ fieldErrors.country }}</p>
           </div>
         </div>
@@ -106,11 +106,11 @@
           </div>
           <div class="rounded-md border border-gray-200 bg-gray-50 p-3">
             <p class="text-xs uppercase tracking-wide text-gray-500">{{ t('customer.orders_new.status') }}</p>
-            <p class="mt-1 text-sm font-semibold text-orange-700">{{ draftOrder.status }}</p>
+            <p class="mt-1 text-sm font-semibold text-orange-700">{{ enumLabel('order_status', draftOrder.status) }}</p>
           </div>
           <div class="rounded-md border border-gray-200 bg-gray-50 p-3">
             <p class="text-xs uppercase tracking-wide text-gray-500">{{ t('customer.orders_new.estimated_total') }}</p>
-            <p class="mt-1 text-sm font-semibold text-gray-900">{{ draftOrder.currency || 'USD' }} {{ Number(draftOrder.totalAmount || 0).toLocaleString() }}</p>
+            <p class="mt-1 text-sm font-semibold text-gray-900">{{ cur(draftOrder.currency) }} {{ Number(draftOrder.totalAmount || 0).toLocaleString() }}</p>
           </div>
         </div>
 
@@ -133,13 +133,13 @@
                 </td>
                 <td class="px-4 py-2 text-sm text-gray-700">
                   <input v-model.number="selectedProducts[idx].quantity" type="number" min="1"
-                    class="w-20 rounded border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none" />
+                    class="w-20 rounded border border-gray-300 px-2 py-1 text-sm focus:border-orange-500 focus:outline-none" />
                 </td>
                 <td class="px-4 py-2 text-sm text-gray-700">
                   <input v-model.number="selectedProducts[idx].unitPrice" type="number" min="0" step="0.01"
-                    class="w-24 rounded border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none" />
+                    class="w-24 rounded border border-gray-300 px-2 py-1 text-sm focus:border-orange-500 focus:outline-none" />
                 </td>
-                <td class="px-4 py-2 text-sm text-gray-600">{{ item.reason || '-' }}</td>
+                <td class="px-4 py-2 text-sm text-gray-600">{{ cell(item.reason) }}</td>
                 <td class="px-4 py-2 text-sm">
                   <button @click="selectedProducts.splice(idx, 1)" class="text-red-500 hover:text-red-700 text-xs font-medium">
                     {{ t('customer.orders_new.remove') }}
@@ -189,7 +189,7 @@
               <span class="font-medium">{{ ref.source }} / {{ ref.section }}</span>
               <span v-if="ref.official" class="ml-2 inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">{{ t('customer.orders_new.official') }}</span>
               <span>: {{ ref.snippet }}</span>
-              <a v-if="ref.url" :href="ref.url" target="_blank" rel="noopener noreferrer" class="ml-2 text-xs font-medium text-blue-600 hover:text-blue-500">{{ t('customer.orders_new.source') }}</a>
+              <a v-if="ref.url" :href="ref.url" target="_blank" rel="noopener noreferrer" class="ml-2 text-xs font-medium text-orange-600 hover:text-orange-500">{{ t('customer.orders_new.source') }}</a>
             </li>
           </ul>
         </div>
@@ -211,7 +211,7 @@
             <Icon name="heroicons:check-circle" class="mr-1.5 h-4 w-4" />
             {{ confirmingDraft ? t('customer.orders_new.confirming_draft') : t('customer.orders_new.confirm_draft') }}
           </button>
-          <NuxtLink :to="`/customer/orders/${draftOrder.id}`" class="text-sm font-medium text-blue-600 hover:text-blue-500">{{ t('customer.orders_new.view_draft') }}</NuxtLink>
+          <NuxtLink :to="localePath(`/customer/orders/${draftOrder.id}`)" class="text-sm font-medium text-orange-600 hover:text-orange-500">{{ t('customer.orders_new.view_draft') }}</NuxtLink>
         </div>
       </div>
     </section>
@@ -225,38 +225,38 @@
         <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
           <div>
             <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.currency') }}</label>
-            <input v-model="manualForm.currency" type="text" placeholder="USD" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm uppercase focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            <input v-model="manualForm.currency" type="text" :placeholder="t('common.defaults.currency')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm uppercase focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.tax_amount') }}</label>
-            <input v-model.number="manualForm.taxAmount" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            <input v-model.number="manualForm.taxAmount" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.shipping_amount') }}</label>
-            <input v-model.number="manualForm.shippingAmount" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            <input v-model.number="manualForm.shippingAmount" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.related_inquiry') }}</label>
-            <input v-model="manualForm.inquiryId" type="text" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            <input v-model="manualForm.inquiryId" type="text" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
           </div>
         </div>
         <div class="space-y-3">
           <div v-for="(item, idx) in manualForm.items" :key="`manual-item-${idx}`" class="grid grid-cols-1 gap-3 rounded-md border border-gray-200 p-3 md:grid-cols-12">
             <div class="md:col-span-4">
               <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.product_id') }}</label>
-              <input v-model="item.productId" type="text" :placeholder="t('customer.orders_new.product_id_placeholder')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              <input v-model="item.productId" type="text" :placeholder="t('customer.orders_new.product_id_placeholder')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
             </div>
             <div class="md:col-span-2">
               <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.quantity') }}</label>
-              <input v-model.number="item.quantity" type="number" min="1" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              <input v-model.number="item.quantity" type="number" min="1" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
             </div>
             <div class="md:col-span-2">
               <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.unit_price') }}</label>
-              <input v-model.number="item.unitPrice" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              <input v-model.number="item.unitPrice" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
             </div>
             <div class="md:col-span-3">
               <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.specifications') }}</label>
-              <input v-model="item.specifications" type="text" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              <input v-model="item.specifications" type="text" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
             </div>
             <div class="md:col-span-1 flex items-end justify-end">
               <button v-if="manualForm.items.length > 1" @click="removeManualItem(idx)" type="button" class="rounded-md border border-red-200 px-2 py-2 text-xs font-medium text-red-700 hover:bg-red-50">{{ t('customer.orders_new.remove') }}</button>
@@ -292,18 +292,20 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 type ManualItem = { productId: string; quantity: number; unitPrice: number; specifications: string }
 
 const { t } = useI18n()
+const localePath = useLocalePath()
+const { currencyOrDefault: cur, cell, enumLabel } = useDisplay()
 const api = useApi()
 
 const shippingAddress = reactive({ street: '', city: '', state: '', zipCode: '', country: '' })
 
 const aiForm = reactive({
   prompt: '', targetCountry: '', quantity: 1, budget: 0,
-  currency: 'USD', taxAmount: 0, shippingAmount: 0,
+  currency: cur(null), taxAmount: 0, shippingAmount: 0,
   additionalRequirements: '', inquiryId: ''
 })
 
 const manualForm = reactive({
-  currency: 'USD', taxAmount: 0, shippingAmount: 0, inquiryId: '',
+  currency: cur(null), taxAmount: 0, shippingAmount: 0, inquiryId: '',
   items: [{ productId: '', quantity: 1, unitPrice: 0, specifications: '' }] as ManualItem[]
 })
 
@@ -374,7 +376,7 @@ const submitAIDraft = async () => {
       prompt: aiForm.prompt.trim(), targetCountry,
       quantity: Math.max(1, Number(aiForm.quantity) || 1),
       budget: Number(aiForm.budget) || 0,
-      currency: (aiForm.currency || 'USD').toUpperCase(),
+      currency: cur(aiForm.currency).toUpperCase(),
       taxAmount: Number(aiForm.taxAmount) || 0,
       shippingAmount: Number(aiForm.shippingAmount) || 0,
       shippingAddress: buildSharedAddressPayload(),
@@ -385,7 +387,7 @@ const submitAIDraft = async () => {
     selectedProducts.value = Array.isArray(res.selectedProducts) ? res.selectedProducts : []
     // Handle "no products matched" response (order is null, suggestions provided)
     if (!res.order && Array.isArray(res.suggestions)) {
-      aiError.value = res.message || 'No products matched your request'
+      aiError.value = res.message || t('customer.orders_new.ai_no_products_matched')
       aiViolationDetails.value = res.suggestions
       return
     }
@@ -400,11 +402,11 @@ const submitAIDraft = async () => {
     confirmComplianceAck.value = false
     aiSummary.value = res.ai?.summary || ''
     missingInformation.value = Array.isArray(res.ai?.missingInformation) ? res.ai.missingInformation : []
-    aiSuccess.value = res.message || 'AI draft generated'
+    aiSuccess.value = res.message || t('customer.orders_new.ai_draft_generated')
   } catch (err: any) {
     const violations = err?.details?.violations
     aiViolationDetails.value = Array.isArray(violations) ? violations : []
-    aiError.value = err?.message || 'Failed to generate AI draft order'
+    aiError.value = err?.message || t('errors.api.ai_draft_failed')
   } finally { aiSubmitting.value = false }
 }
 
@@ -426,9 +428,9 @@ const confirmDraftOrder = async () => {
       complianceAck: compliance.hasOfficialEvidence ? true : confirmComplianceAck.value,
       items: editedItems
     })
-    await navigateTo(`/customer/orders/${draftOrder.value.id}`)
+    await navigateTo(localePath(`/customer/orders/${draftOrder.value.id}`))
   } catch (err: any) {
-    aiError.value = err?.message || 'Failed to confirm draft order'
+    aiError.value = err?.message || t('errors.api.ai_confirm_failed')
   } finally { confirmingDraft.value = false }
 }
 
@@ -447,17 +449,17 @@ const submitManualOrder = async () => {
   manualSubmitting.value = true
   try {
     const res = await api.createOrder({
-      items: cleanItems, currency: (manualForm.currency || 'USD').toUpperCase(),
+      items: cleanItems, currency: cur(manualForm.currency).toUpperCase(),
       taxAmount: Number(manualForm.taxAmount) || 0, shippingAmount: Number(manualForm.shippingAmount) || 0,
       shippingAddress: buildSharedAddressPayload(), inquiryId: manualForm.inquiryId.trim() || undefined
     })
     const createdId = res.order?.id
-    if (createdId) { await navigateTo(`/customer/orders/${createdId}`); return }
-    await navigateTo('/customer/orders')
+    if (createdId) { await navigateTo(localePath(`/customer/orders/${createdId}`)); return }
+    await navigateTo(localePath('/customer/orders'))
   } catch (err: any) {
     const violations = err?.details?.violations
     manualViolationDetails.value = Array.isArray(violations) ? violations : []
-    manualError.value = err?.message || 'Failed to create manual order'
+    manualError.value = err?.message || t('errors.api.manual_order_failed')
   } finally { manualSubmitting.value = false }
 }
 </script>

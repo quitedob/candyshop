@@ -10,10 +10,10 @@
     <!-- Tabs -->
     <div class="mt-6 border-b border-gray-200">
       <nav class="-mb-px flex space-x-8">
-        <button type="button" @click="activeTab = 'price-lists'" :class="[activeTab === 'price-lists' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'], 'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium'">
+        <button type="button" @click="activeTab = 'price-lists'" :class="[activeTab === 'price-lists' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'], 'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium'">
           {{ t('admin.pricing.price_lists') }}
         </button>
-        <button type="button" @click="activeTab = 'product-pricing'" :class="[activeTab === 'product-pricing' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'], 'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium'">
+        <button type="button" @click="activeTab = 'product-pricing'" :class="[activeTab === 'product-pricing' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'], 'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium'">
           {{ t('admin.pricing.product_pricing') }}
         </button>
       </nav>
@@ -22,7 +22,7 @@
     <!-- Price Lists Tab -->
     <div v-if="activeTab === 'price-lists'" class="mt-6 space-y-6">
       <div class="flex justify-end">
-        <button type="button" @click="openCreatePriceList" class="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700">
+        <button type="button" @click="openCreatePriceList" class="inline-flex items-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-700">
           {{ t('admin.pricing.create_price_list') }}
         </button>
       </div>
@@ -47,15 +47,15 @@
             </tr>
             <tr v-else v-for="pl in priceLists" :key="pl.id">
               <td class="py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{{ pl.name }}</td>
-              <td class="px-3 py-4 text-sm text-gray-500">{{ pl.currency || 'USD' }}</td>
+              <td class="px-3 py-4 text-sm text-gray-500">{{ cur(pl.currency) }}</td>
               <td class="px-3 py-4 text-sm">
                 <span :class="[pl.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800', 'inline-flex rounded-full px-2 text-xs font-semibold leading-5']">
-                  {{ pl.status }}
+                  {{ enumLabel('product_status', pl.status) }}
                 </span>
               </td>
               <td class="px-3 py-4 text-sm text-gray-500">{{ pl.productCount || 0 }}</td>
               <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                <button type="button" class="text-blue-600 hover:text-blue-900 mr-3" @click="openEditPriceList(pl)">{{ t('admin.pricing.edit') }}</button>
+                <button type="button" class="text-orange-600 hover:text-orange-900 mr-3" @click="openEditPriceList(pl)">{{ t('admin.pricing.edit') }}</button>
                 <button type="button" class="text-red-600 hover:text-red-900" @click="deletePriceList(pl.id)">{{ t('admin.pricing.delete') }}</button>
               </td>
             </tr>
@@ -79,7 +79,7 @@
       <div v-if="selectedProductId" class="overflow-hidden rounded-lg bg-white shadow ring-1 ring-black ring-opacity-5">
         <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
           <h3 class="text-lg leading-6 font-medium text-gray-900">{{ t('admin.pricing.pricing_rules') }}</h3>
-          <button type="button" @click="openAddPriceRule" class="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-3 py-1 text-sm font-medium text-white shadow-sm hover:bg-blue-700">
+          <button type="button" @click="openAddPriceRule" class="inline-flex items-center rounded-md border border-transparent bg-orange-600 px-3 py-1 text-sm font-medium text-white shadow-sm hover:bg-orange-700">
             {{ t('admin.pricing.add_rule') }}
           </button>
         </div>
@@ -102,7 +102,7 @@
             <tr v-else v-for="price in productPrices" :key="price.id">
               <td class="py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{{ price.priceListName || price.priceListId }}</td>
               <td class="px-3 py-4 text-sm text-gray-500">{{ price.minQuantity || 0 }}</td>
-              <td class="px-3 py-4 text-sm text-gray-500">{{ price.currency || 'USD' }} {{ (price.unitPrice || 0).toLocaleString() }}</td>
+              <td class="px-3 py-4 text-sm text-gray-500">{{ cur(price.currency) }} {{ (price.unitPrice || 0).toLocaleString() }}</td>
               <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                 <button type="button" class="text-red-600 hover:text-red-900" @click="deletePrice(price.id)">{{ t('admin.pricing.delete') }}</button>
               </td>
@@ -143,7 +143,7 @@
             <div v-if="priceListError" class="text-sm text-red-600">{{ priceListError }}</div>
             <div class="flex justify-end gap-3">
               <button type="button" @click="closePriceListModal" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700">{{ t('admin.pricing.cancel') }}</button>
-              <button type="submit" :disabled="savingPriceList" class="rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50">{{ t('admin.pricing.save') }}</button>
+              <button type="submit" :disabled="savingPriceList" class="rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm text-white disabled:opacity-50">{{ t('admin.pricing.save') }}</button>
             </div>
           </form>
         </div>
@@ -176,7 +176,7 @@
             <div v-if="priceRuleError" class="text-sm text-red-600">{{ priceRuleError }}</div>
             <div class="flex justify-end gap-3">
               <button type="button" @click="closePriceRuleModal" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700">{{ t('admin.pricing.cancel') }}</button>
-              <button type="submit" :disabled="savingPriceRule" class="rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50">{{ t('admin.pricing.save') }}</button>
+              <button type="submit" :disabled="savingPriceRule" class="rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm text-white disabled:opacity-50">{{ t('admin.pricing.save') }}</button>
             </div>
           </form>
         </div>
@@ -195,6 +195,7 @@ definePageMeta({
 
 const api = useApi()
 const { t } = useI18n()
+const { currencyOrDefault: cur, enumLabel } = useDisplay()
 
 const activeTab = ref('price-lists')
 const priceLists = ref<any[]>([])
@@ -203,7 +204,7 @@ const showPriceListModal = ref(false)
 const editingPriceListId = ref('')
 const savingPriceList = ref(false)
 const priceListError = ref('')
-const priceListForm = reactive({ name: '', currency: 'USD', status: 'active' })
+const priceListForm = reactive({ name: '', currency: cur(null), status: 'active' })
 const products = ref<any[]>([])
 const selectedProductId = ref('')
 const productPrices = ref<any[]>([])
@@ -233,8 +234,8 @@ const fetchProductPrices = async () => {
   finally { loadingPrices.value = false }
 }
 
-const openCreatePriceList = () => { editingPriceListId.value = ''; Object.assign(priceListForm, { name: '', currency: 'USD', status: 'active' }); priceListError.value = ''; showPriceListModal.value = true }
-const openEditPriceList = (pl: any) => { editingPriceListId.value = pl.id; Object.assign(priceListForm, { name: pl.name, currency: pl.currency || 'USD', status: pl.status || 'active' }); priceListError.value = ''; showPriceListModal.value = true }
+const openCreatePriceList = () => { editingPriceListId.value = ''; Object.assign(priceListForm, { name: '', currency: cur(null), status: 'active' }); priceListError.value = ''; showPriceListModal.value = true }
+const openEditPriceList = (pl: any) => { editingPriceListId.value = pl.id; Object.assign(priceListForm, { name: pl.name, currency: cur(pl.currency), status: pl.status || 'active' }); priceListError.value = ''; showPriceListModal.value = true }
 const closePriceListModal = () => { showPriceListModal.value = false; savingPriceList.value = false; priceListError.value = '' }
 
 const savePriceList = async () => {
@@ -243,14 +244,14 @@ const savePriceList = async () => {
     if (editingPriceListId.value) { await api.put(`/admin/price-lists/${editingPriceListId.value}`, priceListForm) }
     else { await api.post('/admin/price-lists', priceListForm) }
     closePriceListModal(); await fetchPriceLists()
-  } catch (err: any) { priceListError.value = err?.message || 'Failed to save price list' }
+  } catch (err: any) { priceListError.value = err?.message || t('errors.api.save_failed') }
   finally { savingPriceList.value = false }
 }
 
 const deletePriceList = async (id: string) => {
   if (!confirm(t('admin.pricing.confirm_delete_price_list'))) return
   try { await api.del(`/admin/price-lists/${id}`); await fetchPriceLists() }
-  catch (err: any) { alert(err?.message || 'Failed to delete price list') }
+  catch (err: any) { alert(err?.message || t('errors.api.delete_failed')) }
 }
 
 const openAddPriceRule = () => { Object.assign(priceRuleForm, { priceListId: '', minQuantity: 1, unitPrice: 0 }); priceRuleError.value = ''; showPriceRuleModal.value = true }
@@ -259,14 +260,14 @@ const closePriceRuleModal = () => { showPriceRuleModal.value = false; savingPric
 const savePriceRule = async () => {
   savingPriceRule.value = true; priceRuleError.value = ''
   try { await api.post(`/admin/products/${selectedProductId.value}/prices`, priceRuleForm); closePriceRuleModal(); await fetchProductPrices() }
-  catch (err: any) { priceRuleError.value = err?.message || 'Failed to save pricing rule' }
+  catch (err: any) { priceRuleError.value = err?.message || t('errors.api.save_failed') }
   finally { savingPriceRule.value = false }
 }
 
 const deletePrice = async (id: string) => {
   if (!confirm(t('admin.pricing.confirm_delete_price'))) return
   try { await api.del(`/admin/products/${selectedProductId.value}/prices/${id}`); await fetchProductPrices() }
-  catch (err: any) { alert(err?.message || 'Failed to delete price') }
+  catch (err: any) { alert(err?.message || t('errors.api.delete_failed')) }
 }
 
 onMounted(() => { fetchPriceLists(); fetchProducts() })

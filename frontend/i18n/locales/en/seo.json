@@ -1,5 +1,6 @@
 {
   "seo": {
+    "title_template": "%s | Candy Manufacturer - OEM & Private Label Solutions",
     "default_title": "Professional OEM Candy Manufacturer | Private Label Gummy, Hard Candy & Chocolate Supplier",
     "default_description": "Leading candy factory offering OEM/ODM services. Gummy candy, hard candy, aerated candy, toffee & compound chocolate. HACCP, ISO22000 certified. Request samples today.",
     "home_title": "Professional OEM Candy Manufacturer | Private Label Gummy, Hard Candy & Chocolate Supplier",
@@ -7,7 +8,8 @@
     "products_title": "Product Catalog | Browse Our Candy Range",
     "products_description": "Explore our complete range of premium candies including gummy, hard candy, aerated candy, toffee and compound chocolate. OEM and private label available.",
     "faq_title": "Frequently Asked Questions | Candy Manufacturing FAQ",
-    "faq_description": "Find answers to common questions about our OEM candy services, ordering process, shipping, and custom manufacturing capabilities."
+    "faq_description": "Find answers to common questions about our OEM candy services, ordering process, shipping, and custom manufacturing capabilities.",
+    "default_author": "CandyPro Team"
   },
   "about": {
     "title": "About Us",

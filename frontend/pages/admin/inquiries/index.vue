@@ -48,7 +48,7 @@
               </span>
             </td>
             <td class="text-right">
-              <NuxtLink :to="`/admin/inquiries/${inquiry.id}`" class="link mr-3">{{ t('admin.inquiries.view') }}</NuxtLink>
+              <NuxtLink :to="localePath(`/admin/inquiries/${inquiry.id}`)" class="link mr-3">{{ t('admin.inquiries.view') }}</NuxtLink>
               <button type="button" class="link mr-3" @click="openEditModal(inquiry.id)">{{ t('admin.inquiries.edit') }}</button>
               <button type="button" class="link link-danger" @click="deleteInquiry(inquiry.id)">{{ t('admin.inquiries.delete') }}</button>
             </td>
@@ -223,6 +223,7 @@ definePageMeta({
 
 const { token } = useAuth()
 const { t } = useI18n()
+const localePath = useLocalePath()
 const config = useRuntimeConfig()
 const baseURL = config.public.apiBase || '/api/v1'
 
@@ -300,7 +301,7 @@ const fetchInquiries = async () => {
     inquiries.value = res.data || []
     pagination.value = res.pagination
   } catch (err: any) {
-    error.value = err?.data?.message || err.message || 'Failed to fetch inquiries'
+    error.value = err?.data?.message || err.message || t('errors.api.load_failed')
   } finally {
     pending.value = false
   }
@@ -392,7 +393,7 @@ const openEditModal = async (id: string) => {
     showModal.value = true
   } catch (err: any) {
     actionError.value = true
-    actionMessage.value = err?.data?.message || err.message || 'Failed to load inquiry details'
+    actionMessage.value = err?.data?.message || err.message || t('errors.api.load_failed')
   }
 }
 
@@ -457,7 +458,7 @@ const saveInquiry = async () => {
     closeModal()
     await fetchInquiries()
   } catch (err: any) {
-    formError.value = err?.data?.message || err.message || 'Failed to save inquiry'
+    formError.value = err?.data?.message || err.message || t('errors.api.save_failed')
   } finally {
     saving.value = false
   }
@@ -477,7 +478,7 @@ const deleteInquiry = async (id: string) => {
     await fetchInquiries()
   } catch (err: any) {
     actionError.value = true
-    actionMessage.value = err?.data?.message || err.message || 'Failed to delete inquiry'
+    actionMessage.value = err?.data?.message || err.message || t('errors.api.delete_failed')
   }
 }
 
@@ -506,7 +507,7 @@ const assignInquiry = async () => {
     await fetchInquiries()
   } catch (err: any) {
     actionError.value = true
-    actionMessage.value = err?.data?.message || err.message || 'Failed to assign inquiry'
+    actionMessage.value = err?.data?.message || err.message || t('errors.api.assign_failed')
   } finally {
     assigning.value = false
   }
@@ -526,7 +527,7 @@ const analyzeInquiry = async () => {
     analysisResult.value = res.analysis || null
   } catch (err: any) {
     actionError.value = true
-    actionMessage.value = err?.data?.message || err.message || 'Failed to analyze inquiry'
+    actionMessage.value = err?.data?.message || err.message || t('errors.api.analyze_failed')
   } finally {
     analyzing.value = false
   }
@@ -559,7 +560,7 @@ const submitQuote = async () => {
     await fetchInquiries()
   } catch (err: any) {
     actionError.value = true
-    actionMessage.value = err?.data?.message || err.message || 'Failed to submit quote'
+    actionMessage.value = err?.data?.message || err.message || t('errors.api.quote_failed')
   } finally {
     quoting.value = false
   }
@@ -693,7 +694,7 @@ onMounted(fetchInquiries)
 .form-input:focus {
   outline: none;
   border-color: var(--color-highlight);
-  box-shadow: 0 0 0 3px rgba(255, 107, 74, 0.1);
+  box-shadow: 0 0 0 3px rgba(var(--color-highlight-rgb), 0.1);
 }
 
 .form-textarea {
@@ -711,7 +712,7 @@ onMounted(fetchInquiries)
 .form-textarea:focus {
   outline: none;
   border-color: var(--color-highlight);
-  box-shadow: 0 0 0 3px rgba(255, 107, 74, 0.1);
+  box-shadow: 0 0 0 3px rgba(var(--color-highlight-rgb), 0.1);
 }
 
 .form-checkbox {

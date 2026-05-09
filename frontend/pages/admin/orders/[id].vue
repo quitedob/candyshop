@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="mb-6">
-      <NuxtLink to="/admin/orders" class="flex items-center text-sm font-medium text-blue-600 hover:text-blue-500">
+      <NuxtLink :to="localePath('/admin/orders')" class="flex items-center text-sm font-medium text-orange-600 hover:text-orange-500">
         <Icon name="heroicons:arrow-left" class="mr-1 h-4 w-4" />
         {{ t('admin.orders.back') }}
       </NuxtLink>
@@ -22,15 +22,15 @@
           <div>
             <h3 class="text-lg leading-6 font-medium text-gray-900">Order #{{ order.orderNumber || order.id.substring(0, 8) }}</h3>
             <p class="mt-1 max-w-2xl text-sm text-gray-500">
-              {{ t('admin.orders.placed_on') }} {{ order.createdAt ? new Date(order.createdAt).toLocaleString() : '-' }}
+              {{ t('admin.orders.placed_on') }} {{ order.createdAt ? new Date(order.createdAt).toLocaleString() : cell(null) }}
             </p>
           </div>
           <div class="flex items-center gap-3">
             <span :class="[statusClass(order.status), 'inline-flex rounded-full px-3 py-1 text-sm font-semibold leading-5']">
-              {{ order.status || 'pending' }}
+              {{ enumLabel('order_status', order.status) }}
             </span>
             <span :class="[paymentStatusClass(order.paymentStatus), 'inline-flex rounded-full px-3 py-1 text-sm font-semibold leading-5']">
-              {{ t('admin.orders.payment') }}: {{ order.paymentStatus || 'unpaid' }}
+              {{ t('admin.orders.payment') }}: {{ enumLabel('payment_status', order.paymentStatus, 'unpaid') }}
             </span>
           </div>
         </div>
@@ -44,12 +44,12 @@
                   {{ order.user.firstName }} {{ order.user.lastName }}
                   <span class="text-gray-500">({{ order.user.email }})</span>
                 </template>
-                <template v-else>{{ order.userId || '-' }}</template>
+                <template v-else>{{ cell(order.userId) }}</template>
               </dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.orders.currency') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ order.currency || 'USD' }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ cur(order.currency) }}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.orders.subtotal') }}</dt>
@@ -107,8 +107,8 @@
               <tr v-else v-for="(item, idx) in order.items" :key="idx">
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ item.productName || item.productId }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.quantity }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ order.currency || 'USD' }} {{ (item.unitPrice || 0).toLocaleString() }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ order.currency || 'USD' }} {{ ((item.quantity || 0) * (item.unitPrice || 0)).toLocaleString() }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ cur(order.currency) }} {{ (item.unitPrice || 0).toLocaleString() }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ cur(order.currency) }} {{ ((item.quantity || 0) * (item.unitPrice || 0)).toLocaleString() }}</td>
               </tr>
             </tbody>
           </table>
@@ -122,14 +122,14 @@
         </div>
         <div class="px-4 py-5 sm:p-6 flex items-center gap-4">
           <button @click="createTrade" :disabled="creatingTrade"
-            class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+            class="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 disabled:opacity-50 transition-colors">
             <Icon v-if="creatingTrade" name="heroicons:arrow-path" class="h-4 w-4 animate-spin" />
             <Icon v-else name="heroicons:arrow-path-rounded-square" class="h-4 w-4" />
             {{ creatingTrade ? t('admin.orders.creating_trade') : t('admin.orders.create_trade') }}
           </button>
           <p v-if="tradeMessage" class="text-sm" :class="tradeError ? 'text-red-600' : 'text-green-600'">{{ tradeMessage }}</p>
-          <NuxtLink v-if="createdTradeId" :to="`/admin/trades/${createdTradeId}`"
-            class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+          <NuxtLink v-if="createdTradeId" :to="localePath(`/admin/trades/${createdTradeId}`)"
+            class="text-sm text-orange-600 hover:text-amber-800 font-medium">
             {{ t('admin.orders.view_trade') }} →
           </NuxtLink>
         </div>
@@ -157,7 +157,7 @@
               <label class="block text-sm font-medium text-gray-700">{{ t('admin.orders.tracking_number') }}</label>
               <input v-model="trackingInput" type="text" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
-            <button type="submit" :disabled="updatingStatus" class="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50">
+            <button type="submit" :disabled="updatingStatus" class="inline-flex justify-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-700 disabled:opacity-50">
               {{ updatingStatus ? t('admin.orders.updating') : t('admin.orders.update') }}
             </button>
           </form>
@@ -198,14 +198,14 @@
               <tbody class="bg-white divide-y divide-gray-200">
                 <tr v-for="payment in payments" :key="payment.id">
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ payment.id.substring(0, 8) }}</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ order.currency || 'USD' }} {{ (payment.amount || 0).toLocaleString() }}</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ payment.method || '-' }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ cur(order.currency) }} {{ (payment.amount || 0).toLocaleString() }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ cell(payment.method) }}</td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span :class="[paymentStatusBadge(payment.status), 'inline-flex rounded-full px-2 text-xs font-semibold leading-5']">
-                      {{ payment.status }}
+                      {{ enumLabel('payment_status', payment.status) }}
                     </span>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ payment.createdAt ? new Date(payment.createdAt).toLocaleString() : '-' }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ payment.createdAt ? new Date(payment.createdAt).toLocaleString() : cell(null) }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button v-if="payment.status === 'pending'" type="button" class="text-green-600 hover:text-green-900 mr-3" @click="confirmPayment(payment.id)">
                       {{ t('admin.orders.confirm') }}
@@ -255,6 +255,8 @@ definePageMeta({ layout: 'admin', middleware: ['auth'] })
 const route = useRoute()
 const api = useApi()
 const { t } = useI18n()
+const localePath = useLocalePath()
+const { currencyOrDefault: cur, cell, enumLabel } = useDisplay()
 
 const order = ref<any>(null)
 const pending = ref(true)
@@ -287,7 +289,7 @@ const fetchOrder = async () => {
     statusInput.value = order.value.status || 'pending'
     trackingInput.value = order.value.trackingNumber || ''
   } catch (err: any) {
-    error.value = err?.message || 'Failed to fetch order'
+    error.value = err?.message || t('errors.api.load_failed')
   } finally { pending.value = false }
 }
 
@@ -296,7 +298,7 @@ const fetchPayments = async () => {
   try {
     payments.value = await api.get<any[]>(`/admin/orders/${route.params.id}/payments`) || []
   } catch (err: any) {
-    paymentError.value = err?.message || 'Failed to fetch payments'
+    paymentError.value = err?.message || t('errors.api.fetch_payments_failed')
   } finally { loadingPayments.value = false }
 }
 
@@ -312,7 +314,7 @@ const updateStatus = async () => {
     setTimeout(() => { statusMessage.value = '' }, 3000)
   } catch (err: any) {
     statusError.value = true
-    statusMessage.value = err?.message || 'Failed to update status'
+    statusMessage.value = err?.message || t('errors.api.status_failed')
   } finally { updatingStatus.value = false }
 }
 
@@ -320,7 +322,7 @@ const confirmPayment = async (paymentId: string) => {
   try {
     await api.put(`/admin/orders/${route.params.id}/payments/${paymentId}/confirm`, {})
     await fetchPayments()
-  } catch (err: any) { alert(err?.message || 'Failed to confirm payment') }
+  } catch (err: any) { alert(err?.message || t('errors.api.payment_confirm_failed')) }
 }
 
 const refundPayment = async (paymentId: string) => {
@@ -328,28 +330,28 @@ const refundPayment = async (paymentId: string) => {
   try {
     await api.put(`/admin/orders/${route.params.id}/payments/${paymentId}/refund`, {})
     await fetchPayments()
-  } catch (err: any) { alert(err?.message || 'Failed to refund payment') }
+  } catch (err: any) { alert(err?.message || t('errors.api.refund_failed')) }
 }
 
 const createTrade = async () => {
   creatingTrade.value = true; tradeMessage.value = ''; tradeError.value = false
   try {
     const res = await api.post<any>(`/admin/orders/${route.params.id}/create-trade`, {
-      terms: 'FOB',
-      currency: order.value?.currency || 'USD'
+      terms: t('common.defaults.incoterms'),
+      currency: cur(order.value?.currency)
     })
     createdTradeId.value = res.trade?.id || null
     tradeMessage.value = t('admin.orders.trade_created')
   } catch (err: any) {
     tradeError.value = true
-    tradeMessage.value = err?.message || 'Failed to create trade'
+    tradeMessage.value = err?.message || t('errors.api.trade_create_failed')
   } finally { creatingTrade.value = false }
 }
 
 const statusClass = (status: string) => {
   if (status === 'pending') return 'bg-yellow-100 text-yellow-800'
-  if (status === 'confirmed' || status === 'production') return 'bg-blue-100 text-blue-800'
-  if (status === 'shipped') return 'bg-indigo-100 text-indigo-800'
+  if (status === 'confirmed' || status === 'production') return 'bg-orange-100 text-orange-800'
+  if (status === 'shipped') return 'bg-amber-100 text-amber-800'
   if (status === 'delivered') return 'bg-green-100 text-green-800'
   if (status === 'cancelled') return 'bg-red-100 text-red-800'
   return 'bg-gray-100 text-gray-800'

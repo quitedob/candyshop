@@ -142,7 +142,7 @@ defineExpose({
 .input-textarea__field:focus {
   outline: none;
   border-color: var(--color-highlight);
-  box-shadow: 0 0 0 3px rgba(255, 107, 74, 0.1);
+  box-shadow: 0 0 0 3px rgba(var(--color-highlight-rgb), 0.1);
 }
 
 .input-textarea__field:disabled {

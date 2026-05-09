@@ -10,7 +10,7 @@
           <Icon name="heroicons:arrow-down-tray" class="h-4 w-4" />
           {{ t('admin.inventory.export') }}
         </button>
-        <button @click="openAdjustmentModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+        <button @click="openAdjustmentModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors">
           <Icon name="heroicons:adjustments-horizontal" class="h-4 w-4" />
           {{ t('admin.inventory.adjust_stock') }}
         </button>
@@ -25,8 +25,8 @@
             <p class="text-sm text-gray-500">{{ t('admin.inventory.total_products') }}</p>
             <p class="mt-1 text-2xl font-bold text-gray-900">{{ stats.totalProducts }}</p>
           </div>
-          <div class="h-12 w-12 rounded-lg bg-blue-50 flex items-center justify-center">
-            <Icon name="heroicons:cube" class="h-6 w-6 text-blue-600" />
+          <div class="h-12 w-12 rounded-lg bg-orange-50 flex items-center justify-center">
+            <Icon name="heroicons:cube" class="h-6 w-6 text-orange-600" />
           </div>
         </div>
       </div>
@@ -71,16 +71,16 @@
         <div class="flex-1 min-w-[200px]">
           <div class="relative">
             <Icon name="heroicons:magnifying-glass" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input v-model="searchQuery" type="text" :placeholder="t('admin.inventory.search')" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input v-model="searchQuery" type="text" :placeholder="t('admin.inventory.search')" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </div>
         </div>
-        <select v-model="stockFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <select v-model="stockFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
           <option value="all">{{ t('admin.inventory.filter_all') }}</option>
           <option value="low">{{ t('admin.inventory.filter_low') }}</option>
           <option value="out">{{ t('admin.inventory.filter_out') }}</option>
           <option value="in">{{ t('admin.inventory.filter_in') }}</option>
         </select>
-        <select v-model="categoryFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <select v-model="categoryFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
           <option value="">{{ t('admin.inventory.all_categories') }}</option>
           <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
         </select>
@@ -117,7 +117,7 @@
             <tr v-else v-for="item in filteredItems" :key="item.id" class="hover:bg-gray-50 transition-colors">
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
-                  <div class="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center overflow-hidden">
+                  <div class="h-10 w-10 rounded-lg bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center overflow-hidden">
                     <img v-if="item.thumbnail" :src="item.thumbnail" class="h-full w-full object-cover" />
                     <Icon v-else name="heroicons:cube" class="h-5 w-5 text-blue-300" />
                   </div>
@@ -132,7 +132,7 @@
               <td class="px-6 py-4 text-sm text-right">
                 <div class="flex items-center justify-end gap-2">
                   <span :class="stockStatusClass(item.stockQuantity, item.moq)" class="font-semibold">{{ item.stockQuantity || 0 }}</span>
-                  <button @click="openAdjustmentModal(item)" class="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors">
+                  <button @click="openAdjustmentModal(item)" class="p-1 text-orange-600 hover:bg-orange-50 rounded transition-colors">
                     <Icon name="heroicons:pencil" class="h-4 w-4" />
                   </button>
                 </div>
@@ -146,7 +146,7 @@
                 </span>
               </td>
               <td class="px-6 py-4 text-sm">
-                <button @click="viewHistory(item)" class="text-blue-600 hover:text-blue-900 mr-3">{{ t('admin.inventory.history') }}</button>
+                <button @click="viewHistory(item)" class="text-orange-600 hover:text-orange-900 mr-3">{{ t('admin.inventory.history') }}</button>
               </td>
             </tr>
           </tbody>
@@ -174,7 +174,7 @@
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="closeAdjustmentModal"></div>
         <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:max-w-lg sm:align-middle">
-          <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+          <div class="bg-gradient-to-r from-orange-500 to-amber-600 px-6 py-4">
             <h3 class="text-lg font-semibold text-white">{{ t('admin.inventory.adjust_title') }}</h3>
             <p class="text-sm text-blue-100 mt-0.5">{{ adjustmentProduct?.name }}</p>
           </div>
@@ -186,29 +186,29 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">{{ t('admin.inventory.new_stock') }}</label>
-                <input v-model.number="newStock" type="number" min="0" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input v-model.number="newStock" type="number" min="0" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">{{ t('admin.inventory.adjustment_type') }}</label>
               <div class="mt-2 flex gap-4">
                 <label class="flex items-center gap-2 cursor-pointer">
-                  <input v-model="adjustmentType" type="radio" value="set" class="text-blue-600 focus:ring-blue-500" />
+                  <input v-model="adjustmentType" type="radio" value="set" class="text-orange-600 focus:ring-orange-500" />
                   <span class="text-sm text-gray-700">{{ t('admin.inventory.type_set') }}</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
-                  <input v-model="adjustmentType" type="radio" value="add" class="text-blue-600 focus:ring-blue-500" />
+                  <input v-model="adjustmentType" type="radio" value="add" class="text-orange-600 focus:ring-orange-500" />
                   <span class="text-sm text-gray-700">{{ t('admin.inventory.type_add') }}</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
-                  <input v-model="adjustmentType" type="radio" value="subtract" class="text-blue-600 focus:ring-blue-500" />
+                  <input v-model="adjustmentType" type="radio" value="subtract" class="text-orange-600 focus:ring-orange-500" />
                   <span class="text-sm text-gray-700">{{ t('admin.inventory.type_subtract') }}</span>
                 </label>
               </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">{{ t('admin.inventory.reason') }}</label>
-              <select v-model="adjustmentReason" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <select v-model="adjustmentReason" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
                 <option value="restock">{{ t('admin.inventory.reason_restock') }}</option>
                 <option value="correction">{{ t('admin.inventory.reason_correction') }}</option>
                 <option value="damage">{{ t('admin.inventory.reason_damage') }}</option>
@@ -219,7 +219,7 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">{{ t('admin.inventory.notes') }}</label>
-              <textarea v-model="adjustmentNotes" rows="2" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+              <textarea v-model="adjustmentNotes" rows="2" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
             </div>
             <div v-if="adjustmentError" class="text-sm text-red-600">{{ adjustmentError }}</div>
           </div>
@@ -227,7 +227,7 @@
             <button @click="closeAdjustmentModal" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
               {{ t('admin.inventory.cancel') }}
             </button>
-            <button @click="submitAdjustment" :disabled="savingAdjustment" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2">
+            <button @click="submitAdjustment" :disabled="savingAdjustment" class="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50 transition-colors flex items-center gap-2">
               <Icon v-if="savingAdjustment" name="heroicons:arrow-path" class="h-4 w-4 animate-spin" />
               {{ t('admin.inventory.save') }}
             </button>
@@ -331,7 +331,7 @@ const fetchInventory = async () => {
     pagination.value = res.pagination
     categories.value = Array.from(new Set(items.value.map((i: any) => i.category).filter(Boolean)))
   } catch (err: any) {
-    error.value = err?.message || 'Failed to fetch inventory'
+    error.value = err?.message || t('errors.api.load_failed')
   } finally { pending.value = false }
 }
 
@@ -350,7 +350,7 @@ const submitAdjustment = async () => {
   try {
     await api.put(`/admin/inventory/${adjustmentProduct.value.id}`, { stockQuantity: finalQty, reason: adjustmentReason.value, notes: adjustmentNotes.value })
     closeAdjustmentModal(); await fetchInventory()
-  } catch (err: any) { adjustmentError.value = err?.message || 'Failed to adjust stock' }
+  } catch (err: any) { adjustmentError.value = err?.message || t('errors.api.stock_adjust_failed') }
   finally { savingAdjustment.value = false }
 }
 

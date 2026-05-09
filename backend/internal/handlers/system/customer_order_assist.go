@@ -3,6 +3,7 @@ package system
 import (
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
+	"candypro/api/internal/kyb"
 	"candypro/api/internal/utils"
 	"encoding/json"
 	"fmt"
@@ -155,7 +156,7 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 		return
 	}
 
-	complianceValidation := h.services.Order.ValidateCountryCompliance(targetCountry, selectedProductModels)
+	complianceValidation := h.services.Product.ValidateComplianceWithMarketProfiles(c.Request.Context(), targetCountry, selectedProductModels)
 	if len(complianceValidation.Violations) > 0 {
 		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
 			Error:   "compliance_violation",
@@ -172,7 +173,14 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 	for _, product := range selectedProductModels {
 		productByID[product.ID] = product
 	}
-	inventoryValidation := h.services.Order.ValidateInventory(items, productByID)
+	omsIDs := make([]string, 0, len(selectedProductModels))
+	for _, p := range selectedProductModels {
+		if id := strings.TrimSpace(p.ID); id != "" {
+			omsIDs = append(omsIDs, id)
+		}
+	}
+	sellableOMS, _ := h.services.Product.EffectiveSellableByProducts(c.Request.Context(), omsIDs, modelsProduct.ChannelWebstore)
+	inventoryValidation := h.services.Order.ValidateInventoryWithSellable(items, productByID, sellableOMS)
 	if len(inventoryValidation.Violations) > 0 {
 		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
 			Error:   "inventory_violation",
@@ -230,7 +238,7 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 		Status:                     "pending_confirmation",
 		PaymentStatus:              "unpaid",
 		Items:                      items,
-		StockReserved:              true,
+		StockReserved:              false,
 		ComplianceOfficialEvidence: hasOfficialEvidence,
 		Subtotal:                   subtotal,
 		TaxAmount:                  req.TaxAmount,
@@ -248,14 +256,11 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 		UpdatedAt: now,
 	}
 
-	if err := h.services.Order.CreateOrderWithStockReservation(c.Request.Context(), order); err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "insufficient stock") {
-			c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-				Error:   "inventory_violation",
-				Message: "Inventory changed while creating AI draft. Please retry with latest stock.",
-			})
-			return
-		}
+	if !h.ensureActiveOrKYBBypassAmount(c, userID, order.TotalAmount, kyb.LineProductIDs(items)...) {
+		return
+	}
+
+	if err := h.services.Order.CreateOrder(c.Request.Context(), order); err != nil {
 		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
 			Error:   "internal_error",
 			Message: "Failed to create AI draft order",

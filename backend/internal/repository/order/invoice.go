@@ -55,6 +55,15 @@ func (r *InvoiceRepository) FindByOrderID(ctx context.Context, orderID string) (
 	return invoices, nil
 }
 
+// FindByTradeID returns all invoices linked to a trade transaction.
+func (r *InvoiceRepository) FindByTradeID(ctx context.Context, tradeID uint) ([]modelsOrder.Invoice, error) {
+	var invoices []modelsOrder.Invoice
+	if err := r.db.WithContext(ctx).Where("trade_id = ?", tradeID).Order("created_at asc").Find(&invoices).Error; err != nil {
+		return nil, err
+	}
+	return invoices, nil
+}
+
 // Create inserts a new invoice, generating an ID and invoice number if absent.
 func (r *InvoiceRepository) Create(ctx context.Context, invoice *modelsOrder.Invoice) error {
 	if invoice.ID == "" {

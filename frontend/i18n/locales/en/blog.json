@@ -19,6 +19,9 @@
     "email_placeholder": "Enter your email",
     "all_posts": "All Posts",
     "loading_posts": "Loading posts...",
-    "no_posts": "No posts found in this category."
+    "no_posts": "No posts found in this category.",
+    "newsletter_invalid": "Please enter a valid email address.",
+    "newsletter_redirect": "Opening the contact form…",
+    "cta_questions": "Have questions about our candy manufacturing capabilities?"
   }
 }

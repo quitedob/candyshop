@@ -19,11 +19,17 @@ type orderRepository interface {
 	Create(ctx context.Context, order *modelsOrder.Order) error
 	CreateWithStockReservation(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error
 	Update(ctx context.Context, order *modelsOrder.Order) error
+	UpdateWithOutbox(ctx context.Context, order *modelsOrder.Order, outbox *modelsOrder.EventOutbox) error
+	ListPendingOutbox(ctx context.Context, eventType string, limit int) ([]modelsOrder.EventOutbox, error)
+	IncrementOutboxAttempt(ctx context.Context, id uint) error
+	UpdateOutboxResult(ctx context.Context, id uint, status, lastErr string, processedAt *time.Time) error
+	FindInquiryTradeHints(ctx context.Context, inquiryID string) (incoterms, commercialNotes string, err error)
 	UpdateWithStockAdjustment(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error
 	Delete(ctx context.Context, id string) error
 	ReleaseStockForOrder(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error
 	DeleteWithStockRestore(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error
 	ConfirmPendingOrder(ctx context.Context, id string, confirmedAt time.Time) error
+	ConfirmAndReserveStock(ctx context.Context, id string, stockDeltas map[string]int, confirmedAt time.Time) error
 	ReleaseExpiredPendingConfirmationOrders(ctx context.Context, olderThan time.Time, limit int) (int, error)
 	CountAll(ctx context.Context) (int64, error)
 	CountByStatuses(ctx context.Context, statuses []string) (int64, error)
@@ -156,6 +162,15 @@ func (s *OrderService) ConfirmPendingOrder(ctx context.Context, id string, confi
 		confirmedAt = time.Now()
 	}
 	return s.repo.ConfirmPendingOrder(ctx, id, confirmedAt)
+}
+
+// ConfirmAndReserveOrder confirms an AI draft order and atomically reserves stock at confirmation time.
+func (s *OrderService) ConfirmAndReserveOrder(ctx context.Context, id string, items []modelsOrder.OrderItem, confirmedAt time.Time) error {
+	if confirmedAt.IsZero() {
+		confirmedAt = time.Now()
+	}
+	stockDeltas := buildOrderStockDeltas(items)
+	return s.repo.ConfirmAndReserveStock(ctx, id, stockDeltas, confirmedAt)
 }
 
 // ReleaseExpiredPendingConfirmationOrders cancels expired pending_confirmation orders and releases reserved stock.

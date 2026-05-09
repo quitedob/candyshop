@@ -31,6 +31,7 @@ type LoginAttemptTracker struct {
 	mu       sync.Mutex
 	attempts map[string]*loginAttempt
 	stopCh   chan struct{}
+	stopOnce sync.Once
 }
 
 // NewLoginAttemptTracker creates a new tracker and starts a background
@@ -44,9 +45,9 @@ func NewLoginAttemptTracker() *LoginAttemptTracker {
 	return t
 }
 
-// Stop terminates the background cleanup goroutine.
+// Stop terminates the background cleanup goroutine (safe to call multiple times).
 func (t *LoginAttemptTracker) Stop() {
-	close(t.stopCh)
+	t.stopOnce.Do(func() { close(t.stopCh) })
 }
 
 // IsLocked returns true if the email is currently locked out,

@@ -1,3 +1,5 @@
+// Package trade 的合规检索（LookupCompliance）仅作 RAG 解释层与内控参考，不构成法律意见；
+// 订单/产品否决仍以硬编码规则与 ProductMarketProfile 为准。
 package trade
 
 import "strings"
@@ -18,7 +20,7 @@ type ComplianceLookupResult struct {
 	References []ComplianceReference `json:"references"`
 }
 
-// LookupCompliance retrieves country-specific compliance references from local corpus.
+// LookupCompliance 从本地语料检索合规参考片段（非法律依据，不得单独作为放行条件）。
 func (s *AIService) LookupCompliance(country, query string, topK int) *ComplianceLookupResult {
 	if s == nil || s.complianceRetriever == nil {
 		return nil

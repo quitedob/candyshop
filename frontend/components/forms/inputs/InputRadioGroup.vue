@@ -120,7 +120,7 @@ const handleChange = (event: Event) => {
 
 .input-radio-group__option--checked {
   border-color: var(--color-highlight);
-  background-color: rgba(255, 107, 74, 0.05);
+  background-color: rgba(var(--color-highlight-rgb), 0.05);
 }
 
 .input-radio-group__option input[type="radio"] {

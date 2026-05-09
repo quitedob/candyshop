@@ -10,7 +10,7 @@ import (
 
 // GenerateID generates a cryptographically secure random ID
 func GenerateID() string {
-	b := make([]byte, 8)
+	b := make([]byte, 16)
 	if _, err := rand.Read(b); err != nil {
 		// SEC-18: crypto/rand failure is critical — do not fall back to predictable values
 		panic(fmt.Sprintf("CRITICAL: crypto/rand failed: %v", err))

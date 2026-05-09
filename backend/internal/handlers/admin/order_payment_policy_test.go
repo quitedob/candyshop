@@ -3,6 +3,8 @@ package admin
 import "testing"
 
 func TestRequiresFullPrepaymentCountry(t *testing.T) {
+	// Test with nil policy service (fallback hardcoded logic)
+	h := &Handler{}
 	cases := []struct {
 		country string
 		want    bool
@@ -15,7 +17,7 @@ func TestRequiresFullPrepaymentCountry(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		got := requiresFullPrepaymentCountry(tc.country)
+		got := h.requiresFullPrepaymentCountry(tc.country)
 		if got != tc.want {
 			t.Fatalf("requiresFullPrepaymentCountry(%q)=%v want=%v", tc.country, got, tc.want)
 		}

@@ -66,13 +66,21 @@ func main() {
 		if err := database.SeedDatabase(db); err != nil {
 			log.Printf("Warning: Failed to seed database: %v", err)
 		}
+
+		// Seed country payment policies (independent of main seed)
+		database.SeedCountryPaymentPolicies(db)
+
+		// 演示 B2B 用户 / 询盘 / 订单（幂等，可用 SEED_DEMO_DATA=false 关闭）
+		if err := database.SeedDemoWorkspace(db); err != nil {
+			log.Printf("Warning: demo workspace seed: %v", err)
+		}
 	}
 
 	// Initialize repositories and services
 	var svcs *servicesCommon.Services
 	if db != nil {
 		repos := repositoryCommon.NewRepositories(db)
-		svcs = servicesCommon.NewServices(repos, cfg)
+		svcs = servicesCommon.NewServices(repos, cfg, db)
 	} else {
 		log.Println("Warning: Running in degraded mode - database unavailable")
 	}
@@ -87,6 +95,7 @@ func main() {
 	backgroundCtx, stopBackground := context.WithCancel(context.Background())
 	defer stopBackground()
 	stopOrderDraftCleanup := startOrderDraftCleanup(backgroundCtx, svcs)
+	stopOutboxRelay := startEventOutboxTradeRelay(backgroundCtx, svcs)
 
 	// Setup router
 	routerWithShutdown := api.SetupRouter(h, cfg, db)
@@ -123,7 +132,17 @@ func main() {
 	if routerWithShutdown.Limiter != nil {
 		routerWithShutdown.Limiter.Stop()
 	}
+	if routerWithShutdown.AIPublicLimiter != nil {
+		routerWithShutdown.AIPublicLimiter.Stop()
+	}
+	if routerWithShutdown.InquiryPublicLimiter != nil {
+		routerWithShutdown.InquiryPublicLimiter.Stop()
+	}
+	if h.AuthScope != nil {
+		h.AuthScope.StopLoginTracker()
+	}
 	stopOrderDraftCleanup()
+	stopOutboxRelay()
 	stopBackground()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -134,6 +153,47 @@ func main() {
 	}
 
 	log.Println("Server exited")
+}
+
+const defaultEventOutboxRelayIntervalSeconds = 30
+
+// startEventOutboxTradeRelay 轮询发件箱，在订单确认为 confirmed 后异步创建 Trade（最终一致性）
+func startEventOutboxTradeRelay(ctx context.Context, svcs *servicesCommon.Services) func() {
+	if svcs == nil || svcs.AdminPortal == nil || svcs.AdminPortal.Order == nil || svcs.AdminPortal.Trade == nil {
+		return func() {}
+	}
+
+	intervalSec := getEnvPositiveInt("EVENT_OUTBOX_RELAY_INTERVAL_SECONDS", defaultEventOutboxRelayIntervalSeconds)
+	workerCtx, cancel := context.WithCancel(ctx)
+	interval := time.Duration(intervalSec) * time.Second
+
+	runRelay := func() {
+		n, err := svcs.AdminPortal.Order.ProcessPendingTradeOutbox(workerCtx, svcs.AdminPortal.Trade, 50)
+		if err != nil {
+			log.Printf("Warning: trade outbox relay: %v", err)
+			return
+		}
+		if n > 0 {
+			log.Printf("Trade outbox relay processed %d event(s)", n)
+		}
+	}
+
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		runRelay()
+		for {
+			select {
+			case <-workerCtx.Done():
+				return
+			case <-ticker.C:
+				runRelay()
+			}
+		}
+	}()
+
+	log.Printf("Trade outbox relay started (interval=%ds)", intervalSec)
+	return cancel
 }
 
 func startOrderDraftCleanup(ctx context.Context, svcs *servicesCommon.Services) func() {

@@ -3,6 +3,7 @@ package customer
 import (
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
+	"candypro/api/internal/kyb"
 	"candypro/api/internal/utils"
 	"fmt"
 	"net/http"
@@ -55,12 +56,13 @@ func (h *Handler) CustomerAddToCart(c *gin.Context) {
 	}
 
 	var req struct {
-		ProductID      string  `json:"productId" binding:"required"`
-		ProductName    string  `json:"productName"`
-		Quantity       int     `json:"quantity"`
-		UnitPrice      float64 `json:"unitPrice"`
-		Currency       string  `json:"currency"`
-		Specifications string  `json:"specifications"`
+		ProductID          string  `json:"productId" binding:"required"`
+		ProductName        string  `json:"productName"`
+		Quantity           int     `json:"quantity"`
+		UnitPrice          float64 `json:"unitPrice"`
+		Currency           string  `json:"currency"`
+		Specifications     string  `json:"specifications"`
+		DestinationCountry string  `json:"destinationCountry"` // 可选：用于套目的国成本栈展示价
 	}
 	if !utils.BindJSONOrInvalidRequest(c, &req) {
 		return
@@ -73,20 +75,36 @@ func (h *Handler) CustomerAddToCart(c *gin.Context) {
 		return
 	}
 
-	// Use server-side price: try contract price first, fall back to 0 (confirmed in PI)
+	// Normalize quantity before pricing and persistence
+	qty := req.Quantity
+	if qty < 1 {
+		qty = 1
+	}
+
+	// Use server-side price: try contract price first, then product base price
 	var unitPrice float64
 	if h.services.Price != nil && h.services.User != nil {
 		if user, userErr := h.services.User.GetByID(c.Request.Context(), userID); userErr == nil && user.CompanyID != nil {
 			if company, compErr := h.services.Company.GetCompany(c.Request.Context(), *user.CompanyID); compErr == nil && company.PriceListID != nil {
-				qty := req.Quantity
-				if qty < 1 {
-					qty = 1
-				}
 				if contractPrice, priceErr := h.services.Price.GetPriceForProduct(c.Request.Context(), req.ProductID, *company.PriceListID, qty); priceErr == nil {
 					unitPrice = contractPrice
 				}
 			}
 		}
+	}
+	if unitPrice <= 0 {
+		unitPrice = product.BasePrice
+	}
+	if unitPrice <= 0 {
+		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
+			Error:   "no_price",
+			Message: fmt.Sprintf("No price available for product %s. Please contact support.", req.ProductID),
+		})
+		return
+	}
+	// 若提供目的国，则在基础/合同价上叠加 ProductMarketCostStack
+	if strings.TrimSpace(req.DestinationCountry) != "" {
+		unitPrice = h.services.Product.ResolveCheckoutUnitPrice(c.Request.Context(), product, unitPrice, req.DestinationCountry)
 	}
 
 	productName := req.ProductName
@@ -102,10 +120,16 @@ func (h *Handler) CustomerAddToCart(c *gin.Context) {
 		UserID:         userID,
 		ProductID:      req.ProductID,
 		ProductName:    productName,
-		Quantity:       req.Quantity,
+		Quantity:       qty,
 		UnitPrice:      unitPrice,
 		Currency:       currency,
 		Specifications: req.Specifications,
+	}
+	cartItems, _ := h.services.Cart.GetCart(c.Request.Context(), userID)
+	proj := projectedCartUSDAfterAdd(cartItems, req.ProductID, qty, unitPrice)
+	pids := kyb.CartLineProductIDs(cartItems, req.ProductID)
+	if !h.ensureActiveOrKYBBypassForAmount(c, userID, proj, pids...) {
+		return
 	}
 
 	created, err := h.services.Cart.AddItem(c.Request.Context(), userID, item)
@@ -139,6 +163,12 @@ func (h *Handler) CustomerUpdateCartItem(c *gin.Context) {
 		Quantity int `json:"quantity" binding:"required,min=1"`
 	}
 	if !utils.BindJSONOrInvalidRequest(c, &req) {
+		return
+	}
+
+	cartItems, _ := h.services.Cart.GetCart(c.Request.Context(), userID)
+	proj := projectedCartUSDAfterQtyChange(cartItems, uint(itemID), req.Quantity)
+	if !h.ensureActiveOrKYBBypassForAmount(c, userID, proj, kyb.CartLineProductIDs(cartItems)...) {
 		return
 	}
 
@@ -228,6 +258,18 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 	if req.Currency != "" {
 		currency = req.Currency
 	}
+
+	// Resolve contract price list for the user (if applicable)
+	var contractPriceListID *string
+	if h.services.Price != nil && h.services.User != nil && h.services.Company != nil {
+		if usr, userErr := h.services.User.GetByID(c.Request.Context(), userID); userErr == nil && usr.CompanyID != nil {
+			if company, compErr := h.services.Company.GetCompany(c.Request.Context(), *usr.CompanyID); compErr == nil && company.PriceListID != nil {
+				contractPriceListID = company.PriceListID
+			}
+		}
+	}
+
+	var priceChangeWarnings []string
 	for _, item := range items {
 		product, productErr := h.services.Product.GetProductByID(c.Request.Context(), item.ProductID)
 		if productErr != nil {
@@ -241,15 +283,36 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 				fmt.Sprintf("Product %s is no longer available for ordering", item.ProductID))
 			return
 		}
+
+		// Re-resolve price server-side at checkout time (not stale cart price)
+		var unitPrice float64
+		if contractPriceListID != nil && h.services.Price != nil {
+			if cp, priceErr := h.services.Price.GetPriceForProduct(c.Request.Context(), item.ProductID, *contractPriceListID, item.Quantity); priceErr == nil {
+				unitPrice = cp
+			}
+		}
+		if unitPrice <= 0 {
+			unitPrice = product.BasePrice
+		}
+		if unitPrice <= 0 {
+			utils.ErrorResponse(c, http.StatusUnprocessableEntity, "no_price",
+				fmt.Sprintf("No price available for product %s. Please contact support.", item.ProductID))
+			return
+		}
+		unitPrice = h.services.Product.ResolveCheckoutUnitPrice(c.Request.Context(), product, unitPrice, req.ShippingAddress.Country)
+		if item.UnitPrice > 0 && unitPrice != item.UnitPrice {
+			priceChangeWarnings = append(priceChangeWarnings, fmt.Sprintf("Price for %s updated from %.2f to %.2f", item.ProductID, item.UnitPrice, unitPrice))
+		}
+
 		orderItems = append(orderItems, modelsOrder.OrderItem{
 			ProductID:      item.ProductID,
 			Quantity:       item.Quantity,
-			UnitPrice:      item.UnitPrice,
+			UnitPrice:      unitPrice,
 			Specifications: item.Specifications,
 		})
 		selectedProducts = append(selectedProducts, *product)
 		productByID[item.ProductID] = *product
-		subtotal += float64(item.Quantity) * item.UnitPrice
+		subtotal += float64(item.Quantity) * unitPrice
 		if item.Currency != "" && req.Currency == "" {
 			currency = item.Currency
 		}
@@ -261,8 +324,8 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 		return
 	}
 
-	// Validate country compliance (same as CustomerCreateOrder)
-	compliance := h.services.Order.ValidateCountryCompliance(req.ShippingAddress.Country, selectedProducts)
+	// Validate country compliance (same as CustomerCreateOrder，含市场画像)
+	compliance := h.services.Product.ValidateComplianceWithMarketProfiles(c.Request.Context(), req.ShippingAddress.Country, selectedProducts)
 	if len(compliance.Violations) > 0 {
 		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
 			Error:   "compliance_violation",
@@ -276,8 +339,13 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 		return
 	}
 
-	// Validate inventory (same as CustomerCreateOrder)
-	inventory := h.services.Order.ValidateInventory(orderItems, productByID)
+	// Validate inventory（含 OMS 自建站渠道可售量封顶）
+	ids := make([]string, 0, len(productByID))
+	for id := range productByID {
+		ids = append(ids, id)
+	}
+	sellable, _ := h.services.Product.EffectiveSellableByProducts(c.Request.Context(), ids, modelsProduct.ChannelWebstore)
+	inventory := h.services.Order.ValidateInventoryWithSellable(orderItems, productByID, sellable)
 	if len(inventory.Violations) > 0 {
 		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
 			Error:   "inventory_violation",
@@ -304,6 +372,10 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 		ShippingAddress: req.ShippingAddress,
 	}
 
+	if !h.ensureActiveOrKYBBypassForAmount(c, userID, subtotal, kyb.CartLineProductIDs(items)...) {
+		return
+	}
+
 	if err := h.services.Order.CreateOrderWithStockReservation(c.Request.Context(), order); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to create order from cart")
 		return
@@ -326,7 +398,7 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 			"country":  compliance.Country,
 			"warnings": compliance.Warnings,
 		},
-		"inventory": gin.H{"warnings": inventory.Warnings},
+		"inventory": gin.H{"warnings": append(inventory.Warnings, priceChangeWarnings...)},
 	})
 }
 

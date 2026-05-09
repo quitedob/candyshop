@@ -1,6 +1,12 @@
+import { useLocalePath } from '#i18n'
+import { stripLocalePathPrefix } from '~/utils/stripLocalePathPrefix'
+
 export default defineNuxtRouteMiddleware(async (to) => {
   const { initAuth, isAuthenticated, isAdmin } = useAuth()
   await initAuth()
+
+  const localePath = useLocalePath()
+  const pathWithoutLocale = stripLocalePathPrefix(to.path)
 
   const publicRoutes = new Set([
     '/login',
@@ -14,27 +20,28 @@ export default defineNuxtRouteMiddleware(async (to) => {
     '/auth/verify-email'
   ])
 
-  const isPublicRoute = publicRoutes.has(to.path)
-  const requiresProtectedArea = to.path.startsWith('/admin') || to.path.startsWith('/customer')
+  const isPublicRoute = publicRoutes.has(pathWithoutLocale)
+  const requiresProtectedArea =
+    pathWithoutLocale.startsWith('/admin') || pathWithoutLocale.startsWith('/customer')
 
   if (!isAuthenticated.value && requiresProtectedArea) {
     // R4-15: Only allow relative redirects to prevent open redirect attacks
-    const redirectPath = to.fullPath.startsWith('/') ? to.fullPath : '/customer/dashboard'
+    const redirectPath = to.fullPath.startsWith('/') ? to.fullPath : localePath('/customer/dashboard')
     return navigateTo({
-      path: '/auth/login',
+      path: localePath('/auth/login'),
       query: { redirect: redirectPath }
     })
   }
 
   if (isAuthenticated.value && isPublicRoute) {
     if (isAdmin.value) {
-      return navigateTo('/admin')
+      return navigateTo(localePath('/admin'))
     }
-    return navigateTo('/customer/dashboard')
+    return navigateTo(localePath('/customer/dashboard'))
   }
 
-  if (to.path.startsWith('/admin') && !isAdmin.value) {
-    return navigateTo('/customer/dashboard')
+  if (pathWithoutLocale.startsWith('/admin') && !isAdmin.value) {
+    return navigateTo(localePath('/customer/dashboard'))
   }
 })
 

@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="mb-6">
-      <NuxtLink to="/customer/orders" class="flex items-center text-sm font-medium text-highlight hover:text-highlight-hover">
+      <NuxtLink :to="localePath('/customer/orders')" class="flex items-center text-sm font-medium text-highlight hover:text-highlight-hover">
         <Icon name="heroicons:arrow-left" class="mr-1 h-4 w-4" />
         {{ t('customer.orders.back') }}
       </NuxtLink>
@@ -15,10 +15,10 @@
     <div v-else-if="order" class="bg-white shadow-lg rounded-xl overflow-hidden">
       <div class="px-6 py-5 flex justify-between items-center bg-bg-alt border-b border-border">
         <div>
-          <h3 class="text-lg leading-6 font-semibold text-primary">Order #{{ order.orderNumber || order.id.substring(0,8) }}</h3>
+          <h3 class="text-lg leading-6 font-semibold text-primary">{{ t('customer.orders.detail_title', { id: order.orderNumber || order.id.substring(0, 8) }) }}</h3>
           <p class="mt-1 max-w-2xl text-sm text-light">{{ t('customer.orders.placed_on') }} {{ new Date(order.createdAt).toLocaleDateString() }}</p>
         </div>
-        <span :class="[statusBadge(order.status), 'badge']">{{ order.status }}</span>
+        <span :class="[statusBadge(order.status), 'badge']">{{ enumLabel('order_status', order.status) }}</span>
       </div>
       <div v-if="order.status === 'pending_confirmation'" class="mx-6 mt-4 rounded-lg border border-warning bg-warning-10 px-4 py-3">
         <div class="flex items-start justify-between gap-4">
@@ -40,12 +40,12 @@
           </button>
         </div>
       </div>
-      <div v-if="order.status === 'pending'" class="mx-6 mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+      <div v-if="order.status === 'pending'" class="mx-6 mt-4 rounded-lg border border-blue-200 bg-orange-50 px-4 py-3">
         <div class="flex items-start gap-3">
           <Icon name="heroicons:clock" class="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
           <div>
-            <p class="text-sm font-medium text-blue-800">Your order request has been received.</p>
-            <p class="mt-1 text-sm text-blue-700">Our sales team will contact you within 24 hours to confirm order details, pricing, and delivery schedule.</p>
+            <p class="text-sm font-medium text-orange-800">{{ t('customer.orders.pending_request_title') }}</p>
+            <p class="mt-1 text-sm text-orange-700">{{ t('customer.orders.pending_request_body') }}</p>
           </div>
         </div>
       </div>
@@ -57,7 +57,7 @@
           </div>
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-light">{{ t('customer.orders.total_amount') }}</dt>
-            <dd class="mt-1 text-sm font-bold text-highlight">{{ order.currency || 'USD' }} {{ order.totalAmount?.toLocaleString() || '0' }}</dd>
+            <dd class="mt-1 text-sm font-bold text-highlight">{{ cur(order.currency) }} {{ order.totalAmount != null ? order.totalAmount.toLocaleString() : t('common.display.zero') }}</dd>
           </div>
           <div class="sm:col-span-1 border-t border-border pt-4">
             <dt class="text-sm font-medium text-light">{{ t('customer.orders.shipping_address') }}</dt>
@@ -65,7 +65,7 @@
           </div>
           <div class="sm:col-span-1 border-t border-border pt-4">
             <dt class="text-sm font-medium text-light">{{ t('customer.orders.payment_status') }}</dt>
-            <dd class="mt-1 text-sm text-primary">{{ order.paymentStatus || 'unpaid' }}</dd>
+            <dd class="mt-1 text-sm text-primary">{{ enumLabel('payment_status', order.paymentStatus, 'unpaid') }}</dd>
           </div>
           <div class="sm:col-span-2 border-t border-border pt-4">
             <dt class="text-sm font-medium text-light">{{ t('customer.orders.tracking_number') }}</dt>
@@ -106,9 +106,9 @@
               <tr v-for="(item, idx) in order.items" :key="`${item.productId}-${idx}`">
                 <td class="px-4 py-3 text-sm text-primary font-mono">{{ item.productId }}</td>
                 <td class="px-4 py-3 text-sm text-primary">{{ item.quantity }}</td>
-                <td class="px-4 py-3 text-sm text-primary">{{ order.currency || 'USD' }} {{ Number(item.unitPrice || 0).toLocaleString() }}</td>
-                <td class="px-4 py-3 text-sm text-primary font-semibold">{{ order.currency || 'USD' }} {{ Number((item.quantity || 0) * (item.unitPrice || 0)).toLocaleString() }}</td>
-                <td class="px-4 py-3 text-sm text-light">{{ item.specifications || 'N/A' }}</td>
+                <td class="px-4 py-3 text-sm text-primary">{{ cur(order.currency) }} {{ Number(item.unitPrice || 0).toLocaleString() }}</td>
+                <td class="px-4 py-3 text-sm text-primary font-semibold">{{ cur(order.currency) }} {{ Number((item.quantity || 0) * (item.unitPrice || 0)).toLocaleString() }}</td>
+                <td class="px-4 py-3 text-sm text-light">{{ item.specifications || t('customer.orders.spec_na') }}</td>
               </tr>
             </tbody>
           </table>
@@ -137,9 +137,9 @@
           <div>
             <label class="block text-sm font-medium text-primary mb-1">{{ t('customer.orders.payment_method') }}</label>
             <select v-model="paymentForm.method" class="form-input">
-              <option value="bank_transfer">Bank Transfer</option>
-              <option value="swift">SWIFT Transfer</option>
-              <option value="other">Other</option>
+              <option value="bank_transfer">{{ t('customer.orders.payment_method_bank') }}</option>
+              <option value="swift">{{ t('customer.orders.payment_method_swift') }}</option>
+              <option value="other">{{ t('customer.orders.payment_method_other') }}</option>
             </select>
           </div>
           <div>
@@ -167,6 +167,8 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const route = useRoute()
 const { t } = useI18n()
+const localePath = useLocalePath()
+const { currencyOrDefault: cur, enumLabel } = useDisplay()
 const api = useApi()
 const id = route.params.id as string
 const order = ref<any>(null)
@@ -191,16 +193,16 @@ onMounted(async () => { await fetchOrder() })
 const fetchOrder = async () => {
   pending.value = true; error.value = ''
   try { order.value = await api.getOrder(id); complianceAck.value = false }
-  catch (err: any) { error.value = err?.message || 'Failed to fetch order details' }
+  catch (err: any) { error.value = err?.message || t('errors.api.load_failed') }
   finally { pending.value = false }
 }
 
 const confirmOrder = async () => {
   if (!order.value?.id) return
-  if (!order.value.complianceOfficialEvidence && !complianceAck.value) { error.value = 'Please confirm manual compliance review before proceeding.'; return }
+  if (!order.value.complianceOfficialEvidence && !complianceAck.value) { error.value = t('customer.orders.error_compliance_ack'); return }
   confirming.value = true; error.value = ''
   try { await api.confirmOrder(order.value.id, order.value.complianceOfficialEvidence ? true : complianceAck.value); await fetchOrder() }
-  catch (err: any) { error.value = err?.message || 'Failed to confirm order' }
+  catch (err: any) { error.value = err?.message || t('errors.api.confirm_failed') }
   finally { confirming.value = false }
 }
 
@@ -212,14 +214,14 @@ const cancelOrder = async () => {
     await api.post(`/user/orders/${order.value.id}/cancel`, {})
     await fetchOrder()
   } catch (err: any) {
-    cancelError.value = err?.message || 'Failed to cancel order'
+    cancelError.value = err?.message || t('errors.api.cancel_failed')
   } finally {
     cancelling.value = false
   }
 }
 
-const formatDate = (value: string | null | undefined) => { if (!value) return 'N/A'; const date = new Date(value); if (Number.isNaN(date.getTime())) return 'N/A'; return date.toLocaleString() }
-const formatAddress = (address: any) => { if (!address || typeof address !== 'object') return 'N/A'; const fields = [address.street, address.city, address.state, address.zipCode, address.country].filter((v) => typeof v === 'string' && v.trim() !== ''); if (fields.length === 0) return 'N/A'; return fields.join(', ') }
+const formatDate = (value: string | null | undefined) => { if (!value) return t('customer.orders.date_na'); const date = new Date(value); if (Number.isNaN(date.getTime())) return t('customer.orders.date_na'); return date.toLocaleString() }
+const formatAddress = (address: any) => { if (!address || typeof address !== 'object') return t('customer.orders.date_na'); const fields = [address.street, address.city, address.state, address.zipCode, address.country].filter((v) => typeof v === 'string' && v.trim() !== ''); if (fields.length === 0) return t('customer.orders.date_na'); return fields.join(', ') }
 const statusBadge = (status: string) => {
   if (status === 'pending_confirmation') return 'badge-warning'
   if (status === 'pending' || status === 'processing' || status === 'production') return 'badge-warning'
@@ -240,7 +242,7 @@ const handleFileChange = (event: Event) => {
 const uploadPaymentProof = async () => {
   if (!selectedFile.value) {
     uploadError.value = true
-    uploadMessage.value = 'Please select a file to upload'
+    uploadMessage.value = t('customer.orders.error_select_file')
     return
   }
   uploadingPayment.value = true; uploadMessage.value = ''; uploadError.value = false
@@ -256,7 +258,7 @@ const uploadPaymentProof = async () => {
     await fetchOrder()
   } catch (err: any) {
     uploadError.value = true
-    uploadMessage.value = err?.data?.message || err?.message || 'Failed to upload payment proof'
+    uploadMessage.value = err?.data?.message || err?.message || t('errors.api.upload_failed')
   } finally { uploadingPayment.value = false }
 }
 </script>
@@ -276,7 +278,7 @@ const uploadPaymentProof = async () => {
 .form-input:focus {
   outline: none;
   border-color: var(--color-highlight);
-  box-shadow: 0 0 0 3px rgba(255, 107, 74, 0.1);
+  box-shadow: 0 0 0 3px rgba(var(--color-highlight-rgb), 0.1);
 }
 
 .file-input {

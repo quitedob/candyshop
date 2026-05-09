@@ -1,11 +1,11 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
     <!-- Header -->
-    <div class="bg-white border-b border-blue-100 shadow-sm">
+    <div class="bg-white border-b border-orange-100 shadow-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div class="flex items-center justify-between">
           <div>
-            <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-orange-500 to-amber-600 bg-clip-text text-transparent">
               {{ t('customer.products.title') }}
             </h1>
             <p class="mt-1 text-sm text-gray-600">{{ t('customer.products.subtitle') }}</p>
@@ -13,7 +13,7 @@
           <div class="flex items-center gap-3">
             <div class="relative">
               <Icon name="heroicons:magnifying-glass" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input v-model="searchQuery" type="text" :placeholder="t('customer.products.search')" class="pl-10 pr-4 py-2 w-64 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+              <input v-model="searchQuery" type="text" :placeholder="t('customer.products.search')" class="pl-10 pr-4 py-2 w-64 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm" />
             </div>
             <button @click="showFilters = !showFilters" class="p-2 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
               <Icon name="heroicons:adjustments" class="h-5 w-5 text-gray-600" />
@@ -24,7 +24,7 @@
     </div>
 
     <!-- AI 选品面板 -->
-    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+    <div class="bg-gradient-to-r from-orange-500 to-amber-600 text-white">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div class="flex items-center gap-3">
           <button @click="showAIPanel = !showAIPanel"
@@ -63,7 +63,7 @@
             </div>
             <div class="flex items-center gap-3">
               <button @click="runAIRecommend" :disabled="aiLoading || !aiForm.prompt.trim()"
-                class="px-5 py-2 bg-white text-blue-600 font-semibold rounded-xl hover:bg-blue-50 disabled:opacity-50 transition-colors flex items-center gap-2 text-sm">
+                class="px-5 py-2 bg-white text-orange-600 font-semibold rounded-xl hover:bg-orange-50 disabled:opacity-50 transition-colors flex items-center gap-2 text-sm">
                 <Icon v-if="aiLoading" name="heroicons:arrow-path" class="h-4 w-4 animate-spin" />
                 <Icon v-else name="heroicons:sparkles" class="h-4 w-4" />
                 {{ aiLoading ? t('customer.products.ai_thinking') : t('customer.products.ai_recommend') }}
@@ -89,7 +89,7 @@
                     </div>
                     <div class="flex gap-1 flex-shrink-0">
                       <span v-if="item.halalCertified" class="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded-full">Halal</span>
-                      <span v-if="item.oemAvailable" class="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">OEM</span>
+                      <span v-if="item.oemAvailable" class="px-1.5 py-0.5 bg-orange-100 text-orange-700 text-xs rounded-full">OEM</span>
                     </div>
                   </div>
                   <p class="text-xs text-gray-600 italic">{{ item.reason }}</p>
@@ -100,13 +100,13 @@
                         <Icon name="heroicons:minus" class="h-3 w-3" />
                       </button>
                       <input v-model.number="item.quantity" type="number" :min="item.moq || 1"
-                        class="w-14 h-7 text-center text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                        class="w-14 h-7 text-center text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500" />
                       <button @click="item.quantity += 1"
                         class="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600">
                         <Icon name="heroicons:plus" class="h-3 w-3" />
                       </button>
                     </div>
-                    <NuxtLink :to="`/customer/inquiries/new?product=${item.id}&name=${encodeURIComponent(item.name)}`"
+                    <NuxtLink :to="`${localePath('/customer/inquiries/new')}?product=${item.id}&name=${encodeURIComponent(item.name)}`"
                       class="ml-auto px-3 py-1.5 bg-orange-500 text-white text-xs font-medium rounded-lg hover:bg-orange-600 transition-colors">
                       {{ t('customer.products.inquire') }}
                     </NuxtLink>
@@ -123,7 +123,7 @@
       <div class="flex gap-8">
         <!-- Filters Sidebar -->
         <aside v-if="showFilters" class="w-64 flex-shrink-0">
-          <div class="bg-white rounded-2xl shadow-sm border border-blue-100 p-5 sticky top-8">
+          <div class="bg-white rounded-2xl shadow-sm border border-orange-100 p-5 sticky top-8">
             <div class="flex items-center justify-between mb-4">
               <h3 class="font-semibold text-gray-900">{{ t('customer.products.filters') }}</h3>
               <button @click="showFilters = false" class="text-gray-400 hover:text-gray-600">
@@ -136,7 +136,7 @@
               <h4 class="text-sm font-medium text-gray-700 mb-3">{{ t('customer.products.categories') }}</h4>
               <div class="space-y-2">
                 <label v-for="cat in categories" :key="cat.slug" class="flex items-center gap-2 cursor-pointer">
-                  <input v-model="selectedCategories" :value="cat.slug" type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                  <input v-model="selectedCategories" :value="cat.slug" type="checkbox" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500" />
                   <span class="text-sm text-gray-600">{{ cat.name }}</span>
                   <span class="text-xs text-gray-400 ml-auto">({{ cat.productCount }})</span>
                 </label>
@@ -148,15 +148,15 @@
               <h4 class="text-sm font-medium text-gray-700 mb-3">{{ t('customer.products.certifications') }}</h4>
               <div class="space-y-2">
                 <label class="flex items-center gap-2 cursor-pointer">
-                  <input v-model="filters.halal" type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                  <input v-model="filters.halal" type="checkbox" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500" />
                   <span class="text-sm text-gray-600">Halal Certified</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
-                  <input v-model="filters.oemOnly" type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                  <input v-model="filters.oemOnly" type="checkbox" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500" />
                   <span class="text-sm text-gray-600">OEM Available</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
-                  <input v-model="filters.featuredOnly" type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                  <input v-model="filters.featuredOnly" type="checkbox" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500" />
                   <span class="text-sm text-gray-600">Featured</span>
                 </label>
               </div>
@@ -166,15 +166,15 @@
             <div class="mb-6">
               <h4 class="text-sm font-medium text-gray-700 mb-3">{{ t('customer.products.moq_range') }}</h4>
               <div class="flex items-center gap-2">
-                <input v-model.number="filters.minMoq" type="number" min="0" :placeholder="t('customer.products.min')" class="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input v-model.number="filters.minMoq" type="number" min="0" :placeholder="t('customer.products.min')" class="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
                 <span class="text-gray-400">-</span>
-                <input v-model.number="filters.maxMoq" type="number" min="0" :placeholder="t('customer.products.max')" class="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input v-model.number="filters.maxMoq" type="number" min="0" :placeholder="t('customer.products.max')" class="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
             </div>
 
             <!-- Apply/Clear -->
             <div class="flex gap-2">
-              <button @click="applyFilters" class="flex-1 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+              <button @click="applyFilters" class="flex-1 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors">
                 {{ t('customer.products.apply') }}
               </button>
               <button @click="clearFilters" class="px-3 py-2 border border-gray-200 text-gray-600 text-sm rounded-lg hover:bg-gray-50 transition-colors">
@@ -187,7 +187,7 @@
         <!-- Product Grid -->
         <div class="flex-1">
           <div v-if="pending" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <div v-for="i in 8" :key="i" class="bg-white rounded-2xl shadow-sm border border-blue-100 overflow-hidden animate-pulse">
+            <div v-for="i in 8" :key="i" class="bg-white rounded-2xl shadow-sm border border-orange-100 overflow-hidden animate-pulse">
               <div class="h-48 bg-gray-200"></div>
               <div class="p-4 space-y-3">
                 <div class="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -218,7 +218,7 @@
               </p>
               <div class="flex items-center gap-2">
                 <span class="text-sm text-gray-500">{{ t('customer.products.sort_by') }}</span>
-                <select v-model="sortBy" @change="fetchProducts" class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select v-model="sortBy" @change="fetchProducts" class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
                   <option value="popular">{{ t('customer.products.sort_popular') }}</option>
                   <option value="name">{{ t('customer.products.sort_name') }}</option>
                   <option value="moq_low">{{ t('customer.products.sort_moq_low') }}</option>
@@ -229,9 +229,9 @@
 
             <!-- Product Grid -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              <div v-for="product in products" :key="product.id" class="group bg-white rounded-2xl shadow-sm border border-blue-100 overflow-hidden hover:shadow-xl hover:border-blue-200 transition-all duration-300">
+              <div v-for="product in products" :key="product.id" class="group bg-white rounded-2xl shadow-sm border border-orange-100 overflow-hidden hover:shadow-xl hover:border-blue-200 transition-all duration-300">
                 <!-- Product Image -->
-                <div class="relative h-48 bg-gradient-to-br from-blue-50 to-indigo-50 overflow-hidden">
+                <div class="relative h-48 bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden">
                   <img v-if="product.thumbnail" :src="product.thumbnail" :alt="product.name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   <div v-else class="w-full h-full flex items-center justify-center">
                     <Icon name="heroicons:cube" class="h-16 w-16 text-blue-200" />
@@ -247,7 +247,7 @@
                   </div>
                   <!-- OEM Badge -->
                   <div v-if="product.oemAvailable" class="absolute top-3 right-3">
-                    <span class="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded-full flex items-center gap-1">
+                    <span class="px-2 py-1 bg-orange-600 text-white text-xs font-medium rounded-full flex items-center gap-1">
                       <Icon name="heroicons:sparkles" class="h-3 w-3" />
                       OEM
                     </span>
@@ -256,7 +256,7 @@
 
                 <!-- Product Info -->
                 <div class="p-4">
-                  <div class="text-xs text-blue-600 font-medium mb-1">{{ product.category }}</div>
+                  <div class="text-xs text-orange-600 font-medium mb-1">{{ product.category }}</div>
                   <h3 class="font-semibold text-gray-900 mb-1 line-clamp-1">{{ product.name }}</h3>
                   <p class="text-sm text-gray-500 mb-3 line-clamp-2">{{ product.summary || product.description?.substring(0, 80) }}</p>
 
@@ -277,7 +277,7 @@
                     <span v-for="flavor in product.flavors?.slice(0, 3)" :key="flavor" class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
                       {{ flavor }}
                     </span>
-                    <span v-for="shape in product.shapes?.slice(0, 2)" :key="shape" class="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs rounded-full">
+                    <span v-for="shape in product.shapes?.slice(0, 2)" :key="shape" class="px-2 py-0.5 bg-orange-50 text-orange-600 text-xs rounded-full">
                       {{ shape }}
                     </span>
                     <span v-if="(product.flavors?.length || 0) > 3 || (product.shapes?.length || 0) > 2" class="px-2 py-0.5 bg-gray-50 text-gray-400 text-xs rounded-full">
@@ -289,15 +289,15 @@
                   <div class="flex items-center justify-between pt-3 border-t border-gray-100">
                     <div>
                       <p class="text-xs text-gray-500">{{ t('customer.products.unit_price') }}</p>
-                      <p class="text-lg font-bold text-blue-600">
-                        {{ product.currency || 'USD' }} {{ (product.unitPrice || 0).toLocaleString() }}
+                      <p class="text-lg font-bold text-orange-600">
+                        {{ cur(product.currency) }} {{ (product.unitPrice || 0).toLocaleString() }}
                       </p>
                     </div>
                     <div class="flex gap-2">
-                      <NuxtLink :to="`/customer/inquiries/new?product=${product.id}&name=${encodeURIComponent(product.name)}`" class="p-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors" :title="t('customer.products.inquire')">
+                      <NuxtLink :to="`${localePath('/customer/inquiries/new')}?product=${product.id}&name=${encodeURIComponent(product.name)}`" class="p-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors" :title="t('customer.products.inquire')">
                         <Icon name="heroicons:chat-bubble-left" class="h-5 w-5" />
                       </NuxtLink>
-                      <NuxtLink :to="`/customer/products/${product.slug || product.id}`" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                      <NuxtLink :to="localePath(`/customer/products/${product.slug || product.id}`)" class="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors">
                         {{ t('customer.products.view_details') }}
                       </NuxtLink>
                     </div>
@@ -312,7 +312,7 @@
                 <Icon name="heroicons:chevron-left" class="h-5 w-5" />
               </button>
               <div class="flex items-center gap-1">
-                <button v-for="p in visiblePages" :key="p" @click="goToPage(p)" class="w-10 h-10 flex items-center justify-center rounded-lg text-sm font-medium transition-colors" :class="p === page ? 'bg-blue-600 text-white' : 'border border-gray-200 hover:bg-gray-50'">
+                <button v-for="p in visiblePages" :key="p" @click="goToPage(p)" class="w-10 h-10 flex items-center justify-center rounded-lg text-sm font-medium transition-colors" :class="p === page ? 'bg-orange-600 text-white' : 'border border-gray-200 hover:bg-gray-50'">
                   {{ p }}
                 </button>
               </div>
@@ -344,6 +344,8 @@ definePageMeta({
 })
 
 const { t } = useI18n()
+const localePath = useLocalePath()
+const { currencyOrDefault: cur } = useDisplay()
 const api = useApi()
 
 const products = ref<any[]>([])
@@ -367,7 +369,7 @@ const aiForm = reactive({
   targetCountry: '',
   quantity: 1,
   budget: 0,
-  currency: 'USD',
+  currency: cur(null),
 })
 
 const runAIRecommend = async () => {
@@ -382,7 +384,7 @@ const runAIRecommend = async () => {
       targetCountry: aiForm.targetCountry.trim() || 'global',
       quantity: Math.max(1, aiForm.quantity || 1),
       budget: aiForm.budget || 0,
-      currency: (aiForm.currency || 'USD').toUpperCase(),
+      currency: cur(aiForm.currency).toUpperCase(),
     })
     aiResults.value = (res.recommendations || []).map((item: any) => ({
       ...item,
@@ -401,7 +403,7 @@ const runAIRecommend = async () => {
 
 const inquireAllAI = () => {
   const names = aiResults.value.map(item => item.name).join(', ')
-  navigateTo(`/customer/inquiries/new?products=${encodeURIComponent(names)}`)
+  navigateTo(`${localePath('/customer/inquiries/new')}?products=${encodeURIComponent(names)}`)
 }
 
 const searchQuery = ref('')

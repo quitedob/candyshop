@@ -45,6 +45,11 @@
             <h1 class="product-header__title">{{ product.name }}</h1>
             <p class="product-header__summary">{{ product.summary }}</p>
 
+            <!-- Price -->
+            <p v-if="product.unitPrice" class="product-header__price">
+              {{ $t('product.price_from') }} ${{ product.unitPrice.toLocaleString() }}{{ $t('product.price_per_unit') }}
+            </p>
+
             <!-- Quick Specs -->
             <div class="product-header__specs">
               <div v-if="product.moq" class="product-header__spec">
@@ -57,7 +62,7 @@
               </div>
               <div v-if="product.port" class="product-header__spec">
                 <Icon name="lucide:anchor" size="18" />
-                <span>{{ $t('factory.port') || 'Port' }}: <strong>{{ product.port }}</strong></span>
+                <span>{{ $t('factory.port') }}: <strong>{{ product.port }}</strong></span>
               </div>
             </div>
 
@@ -147,7 +152,7 @@
           <div v-else-if="activeTab === 'oem'" key="oem" class="tab-content">
             <OEMOptions
               :options="oemOptions"
-              :subtitle="$t('oem.customize_message') || 'Select your customization options'"
+              :subtitle="$t('oem.customize_message')"
             />
           </div>
           </Transition>
@@ -277,7 +282,7 @@ const breadcrumbItems = computed(() => [
 
 // Tabs
 const tabs = [
-  { id: 'description', label: t('nav.about') || 'About', icon: 'lucide:info' },
+  { id: 'description', label: t('nav.about'), icon: 'lucide:info' },
   { id: 'specs', label: t('product.specifications'), icon: 'lucide:list' },
   { id: 'packaging', label: t('product.packaging'), icon: 'lucide:package' },
   { id: 'oem', label: t('nav.oem'), icon: 'lucide:settings' }
@@ -285,12 +290,12 @@ const tabs = [
 
 // Spec rows
 const specRows = computed(() => [
-  { label: t('product.flavors'), value: product.value.flavors?.join(', ') || '-', type: 'text' },
-  { label: t('product.shapes'), value: product.value.shapes?.join(', ') || '-', type: 'text' },
-  { label: t('product.ingredients'), value: product.value.ingredients || '-', type: 'text' },
-  { label: t('product.allergens'), value: product.value.allergens || '-', type: 'text' },
-  { label: 'Shelf Life', value: product.value.shelfLife || '-', type: 'text' },
-  { label: 'Storage', value: product.value.storage || '-', type: 'text' }
+  { label: t('product.flavors'), value: product.value.flavors?.join(', ') || t('common.display.em_dash'), type: 'text' },
+  { label: t('product.shapes'), value: product.value.shapes?.join(', ') || t('common.display.em_dash'), type: 'text' },
+  { label: t('product.ingredients'), value: product.value.ingredients || t('common.display.em_dash'), type: 'text' },
+  { label: t('product.allergens'), value: product.value.allergens || t('common.display.em_dash'), type: 'text' },
+  { label: t('product.shelf_life'), value: product.value.shelfLife || t('common.display.em_dash'), type: 'text' },
+  { label: t('product.storage'), value: product.value.storage || t('common.display.em_dash'), type: 'text' }
 ])
 
 // Packaging options
@@ -423,7 +428,7 @@ const handleInquire = (product: any) => {
     return
   }
   router.push({
-    path: localePath('/contact'),
+    path: localePath('/customer/inquiries/new'),
     query: { product: product.name }
   })
 }
@@ -434,8 +439,8 @@ const handleSample = (product: any) => {
     return
   }
   router.push({
-    path: localePath('/contact'),
-    query: { product: product.name, sample: 'true' }
+    path: localePath('/customer/inquiries/new'),
+    query: { product: product.name, message: 'I would like to request a sample for this product.' }
   })
 }
 
@@ -485,6 +490,13 @@ useSeo({
   font-size: var(--text-lg);
   color: var(--color-text-light);
   margin-bottom: var(--spacing-xl);
+}
+
+.product-header__price {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--color-highlight);
+  margin-bottom: var(--spacing-lg);
 }
 
 .product-header__specs {

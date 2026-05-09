@@ -16,12 +16,13 @@ import (
 )
 
 type Repositories struct {
-	User           *user.UserRepository
-	Company        *user.CompanyRepository
-	Inquiry        *inquiry.InquiryRepository
-	Order          *order.OrderRepository
-	Payment        *order.PaymentRepository
-	Invoice        *order.InvoiceRepository
+	User               *user.UserRepository
+	Company            *user.CompanyRepository
+	Inquiry            *inquiry.InquiryRepository
+	Order              *order.OrderRepository
+	Payment            *order.PaymentRepository
+	Invoice            *order.InvoiceRepository
+	DocumentAdjustment *order.DocumentAdjustmentRepository
 	Product        *product.ProductRepository
 	Price          *product.PriceRepository
 	Content        *content.ContentRepository
@@ -30,6 +31,7 @@ type Repositories struct {
 	Project        *oem.ProjectRepository
 	Trade          trade.TradeRepository
 	Shipment       *trade.ShipmentRepository
+	ShipmentEvent  *trade.ShipmentEventRepository
 	TradeDocDetail *trade.TradeDocumentDetailRepository
 	ActivityLog    *activitylog.ActivityLogRepository
 	SystemSetting  *systemsetting.SystemSettingRepository
@@ -37,12 +39,13 @@ type Repositories struct {
 
 func New(db *gorm.DB) *Repositories {
 	return &Repositories{
-		User:           user.NewUserRepository(db),
-		Company:        user.NewCompanyRepository(db),
-		Inquiry:        inquiry.NewInquiryRepository(db),
-		Order:          order.NewOrderRepository(db),
-		Payment:        order.NewPaymentRepository(db),
-		Invoice:        order.NewInvoiceRepository(db),
+		User:               user.NewUserRepository(db),
+		Company:            user.NewCompanyRepository(db),
+		Inquiry:            inquiry.NewInquiryRepository(db),
+		Order:              order.NewOrderRepository(db),
+		Payment:            order.NewPaymentRepository(db),
+		Invoice:            order.NewInvoiceRepository(db),
+		DocumentAdjustment: order.NewDocumentAdjustmentRepository(db),
 		Product:        product.NewProductRepository(db),
 		Price:          product.NewPriceRepository(db),
 		Content:        content.NewContentRepository(db),
@@ -51,8 +54,10 @@ func New(db *gorm.DB) *Repositories {
 		Project:        oem.NewProjectRepository(db),
 		Trade:          trade.NewTradeRepository(db),
 		Shipment:       trade.NewShipmentRepository(db),
+			ShipmentEvent:  trade.NewShipmentEventRepository(db),
 		TradeDocDetail: trade.NewTradeDocumentDetailRepository(db),
 		ActivityLog:    activitylog.NewActivityLogRepository(db),
 		SystemSetting:  systemsetting.NewSystemSettingRepository(db),
 	}
 }
+

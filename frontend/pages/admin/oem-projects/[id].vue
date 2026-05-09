@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="mb-6">
-      <NuxtLink to="/admin/oem-projects" class="flex items-center text-sm font-medium text-blue-600 hover:text-blue-500">
+      <NuxtLink :to="localePath('/admin/oem-projects')" class="flex items-center text-sm font-medium text-orange-600 hover:text-orange-500">
         <Icon name="heroicons:arrow-left" class="mr-1 h-4 w-4" />
         {{ t('admin.oemProjects.back') }}
       </NuxtLink>
@@ -172,7 +172,7 @@
               {{ statusMessage }}
             </div>
             <div class="flex justify-end">
-              <button type="submit" :disabled="updatingStatus" class="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50">
+              <button type="submit" :disabled="updatingStatus" class="inline-flex justify-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-700 disabled:opacity-50">
                 {{ updatingStatus ? t('admin.oemProjects.updating') : t('admin.oemProjects.update') }}
               </button>
             </div>
@@ -194,6 +194,7 @@ definePageMeta({
 const route = useRoute()
 const { token } = useAuth()
 const { t } = useI18n()
+const localePath = useLocalePath()
 const config = useRuntimeConfig()
 const baseURL = config.public.apiBase || '/api/v1'
 
@@ -227,7 +228,7 @@ const fetchProject = async () => {
     statusInput.value = project.value.status || 'inquiry'
     notesInput.value = project.value.adminNotes || ''
   } catch (err: any) {
-    error.value = err?.data?.message || err.message || 'Failed to fetch project'
+    error.value = err?.data?.message || err.message || t('errors.api.load_failed')
   } finally {
     pending.value = false
   }
@@ -252,7 +253,7 @@ const updateStatus = async () => {
     setTimeout(() => { statusMessage.value = '' }, 3000)
   } catch (err: any) {
     statusError.value = true
-    statusMessage.value = err?.data?.message || err.message || 'Failed to update status'
+    statusMessage.value = err?.data?.message || err.message || t('errors.api.status_failed')
   } finally {
     updatingStatus.value = false
   }
@@ -267,7 +268,7 @@ const getStepClass = (stepKey: string) => {
   const currentIdx = getStepIndex(project.value?.status || 'inquiry')
   const stepIdx = steps.findIndex(s => s.key === stepKey)
   if (stepIdx < currentIdx) return 'bg-green-500'
-  if (stepIdx === currentIdx) return 'bg-blue-500'
+  if (stepIdx === currentIdx) return 'bg-orange-500'
   return 'bg-gray-300'
 }
 
@@ -281,14 +282,14 @@ const statusBadgeClass = (status: string) => {
   const currentIdx = getStepIndex(status)
   const maxIdx = steps.length - 1
   if (currentIdx >= maxIdx) return 'bg-green-100 text-green-800'
-  if (currentIdx >= 4) return 'bg-blue-100 text-blue-800'
+  if (currentIdx >= 4) return 'bg-orange-100 text-orange-800'
   return 'bg-yellow-100 text-yellow-800'
 }
 
 const sampleStatusClass = (status: string) => {
   if (status === 'approved') return 'bg-green-100 text-green-800'
   if (status === 'rejected') return 'bg-red-100 text-red-800'
-  if (status === 'shipped') return 'bg-blue-100 text-blue-800'
+  if (status === 'shipped') return 'bg-orange-100 text-orange-800'
   return 'bg-gray-100 text-gray-800'
 }
 

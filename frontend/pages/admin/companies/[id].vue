@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="mb-6">
-      <NuxtLink to="/admin/companies" class="flex items-center text-sm font-medium text-blue-600 hover:text-blue-500">
+      <NuxtLink :to="localePath('/admin/companies')" class="flex items-center text-sm font-medium text-orange-600 hover:text-orange-500">
         <Icon name="heroicons:arrow-left" class="mr-1 h-4 w-4" />
         {{ t('admin.companies.back') }}
       </NuxtLink>
@@ -24,7 +24,7 @@
             <p class="mt-1 max-w-2xl text-sm text-gray-500">{{ t('admin.companies.company_details') }}</p>
           </div>
           <span :class="[statusBadgeClass(company.kybStatus), 'inline-flex rounded-full px-3 py-1 text-sm font-semibold leading-5']">
-            {{ company.kybStatus || 'pending' }}
+            {{ enumLabel('kyb_status', company.kybStatus) }}
           </span>
         </div>
 
@@ -57,7 +57,7 @@
             <div v-if="company.businessLicenseUrl">
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.companies.business_license') }}</dt>
               <dd class="mt-1 text-sm">
-                <a :href="company.businessLicenseUrl" target="_blank" class="text-blue-600 hover:text-blue-900">{{ t('admin.companies.view_document') }}</a>
+                <a :href="company.businessLicenseUrl" target="_blank" class="text-orange-600 hover:text-orange-900">{{ t('admin.companies.view_document') }}</a>
               </dd>
             </div>
             <div v-if="company.kybVerifiedAt">
@@ -85,15 +85,15 @@
           <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-3">
             <div>
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.companies.credit_limit') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ company.creditLimit ? `${company.currency || 'USD'} ${company.creditLimit.toLocaleString()}` : '-' }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ company.creditLimit ? `${cur(company.currency)} ${company.creditLimit.toLocaleString()}` : cell(null) }}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.companies.payment_terms') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ company.paymentTerms || '-' }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ cell(company.paymentTerms) }}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.companies.price_list') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ company.priceListName || '-' }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ cell(company.priceListName) }}</dd>
             </div>
           </dl>
         </div>
@@ -121,8 +121,8 @@
               <tr v-else v-for="user in company.users" :key="user.id">
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ user.firstName }} {{ user.lastName }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.email }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.role?.name || user.role || '-' }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.status || '-' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ cell(user.role?.name || user.role) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ enumLabel('company_status', user.status) }}</td>
               </tr>
             </tbody>
           </table>
@@ -154,7 +154,7 @@
               {{ statusMessage }}
             </div>
             <div class="flex justify-end">
-              <button type="submit" :disabled="updatingStatus" class="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50">
+              <button type="submit" :disabled="updatingStatus" class="inline-flex justify-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-700 disabled:opacity-50">
                 {{ updatingStatus ? t('admin.companies.updating') : t('admin.companies.update') }}
               </button>
             </div>
@@ -176,6 +176,8 @@ definePageMeta({
 const route = useRoute()
 const { token } = useAuth()
 const { t } = useI18n()
+const localePath = useLocalePath()
+const { currencyOrDefault: cur, cell, enumLabel } = useDisplay()
 const config = useRuntimeConfig()
 const baseURL = config.public.apiBase || '/api/v1'
 
@@ -198,7 +200,7 @@ const fetchCompany = async () => {
     statusInput.value = company.value.kybStatus || 'pending'
     notesInput.value = company.value.kybNotes || ''
   } catch (err: any) {
-    error.value = err?.data?.message || err.message || 'Failed to fetch company'
+    error.value = err?.data?.message || err.message || t('errors.api.load_failed')
   } finally {
     pending.value = false
   }
@@ -222,7 +224,7 @@ const updateStatus = async () => {
     await fetchCompany()
   } catch (err: any) {
     statusError.value = true
-    statusMessage.value = err?.data?.message || err.message || 'Failed to update status'
+    statusMessage.value = err?.data?.message || err.message || t('errors.api.status_failed')
   } finally {
     updatingStatus.value = false
   }

@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="mb-6">
-      <NuxtLink to="/customer/inquiries" class="flex items-center text-sm font-medium text-blue-600 hover:text-blue-500">
+      <NuxtLink :to="localePath('/customer/inquiries')" class="flex items-center text-sm font-medium text-orange-600 hover:text-orange-500">
         <Icon name="heroicons:arrow-left" class="mr-1 h-4 w-4" />
         {{ t('customer.inquiries.back') }}
       </NuxtLink>
@@ -96,6 +96,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 const route = useRoute()
 const api = useApi()
 const { t } = useI18n()
+const localePath = useLocalePath()
 
 const inquiry = ref<any>(null)
 const pending = ref(true)
@@ -104,7 +105,7 @@ const error = ref('')
 const fetchInquiry = async () => {
   pending.value = true; error.value = ''
   try { inquiry.value = await api.get<any>(`/user/inquiries/${route.params.id}`) }
-  catch (err: any) { error.value = err?.message || 'Failed to fetch inquiry details' }
+  catch (err: any) { error.value = err?.message || t('errors.api.load_failed') }
   finally { pending.value = false }
 }
 
@@ -116,8 +117,8 @@ const formatProducts = (products: unknown) => {
 
 const statusClass = (status: string) => {
   if (status === 'pending') return 'bg-yellow-100 text-yellow-800'
-  if (status === 'quoted' || status === 'contacted') return 'bg-blue-100 text-blue-800'
-  if (status === 'negotiating') return 'bg-indigo-100 text-indigo-800'
+  if (status === 'quoted' || status === 'contacted') return 'bg-orange-100 text-orange-800'
+  if (status === 'negotiating') return 'bg-amber-100 text-amber-800'
   if (status === 'won') return 'bg-green-100 text-green-800'
   if (status === 'lost' || status === 'closed') return 'bg-gray-100 text-gray-800'
   return 'bg-gray-100 text-gray-800'

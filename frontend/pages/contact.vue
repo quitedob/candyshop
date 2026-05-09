@@ -52,7 +52,7 @@
                 </div>
                 <div>
                   <strong>{{ t('contact.address') }}</strong>
-                  <p>123 Industrial Zone, Sweet City<br>Sweet Province, CN</p>
+                  <p>No. 88 Shipin Road, Jinshan District<br>Shanghai 201500, China</p>
                 </div>
               </div>
 
@@ -62,7 +62,7 @@
                 </div>
                 <div>
                   <strong>{{ t('contact.phone') }}</strong>
-                  <p><a href="tel:+861234567890">+86 123 4567 890</a></p>
+                  <p><a href="tel:+862167310088">+86 21 6731 0088</a></p>
                 </div>
               </div>
 
@@ -72,7 +72,7 @@
                 </div>
                 <div>
                   <strong>{{ t('contact.email') }}</strong>
-                  <p><a href="mailto:info@candypro.com">info@candypro.com</a></p>
+                  <p><a href="mailto:sales@candypro.com">sales@candypro.com</a></p>
                 </div>
               </div>
 
@@ -82,7 +82,7 @@
                 </div>
                 <div>
                   <strong>{{ t('contact.whatsapp') }}</strong>
-                  <p><a :href="whatsappUrl" target="_blank" rel="noopener noreferrer">+86 123 4567 890</a></p>
+                  <p><a :href="whatsappUrl" target="_blank" rel="noopener noreferrer">+86 21 6731 0088</a></p>
                 </div>
               </div>
 
@@ -100,7 +100,7 @@
             <!-- Map -->
             <div class="map-card">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3058.767954321654!2d120.1234567!3d31.2345678!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzFCsDAwJzUwLjAiTiA1McKwMjAnMjMuMCJF!5e0!3m2!1sen!2sus!4v1234567890"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3418.5!2d121.3422!3d30.7413!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x35b27a!2sJinshan+Industrial+Zone!5e0!3m2!1sen!2scn"
                 width="100%"
                 height="300"
                 style="border:0;"
@@ -249,29 +249,29 @@ const offices = computed(() => [
     id: 'cn',
     country: t('contact.offices.headquarters_country'),
     address: t('contact.offices.headquarters_address'),
-    phone: '+86 123 4567 890',
-    email: 'china@candypro.com'
+    phone: '+86 21 6731 0088',
+    email: 'hq@candypro.com'
   },
   {
     id: 'us',
     country: t('contact.offices.us_country'),
     address: t('contact.offices.us_address'),
-    phone: '+1 415 123 4567',
-    email: 'usa@candypro.com'
+    phone: '+1 626 888 0168',
+    email: 'us@candypro.com'
   },
   {
     id: 'uk',
     country: t('contact.offices.uk_country'),
     address: t('contact.offices.uk_address'),
-    phone: '+44 20 1234 5678',
-    email: 'uk@candypro.com'
+    phone: '+44 20 7946 0958',
+    email: 'eu@candypro.com'
   },
   {
     id: 'ae',
     country: t('contact.offices.uae_country'),
     address: t('contact.offices.uae_address'),
-    phone: '+971 4 123 4567',
-    email: 'uae@candypro.com'
+    phone: '+971 4 355 6800',
+    email: 'mena@candypro.com'
   }
 ])
 

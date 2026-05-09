@@ -30,6 +30,7 @@ type RateLimiter struct {
 	limit    int
 	window   time.Duration
 	stopCh   chan struct{}
+	stopOnce sync.Once
 }
 
 type clientInfo struct {
@@ -52,9 +53,9 @@ func NewRateLimiter(limit int, window time.Duration) *RateLimiter {
 	return rl
 }
 
-// Stop stops the cleanup goroutine
+// Stop stops the cleanup goroutine (safe to call multiple times).
 func (rl *RateLimiter) Stop() {
-	close(rl.stopCh)
+	rl.stopOnce.Do(func() { close(rl.stopCh) })
 }
 
 // Allow checks if a request from the given IP is allowed
@@ -135,15 +136,71 @@ func RateLimit(cfg *config.SecurityConfig) (gin.HandlerFunc, *RateLimiter) {
 	}, limiter
 }
 
-// SecurityHeaders adds security headers to responses
-func SecurityHeaders() gin.HandlerFunc {
+// PublicAIRateLimit 针对公开 AI 路由的独立限流（与全局限流叠加），使用单独计数器。
+func PublicAIRateLimit(limiter *RateLimiter, limitPerMinute int) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ip := c.ClientIP()
+		allowed, remaining := limiter.Allow(ip)
+		c.Header("X-Public-AI-RateLimit-Limit", strconv.Itoa(limitPerMinute))
+		c.Header("X-Public-AI-RateLimit-Remaining", strconv.Itoa(remaining))
+		if !allowed {
+			c.JSON(http.StatusTooManyRequests, modelsProduct.ErrorResponse{
+				Error:   "rate_limit_exceeded",
+				Message: "Too many AI requests from this IP. Please try again later.",
+			})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
+// PublicInquiryRateLimit 针对 POST /public/inquiry 的独立 IP 限流（与全局限流叠加，减轻垃圾询盘）。
+func PublicInquiryRateLimit(limiter *RateLimiter, limitPerMinute int) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ip := c.ClientIP()
+		allowed, remaining := limiter.Allow(ip)
+		c.Header("X-Public-Inquiry-RateLimit-Limit", strconv.Itoa(limitPerMinute))
+		c.Header("X-Public-Inquiry-RateLimit-Remaining", strconv.Itoa(remaining))
+		if !allowed {
+			c.JSON(http.StatusTooManyRequests, modelsProduct.ErrorResponse{
+				Error:   "rate_limit_exceeded",
+				Message: "Too many inquiry submissions from this IP. Please try again later.",
+			})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
+// DisablePublicAIRoutes 当配置关闭公开 AI 时拒绝 /system 下未登录接口（需在路由层仅挂到公开 AI 子组）。
+func DisablePublicAIRoutes(cfg *config.Config) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if cfg != nil && cfg.AI.PublicRoutesDisabled {
+			c.JSON(http.StatusServiceUnavailable, modelsProduct.ErrorResponse{
+				Error:   "service_unavailable",
+				Message: "Public AI routes are disabled by configuration",
+			})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
+// SecurityHeaders adds security headers to responses.
+// HSTS is only set in production to avoid browser issues on localhost.
+func SecurityHeaders(environment string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("X-Frame-Options", "DENY")
 		c.Header("X-Content-Type-Options", "nosniff")
 		c.Header("X-XSS-Protection", "1; mode=block")
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
 		c.Header("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
-		c.Header("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
+		if environment == "production" {
+			c.Header("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
+		}
 		// SEC-11: Content-Security-Policy — allow Google Fonts for frontend styling
 		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none'")
 		c.Next()

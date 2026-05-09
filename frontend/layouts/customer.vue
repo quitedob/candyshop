@@ -10,8 +10,14 @@
       </div>
     </div>
 
-    <!-- Header -->
-    <header class="customer-header" :class="{ 'customer-header--scrolled': isScrolled }">
+    <!-- Header：有待审核横幅时顶栏下移，避免与横幅同为 sticky top:0 重叠 -->
+    <header
+      class="customer-header"
+      :class="{
+        'customer-header--scrolled': isScrolled,
+        'customer-header--with-pending': isPending
+      }"
+    >
       <div class="container">
         <div class="customer-header__inner">
           <!-- Logo -->
@@ -26,8 +32,8 @@
             </svg>
           </NuxtLink>
 
-          <!-- Desktop Navigation -->
-          <nav class="customer-header__nav hide-mobile">
+          <!-- Desktop / tablet: scroll when many items (avoids overflow on narrow widths) -->
+          <nav class="customer-header__nav hide-mobile" aria-label="Customer portal">
             <ul class="customer-header__nav-list">
               <li v-for="item in navigation" :key="item.key" class="customer-header__nav-item">
                 <NuxtLink
@@ -52,23 +58,36 @@
             </div>
 
             <!-- Cart / Order Request -->
-            <NuxtLink :to="localePath('/customer/cart')" class="customer-header__cart">
-              <Icon name="heroicons:shopping-bag" class="customer-header__cart-icon" />
+            <NuxtLink
+              :to="localePath('/customer/cart')"
+              class="customer-header__cart"
+              :aria-label="t('customer.a11y.cart')"
+            >
+              <Icon name="heroicons:shopping-bag" class="customer-header__cart-icon" aria-hidden="true" />
               <span v-if="cartCount > 0" class="customer-header__cart-badge">{{ cartCount }}</span>
             </NuxtLink>
 
             <!-- Logout Button -->
-            <button @click="handleLogout" class="customer-header__logout hide-mobile" :title="t('customer.nav.logout')">
-              <Icon name="heroicons:arrow-right-on-rectangle" class="h-5 w-5" />
+            <button
+              type="button"
+              class="customer-header__logout hide-mobile"
+              :title="t('customer.nav.logout')"
+              :aria-label="t('customer.nav.logout')"
+              @click="handleLogout"
+            >
+              <Icon name="heroicons:arrow-right-on-rectangle" class="h-5 w-5" aria-hidden="true" />
             </button>
 
             <!-- Mobile Menu Toggle -->
             <button
+              type="button"
               class="customer-header__menu-toggle hide-desktop"
+              :aria-expanded="isMenuOpen ? 'true' : 'false'"
+              :aria-controls="customerMobileNavId"
+              :aria-label="isMenuOpen ? t('customer.a11y.closeMenu') : t('customer.a11y.openMenu')"
               @click="isMenuOpen = !isMenuOpen"
-              aria-label="Toggle menu"
             >
-              <Icon :name="isMenuOpen ? 'heroicons:x-mark' : 'heroicons:bars-3'" class="customer-header__menu-icon" />
+              <Icon :name="isMenuOpen ? 'heroicons:x-mark' : 'heroicons:bars-3'" class="customer-header__menu-icon" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -76,7 +95,13 @@
 
       <!-- Mobile Navigation -->
       <Transition name="slide-down">
-        <div v-if="isMenuOpen" class="customer-header__mobile-nav hide-desktop">
+        <div
+          v-if="isMenuOpen"
+          :id="customerMobileNavId"
+          class="customer-header__mobile-nav hide-desktop"
+          role="navigation"
+          :aria-label="t('customer.brand')"
+        >
           <nav class="customer-header__mobile-nav-inner">
             <NuxtLink
               v-for="item in navigation"
@@ -88,13 +113,25 @@
             >
               {{ $t(item.key) }}
             </NuxtLink>
-            <button @click="handleLogout" class="customer-header__mobile-link text-left text-red-600">
+            <button
+              type="button"
+              class="customer-header__mobile-link customer-header__mobile-link--logout"
+              @click="handleLogout"
+            >
               {{ $t('customer.nav.logout') }}
             </button>
           </nav>
         </div>
       </Transition>
     </header>
+
+    <!-- 移动端菜单打开时遮罩，点击关闭并防止误触主内容 -->
+    <div
+      class="customer-header__backdrop hide-desktop"
+      :class="{ 'customer-header__backdrop--visible': isMenuOpen }"
+      aria-hidden="true"
+      @click="isMenuOpen = false"
+    />
 
     <!-- Page Header -->
     <div class="customer-content">
@@ -121,6 +158,7 @@ const { t } = useI18n()
 const isScrolled = ref(false)
 const isMenuOpen = ref(false)
 const cartCount = ref(0)
+const customerMobileNavId = 'customer-mobile-nav'
 
 const api = useApi()
 const fetchCartCount = async () => {
@@ -140,6 +178,18 @@ watch(() => route.path, (newPath) => {
   }
 })
 
+watch(isMenuOpen, (open) => {
+  if (import.meta.client) {
+    document.body.classList.toggle('body-lock', open)
+  }
+})
+
+const onEscape = (e) => {
+  if (e.key === 'Escape') {
+    isMenuOpen.value = false
+  }
+}
+
 // Navigation with i18n keys (matching customer.json)
 const navigation = [
   { key: 'customer.nav.dashboard', href: '/customer/dashboard' },
@@ -156,6 +206,8 @@ const navigation = [
   { key: 'customer.nav.company', href: '/customer/company' },
   { key: 'customer.nav.notifications', href: '/customer/notifications' },
   { key: 'customer.nav.profile', href: '/customer/profile' },
+  { key: 'customer.nav.help', href: '/customer/help' },
+  { key: 'customer.nav.resources', href: '/customer/resources' },
 ]
 
 // Page title based on route
@@ -171,6 +223,8 @@ const pageTitle = computed(() => {
   if (path.includes('/company')) return t('customer.page_titles.company')
   if (path.includes('/pricing')) return t('customer.page_titles.pricing')
   if (path.includes('/profile')) return t('customer.page_titles.profile')
+  if (path.includes('/help')) return t('customer.page_titles.help')
+  if (path.includes('/resources')) return t('customer.page_titles.resources')
   if (path.includes('/cart')) return t('customer.cart.title')
   if (path.includes('/products')) return t('customer.products.title')
   if (path.includes('/oem-projects')) return t('customer.oemProjects.title')
@@ -200,11 +254,16 @@ const handleLogout = async () => {
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
+  window.addEventListener('keydown', onEscape)
   fetchCartCount()
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('keydown', onEscape)
+  if (import.meta.client) {
+    document.body.classList.remove('body-lock')
+  }
 })
 </script>
 
@@ -254,6 +313,10 @@ onUnmounted(() => {
   box-shadow: var(--shadow-md);
 }
 
+.customer-header--with-pending {
+  top: 2.75rem;
+}
+
 .customer-header__inner {
   display: flex;
   align-items: center;
@@ -271,10 +334,22 @@ onUnmounted(() => {
 }
 
 /* Navigation */
+.customer-header__nav {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0 var(--spacing-sm);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
 .customer-header__nav-list {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
+  flex-wrap: nowrap;
+  width: max-content;
+  min-height: 44px;
 }
 
 .customer-header__nav-link {
@@ -294,7 +369,7 @@ onUnmounted(() => {
 
 .customer-header__nav-link--active {
   color: var(--color-highlight);
-  background: rgba(255, 107, 74, 0.08);
+  background: rgba(var(--color-highlight-rgb), 0.08);
 }
 
 /* Actions */
@@ -331,9 +406,15 @@ onUnmounted(() => {
 
 .customer-header__cart {
   position: relative;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: var(--spacing-sm);
   color: var(--color-text-light);
   transition: color var(--transition-fast);
+  box-sizing: border-box;
 }
 
 .customer-header__cart:hover {
@@ -363,19 +444,28 @@ onUnmounted(() => {
 }
 
 .customer-header__menu-toggle {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: var(--spacing-sm);
   color: var(--color-text);
 }
 
 .customer-header__logout {
+  min-width: 44px;
+  min-height: 44px;
   padding: var(--spacing-sm);
   color: var(--color-text-light);
   transition: color var(--transition-fast);
   background: none;
   border: none;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 .customer-header__logout:hover {
@@ -401,19 +491,52 @@ onUnmounted(() => {
 }
 
 .customer-header__mobile-link {
-  display: block;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  line-height: 1.3;
   padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--text-base);
   font-weight: 500;
   color: var(--color-text-light);
   border-radius: var(--radius-md);
   transition: all var(--transition-fast);
+  box-sizing: border-box;
 }
 
 .customer-header__mobile-link:hover,
 .customer-header__mobile-link--active {
   color: var(--color-highlight);
-  background: rgba(255, 107, 74, 0.08);
+  background: rgba(var(--color-highlight-rgb), 0.08);
+}
+
+.customer-header__mobile-link--logout {
+  margin-top: var(--spacing-xs);
+  border: none;
+  width: 100%;
+  cursor: pointer;
+  background: transparent;
+  font: inherit;
+  justify-content: flex-start;
+  color: var(--color-error, #ef4444);
+}
+
+.customer-header__backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-sticky) - 1);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.customer-header__backdrop--visible {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .customer-header__backdrop--visible {
+    display: none !important;
+  }
 }
 
 /* Content Area */

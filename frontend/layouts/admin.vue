@@ -1,10 +1,39 @@
 <template>
   <div class="admin-layout">
+    <!-- 窄屏顶栏：汉堡入口，避免侧栏挤占主内容 -->
+    <header class="admin-mobile-topbar">
+      <button
+        type="button"
+        class="admin-mobile-topbar__btn"
+        :aria-expanded="isMobileNavOpen ? 'true' : 'false'"
+        aria-controls="admin-sidebar-nav"
+        :aria-label="t('admin.a11y.openNav')"
+        @click="isMobileNavOpen = !isMobileNavOpen"
+      >
+        <Icon name="heroicons:bars-3" class="admin-mobile-topbar__icon" />
+      </button>
+      <span class="admin-mobile-topbar__brand">{{ t('admin.brand') }}</span>
+    </header>
+
+    <!-- 移动端侧栏遮罩 -->
+    <div
+      class="admin-sidebar-backdrop"
+      :class="{ 'admin-sidebar-backdrop--visible': isMobileNavOpen }"
+      aria-hidden="true"
+      @click="isMobileNavOpen = false"
+    />
+
     <!-- Sidebar -->
-    <aside class="admin-sidebar" :class="{ 'admin-sidebar--collapsed': isCollapsed }">
+    <aside
+      class="admin-sidebar"
+      :class="{
+        'admin-sidebar--collapsed': isCollapsed,
+        'admin-sidebar--mobile-open': isMobileNavOpen
+      }"
+    >
       <!-- Logo -->
       <div class="admin-sidebar__header">
-        <NuxtLink to="/" class="admin-sidebar__logo">
+        <NuxtLink to="/" class="admin-sidebar__logo" @click="isMobileNavOpen = false">
           <svg viewBox="0 0 180 40" fill="none" class="admin-sidebar__logo-svg">
             <circle cx="20" cy="20" r="16" fill="var(--color-highlight)" opacity="0.3"/>
             <path d="M14 20C14 16.6863 16.6863 14 20 14C23.3137 14 26 16.6863 26 20C26 23.3137 23.3137 26 20 26C16.6863 26 14 23.3137 14 20Z" stroke="var(--color-highlight)" stroke-width="2.5"/>
@@ -13,13 +42,27 @@
             <text x="45" y="27" font-family="Outfit, system-ui, sans-serif" font-size="18" font-weight="700" fill="white">CandyPro</text>
           </svg>
         </NuxtLink>
-        <button class="admin-sidebar__toggle" @click="isCollapsed = !isCollapsed">
+        <button
+          type="button"
+          class="admin-sidebar__close"
+          :aria-label="t('admin.a11y.closeNav')"
+          @click="isMobileNavOpen = false"
+        >
+          <Icon name="heroicons:x-mark" class="admin-sidebar__close-icon" />
+        </button>
+        <button
+          type="button"
+          class="admin-sidebar__toggle"
+          :aria-expanded="!isCollapsed ? 'true' : 'false'"
+          :aria-label="t('admin.a11y.toggleSidebar')"
+          @click="isCollapsed = !isCollapsed"
+        >
           <Icon :name="isCollapsed ? 'heroicons:chevron-right' : 'heroicons:chevron-left'" class="admin-sidebar__toggle-icon" />
         </button>
       </div>
 
       <!-- Navigation -->
-      <nav class="admin-sidebar__nav">
+      <nav id="admin-sidebar-nav" class="admin-sidebar__nav" :aria-label="t('admin.brand')">
         <!-- Group: Main -->
         <div class="admin-sidebar__group">
           <template v-for="item in mainNav" :key="item.key">
@@ -27,74 +70,92 @@
               :to="item.href"
               class="admin-sidebar__link"
               :class="{ 'admin-sidebar__link--active': isActive(item.href) }"
-              :title="isCollapsed ? t(item.key) : ''"
+              :title="!showNavLabels ? t(item.key) : ''"
+              @click="isMobileNavOpen = false"
             >
               <Icon :name="item.icon" class="admin-sidebar__link-icon" />
-              <span v-if="!isCollapsed" class="admin-sidebar__link-text">{{ t(item.key) }}</span>
+              <span v-if="showNavLabels" class="admin-sidebar__link-text">{{ t(item.key) }}</span>
             </NuxtLink>
           </template>
         </div>
 
         <!-- Divider -->
-        <div class="admin-sidebar__divider"></div>
+        <div class="admin-sidebar__divider" />
 
         <!-- Group: Management -->
-        <div v-if="!isCollapsed" class="admin-sidebar__group-label">{{ t('admin.nav.management') }}</div>
+        <div v-if="showNavLabels" class="admin-sidebar__group-label">{{ t('admin.nav.management') }}</div>
         <template v-for="item in managementNav" :key="item.key">
           <NuxtLink
             :to="item.href"
             class="admin-sidebar__link"
             :class="{ 'admin-sidebar__link--active': isActive(item.href) }"
-            :title="isCollapsed ? t(item.key) : ''"
+            :title="!showNavLabels ? t(item.key) : ''"
+            @click="isMobileNavOpen = false"
           >
             <Icon :name="item.icon" class="admin-sidebar__link-icon" />
-            <span v-if="!isCollapsed" class="admin-sidebar__link-text">{{ t(item.key) }}</span>
+            <span v-if="showNavLabels" class="admin-sidebar__link-text">{{ t(item.key) }}</span>
           </NuxtLink>
         </template>
 
         <!-- Divider -->
-        <div class="admin-sidebar__divider"></div>
+        <div class="admin-sidebar__divider" />
 
         <!-- Group: Super Admin -->
         <template v-if="isSuperAdmin">
-          <div v-if="!isCollapsed" class="admin-sidebar__group-label">{{ t('admin.nav.superadmin') }}</div>
+          <div v-if="showNavLabels" class="admin-sidebar__group-label">{{ t('admin.nav.superadmin') }}</div>
           <template v-for="item in superAdminNav" :key="item.key">
             <NuxtLink
               :to="item.href"
               class="admin-sidebar__link"
               :class="{ 'admin-sidebar__link--active': isActive(item.href) }"
-              :title="isCollapsed ? t(item.key) : ''"
+              :title="!showNavLabels ? t(item.key) : ''"
+              @click="isMobileNavOpen = false"
             >
               <Icon :name="item.icon" class="admin-sidebar__link-icon" />
-              <span v-if="!isCollapsed" class="admin-sidebar__link-text">{{ t(item.key) }}</span>
+              <span v-if="showNavLabels" class="admin-sidebar__link-text">{{ t(item.key) }}</span>
             </NuxtLink>
           </template>
         </template>
       </nav>
 
-      <!-- User Profile -->
+      <!-- User Profile：折叠时仍保留语言、头像与退出，避免无法登出 -->
       <div class="admin-sidebar__footer">
-        <!-- Language Switcher -->
-        <div v-if="!isCollapsed" class="admin-sidebar__lang">
+        <div v-if="showNavLabels" class="admin-sidebar__lang">
           <button
+            type="button"
             :class="['admin-sidebar__lang-btn', { 'admin-sidebar__lang-btn--active': locale === 'zh' }]"
             @click="switchLocale('zh')"
           >中文</button>
           <button
+            type="button"
             :class="['admin-sidebar__lang-btn', { 'admin-sidebar__lang-btn--active': locale === 'en' }]"
             @click="switchLocale('en')"
           >EN</button>
         </div>
-        <div class="admin-sidebar__user">
+        <div class="admin-sidebar__user" :class="{ 'admin-sidebar__user--collapsed': !showNavLabels }">
           <div class="admin-sidebar__user-avatar">{{ userInitials }}</div>
-          <div v-if="!isCollapsed" class="admin-sidebar__user-info">
+          <div v-if="showNavLabels" class="admin-sidebar__user-info">
             <p class="admin-sidebar__user-name">{{ user?.firstName }} {{ user?.lastName }}</p>
             <p class="admin-sidebar__user-role">{{ user?.role }}</p>
           </div>
         </div>
-        <button v-if="!isCollapsed" @click="handleLogout" class="admin-sidebar__logout">
+        <div v-if="!showNavLabels" class="admin-sidebar__lang admin-sidebar__lang--icon">
+          <button
+            type="button"
+            :class="['admin-sidebar__lang-btn', { 'admin-sidebar__lang-btn--active': locale === 'zh' }]"
+            title="中文"
+            @click="switchLocale('zh')"
+          >中</button>
+          <button
+            type="button"
+            :class="['admin-sidebar__lang-btn', { 'admin-sidebar__lang-btn--active': locale === 'en' }]"
+            title="English"
+            @click="switchLocale('en')"
+          >EN</button>
+        </div>
+        <button type="button" class="admin-sidebar__logout" :title="!showNavLabels ? t('admin.logout') : ''" @click="handleLogout">
           <Icon name="heroicons:arrow-right-start-on-rectangle" class="admin-sidebar__logout-icon" />
-          <span>{{ t('admin.logout') }}</span>
+          <span v-if="showNavLabels" class="admin-sidebar__logout-text">{{ t('admin.logout') }}</span>
         </button>
       </div>
     </aside>
@@ -109,14 +170,17 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 
 const { user, logout } = useAuth()
 const route = useRoute()
 const { t, locale, setLocale } = useI18n()
 
 const isCollapsed = ref(false)
+const isMobileNavOpen = ref(false)
 const isSuperAdmin = computed(() => user.value?.role === 'superadmin')
+
+const showNavLabels = computed(() => !isCollapsed.value || isMobileNavOpen.value)
 
 // User initials
 const userInitials = computed(() => {
@@ -164,11 +228,19 @@ const isActive = (href) => {
 }
 
 const handleLogout = async () => {
+  isMobileNavOpen.value = false
   await logout()
 }
 
 const switchLocale = (code) => {
   setLocale(code)
+}
+
+let mediaQuery
+const closeMobileIfDesktop = () => {
+  if (mediaQuery && !mediaQuery.matches) {
+    isMobileNavOpen.value = false
+  }
 }
 
 // Persist collapse state
@@ -177,10 +249,31 @@ onMounted(() => {
   if (saved) {
     isCollapsed.value = saved === 'true'
   }
+  mediaQuery = window.matchMedia('(min-width: 768px)')
+  mediaQuery.addEventListener('change', closeMobileIfDesktop)
 })
 
 watch(isCollapsed, (val) => {
   localStorage.setItem('admin-sidebar-collapsed', val.toString())
+})
+
+watch(() => route.path, () => {
+  isMobileNavOpen.value = false
+})
+
+watch(isMobileNavOpen, (open) => {
+  if (import.meta.client) {
+    document.body.classList.toggle('body-lock', open)
+  }
+})
+
+onUnmounted(() => {
+  if (mediaQuery) {
+    mediaQuery.removeEventListener('change', closeMobileIfDesktop)
+  }
+  if (import.meta.client) {
+    document.body.classList.remove('body-lock')
+  }
 })
 </script>
 
@@ -189,6 +282,67 @@ watch(isCollapsed, (val) => {
   display: flex;
   min-height: 100vh;
   background: var(--color-bg);
+}
+
+/* —— 移动端顶栏 —— */
+.admin-mobile-topbar {
+  display: none;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  padding-top: max(var(--spacing-sm), env(safe-area-inset-top, 0px));
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 570;
+}
+
+.admin-mobile-topbar__btn {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-alt);
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.admin-mobile-topbar__icon {
+  width: 22px;
+  height: 22px;
+}
+
+.admin-mobile-topbar__brand {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-sidebar-backdrop {
+  display: none;
+}
+
+.admin-sidebar-backdrop--visible {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 550;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+}
+
+@media (min-width: 768px) {
+  .admin-sidebar-backdrop--visible {
+    display: none !important;
+  }
 }
 
 /* Sidebar */
@@ -200,8 +354,9 @@ watch(isCollapsed, (val) => {
   background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   display: flex;
   flex-direction: column;
-  transition: width 0.3s ease;
+  transition: width 0.3s ease, transform 0.3s ease;
   overflow: hidden;
+  z-index: 560;
 }
 
 .admin-sidebar--collapsed {
@@ -213,6 +368,7 @@ watch(isCollapsed, (val) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--spacing-xs);
   padding: var(--spacing-md);
   border-bottom: 1px solid rgba(255,255,255,0.1);
 }
@@ -220,6 +376,7 @@ watch(isCollapsed, (val) => {
 .admin-sidebar__logo {
   display: block;
   flex: 1;
+  min-width: 0;
 }
 
 .admin-sidebar__logo-svg {
@@ -228,11 +385,15 @@ watch(isCollapsed, (val) => {
 }
 
 .admin-sidebar__toggle {
-  width: 28px;
-  height: 28px;
+  min-width: 44px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
   border-radius: var(--radius-md);
   color: rgba(255,255,255,0.6);
   transition: all var(--transition-fast);
@@ -246,6 +407,30 @@ watch(isCollapsed, (val) => {
 .admin-sidebar__toggle-icon {
   width: 18px;
   height: 18px;
+}
+
+.admin-sidebar__close {
+  display: none;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  color: rgba(255,255,255,0.7);
+}
+
+.admin-sidebar__close:hover {
+  background: rgba(255,255,255,0.1);
+  color: white;
+}
+
+.admin-sidebar__close-icon {
+  width: 22px;
+  height: 22px;
 }
 
 /* Navigation */
@@ -294,6 +479,8 @@ watch(isCollapsed, (val) => {
   font-size: var(--text-sm);
   font-weight: 500;
   transition: all var(--transition-fast);
+  min-height: 44px;
+  box-sizing: border-box;
 }
 
 .admin-sidebar__link:hover {
@@ -302,12 +489,12 @@ watch(isCollapsed, (val) => {
 }
 
 .admin-sidebar__link--active {
-  background: rgba(255, 107, 74, 0.2);
+  background: rgba(var(--color-highlight-rgb), 0.2);
   color: var(--color-highlight);
 }
 
 .admin-sidebar__link--active:hover {
-  background: rgba(255, 107, 74, 0.25);
+  background: rgba(var(--color-highlight-rgb), 0.25);
 }
 
 .admin-sidebar__link-icon {
@@ -343,15 +530,22 @@ watch(isCollapsed, (val) => {
   padding: 3px;
 }
 
+.admin-sidebar__lang--icon {
+  margin-bottom: var(--spacing-sm);
+}
+
 .admin-sidebar__lang-btn {
   flex: 1;
-  padding: 4px 0;
+  padding: 6px 0;
+  border: none;
+  cursor: pointer;
   border-radius: calc(var(--radius-md) - 2px);
   font-size: var(--text-xs);
   font-weight: 600;
   color: rgba(255,255,255,0.5);
   transition: all var(--transition-fast);
   text-align: center;
+  background: transparent;
 }
 
 .admin-sidebar__lang-btn:hover {
@@ -367,6 +561,11 @@ watch(isCollapsed, (val) => {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.admin-sidebar__user--collapsed {
+  justify-content: center;
   margin-bottom: var(--spacing-sm);
 }
 
@@ -406,13 +605,18 @@ watch(isCollapsed, (val) => {
 .admin-sidebar__logout {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--spacing-sm);
   width: 100%;
+  min-height: 44px;
   padding: var(--spacing-sm);
+  border: none;
+  cursor: pointer;
   border-radius: var(--radius-md);
   color: rgba(255,255,255,0.5);
   font-size: var(--text-sm);
   transition: all var(--transition-fast);
+  background: transparent;
 }
 
 .admin-sidebar__logout:hover {
@@ -423,10 +627,16 @@ watch(isCollapsed, (val) => {
 .admin-sidebar__logout-icon {
   width: 18px;
   height: 18px;
+  flex-shrink: 0;
 }
 
-.admin-sidebar--collapsed .admin-sidebar__footer {
-  display: none;
+.admin-sidebar__logout-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-sidebar--collapsed .admin-sidebar__logout {
+  padding: var(--spacing-sm);
 }
 
 /* Main Content */
@@ -451,6 +661,54 @@ watch(isCollapsed, (val) => {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (max-width: 767px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+
+  .admin-mobile-topbar {
+    display: flex;
+  }
+
+  .admin-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: min(300px, 88vw) !important;
+    height: 100dvh;
+    max-height: 100dvh;
+    transform: translateX(-100%);
+    box-shadow: none;
+  }
+
+  .admin-sidebar--collapsed {
+    width: min(300px, 88vw) !important;
+  }
+
+  .admin-sidebar--mobile-open {
+    transform: translateX(0);
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.2);
+  }
+
+  .admin-sidebar__toggle {
+    display: none;
+  }
+
+  .admin-sidebar__close {
+    display: flex;
+  }
+
+  .admin-main {
+    width: 100%;
+  }
+
+  .admin-main__content {
+    padding: var(--spacing-md);
+    padding-bottom: max(var(--spacing-xl), env(safe-area-inset-bottom, 0px));
   }
 }
 </style>

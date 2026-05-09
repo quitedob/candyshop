@@ -1,5 +1,6 @@
 {
   "seo": {
+    "title_template": "%s | 糖果制造商 - OEM 与贴牌解决方案",
     "default_title": "专业OEM糖果制造商 | 贴牌软糖、硬糖及巧克力供应商",
     "default_description": "专业糖果工厂提供OEM/ODM服务。软糖、硬糖、充气糖果、太妃糖及代可可脂巧克力。HACCP、ISO22000认证。立即申请样品。",
     "home_title": "专业OEM糖果制造商 | 贴牌软糖、硬糖及巧克力供应商",
@@ -7,7 +8,8 @@
     "products_title": "产品目录 | 浏览我们的糖果系列",
     "products_description": "探索我们完整的优质糖果产品系列，包括软糖、硬糖、充气糖果、太妃糖和代可可脂巧克力。支持OEM和贴牌生产。",
     "faq_title": "常见问题 | 糖果制造FAQ",
-    "faq_description": "查找关于我们OEM糖果服务、订购流程、运输和定制生产能力的常见问题解答。"
+    "faq_description": "查找关于我们OEM糖果服务、订购流程、运输和定制生产能力的常见问题解答。",
+    "default_author": "CandyPro 团队"
   },
   "about": {
     "title": "关于我们",

@@ -6,8 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Register wires all public API routes under /api/v1/public.
-func Register(group *gin.RouterGroup, h *handlers.Handlers) {
+// Register wires all public API routes under /api/v1/public。
+// inquiryExtra 仅挂在 POST /inquiry 上（例如独立限流）。
+func Register(group *gin.RouterGroup, h *handlers.Handlers, inquiryExtra ...gin.HandlerFunc) {
 	// Products
 	group.GET("/products", h.Public.GetProducts)
 	group.GET("/products/featured", h.Public.GetFeaturedProducts)
@@ -39,8 +40,9 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers) {
 	group.GET("/cases", h.Public.GetCases)
 	group.GET("/cases/:slug", h.Public.GetCase)
 
-	// Inquiry submission
-	group.POST("/inquiry", h.Public.SubmitInquiry)
+	// Inquiry submission（独立中间件：询盘防刷限流）
+	inquiry := group.Group("", inquiryExtra...)
+	inquiry.POST("/inquiry", h.Public.SubmitInquiry)
 
 	// Search
 	group.GET("/search", h.Public.Search)

@@ -6,7 +6,7 @@
         <p class="mt-2 text-sm text-gray-700">{{ t('admin.users.description') }}</p>
       </div>
       <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-        <button @click="openCreateModal" type="button" class="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700">
+        <button @click="openCreateModal" type="button" class="inline-flex items-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-700">
           {{ t('admin.users.new_user') }}
         </button>
       </div>
@@ -56,7 +56,7 @@
                     <div class="text-gray-900">{{ user.company }}</div>
                   </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                    <span class="inline-flex rounded-full bg-blue-100 px-2 text-xs font-semibold leading-5 text-blue-800">{{ user.role?.name || user.role || t('admin.users.role_customer') }}</span>
+                    <span class="inline-flex rounded-full bg-orange-100 px-2 text-xs font-semibold leading-5 text-orange-800">{{ user.role?.name || user.role || t('admin.users.role_customer') }}</span>
                   </td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                     <span :class="[
@@ -67,7 +67,7 @@
                     </span>
                   </td>
                   <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                    <NuxtLink :to="`/admin/users/${user.id}`" class="text-blue-600 hover:text-blue-900">{{ t('admin.users.edit') }}</NuxtLink>
+                    <NuxtLink :to="localePath(`/admin/users/${user.id}`)" class="text-orange-600 hover:text-orange-900">{{ t('admin.users.edit') }}</NuxtLink>
                   </td>
                   <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                     <button @click="removeUser(user.id)" class="text-red-600 hover:text-red-800">{{ t('admin.users.delete') }}</button>
@@ -157,7 +157,7 @@
             <div v-if="createError" class="sm:col-span-2 text-sm text-red-600">{{ createError }}</div>
             <div class="sm:col-span-2 mt-2 flex justify-end gap-3">
               <button type="button" @click="closeCreateModal" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700">{{ t('admin.users.cancel') }}</button>
-              <button type="submit" :disabled="creating" class="rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+              <button type="submit" :disabled="creating" class="rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
                 {{ creating ? t('admin.users.creating') : t('admin.users.create_user') }}
               </button>
             </div>
@@ -178,10 +178,11 @@ definePageMeta({
 
 const { token, user: authUser } = useAuth()
 const { t } = useI18n()
+const localePath = useLocalePath()
 
 // Guard: only superadmin can access user management
 if (authUser.value?.role !== 'superadmin') {
-  navigateTo('/admin')
+  navigateTo(localePath('/admin'))
 }
 const api = useApi()
 
@@ -203,7 +204,7 @@ const fetchUsers = async () => {
   try {
     const res = await api.get<any>(`/admin/users?page=${page.value}&limit=20`)
     users.value = res.data; pagination.value = res.pagination
-  } catch (err: any) { error.value = err?.message || 'Failed to fetch users' }
+  } catch (err: any) { error.value = err?.message || t('errors.api.load_failed') }
   finally { pending.value = false }
 }
 
@@ -217,14 +218,14 @@ const closeCreateModal = () => { showCreateModal.value = false }
 const createUser = async () => {
   creating.value = true; createError.value = ''
   try { await api.post('/admin/users', createForm); closeCreateModal(); await fetchUsers() }
-  catch (err: any) { createError.value = err?.message || 'Failed to create user' }
+  catch (err: any) { createError.value = err?.message || t('errors.api.user_create_failed') }
   finally { creating.value = false }
 }
 
 const removeUser = async (id: string) => {
   if (!confirm(t('admin.users.confirm_delete'))) return
   try { await api.del(`/admin/users/${id}`); await fetchUsers() }
-  catch (err: any) { error.value = err?.message || 'Failed to delete user' }
+  catch (err: any) { error.value = err?.message || t('errors.api.delete_failed') }
 }
 
 watch(page, fetchUsers)

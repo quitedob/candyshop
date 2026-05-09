@@ -1,11 +1,15 @@
 package trade
 
 import (
+	modelsOrder "candypro/api/internal/models/order"
 	modelsTrade "candypro/api/internal/models/trade"
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type tradeRepository interface {
@@ -14,6 +18,8 @@ type tradeRepository interface {
 	ListTransactionsByUserID(ctx context.Context, userID string, page, pageSize int) ([]modelsTrade.TradeTransaction, int64, error)
 	ListAllTransactions(ctx context.Context, page, pageSize int, status string) ([]modelsTrade.TradeTransaction, int64, error)
 	UpdateTransaction(ctx context.Context, transaction *modelsTrade.TradeTransaction) error
+	CountTransactionsByOrderID(ctx context.Context, orderID string) (int64, error)
+	GetFirstTransactionByOrderID(ctx context.Context, orderID string) (*modelsTrade.TradeTransaction, error)
 	CreateDocument(ctx context.Context, doc *modelsTrade.TradeDocument) error
 	GetDocumentByID(ctx context.Context, id uint) (*modelsTrade.TradeDocument, error)
 	ListDocumentsByTransactionID(ctx context.Context, transactionID uint) ([]modelsTrade.TradeDocument, error)
@@ -69,6 +75,34 @@ func (s *TradeService) ListTransactions(ctx context.Context, userID string, page
 // UpdateTransaction status
 func (s *TradeService) UpdateTransaction(ctx context.Context, trans *modelsTrade.TradeTransaction) error {
 	return s.repo.UpdateTransaction(ctx, trans)
+}
+
+// HasTransactionForOrder reports whether a trade record already exists for the order.
+func (s *TradeService) HasTransactionForOrder(ctx context.Context, orderID string) (bool, error) {
+	n, err := s.repo.CountTransactionsByOrderID(ctx, orderID)
+	if err != nil {
+		return false, err
+	}
+	return n > 0, nil
+}
+
+// SyncTradeTotalFromOrder 将贸易主单总金额/币种与订单对齐（订单财务变更后调用）
+func (s *TradeService) SyncTradeTotalFromOrder(ctx context.Context, order *modelsOrder.Order) error {
+	if order == nil || strings.TrimSpace(order.ID) == "" {
+		return errors.New("invalid order")
+	}
+	tx, err := s.repo.GetFirstTransactionByOrderID(ctx, order.ID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+	tx.TotalAmount = order.TotalAmount
+	if c := strings.TrimSpace(order.Currency); c != "" {
+		tx.Currency = c
+	}
+	return s.repo.UpdateTransaction(ctx, tx)
 }
 
 // AddDocument attaches a new document (PI, CI, etc) to a transaction

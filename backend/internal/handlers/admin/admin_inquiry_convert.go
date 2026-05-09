@@ -1,9 +1,10 @@
 package admin
 
 import (
+	"errors"
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
-	modelsTrade "candypro/api/internal/models/trade"
+	orderSvc "candypro/api/internal/services/order"
 	"candypro/api/internal/utils"
 	"fmt"
 	"net/http"
@@ -60,41 +61,129 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 
 	userID := strings.TrimSpace(*inquiry.UserID)
 
+	// Determine destination country
+	destCountry := ""
+	if req.ShippingAddress != nil {
+		destCountry = strings.TrimSpace(req.ShippingAddress.Country)
+	}
+	if destCountry == "" {
+		destCountry = strings.TrimSpace(inquiry.TargetCountry)
+	}
+	if destCountry == "" {
+		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
+			Error:   "missing_country",
+			Message: "Destination country is required for order conversion (provide shippingAddress.country or set inquiry targetCountry)",
+		})
+		return
+	}
+
 	// Parse EstimatedQuantity to get numeric value for order item quantities
 	quantity := parseQuantity(inquiry.EstimatedQuantity)
 
-	// Build order items from inquiry products
+	// Build order items from inquiry products with full validation
 	var items []modelsOrder.OrderItem
+	selectedProducts := make([]modelsProduct.Product, 0, len(inquiry.Products))
+	productByID := make(map[string]modelsProduct.Product, len(inquiry.Products))
+
 	for _, pid := range inquiry.Products {
 		pid = strings.TrimSpace(pid)
 		if pid == "" {
 			continue
 		}
-		unitPrice := 0.0
-		// Try to get price from pricing service if available
+
+		// Validate product exists and is active
+		product, prodErr := h.services.Product.GetProductByID(c.Request.Context(), pid)
+		if prodErr != nil {
+			c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
+				Error:   "product_not_found",
+				Message: fmt.Sprintf("Product %s in inquiry no longer exists", pid),
+			})
+			return
+		}
+		if status := strings.ToLower(strings.TrimSpace(product.Status)); status != "" && status != "active" {
+			c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
+				Error:   "product_unavailable",
+				Message: fmt.Sprintf("Product %s is no longer available for ordering", pid),
+			})
+			return
+		}
+
+		// Resolve price: try price service, then product base price
+		var unitPrice float64
 		if h.services.Price != nil {
-			if price, err := h.services.Price.GetPriceForProduct(c.Request.Context(), pid, "", quantity); err == nil {
+			if price, priceErr := h.services.Price.GetPriceForProduct(c.Request.Context(), pid, "", quantity); priceErr == nil {
 				unitPrice = price
 			}
 		}
+		if unitPrice <= 0 {
+			unitPrice = product.BasePrice
+		}
+		if unitPrice <= 0 {
+			c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
+				Error:   "no_price",
+				Message: fmt.Sprintf("No price available for product %s. Set a base price or contract price before converting.", pid),
+			})
+			return
+		}
+
+		// Apply market cost stack if available
+		unitPrice = h.services.Product.ResolveCheckoutUnitPrice(c.Request.Context(), product, unitPrice, destCountry)
+
 		items = append(items, modelsOrder.OrderItem{
 			ProductID: pid,
 			Quantity:  quantity,
 			UnitPrice: unitPrice,
 		})
+		selectedProducts = append(selectedProducts, *product)
+		productByID[pid] = *product
 	}
 
-	itemsArr := modelsOrder.OrderItemArray(items)
-	if itemsArr == nil {
-		itemsArr = modelsOrder.OrderItemArray{}
+	if len(items) == 0 {
+		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
+			Error:   "no_items",
+			Message: "Inquiry has no valid products to convert",
+		})
+		return
 	}
 
-	// Calculate totals
-	subtotal := inquiry.QuotedAmount
-	if subtotal == 0 {
-		for _, item := range items {
-			subtotal += item.UnitPrice * float64(item.Quantity)
-		}
+	// Validate destination-country compliance
+	compliance := h.services.Product.ValidateComplianceWithMarketProfiles(c.Request.Context(), destCountry, selectedProducts)
+	if len(compliance.Violations) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
+			Error:   "compliance_violation",
+			Message: "Order violates destination-country compliance requirements",
+			Details: gin.H{
+				"country":    compliance.Country,
+				"violations": compliance.Violations,
+				"warnings":   compliance.Warnings,
+			},
+		})
+		return
+	}
+
+	// Validate inventory
+	ids := make([]string, 0, len(productByID))
+	for id := range productByID {
+		ids = append(ids, id)
+	}
+	sellable, _ := h.services.Product.EffectiveSellableByProducts(c.Request.Context(), ids, modelsProduct.ChannelWebstore)
+	inventory := h.services.Order.ValidateInventoryWithSellable(items, productByID, sellable)
+	if len(inventory.Violations) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
+			Error:   "inventory_violation",
+			Message: "Insufficient stock or inventory policy violation for one or more products",
+			Details: gin.H{
+				"violations": inventory.Violations,
+				"warnings":   inventory.Warnings,
+			},
+		})
+		return
+	}
+
+	// Calculate totals from validated items
+	var subtotal float64
+	for _, item := range items {
+		subtotal += item.UnitPrice * float64(item.Quantity)
 	}
 
 	orderNumber := fmt.Sprintf("ORD-%s-%s", time.Now().Format("20060102"), strings.ToUpper(utils.GenerateSlug()))
@@ -104,37 +193,31 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 		shippingAddr = *req.ShippingAddress
 	} else {
 		shippingAddr = modelsOrder.Address{
-			Country: inquiry.TargetCountry,
+			Country: destCountry,
 		}
 	}
 
 	order := &modelsOrder.Order{
-		ID:             utils.GenerateID(),
-		OrderNumber:    orderNumber,
-		UserID:         userID,
-		InquiryID:      &inquiryID,
-		Status:         "pending",
-		PaymentStatus:  "unpaid",
-		Items:          itemsArr,
-		StockReserved:  len(items) > 0,
-		Subtotal:       subtotal,
-		TaxAmount:      0,
-		ShippingAmount: 0,
-		TotalAmount:    subtotal,
-		Currency:       "USD",
+		ID:              utils.GenerateID(),
+		OrderNumber:     orderNumber,
+		UserID:          userID,
+		InquiryID:       &inquiryID,
+		Status:          "pending",
+		PaymentStatus:   "unpaid",
+		Items:           items,
+		StockReserved:   true,
+		Subtotal:        subtotal,
+		TaxAmount:       0,
+		ShippingAmount:  0,
+		TotalAmount:     subtotal,
+		Currency:        "USD",
 		ShippingAddress: shippingAddr,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
 	}
 
-	var createErr error
-	if order.StockReserved {
-		createErr = h.services.Order.CreateOrderWithStockReservation(c.Request.Context(), order)
-	} else {
-		createErr = h.services.Order.CreateOrder(c.Request.Context(), order)
-	}
-	if createErr != nil {
-		if strings.Contains(strings.ToLower(createErr.Error()), "insufficient stock") {
+	if err := h.services.Order.CreateOrderWithStockReservation(c.Request.Context(), order); err != nil {
+		if errors.Is(err, modelsOrder.ErrInsufficientStock) {
 			c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
 				Error:   "inventory_violation",
 				Message: "Insufficient stock for one or more products in the inquiry",
@@ -149,29 +232,18 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 	}
 
 	// Auto-create a trade transaction linked to this order
-	autoCreateTradeFromOrder(c, h, order, inquiryID)
+	autoCreateTradeFromOrder(c, h, order, inquiry)
 
 	c.JSON(http.StatusCreated, order)
 }
 
 // autoCreateTradeFromOrder creates a trade transaction linked to a newly created order.
-func autoCreateTradeFromOrder(c *gin.Context, h *Handler, order *modelsOrder.Order, inquiryID string) {
+func autoCreateTradeFromOrder(c *gin.Context, h *Handler, order *modelsOrder.Order, inquiry *modelsProduct.Inquiry) {
 	if h.services.Trade == nil {
 		return
 	}
-	trade := &modelsTrade.TradeTransaction{
-		UserID:      order.UserID,
-		OrderID:     &order.ID,
-		Status:      modelsTrade.TradeStatusPending,
-		Currency:    order.Currency,
-		TotalAmount: order.TotalAmount,
-		Terms:       "FOB",
-	}
-	if inquiryID != "" {
-		trade.InquiryID = &inquiryID
-	}
+	trade := orderSvc.BuildTradeTransactionFromInquiry(order, inquiry)
 	if err := h.services.Trade.CreateTransaction(c.Request.Context(), trade); err != nil {
-		// N-17: Log the error; don't silently discard it
 		c.Header("X-Trade-Create-Warning", "trade_creation_failed")
 	}
 }
@@ -181,11 +253,9 @@ func parseQuantity(qty string) int {
 	if qty == "" {
 		return 1
 	}
-	// Try to extract the leading numeric value
 	var num float64
 	n, err := fmt.Sscanf(qty, "%f", &num)
 	if err != nil || n == 0 {
-		// Try to parse word by word
 		parts := strings.Fields(qty)
 		for _, p := range parts {
 			n2, err2 := fmt.Sscanf(p, "%f", &num)

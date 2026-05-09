@@ -715,6 +715,31 @@ func seedProducts(db *gorm.DB) error {
 			return err
 		}
 	}
+	// Ensure BasePrice is set even on pre-existing rows (FirstOrCreate skips field updates)
+	basePrices := map[string]float64{
+		"4d-fruit-gummy":             8.50,
+		"crystal-hard-candy":         5.10,
+		"rainbow-lollipop":           3.80,
+		"sour-belt":                  4.20,
+		"jelly-fruits":               6.00,
+		"chewy-toffee":               7.50,
+		"gummy-bear-classic":         4.95,
+		"gummy-worms":                5.25,
+		"fruit-slices":               4.50,
+		"hard-candy-assorted-mix":    3.60,
+		"hard-candy-fruit-bonbon":    4.80,
+		"chocolate-premium-truffles": 12.00,
+		"chocolate-variety-box":      15.00,
+		"licorice-black-twists":      3.90,
+		"licorice-fruit-ropes":       4.10,
+		"sour-gummy-extreme":         5.50,
+		"sour-belt-rainbow":          4.30,
+		"sour-gummy-bears-zing":      5.00,
+	}
+	for slug, price := range basePrices {
+		db.Model(&modelsProduct.Product{}).Where("slug = ? AND (base_price = 0 OR base_price IS NULL)", slug).Update("base_price", price)
+	}
+
 	return nil
 }
 

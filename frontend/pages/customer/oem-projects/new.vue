@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="mb-6">
-      <NuxtLink to="/customer/oem-projects" class="flex items-center text-sm font-medium text-blue-600 hover:text-blue-500">
+      <NuxtLink :to="localePath('/customer/oem-projects')" class="flex items-center text-sm font-medium text-orange-600 hover:text-orange-500">
         <Icon name="heroicons:arrow-left" class="mr-1 h-4 w-4" />
         {{ t('customer.oemProjects.back') }}
       </NuxtLink>
@@ -16,16 +16,16 @@
 
         <form @submit.prevent="submitProject" class="px-4 py-5 sm:p-6 space-y-6">
           <div>
-            <label class="block text-sm font-medium text-gray-700">{{ t('customer.oemProjects.select_product') || 'Select Product' }} *</label>
+            <label class="block text-sm font-medium text-gray-700">{{ t('customer.oemProjects.select_product') }} *</label>
             <select v-model="form.productId" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-              <option value="">{{ t('customer.oemProjects.select_product_placeholder') || 'Choose a product...' }}</option>
+              <option value="">{{ t('customer.oemProjects.select_product_placeholder') }}</option>
               <option v-for="p in availableProducts" :key="p.id" :value="p.id">{{ p.name }} ({{ p.category }})</option>
             </select>
           </div>
 
           <div>
             <label class="block text-sm font-medium text-gray-700">{{ t('customer.oemProjects.product_name') }}</label>
-            <input v-model="form.productName" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" :placeholder="t('customer.oemProjects.product_name_placeholder') || 'Or specify a custom product name'" />
+            <input v-model="form.productName" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" :placeholder="t('customer.oemProjects.product_name_placeholder')" />
           </div>
 
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -68,10 +68,10 @@
           <div v-if="successMessage" class="text-sm text-green-600">{{ successMessage }}</div>
 
           <div class="flex justify-end gap-3">
-            <NuxtLink to="/customer/oem-projects" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+            <NuxtLink :to="localePath('/customer/oem-projects')" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
               {{ t('customer.oemProjects.cancel') }}
             </NuxtLink>
-            <button type="submit" :disabled="submitting" class="rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50">
+            <button type="submit" :disabled="submitting" class="rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-700 disabled:opacity-50">
               {{ submitting ? t('customer.oemProjects.submitting') : t('customer.oemProjects.submit') }}
             </button>
           </div>
@@ -87,6 +87,7 @@ import { ref, reactive, onMounted } from 'vue'
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const { t } = useI18n()
+const localePath = useLocalePath()
 const api = useApi()
 
 const submitting = ref(false)
@@ -118,9 +119,9 @@ const submitProject = async () => {
       moq: form.moq, requirements: form.requirements
     })
     successMessage.value = t('customer.oemProjects.project_created')
-    setTimeout(() => navigateTo('/customer/oem-projects'), 1500)
+    setTimeout(() => navigateTo(localePath('/customer/oem-projects')), 1500)
   } catch (err: any) {
-    errorMessage.value = err?.message || 'Failed to create project'
+    errorMessage.value = err?.message || t('errors.api.save_failed')
   } finally { submitting.value = false }
 }
 </script>

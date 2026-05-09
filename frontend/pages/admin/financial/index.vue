@@ -193,7 +193,7 @@ const isOverdue = (inv: any) => {
 const statusClass = (status: string) => {
   const map: Record<string, string> = {
     paid: 'bg-green-100 text-green-800',
-    sent: 'bg-blue-100 text-blue-800',
+    sent: 'bg-orange-100 text-orange-800',
     draft: 'bg-gray-100 text-gray-800',
     overdue: 'bg-red-100 text-red-800',
     voided: 'bg-gray-100 text-gray-500'

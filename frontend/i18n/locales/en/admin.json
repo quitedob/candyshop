@@ -2,6 +2,11 @@
   "admin": {
     "brand": "CandyPro Admin",
     "logout": "Logout",
+    "a11y": {
+      "openNav": "Open sidebar menu",
+      "closeNav": "Close sidebar menu",
+      "toggleSidebar": "Expand or collapse sidebar"
+    },
     "nav": {
       "dashboard": "Dashboard",
       "users": "Users",
@@ -186,6 +191,7 @@
       "col_customer": "Customer",
       "col_amount": "Amount",
       "col_status": "Status",
+      "col_actions": "Actions",
       "edit": "Edit",
       "delete": "Delete",
       "edit_order": "Edit Order",
@@ -225,6 +231,11 @@
       "showing": "Showing {from} to {to} of {total}",
       "previous": "Previous",
       "next": "Next",
+      "preview": "Preview",
+      "ai_generate": "AI Generate",
+      "ai_generating": "Generating...",
+      "ai_topic_placeholder": "Enter a topic for AI to write about...",
+      "convert_to_md": "Convert to MD",
       "back": "Back to Orders",
       "loading_details": "Loading order details...",
       "placed_on": "Placed on",
@@ -368,6 +379,7 @@
       "add_content": "Add Content",
       "tab_posts": "Posts",
       "tab_cases": "Case Studies",
+      "category_general": "General",
       "loading": "Loading content...",
       "no_data": "No content found.",
       "col_title": "Title",
@@ -668,7 +680,13 @@
       "danger_zone": "Danger Zone",
       "deleting": "Deleting...",
       "delete_user": "Delete User",
-      "confirm_delete": "Delete this user permanently?"
+      "confirm_delete": "Delete this user permanently?",
+      "status_active": "Active",
+      "status_suspended": "Suspended",
+      "status_inactive": "Inactive",
+      "role_option_customer": "Customer",
+      "role_option_admin": "Admin",
+      "role_option_superadmin": "Super Admin"
     },
     "inventory": {
       "title": "Inventory",
@@ -779,6 +797,7 @@
       "status_paid": "Paid",
       "status_overdue": "Overdue",
       "status_cancelled": "Cancelled",
+      "status_unknown": "Unknown",
       "col_invoice": "Invoice",
       "col_order": "Order",
       "col_customer": "Customer",
@@ -803,6 +822,7 @@
       "currency": "Currency",
       "total_amount": "Total Amount",
       "paid_amount": "Paid Amount",
+      "paid_amount_line": "Paid: {currency} {amount}",
       "invoice_date": "Invoice Date",
       "due_date": "Due Date",
       "status": "Status",

@@ -13,10 +13,10 @@
         <div class="flex-1 min-w-[200px]">
           <div class="relative">
             <Icon name="heroicons:magnifying-glass" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input v-model="searchQuery" type="text" :placeholder="t('admin.auditLog.search')" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input v-model="searchQuery" type="text" :placeholder="t('admin.auditLog.search')" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </div>
         </div>
-        <select v-model="entityTypeFilter" @change="resetAndFetch" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <select v-model="entityTypeFilter" @change="resetAndFetch" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
           <option value="">{{ t('admin.auditLog.filter_all_types') }}</option>
           <option value="order">{{ t('admin.auditLog.entity_order') }}</option>
           <option value="inquiry">{{ t('admin.auditLog.entity_inquiry') }}</option>
@@ -24,7 +24,7 @@
           <option value="user">{{ t('admin.auditLog.entity_user') }}</option>
           <option value="trade">{{ t('admin.auditLog.entity_trade') }}</option>
         </select>
-        <select v-model="actionFilter" @change="resetAndFetch" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <select v-model="actionFilter" @change="resetAndFetch" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
           <option value="">{{ t('admin.auditLog.filter_all_actions') }}</option>
           <option value="create">{{ t('admin.auditLog.action_create') }}</option>
           <option value="update">{{ t('admin.auditLog.action_update') }}</option>
@@ -142,7 +142,7 @@ const fetchLogs = async () => {
     logs.value = res.data || []
     pagination.value = res.pagination
   } catch (err: any) {
-    error.value = err?.message || 'Failed to fetch audit log'
+    error.value = err?.message || t('errors.api.load_failed')
   } finally {
     pending.value = false
   }
@@ -155,7 +155,7 @@ const resetAndFetch = () => {
 
 const actionBadgeClass = (action: string) => {
   if (action === 'create') return 'bg-green-100 text-green-800'
-  if (action === 'update') return 'bg-blue-100 text-blue-800'
+  if (action === 'update') return 'bg-orange-100 text-orange-800'
   if (action === 'delete') return 'bg-red-100 text-red-800'
   if (action === 'status_change') return 'bg-yellow-100 text-yellow-800'
   return 'bg-gray-100 text-gray-800'

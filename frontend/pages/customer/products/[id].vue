@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <NuxtLink to="/customer/products" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-500 mb-6">
+      <NuxtLink :to="localePath('/customer/products')" class="inline-flex items-center text-sm text-orange-600 hover:text-orange-500 mb-6">
         <Icon name="heroicons:arrow-left" class="mr-1 h-4 w-4" />
         {{ t('customer.products.back_to_catalog') }}
       </NuxtLink>
@@ -12,7 +12,7 @@
 
       <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
         <p class="text-red-700">{{ error }}</p>
-        <NuxtLink to="/customer/products" class="mt-4 inline-block px-4 py-2 bg-red-100 text-red-700 rounded-lg">
+        <NuxtLink :to="localePath('/customer/products')" class="mt-4 inline-block px-4 py-2 bg-red-100 text-red-700 rounded-lg">
           {{ t('customer.products.back_to_catalog') }}
         </NuxtLink>
       </div>
@@ -20,7 +20,7 @@
       <div v-else-if="product" class="grid grid-cols-1 lg:grid-cols-2 gap-12">
         <!-- Product Images -->
         <div class="space-y-4">
-          <div class="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50">
+          <div class="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50">
             <img v-if="selectedImage" :src="selectedImage" :alt="product.name" class="w-full h-full object-cover" />
             <div v-else class="w-full h-full flex items-center justify-center">
               <Icon name="heroicons:cube" class="h-24 w-24 text-blue-200" />
@@ -28,7 +28,7 @@
             <!-- Badges -->
             <div class="absolute top-4 left-4 flex flex-col gap-2">
               <span v-if="product.halalCertified" class="px-3 py-1.5 bg-emerald-400 text-emerald-900 text-sm font-bold rounded-full">
-                Halal Certified
+                {{ t('customer.products.halal_certified') }}
               </span>
               <span v-if="product.featured" class="px-3 py-1.5 bg-amber-400 text-amber-900 text-sm font-bold rounded-full">
                 Featured
@@ -38,7 +38,7 @@
 
           <!-- Thumbnail Gallery -->
           <div v-if="allImages.length > 1" class="grid grid-cols-6 gap-2">
-            <button v-for="(img, idx) in allImages" :key="idx" @click="selectedImage = img" class="aspect-square rounded-lg overflow-hidden border-2 transition-all" :class="selectedImage === img ? 'border-blue-500' : 'border-transparent hover:border-gray-200'">
+            <button v-for="(img, idx) in allImages" :key="idx" @click="selectedImage = img" class="aspect-square rounded-lg overflow-hidden border-2 transition-all" :class="selectedImage === img ? 'border-orange-500' : 'border-transparent hover:border-gray-200'">
               <img :src="img" class="w-full h-full object-cover" />
             </button>
           </div>
@@ -46,24 +46,24 @@
 
         <!-- Product Info -->
         <div>
-          <div class="text-sm text-blue-600 font-medium mb-1">{{ product.category }}</div>
+          <div class="text-sm text-orange-600 font-medium mb-1">{{ product.category }}</div>
           <h1 class="text-3xl font-bold text-gray-900 mb-3">{{ product.name }}</h1>
           <p class="text-gray-600 mb-6">{{ product.summary || product.description }}</p>
 
           <!-- Price & MOQ -->
-          <div class="bg-white rounded-xl border border-blue-100 p-5 mb-6">
+          <div class="bg-white rounded-xl border border-orange-100 p-5 mb-6">
             <div class="flex items-end justify-between mb-4">
               <div>
                 <p class="text-sm text-gray-500">{{ t('customer.products.unit_price') }}</p>
                 <div class="flex items-center gap-2">
-                  <p class="text-3xl font-bold text-blue-600">{{ product.currency || 'USD' }} {{ displayPrice.toLocaleString() }}</p>
+                  <p class="text-3xl font-bold text-orange-600">{{ cur(product.currency) }} {{ displayPrice.toLocaleString() }}</p>
                   <span v-if="contractPrice !== null" class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">{{ t('customer.products.contract_price') }}</span>
                   <span v-else-if="loadingPrice" class="text-xs text-gray-400">{{ t('customer.products.loading_price') }}</span>
                 </div>
               </div>
               <div class="text-right">
                 <p class="text-sm text-gray-500">{{ t('customer.products.moq') }}</p>
-                <p class="text-xl font-semibold text-gray-900">{{ product.moq || 1 }} units</p>
+                <p class="text-xl font-semibold text-gray-900">{{ t('customer.products.moq_units', { count: product.moq || 1 }) }}</p>
               </div>
             </div>
 
@@ -74,7 +74,7 @@
                 <div class="flex flex-wrap gap-2">
                   <button v-for="flavor in flavorOptions" :key="flavor"
                     @click="selectedFlavor = flavor"
-                    :class="['px-3 py-1.5 text-sm rounded-full border transition-colors', selectedFlavor === flavor ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300']">
+                    :class="['px-3 py-1.5 text-sm rounded-full border transition-colors', selectedFlavor === flavor ? 'bg-orange-600 text-white border-orange-600' : 'bg-white text-gray-700 border-gray-200 hover:border-orange-300']">
                     {{ flavor }}
                   </button>
                 </div>
@@ -84,13 +84,13 @@
                 <div class="flex flex-wrap gap-2">
                   <button v-for="weight in weightOptions" :key="weight"
                     @click="selectedWeight = weight"
-                    :class="['px-3 py-1.5 text-sm rounded-full border transition-colors', selectedWeight === weight ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300']">
+                    :class="['px-3 py-1.5 text-sm rounded-full border transition-colors', selectedWeight === weight ? 'bg-orange-600 text-white border-orange-600' : 'bg-white text-gray-700 border-gray-200 hover:border-orange-300']">
                     {{ weight }}
                   </button>
                 </div>
               </div>
               <div v-if="selectedVariant" class="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
-                SKU: {{ selectedVariant.sku }}
+                {{ t('customer.products.sku_label') }} {{ selectedVariant.sku }}
                 <span v-if="selectedVariant.priceModifier !== 0" class="ml-2 font-medium" :class="selectedVariant.priceModifier > 0 ? 'text-red-600' : 'text-green-600'">
                   {{ selectedVariant.priceModifier > 0 ? '+' : '' }}{{ selectedVariant.priceModifier }}
                 </span>
@@ -104,7 +104,7 @@
                 <button @click="quantity = Math.max(product.moq || 1, quantity - 1)" class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
                   <Icon name="heroicons:minus" class="h-4 w-4" />
                 </button>
-                <input v-model.number="quantity" type="number" :min="product.moq || 1" class="w-24 h-10 text-center border border-gray-200 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input v-model.number="quantity" type="number" :min="product.moq || 1" class="w-24 h-10 text-center border border-gray-200 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-orange-500" />
                 <button @click="quantity += 1" class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
                   <Icon name="heroicons:plus" class="h-4 w-4" />
                 </button>
@@ -114,18 +114,18 @@
             <!-- Total -->
             <div class="flex items-center justify-between pt-4 border-t border-gray-100">
               <span class="text-gray-600">{{ t('customer.products.estimated_total') }}</span>
-              <span class="text-2xl font-bold text-gray-900">{{ product.currency || 'USD' }} {{ (displayPrice * quantity).toLocaleString() }}</span>
+              <span class="text-2xl font-bold text-gray-900">{{ cur(product.currency) }} {{ (displayPrice * quantity).toLocaleString() }}</span>
             </div>
           </div>
 
           <!-- OEM Available -->
-          <div v-if="product.oemAvailable" class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-5 mb-6">
+          <div v-if="product.oemAvailable" class="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border border-orange-100 p-5 mb-6">
             <div class="flex items-start gap-3">
-              <Icon name="heroicons:sparkles" class="h-6 w-6 text-blue-600 flex-shrink-0 mt-0.5" />
+              <Icon name="heroicons:sparkles" class="h-6 w-6 text-orange-600 flex-shrink-0 mt-0.5" />
               <div>
                 <h3 class="font-semibold text-gray-900">{{ t('customer.products.oem_available') }}</h3>
-                <p class="text-sm text-gray-600 mt-1">Custom private-label options available. Contact us for OEM pricing and requirements.</p>
-                <NuxtLink to="/customer/oem-projects/new" class="inline-flex items-center gap-1 mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                <p class="text-sm text-gray-600 mt-1">{{ t('customer.products.oem_private_label_hint') }}</p>
+                <NuxtLink :to="localePath('/customer/oem-projects/new')" class="inline-flex items-center gap-1 mt-2 text-sm text-orange-600 hover:text-orange-700 font-medium">
                   {{ t('customer.products.start_oem') }}
                   <Icon name="heroicons:arrow-right" class="h-4 w-4" />
                 </NuxtLink>
@@ -135,19 +135,19 @@
 
           <!-- Actions: Inquire + Place Order -->
           <div class="space-y-3">
-            <button @click="submitOrderRequest" :disabled="submitting" class="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-200 disabled:opacity-50 flex items-center justify-center gap-2">
+            <button @click="submitOrderRequest" :disabled="submitting" class="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-600 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-amber-700 transition-all shadow-lg shadow-orange-200 disabled:opacity-50 flex items-center justify-center gap-2">
               <Icon v-if="submitting" name="heroicons:arrow-path" class="h-5 w-5 animate-spin" />
               <Icon v-else name="heroicons:paper-airplane" class="h-5 w-5" />
               {{ submitting ? t('customer.products.submitting') : t('customer.products.submit_request') }}
             </button>
             <div class="flex gap-3">
-              <NuxtLink :to="`/customer/inquiries/new?product=${product.id}&name=${encodeURIComponent(product.name)}`" class="flex-1 py-3 border-2 border-orange-500 text-orange-600 font-semibold rounded-xl hover:bg-orange-50 transition-colors flex items-center justify-center gap-2">
+              <NuxtLink :to="`${localePath('/customer/inquiries/new')}?product=${product.id}&name=${encodeURIComponent(product.name)}`" class="flex-1 py-3 border-2 border-orange-500 text-orange-600 font-semibold rounded-xl hover:bg-orange-50 transition-colors flex items-center justify-center gap-2">
                 <Icon name="heroicons:chat-bubble-left" class="h-5 w-5" />
                 {{ t('customer.products.inquire') }}
               </NuxtLink>
-              <NuxtLink v-if="product.oemAvailable" to="/customer/oem-projects/new" class="px-6 py-3 border-2 border-blue-600 text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
+              <NuxtLink v-if="product.oemAvailable" :to="localePath('/customer/oem-projects/new')" class="px-6 py-3 border-2 border-orange-500 text-orange-600 font-semibold rounded-xl hover:bg-orange-50 transition-colors flex items-center justify-center gap-2">
                 <Icon name="heroicons:sparkles" class="h-5 w-5" />
-                OEM
+                {{ t('customer.products.oem_short') }}
               </NuxtLink>
             </div>
           </div>
@@ -160,7 +160,7 @@
                 <div>
                   <p class="font-semibold text-emerald-800">{{ t('customer.products.order_submitted') }}</p>
                   <p class="text-sm text-emerald-700 mt-1">{{ t('customer.products.will_contact') }}</p>
-                  <NuxtLink to="/customer/orders" class="inline-flex items-center gap-1 mt-2 text-sm font-medium text-emerald-700 hover:text-emerald-800">
+                  <NuxtLink :to="localePath('/customer/orders')" class="inline-flex items-center gap-1 mt-2 text-sm font-medium text-emerald-700 hover:text-emerald-800">
                     {{ t('customer.nav.orders') }} →
                   </NuxtLink>
                 </div>
@@ -202,7 +202,7 @@
             <div v-if="product.shapes?.length">
               <h4 class="text-sm font-medium text-gray-700 mb-2">{{ t('customer.products.shapes') }}</h4>
               <div class="flex flex-wrap gap-2">
-                <span v-for="shape in product.shapes" :key="shape" class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm">
+                <span v-for="shape in product.shapes" :key="shape" class="px-3 py-1.5 bg-orange-50 text-orange-700 rounded-full text-sm">
                   {{ shape }}
                 </span>
               </div>
@@ -243,6 +243,8 @@ definePageMeta({
 })
 
 const { t } = useI18n()
+const localePath = useLocalePath()
+const { currencyOrDefault: cur } = useDisplay()
 const api = useApi()
 const route = useRoute()
 
@@ -294,7 +296,7 @@ const fetchProduct = async () => {
     fetchContractPrice()
     fetchVariants()
   } catch (err: any) {
-    error.value = err?.message || 'Failed to load product'
+    error.value = err?.message || t('errors.api.product_load_failed')
   } finally {
     pending.value = false
   }
@@ -352,9 +354,9 @@ const submitOrderRequest = async () => {
         unitPrice: displayPrice.value,
         specifications: selectedVariant.value?.sku || ''
       })
-      await navigateTo('/customer/cart')
+      await navigateTo(localePath('/customer/cart'))
     } catch (cartErr: any) {
-      alert(cartErr?.message || 'Failed to submit order request')
+      alert(cartErr?.message || t('errors.api.cart_submit_failed'))
     }
   } finally {
     submitting.value = false

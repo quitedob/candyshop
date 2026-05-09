@@ -18,7 +18,7 @@
             </div>
             <div class="mt-2 flex items-center text-sm text-gray-500">
               <Icon name="heroicons:truck" class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
-              {{ t('customer.trades.incoterms_info') }}: {{ trade?.incoterms || trade?.terms || t('customer.common.na') }}
+              {{ t('customer.trades.incoterms_info') }}: {{ trade?.incoterms || trade?.terms || t('common.display.tbd') }}
             </div>
           </div>
         </div>
@@ -36,12 +36,12 @@
         </div>
         <div class="flex-1 p-4 overflow-y-auto bg-gray-50" ref="chatContainer">
           <div v-for="(msg, index) in messages" :key="index" class="mb-4">
-            <div :class="['rounded-lg p-3 max-w-sm', msg.role === 'user' ? 'bg-blue-600 text-white ml-auto' : 'bg-white border text-gray-800 mr-auto']">
+            <div :class="['rounded-lg p-3 max-w-sm', msg.role === 'user' ? 'bg-orange-600 text-white ml-auto' : 'bg-white border text-gray-800 mr-auto']">
               <div v-if="msg.sender" class="text-xs font-semibold mb-1 opacity-70">{{ msg.sender }}</div>
               <div class="whitespace-pre-wrap text-sm">{{ msg.content }}</div>
               <div v-if="msg.tool_calls?.length" class="mt-2 border-t pt-2 border-gray-200">
                 <p class="text-xs font-bold text-gray-500 mb-1">{{ t('customer.trades.tools_called') }}:</p>
-                <div v-for="tc in msg.tool_calls" :key="tc.id" class="text-xs text-blue-800 bg-blue-50 rounded p-1 mb-1">{{ tc.function.name }}</div>
+                <div v-for="tc in msg.tool_calls" :key="tc.id" class="text-xs text-orange-800 bg-orange-50 rounded p-1 mb-1">{{ tc.function.name }}</div>
               </div>
             </div>
           </div>
@@ -55,10 +55,10 @@
         <div class="p-4 border-t border-gray-200 flex space-x-2 bg-white rounded-b-lg">
           <input v-model="inputQuery" @keyup.enter="sendMessage" type="text"
             :placeholder="t('customer.trades.ai_input_placeholder')"
-            class="flex-1 shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+            class="flex-1 shadow-sm focus:ring-orange-500 focus:border-orange-500 block w-full sm:text-sm border-gray-300 rounded-md"
             :disabled="isStreaming" />
           <button @click="sendMessage" :disabled="isStreaming || !inputQuery.trim()"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-50">
             {{ t('customer.trades.send') }}
           </button>
         </div>
@@ -73,7 +73,7 @@
               <h3 class="text-lg leading-6 font-medium text-gray-900">{{ t('customer.trades.documents_title') }}</h3>
               <p class="mt-1 text-sm text-gray-500">{{ t('customer.trades.documents_subtitle') }}</p>
             </div>
-            <button @click="refreshDocs" class="text-xs text-blue-600 hover:text-blue-800">
+            <button @click="refreshDocs" class="text-xs text-orange-600 hover:text-orange-800">
               <Icon name="heroicons:arrow-path" class="h-4 w-4" />
             </button>
           </div>
@@ -92,7 +92,7 @@
                     <p class="text-xs text-gray-500">{{ doc.number }} · {{ doc.status }}</p>
                   </div>
                 </div>
-                <button @click="viewDoc(doc)" class="text-blue-600 hover:text-blue-900 text-sm font-medium">
+                <button @click="viewDoc(doc)" class="text-orange-600 hover:text-orange-900 text-sm font-medium">
                   {{ t('customer.trades.view') }}
                 </button>
               </li>
@@ -194,15 +194,16 @@ const plData = ref<any>(null)
 const cooData = ref<any>(null)
 const hcData = ref<any>(null)
 
+const dash = () => t('common.display.em_dash')
 const richDocs = computed(() => {
   const list: any[] = []
-  if (piData.value) list.push({ key: 'pi', label: 'Proforma Invoice', number: piData.value.piNumber, status: piData.value.status, data: piData.value })
-  if (ciData.value) list.push({ key: 'ci', label: 'Commercial Invoice', number: ciData.value.ciNumber, status: ciData.value.status, data: ciData.value })
-  if (blData.value) list.push({ key: 'bl', label: 'Bill of Lading', number: blData.value.blNumber, status: blData.value.status, data: blData.value })
-  if (scData.value) list.push({ key: 'sc', label: 'Sales Contract', number: scData.value.contractNo, status: scData.value.status || '-', data: scData.value })
-  if (plData.value) list.push({ key: 'pl', label: 'Packing List', number: plData.value.plNumber, status: '-', data: plData.value })
-  if (cooData.value) list.push({ key: 'coo', label: 'Certificate of Origin', number: cooData.value.certificateNo, status: '-', data: cooData.value })
-  if (hcData.value) list.push({ key: 'hc', label: 'Health Certificate', number: hcData.value.certificateNo, status: '-', data: hcData.value })
+  if (piData.value) list.push({ key: 'pi', label: t('customer.trades.doc_pi'), number: piData.value.piNumber, status: piData.value.status, data: piData.value })
+  if (ciData.value) list.push({ key: 'ci', label: t('customer.trades.doc_ci'), number: ciData.value.ciNumber, status: ciData.value.status, data: ciData.value })
+  if (blData.value) list.push({ key: 'bl', label: t('customer.trades.doc_bl'), number: blData.value.blNumber, status: blData.value.status, data: blData.value })
+  if (scData.value) list.push({ key: 'sc', label: t('customer.trades.doc_sc'), number: scData.value.contractNo, status: scData.value.status || dash(), data: scData.value })
+  if (plData.value) list.push({ key: 'pl', label: t('customer.trades.doc_pl'), number: plData.value.plNumber, status: dash(), data: plData.value })
+  if (cooData.value) list.push({ key: 'coo', label: t('customer.trades.doc_coo'), number: cooData.value.certificateNo, status: dash(), data: cooData.value })
+  if (hcData.value) list.push({ key: 'hc', label: t('customer.trades.doc_hc'), number: hcData.value.certificateNo, status: dash(), data: hcData.value })
   return list
 })
 
@@ -216,7 +217,7 @@ const fetchTradeDetails = async () => {
   try {
     trade.value = await api.get<any>(`/user/trades/${tradeId}`)
   } catch (err: any) {
-    loadError.value = err?.message || 'Failed to load trade details'
+    loadError.value = err?.message || t('errors.api.trade_load_failed')
   }
 }
 
@@ -311,10 +312,10 @@ const streamFetch = async (url: string) => {
 const handleSSEEvent = (data: any) => {
   if (data.type === 'message' || data.type === 'tool_result') {
     if (streamingText.value) {
-      messages.value.push({ role: 'ai', content: streamingText.value, sender: data.agent_name || 'AI' })
+      messages.value.push({ role: 'ai', content: streamingText.value, sender: data.agent_name || t('customer.trades.agent_ai') })
       streamingText.value = ''
     }
-    messages.value.push({ role: 'ai', content: data.content || '', sender: data.agent_name || 'AI', tool_calls: data.tool_calls })
+    messages.value.push({ role: 'ai', content: data.content || '', sender: data.agent_name || t('customer.trades.agent_ai'), tool_calls: data.tool_calls })
   } else if (data.type === 'stream_chunk') {
     streamingText.value += data.content
   } else if (data.type === 'error') {

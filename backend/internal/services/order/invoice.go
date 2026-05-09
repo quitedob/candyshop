@@ -12,6 +12,7 @@ type invoiceRepository interface {
 	FindAll(ctx context.Context, page, pageSize int, status string) ([]modelsOrder.Invoice, int64, error)
 	FindByID(ctx context.Context, id string) (*modelsOrder.Invoice, error)
 	FindByOrderID(ctx context.Context, orderID string) ([]modelsOrder.Invoice, error)
+	FindByTradeID(ctx context.Context, tradeID uint) ([]modelsOrder.Invoice, error)
 	Create(ctx context.Context, invoice *modelsOrder.Invoice) error
 	Update(ctx context.Context, invoice *modelsOrder.Invoice) error
 	Delete(ctx context.Context, id string) error
@@ -22,14 +23,26 @@ type invoiceRepository interface {
 	FindByStatus(ctx context.Context, status string, page, limit int) ([]modelsOrder.Invoice, int64, error)
 }
 
-// InvoiceService provides invoice business logic.
-type InvoiceService struct {
-	repo invoiceRepository
+// orderByIDReader 按 ID 读取订单（发票从订单派生时用；可传 nil）
+type orderByIDReader interface {
+	FindByID(ctx context.Context, id string) (*modelsOrder.Order, error)
 }
 
-// NewInvoiceService creates an InvoiceService.
-func NewInvoiceService(repo invoiceRepository) *InvoiceService {
-	return &InvoiceService{repo: repo}
+// documentAdjustmentWriter 写入单证调整审计（可传 nil 则跳过审计）
+type documentAdjustmentWriter interface {
+	Create(ctx context.Context, row *modelsOrder.DocumentAdjustment) error
+}
+
+// InvoiceService provides invoice business logic.
+type InvoiceService struct {
+	repo   invoiceRepository
+	orders orderByIDReader
+	adj    documentAdjustmentWriter
+}
+
+// NewInvoiceService creates an InvoiceService（orders/adj 可为 nil）
+func NewInvoiceService(repo invoiceRepository, orders orderByIDReader, adj documentAdjustmentWriter) *InvoiceService {
+	return &InvoiceService{repo: repo, orders: orders, adj: adj}
 }
 
 // ListInvoices returns paginated invoices.
@@ -51,6 +64,11 @@ func (s *InvoiceService) GetInvoice(ctx context.Context, id string) (*modelsOrde
 // GetByOrderID returns all invoices for an order.
 func (s *InvoiceService) GetByOrderID(ctx context.Context, orderID string) ([]modelsOrder.Invoice, error) {
 	return s.repo.FindByOrderID(ctx, orderID)
+}
+
+// GetByTradeID returns all invoices for a trade transaction.
+func (s *InvoiceService) GetByTradeID(ctx context.Context, tradeID uint) ([]modelsOrder.Invoice, error) {
+	return s.repo.FindByTradeID(ctx, tradeID)
 }
 
 // CreateInvoice creates a new invoice with defaults applied.

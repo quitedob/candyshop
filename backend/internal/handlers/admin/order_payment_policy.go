@@ -1,14 +1,41 @@
 package admin
 
-import "strings"
+import (
+	"context"
+	"strings"
+)
 
-func requiresFullPrepaymentCountry(country string) bool {
+// requiresFullPrepaymentCountry checks if the country requires full prepayment.
+// Uses the database-driven policy service when available, falls back to hardcoded defaults.
+func (h *Handler) requiresFullPrepaymentCountry(country string) bool {
+	if h.countryPaymentPolicy != nil {
+		return h.countryPaymentPolicy.RequiresFullPrepayment(country)
+	}
+	// Fallback for when the policy service is unavailable
 	switch normalizePaymentPolicyCountry(country) {
 	case "india", "pakistan":
 		return true
 	default:
 		return false
 	}
+}
+
+// requiresFullPrepaymentForOrder checks both the destination country policy and
+// the user's company payment terms to determine if full prepayment is required.
+func (h *Handler) requiresFullPrepaymentForOrder(ctx context.Context, country, userID string) bool {
+	if h.requiresFullPrepaymentCountry(country) {
+		return true
+	}
+	if h.services != nil && h.services.User != nil && h.services.Company != nil && userID != "" {
+		usr, err := h.services.User.GetByID(ctx, userID)
+		if err == nil && usr.CompanyID != nil {
+			company, err := h.services.Company.GetCompany(ctx, *usr.CompanyID)
+			if err == nil {
+				return requiresPrepaymentByTerms(company.PaymentTerms)
+			}
+		}
+	}
+	return false
 }
 
 func normalizePaymentPolicyCountry(country string) string {

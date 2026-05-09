@@ -6,7 +6,7 @@
         <p class="mt-2 text-sm text-gray-700">{{ t('admin.certifications.description') }}</p>
       </div>
       <div class="mt-4 sm:mt-0">
-        <button type="button" class="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700" @click="openCreateModal">
+        <button type="button" class="inline-flex items-center justify-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-700" @click="openCreateModal">
           {{ t('admin.certifications.add_certification') }}
         </button>
       </div>
@@ -51,7 +51,7 @@
             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ cert.issuer }}</td>
             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ cert.validUntil }}</td>
             <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-              <button type="button" class="text-blue-600 hover:text-blue-900" @click="openEditModal(cert)">{{ t('admin.certifications.edit') }}</button>
+              <button type="button" class="text-orange-600 hover:text-orange-900" @click="openEditModal(cert)">{{ t('admin.certifications.edit') }}</button>
               <button type="button" class="ml-4 text-red-600 hover:text-red-900" @click="deleteCertification(cert.id)">{{ t('admin.certifications.delete') }}</button>
             </td>
           </tr>
@@ -102,7 +102,7 @@
               <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700" @click="closeModal">
                 {{ t('admin.certifications.cancel') }}
               </button>
-              <button type="submit" :disabled="saving" class="rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50">
+              <button type="submit" :disabled="saving" class="rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm text-white disabled:opacity-50">
                 {{ saving ? t('admin.certifications.saving') : (editingId ? t('admin.certifications.update') : t('admin.certifications.create')) }}
               </button>
             </div>
@@ -179,7 +179,7 @@ const fetchCertifications = async () => {
     })
     certifications.value = res.data || res || []
   } catch (err: any) {
-    error.value = err?.data?.message || err.message || 'Failed to fetch certifications'
+    error.value = err?.data?.message || err.message || t('errors.api.load_failed')
   } finally {
     pending.value = false
   }
@@ -239,7 +239,7 @@ const saveCertification = async () => {
     closeModal()
     await fetchCertifications()
   } catch (err: any) {
-    formError.value = err?.data?.message || 'Failed to save certification'
+    formError.value = err?.data?.message || t('errors.api.save_failed')
   } finally {
     saving.value = false
   }
@@ -259,7 +259,7 @@ const deleteCertification = async (id: string) => {
     await fetchCertifications()
   } catch (err: any) {
     actionError.value = true
-    actionMessage.value = err?.data?.message || 'Failed to delete certification'
+    actionMessage.value = err?.data?.message || t('errors.api.delete_failed')
   }
 }
 

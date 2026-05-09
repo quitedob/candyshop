@@ -142,7 +142,7 @@ const fetchStaff = async () => {
     staff.value = res.data || []
     pagination.value = res.pagination
   } catch (err: any) {
-    error.value = err?.message || 'Failed to fetch staff'
+    error.value = err?.message || t('errors.api.load_failed')
   } finally {
     pending.value = false
   }
@@ -162,15 +162,15 @@ const toggleExpand = async (userId: string) => {
     const res = await api.get<any>(`/admin/staff/${userId}/activity`, { page: 1, limit: 10 })
     activity.value = res.data || []
   } catch (err: any) {
-    activityError.value = err?.message || 'Failed to fetch activity'
+    activityError.value = err?.message || t('errors.api.load_failed')
   } finally {
     activityLoading.value = false
   }
 }
 
 const roleBadgeClass = (role: string) => {
-  if (role === 'superadmin') return 'bg-purple-100 text-purple-800'
-  if (role === 'admin') return 'bg-blue-100 text-blue-800'
+  if (role === 'superadmin') return 'bg-orange-100 text-orange-800'
+  if (role === 'admin') return 'bg-orange-100 text-orange-800'
   return 'bg-gray-100 text-gray-800'
 }
 
@@ -183,7 +183,7 @@ const statusBadgeClass = (status: string) => {
 
 const actionBadgeClass = (action: string) => {
   if (action === 'create') return 'bg-green-100 text-green-800'
-  if (action === 'update') return 'bg-blue-100 text-blue-800'
+  if (action === 'update') return 'bg-orange-100 text-orange-800'
   if (action === 'delete') return 'bg-red-100 text-red-800'
   if (action === 'status_change') return 'bg-yellow-100 text-yellow-800'
   return 'bg-gray-100 text-gray-800'

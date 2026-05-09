@@ -6,7 +6,7 @@
         <p class="mt-2 text-sm text-gray-700">{{ t('customer.oemProjects.subtitle') }}</p>
       </div>
       <div class="mt-4 sm:mt-0">
-        <NuxtLink to="/customer/oem-projects/new" class="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700">
+        <NuxtLink :to="localePath('/customer/oem-projects/new')" class="inline-flex items-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-700">
           {{ t('customer.oemProjects.start_new_project') }}
         </NuxtLink>
       </div>
@@ -33,7 +33,7 @@
           <tr v-else-if="projects.length === 0">
             <td colspan="5" class="py-10 text-center">
               <div class="text-gray-500">{{ t('customer.oemProjects.no_projects') }}</div>
-              <NuxtLink to="/customer/oem-projects/new" class="mt-4 inline-flex items-center text-blue-600 hover:text-blue-900">
+              <NuxtLink :to="localePath('/customer/oem-projects/new')" class="mt-4 inline-flex items-center text-orange-600 hover:text-orange-900">
                 {{ t('customer.oemProjects.start_first_project') }}
               </NuxtLink>
             </td>
@@ -53,7 +53,7 @@
             </td>
             <td class="px-3 py-4 text-sm text-gray-500">{{ project.createdAt ? new Date(project.createdAt).toLocaleDateString() : '-' }}</td>
             <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-              <NuxtLink :to="`/customer/oem-projects/${project.id}`" class="text-blue-600 hover:text-blue-900">{{ t('customer.oemProjects.view') }}</NuxtLink>
+              <NuxtLink :to="localePath(`/customer/oem-projects/${project.id}`)" class="text-orange-600 hover:text-orange-900">{{ t('customer.oemProjects.view') }}</NuxtLink>
             </td>
           </tr>
         </tbody>
@@ -83,6 +83,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
+const localePath = useLocalePath()
 
 const projects = ref<any[]>([])
 const pagination = ref<any>(null)
@@ -105,14 +106,14 @@ const fetchProjects = async () => {
     projects.value = res.data || []
     pagination.value = res.pagination
   } catch (err: any) {
-    error.value = err?.message || 'Failed to fetch projects'
+    error.value = err?.message || t('errors.api.load_failed')
   } finally { pending.value = false }
 }
 
 const getStepIndex = (status: string) => { const idx = steps.findIndex(s => s.key === status); return idx >= 0 ? idx : 0 }
 const stepClass = (status: string, stepKey: string) => {
   const currentIdx = getStepIndex(status); const stepIdx = steps.findIndex(s => s.key === stepKey)
-  if (stepIdx < currentIdx) return 'bg-green-500'; if (stepIdx === currentIdx) return 'bg-blue-500'; return 'bg-gray-300'
+  if (stepIdx < currentIdx) return 'bg-green-500'; if (stepIdx === currentIdx) return 'bg-orange-500'; return 'bg-gray-300'
 }
 const nextPage = () => { if (pagination.value && page.value < pagination.value.totalPages) page.value += 1 }
 const prevPage = () => { if (page.value > 1) page.value -= 1 }

@@ -1,5 +1,8 @@
 <script setup lang="ts">
-await navigateTo('/auth/forgot-password', { replace: true })
+import { useLocalePath } from '#i18n'
+
+const localePath = useLocalePath()
+await navigateTo(localePath('/auth/forgot-password'), { replace: true })
 </script>
 
 <template>

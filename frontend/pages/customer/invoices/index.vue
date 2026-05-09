@@ -30,7 +30,7 @@
             </td>
             <td class="px-6 py-4 text-sm text-gray-500">{{ formatDate(inv.createdAt) }}</td>
             <td class="px-6 py-4 text-right">
-              <NuxtLink :to="`/customer/invoices/${inv.id}`" class="text-orange-600 hover:text-orange-800 text-sm font-medium">
+              <NuxtLink :to="localePath(`/customer/invoices/${inv.id}`)" class="text-orange-600 hover:text-orange-800 text-sm font-medium">
                 {{ $t('customer.invoices.view') }}
               </NuxtLink>
             </td>
@@ -44,6 +44,8 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
+const { t } = useI18n()
+const localePath = useLocalePath()
 const api = useApi()
 const invoices = ref<any[]>([])
 const pending = ref(true)
@@ -54,7 +56,7 @@ const fetchInvoices = async () => {
     const res = await api.get('/user/invoices')
     invoices.value = res.data || []
   } catch (e: any) {
-    error.value = e?.message || 'Failed to load invoices'
+    error.value = e?.message || t('errors.api.load_failed')
   } finally {
     pending.value = false
   }

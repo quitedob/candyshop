@@ -6,7 +6,7 @@
         <p class="mt-2 text-sm text-gray-700">{{ t('admin.products.description') }}</p>
       </div>
       <div class="mt-4 sm:mt-0">
-        <button type="button" class="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700" @click="openCreateModal">
+        <button type="button" class="inline-flex items-center justify-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-700" @click="openCreateModal">
           {{ t('admin.products.add_product') }}
         </button>
       </div>
@@ -60,7 +60,7 @@
               </span>
             </td>
             <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-              <button type="button" class="text-blue-600 hover:text-blue-900" @click="openEditModal(product)">{{ t('admin.products.edit') }}</button>
+              <button type="button" class="text-orange-600 hover:text-orange-900" @click="openEditModal(product)">{{ t('admin.products.edit') }}</button>
               <button type="button" class="ml-4 text-red-600 hover:text-red-900" @click="deleteProduct(product.id)">{{ t('admin.products.delete') }}</button>
             </td>
           </tr>
@@ -152,7 +152,7 @@
               <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.thumbnail') }}</label>
               <div class="mt-1 flex items-center gap-2">
                 <input v-model="form.thumbnail" class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-                <button type="button" class="rounded-md bg-blue-50 px-3 py-2 text-xs font-medium text-blue-600 hover:bg-blue-500" @click="triggerUpload('thumbnail')">
+                <button type="button" class="rounded-md bg-orange-50 px-3 py-2 text-xs font-medium text-orange-600 hover:bg-orange-500" @click="triggerUpload('thumbnail')">
                   {{ t('admin.products.upload_image') }}
                 </button>
               </div>
@@ -161,7 +161,7 @@
               <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.images') }}</label>
               <div class="mt-1 flex items-center gap-2">
                 <input v-model="form.imagesInput" class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-                <button type="button" class="rounded-md bg-blue-50 px-3 py-2 text-xs font-medium text-blue-600 hover:text-blue-500" @click="triggerUpload('images')">
+                <button type="button" class="rounded-md bg-orange-50 px-3 py-2 text-xs font-medium text-orange-600 hover:text-orange-500" @click="triggerUpload('images')">
                   {{ t('admin.products.upload_images') }}
                 </button>
                 <div v-if="uploadingImage" class="mt-1 text-xs text-gray-500">
@@ -205,7 +205,7 @@
               <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700" @click="closeModal">
                 {{ t('admin.products.cancel') }}
               </button>
-              <button type="submit" :disabled="saving" class="rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50">
+              <button type="submit" :disabled="saving" class="rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm text-white disabled:opacity-50">
                 {{ saving ? t('admin.products.saving') : (editingId ? t('admin.products.update') : t('admin.products.create')) }}
               </button>
             </div>
@@ -271,7 +271,7 @@ const triggerUpload = async (field: 'thumbnail' | 'images') => {
       }
     } catch (err: any) {
       if (err?.name !== 'AbortError') {
-        uploadError.value = err?.message || 'Upload failed'
+        uploadError.value = err?.message || t('errors.api.upload_failed')
       }
     } finally {
       uploadingImage.value = false
@@ -371,7 +371,7 @@ const fetchProducts = async () => {
   try {
     const res = await api.get<any>(`/admin/products?page=${page.value}&limit=${pageSize}`)
     products.value = res.data || []; pagination.value = res.pagination
-  } catch (err: any) { error.value = err?.message || 'Failed to fetch products' }
+  } catch (err: any) { error.value = err?.message || t('errors.api.load_failed') }
   finally { pending.value = false }
 }
 
@@ -406,7 +406,7 @@ const saveProduct = async () => {
     if (editingId.value) { await api.put(`/admin/products/${editingId.value}`, payload); actionMessage.value = t('admin.products.updated_success') }
     else { await api.post('/admin/products', payload); actionMessage.value = t('admin.products.created_success') }
     closeModal(); await fetchProducts()
-  } catch (err: any) { formError.value = err?.message || 'Failed to save product' }
+  } catch (err: any) { formError.value = err?.message || t('errors.api.save_failed') }
   finally { saving.value = false }
 }
 
@@ -414,7 +414,7 @@ const deleteProduct = async (id: string) => {
   if (!confirm(t('admin.products.confirm_delete'))) return
   actionMessage.value = ''; actionError.value = false
   try { await api.del(`/admin/products/${id}`); actionMessage.value = t('admin.products.deleted_success'); await fetchProducts() }
-  catch (err: any) { actionError.value = true; actionMessage.value = err?.message || 'Failed to delete product' }
+  catch (err: any) { actionError.value = true; actionMessage.value = err?.message || t('errors.api.delete_failed') }
 }
 
 watch(page, fetchProducts)
@@ -545,7 +545,7 @@ onMounted(fetchProducts)
 .form-input:focus {
   outline: none;
   border-color: var(--color-highlight);
-  box-shadow: 0 0 0 3px rgba(255, 107, 74, 0.1);
+  box-shadow: 0 0 0 3px rgba(var(--color-highlight-rgb), 0.1);
 }
 
 .form-textarea {
@@ -563,7 +563,7 @@ onMounted(fetchProducts)
 .form-textarea:focus {
   outline: none;
   border-color: var(--color-highlight);
-  box-shadow: 0 0 0 3px rgba(255, 107, 74, 0.1);
+  box-shadow: 0 0 0 3px rgba(var(--color-highlight-rgb), 0.1);
 }
 
 .modal-overlay {

@@ -213,9 +213,9 @@ const normalizeCase = (raw: RawCaseStudy) => {
   return {
     id: raw.id,
     slug: raw.slug,
-    client: raw.client || 'Case Study',
+    client: raw.client || t('cases_detail.fallback_client'),
     project: raw.title || raw.slug,
-    industry: raw.industry || 'General',
+    industry: raw.industry || t('cases_detail.fallback_industry'),
     location: raw.location || '',
     year: createdDate ? String(createdDate.getFullYear()) : '',
     thumbnail: raw.thumbnail || '',
@@ -241,17 +241,19 @@ const parseTimeline = (timelineText: string): TimelineStep[] => {
     return []
   }
 
+  const stepTitle = (index: number) => t('cases_detail.timeline_step', { n: index + 1 })
+
   try {
     const parsed = JSON.parse(value) as Array<{ title?: string; description?: string } | string>
     if (Array.isArray(parsed)) {
       return parsed
         .map((item, index) => {
           if (typeof item === 'string') {
-            return { id: `step-${index + 1}`, title: `Step ${index + 1}`, description: item }
+            return { id: `step-${index + 1}`, title: stepTitle(index), description: item }
           }
           return {
             id: `step-${index + 1}`,
-            title: item.title || `Step ${index + 1}`,
+            title: item.title || stepTitle(index),
             description: item.description || ''
           }
         })
@@ -268,7 +270,7 @@ const parseTimeline = (timelineText: string): TimelineStep[] => {
 
   return parts.map((part, index) => ({
     id: `step-${index + 1}`,
-    title: `Step ${index + 1}`,
+    title: stepTitle(index),
     description: part
   }))
 }
@@ -301,7 +303,7 @@ const relatedCases = computed(() => {
 })
 
 const breadcrumbItems = computed(() => {
-  const label = caseStudy.value?.client || 'Case Study'
+  const label = caseStudy.value?.client || t('cases_detail.fallback_client')
   return [
     { label: t('nav.cases'), to: '/cases-clients' },
     { label }
@@ -310,8 +312,8 @@ const breadcrumbItems = computed(() => {
 
 const whatsappUrl = computed(() => {
   const number = config.public.whatsappNumber
-  const client = caseStudy.value?.client || 'your case study'
-  const message = encodeURIComponent(`Hi, I'm interested in discussing a project similar to ${client}.`)
+  const client = caseStudy.value?.client || t('cases_detail.fallback_client')
+  const message = encodeURIComponent(t('cases_detail.whatsapp_similar', { client }))
   return `https://wa.me/${number}?text=${message}`
 })
 
@@ -321,7 +323,7 @@ const loadError = computed(() => {
 })
 
 useSeo({
-  title: computed(() => `${caseStudy.value?.client || 'Case Study'} | ${t('seo.default_title')}`),
+  title: computed(() => `${caseStudy.value?.client || t('cases_detail.fallback_client')} | ${t('seo.default_title')}`),
   description: computed(() => caseStudy.value?.result || t('cases.subtitle')),
   ogImage: computed(() => caseStudy.value?.thumbnail || ''),
   ogType: 'article'

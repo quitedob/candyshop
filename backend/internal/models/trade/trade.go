@@ -51,6 +51,8 @@ type TradeTransaction struct {
 	Currency    string  `gorm:"type:varchar(3);default:'USD'" json:"currency"`
 	TotalAmount float64 `json:"totalAmount"`
 	Terms       string  `gorm:"type:varchar(50)" json:"terms"` // Incoterms e.g. FOB, CIF, EXW
+	// CommercialNotes 询盘映射：包装要求、议定付款方式等
+	CommercialNotes string `gorm:"type:text" json:"commercialNotes,omitempty"`
 
 	// Relationships to documents
 	Documents []TradeDocument `gorm:"foreignKey:TransactionID" json:"documents,omitempty"`
@@ -76,6 +78,11 @@ type TradeDocument struct {
 	// AI Generation metadata
 	IsAIGenerated bool `gorm:"default:false" json:"isAiGenerated"`
 	AIVersion     int  `gorm:"default:0" json:"aiVersion"`
+
+	// SourceOrderID 派生单证时关联的订单 ID（审计/对账）
+	SourceOrderID *string `gorm:"type:varchar(100);index" json:"sourceOrderId,omitempty"`
+	// LineageSource 派生来源：manual | order_derived | ai_draft
+	LineageSource string `gorm:"type:varchar(40);default:'manual'" json:"lineageSource"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`

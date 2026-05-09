@@ -237,7 +237,7 @@ func (h *Handler) AdminCreateContent(c *gin.Context) {
 		}
 
 		if err := h.services.Content.CreatePost(c.Request.Context(), post); err != nil {
-			if isDuplicateErr(err) {
+			if utils.IsDuplicateKeyError(err) {
 				c.JSON(http.StatusConflict, modelsProduct.ErrorResponse{
 					Error:   "conflict",
 					Message: "post id or slug already exists",
@@ -267,7 +267,7 @@ func (h *Handler) AdminCreateContent(c *gin.Context) {
 		}
 
 		if err := h.services.Content.CreateCase(c.Request.Context(), caseStudy); err != nil {
-			if isDuplicateErr(err) {
+			if utils.IsDuplicateKeyError(err) {
 				c.JSON(http.StatusConflict, modelsProduct.ErrorResponse{
 					Error:   "conflict",
 					Message: "case id or slug already exists",
@@ -339,7 +339,7 @@ func (h *Handler) AdminUpdateContent(c *gin.Context) {
 
 		post.UpdatedAt = time.Now()
 		if err := h.services.Content.UpdatePost(c.Request.Context(), post); err != nil {
-			if isDuplicateErr(err) {
+			if utils.IsDuplicateKeyError(err) {
 				c.JSON(http.StatusConflict, modelsProduct.ErrorResponse{
 					Error:   "conflict",
 					Message: "post slug already exists",
@@ -376,7 +376,7 @@ func (h *Handler) AdminUpdateContent(c *gin.Context) {
 
 		caseStudy.UpdatedAt = time.Now()
 		if err := h.services.Content.UpdateCase(c.Request.Context(), caseStudy); err != nil {
-			if isDuplicateErr(err) {
+			if utils.IsDuplicateKeyError(err) {
 				c.JSON(http.StatusConflict, modelsProduct.ErrorResponse{
 					Error:   "conflict",
 					Message: "case slug already exists",

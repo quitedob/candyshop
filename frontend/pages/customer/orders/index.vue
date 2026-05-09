@@ -5,7 +5,7 @@
         <h3 class="text-lg leading-6 font-medium text-gray-900">{{ t('customer.orders.title') }}</h3>
         <p class="mt-1 max-w-2xl text-sm text-gray-500">{{ t('customer.orders.subtitle') }}</p>
       </div>
-      <NuxtLink to="/customer/orders/new" class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700">
+      <NuxtLink :to="localePath('/customer/orders/new')" class="inline-flex items-center rounded-md bg-orange-600 px-3 py-2 text-sm font-medium text-white hover:bg-orange-700">
         <Icon name="heroicons:sparkles" class="mr-1.5 h-4 w-4" />
         {{ t('customer.orders.place_new') }}
       </NuxtLink>
@@ -25,7 +25,7 @@
       <h3 class="mt-2 text-sm font-medium text-gray-900">{{ t('customer.orders.no_orders') }}</h3>
       <p class="mt-1 text-sm text-gray-500">{{ t('customer.orders.no_orders_desc') }}</p>
       <div class="mt-6">
-        <NuxtLink to="/customer/orders/new" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+        <NuxtLink :to="localePath('/customer/orders/new')" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700">
           {{ t('customer.orders.start_order') }}
         </NuxtLink>
       </div>
@@ -44,7 +44,7 @@
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           <tr v-for="order in orders" :key="order.id" class="hover:bg-gray-50">
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-orange-600">
               #{{ order.orderNumber || order.id.substring(0,8) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -59,7 +59,7 @@
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-             <NuxtLink :to="`/customer/orders/${order.id}`" class="text-blue-600 hover:text-blue-900">{{ t('customer.orders.view_details') }}</NuxtLink>
+             <NuxtLink :to="localePath(`/customer/orders/${order.id}`)" class="text-orange-600 hover:text-orange-900">{{ t('customer.orders.view_details') }}</NuxtLink>
             </td>
           </tr>
         </tbody>
@@ -104,6 +104,7 @@ definePageMeta({
 })
 
 const { t } = useI18n()
+const localePath = useLocalePath()
 const api = useApi()
 
 const orders = ref<any[]>([])
@@ -121,7 +122,7 @@ const fetchOrders = async () => {
     orders.value = res.data || []
     pagination.value = res.pagination
   } catch (err: any) {
-    error.value = err?.message || 'Failed to fetch orders'
+    error.value = err?.message || t('errors.api.load_failed')
   } finally {
     pending.value = false
   }
@@ -130,8 +131,8 @@ const fetchOrders = async () => {
 const statusBadge = (status: string) => {
   if (status === 'pending_confirmation') return 'bg-orange-100 text-orange-800'
   if (status === 'pending' || status === 'processing' || status === 'production') return 'bg-yellow-100 text-yellow-800'
-  if (status === 'confirmed') return 'bg-indigo-100 text-indigo-800'
-  if (status === 'shipped') return 'bg-blue-100 text-blue-800'
+  if (status === 'confirmed') return 'bg-amber-100 text-amber-800'
+  if (status === 'shipped') return 'bg-orange-100 text-orange-800'
   if (status === 'delivered') return 'bg-green-100 text-green-800'
   if (status === 'cancelled') return 'bg-red-100 text-red-800'
   return 'bg-gray-100 text-gray-800'

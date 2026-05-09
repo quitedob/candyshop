@@ -3,7 +3,17 @@
   "loading": "加载中...",
   "whatsapp": {
     "us": "WhatsApp咨询",
-    "message": "您好，我对您的OEM糖果服务很感兴趣。能提供更多信息吗？"
+    "message": "您好，我对您的OEM糖果服务很感兴趣。能提供更多信息吗？",
+    "product_inquiry": "您好，我对「{product}」感兴趣{categoryPart}。能否提供更多信息？",
+    "category_part": "（分类：{name}）",
+    "inquiry_intro": "您好，我想咨询贵司的 OEM 糖果服务。\n\n",
+    "inquiry_followup": "请补充报价与交期方面的说明。",
+    "field_name": "姓名",
+    "field_company": "公司",
+    "field_email": "邮箱",
+    "field_country": "国家/地区",
+    "field_product": "产品",
+    "field_quantity": "数量"
   },
   "pagination": {
     "prev": "上一页",
@@ -22,28 +32,167 @@
       "description": "抱歉，服务器出现问题。请稍后再试。",
       "refresh": "刷新页面"
     },
+    "403": {
+      "title": "无权访问",
+      "description": "您没有权限查看此页面。"
+    },
     "default": "发生错误",
+    "boundary": "出了点问题",
     "goHome": "返回首页",
     "tryAgain": "重试",
-    "retry": "重试"
+    "retry": "重试",
+    "api": {
+      "generic_failed": "操作失败，请稍后重试。",
+      "load_failed": "无法加载数据，请稍后重试。",
+      "save_failed": "无法保存，请稍后重试。",
+      "delete_failed": "无法删除，请稍后重试。",
+      "upload_failed": "无法上传，请稍后重试。",
+      "cancel_failed": "无法取消，请稍后重试。",
+      "confirm_failed": "无法确认，请稍后重试。",
+      "assign_failed": "无法分配，请稍后重试。",
+      "analyze_failed": "无法分析，请稍后重试。",
+      "quote_failed": "无法提交报价，请稍后重试。",
+      "ai_draft_failed": "无法生成草稿订单，请稍后重试。",
+      "ai_confirm_failed": "无法确认草稿，请稍后重试。",
+      "manual_order_failed": "无法创建订单，请稍后重试。",
+      "trade_load_failed": "无法加载贸易详情。",
+      "status_failed": "无法更新状态。",
+      "document_confirm_failed": "无法确认单据。",
+      "document_save_failed": "无法保存单据。",
+      "user_create_failed": "无法创建用户。",
+      "send_failed": "无法发送，请稍后重试。",
+      "cart_submit_failed": "无法提交订单请求，请稍后重试。",
+      "product_load_failed": "无法加载产品信息。",
+      "trade_create_failed": "无法创建贸易单。",
+      "trade_start_failed": "无法发起贸易。",
+      "refund_failed": "无法处理退款。",
+      "stock_adjust_failed": "无法调整库存。",
+      "company_verify_failed": "无法验证企业。",
+      "inquiry_convert_failed": "无法转换询价。",
+      "payment_confirm_failed": "无法确认付款。",
+      "fetch_payments_failed": "无法加载付款记录。"
+    }
   },
   "validation": {
     "required": {
       "companyName": "公司名称是必填项",
       "contactPerson": "联系人是必填项",
-      "email": "电子邮箱是必填项"
+      "email": "电子邮箱是必填项",
+      "default": "{field} 为必填项"
     },
     "email": "邮箱格式不正确",
     "phone": "电话号码格式不正确",
     "minLength": {
       "companyName": "公司名称至少需要 {min} 个字符",
-      "contactPerson": "联系人至少需要 {min} 个字符"
+      "contactPerson": "联系人至少需要 {min} 个字符",
+      "default": "至少需要 {min} 个字符"
     },
     "pattern": {
       "default": "格式不正确"
     },
     "invalid": {
       "default": "输入无效"
+    }
+  },
+  "roles": {
+    "customer": "客户",
+    "admin": "管理员",
+    "superadmin": "超级管理员"
+  },
+  "display": {
+    "na": "暂无",
+    "em_dash": "—",
+    "tbd": "待定",
+    "zero": "0"
+  },
+  "defaults": {
+    "currency": "USD",
+    "incoterms": "FOB",
+    "target_country_global": "global"
+  },
+  "enum": {
+    "order_status": {
+      "pending": "待处理",
+      "confirmed": "已确认",
+      "production": "生产中",
+      "shipped": "已发货",
+      "delivered": "已送达",
+      "cancelled": "已取消",
+      "processing": "处理中",
+      "pending_confirmation": "待确认",
+      "unknown": "未知"
+    },
+    "payment_status": {
+      "unpaid": "未付款",
+      "paid": "已付款",
+      "partial": "部分付款",
+      "refunded": "已退款",
+      "pending": "待付款",
+      "confirmed": "已确认",
+      "unknown": "未知"
+    },
+    "product_status": {
+      "active": "上架",
+      "inactive": "下架",
+      "draft": "草稿",
+      "unknown": "未知"
+    },
+    "company_status": {
+      "pending": "待审核",
+      "verified": "已认证",
+      "rejected": "已拒绝",
+      "active": "正常",
+      "suspended": "已暂停",
+      "inactive": "未激活",
+      "unknown": "未知"
+    },
+    "kyb_status": {
+      "pending": "待审核",
+      "approved": "已通过",
+      "rejected": "已拒绝",
+      "unknown": "未知"
+    },
+    "inquiry_status": {
+      "pending": "待处理",
+      "open": "进行中",
+      "closed": "已关闭",
+      "converted": "已转化",
+      "unknown": "未知"
+    },
+    "inquiry_priority": {
+      "normal": "普通",
+      "high": "高",
+      "low": "低",
+      "urgent": "紧急",
+      "unknown": "未知"
+    },
+    "trade_status": {
+      "draft": "草稿",
+      "pending": "待处理",
+      "confirmed": "已确认",
+      "in_progress": "进行中",
+      "paid": "已付款",
+      "shipped": "已发货",
+      "active": "进行中",
+      "completed": "已完成",
+      "closed": "已关闭",
+      "cancelled": "已取消",
+      "unknown": "未知"
+    },
+    "shipment_status": {
+      "pending": "待发货",
+      "in_transit": "运输中",
+      "delivered": "已送达",
+      "exception": "异常",
+      "unknown": "未知"
+    },
+    "carrier": {
+      "standard": "标准",
+      "unknown": "未知"
+    },
+    "tracking_provider": {
+      "standard": "标准",
+      "unknown": "未知"
     }
   },
   "offline_message": "请检查您的网络连接并重试。",

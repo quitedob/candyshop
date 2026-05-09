@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="mb-6">
-      <NuxtLink to="/admin/inquiries" class="flex items-center text-sm font-medium text-blue-600 hover:text-blue-500">
+      <NuxtLink :to="localePath('/admin/inquiries')" class="flex items-center text-sm font-medium text-orange-600 hover:text-orange-500">
         <Icon name="heroicons:arrow-left" class="mr-1 h-4 w-4" />
         {{ t('admin.inquiryDetail.back') }}
       </NuxtLink>
@@ -22,15 +22,15 @@
           <div>
             <h3 class="text-lg leading-6 font-medium text-gray-900">Inquiry #{{ inquiry.id.substring(0, 8) }}</h3>
             <p class="mt-1 max-w-2xl text-sm text-gray-500">
-              {{ t('admin.inquiryDetail.submitted_on') }} {{ inquiry.createdAt ? new Date(inquiry.createdAt).toLocaleString() : '-' }}
+              {{ t('admin.inquiryDetail.submitted_on') }} {{ inquiry.createdAt ? new Date(inquiry.createdAt).toLocaleString() : cell(null) }}
             </p>
           </div>
           <div class="flex items-center gap-3">
             <span :class="[statusClass(inquiry.status), 'inline-flex rounded-full px-3 py-1 text-sm font-semibold leading-5']">
-              {{ inquiry.status }}
+              {{ enumLabel('inquiry_status', inquiry.status) }}
             </span>
             <span v-if="inquiry.priority" :class="[priorityClass(inquiry.priority), 'inline-flex rounded-full px-3 py-1 text-sm font-semibold leading-5']">
-              {{ inquiry.priority }}
+              {{ enumLabel('inquiry_priority', inquiry.priority) }}
             </span>
           </div>
         </div>
@@ -43,15 +43,15 @@
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.inquiryDetail.company_name') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ inquiry.companyName || '-' }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ cell(inquiry.companyName) }}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.inquiryDetail.contact_person') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ inquiry.contactPerson || '-' }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ cell(inquiry.contactPerson) }}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.inquiryDetail.email') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ inquiry.email || '-' }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ cell(inquiry.email) }}</dd>
             </div>
             <div v-if="inquiry.whatsapp">
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.inquiryDetail.whatsapp') }}</dt>
@@ -75,7 +75,7 @@
             </div>
             <div v-if="inquiry.quotedAmount" class="sm:col-span-2">
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.inquiryDetail.quoted_amount') }}</dt>
-              <dd class="mt-1 text-sm font-medium text-gray-900">{{ inquiry.currency || 'USD' }} {{ (inquiry.quotedAmount || 0).toLocaleString() }}</dd>
+              <dd class="mt-1 text-sm font-medium text-gray-900">{{ cur(inquiry.currency) }} {{ (inquiry.quotedAmount || 0).toLocaleString() }}</dd>
             </div>
             <div class="sm:col-span-2" v-if="inquiry.interestedProducts && inquiry.interestedProducts.length">
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.inquiryDetail.interested_products') }}</dt>
@@ -106,14 +106,14 @@
       </div>
 
       <!-- AI Compliance Check Results -->
-      <div v-if="inquiry.aiComplianceCheck" class="bg-purple-50 shadow overflow-hidden sm:rounded-lg">
-        <div class="px-4 py-5 sm:px-6 bg-purple-100 border-b border-purple-200">
-          <h3 class="text-lg leading-6 font-medium text-purple-900">{{ t('admin.inquiryDetail.ai_compliance_check') }}</h3>
+      <div v-if="inquiry.aiComplianceCheck" class="bg-amber-50 shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6 bg-amber-100 border-b border-amber-200">
+          <h3 class="text-lg leading-6 font-medium text-amber-900">{{ t('admin.inquiryDetail.ai_compliance_check') }}</h3>
         </div>
         <div class="px-4 py-5 sm:p-6">
           <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
             <div>
-              <dt class="text-sm font-medium text-purple-700">{{ t('admin.inquiryDetail.compliance_status') }}</dt>
+              <dt class="text-sm font-medium text-amber-700">{{ t('admin.inquiryDetail.compliance_status') }}</dt>
               <dd class="mt-1">
                 <span :class="[inquiry.aiComplianceCheck.passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800', 'inline-flex rounded-full px-2 text-xs font-semibold leading-5']">
                   {{ inquiry.aiComplianceCheck.passed ? t('admin.inquiryDetail.passed') : t('admin.inquiryDetail.failed') }}
@@ -121,16 +121,16 @@
               </dd>
             </div>
             <div v-if="inquiry.aiComplianceCheck.warnings && inquiry.aiComplianceCheck.warnings.length">
-              <dt class="text-sm font-medium text-purple-700">{{ t('admin.inquiryDetail.warnings') }}</dt>
-              <dd class="mt-1 text-sm text-purple-900">
+              <dt class="text-sm font-medium text-amber-700">{{ t('admin.inquiryDetail.warnings') }}</dt>
+              <dd class="mt-1 text-sm text-amber-900">
                 <ul class="list-disc list-inside">
                   <li v-for="(warning, idx) in inquiry.aiComplianceCheck.warnings" :key="idx">{{ warning }}</li>
                 </ul>
               </dd>
             </div>
             <div v-if="inquiry.aiComplianceCheck.summary" class="sm:col-span-2">
-              <dt class="text-sm font-medium text-purple-700">{{ t('admin.inquiryDetail.summary') }}</dt>
-              <dd class="mt-1 text-sm text-purple-900">{{ inquiry.aiComplianceCheck.summary }}</dd>
+              <dt class="text-sm font-medium text-amber-700">{{ t('admin.inquiryDetail.summary') }}</dt>
+              <dd class="mt-1 text-sm text-amber-900">{{ inquiry.aiComplianceCheck.summary }}</dd>
             </div>
           </dl>
         </div>
@@ -203,7 +203,7 @@
               {{ convertMessage }}
             </div>
             <div class="flex justify-end">
-              <button type="submit" :disabled="converting" class="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50">
+              <button type="submit" :disabled="converting" class="inline-flex justify-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-700 disabled:opacity-50">
                 {{ converting ? t('admin.inquiryDetail.converting') : t('admin.inquiryDetail.convert_button') }}
               </button>
             </div>
@@ -248,6 +248,8 @@ definePageMeta({
 const route = useRoute()
 const { token } = useAuth()
 const { t } = useI18n()
+const localePath = useLocalePath()
+const { currencyOrDefault: cur, cell, enumLabel } = useDisplay()
 const config = useRuntimeConfig()
 const baseURL = config.public.apiBase || '/api/v1'
 
@@ -288,7 +290,7 @@ const fetchInquiry = async () => {
     quoteForm.validUntil = inquiry.value.validUntil ? new Date(inquiry.value.validUntil).toISOString().slice(0, 16) : ''
     quoteForm.customerNotes = inquiry.value.customerNotes || ''
   } catch (err: any) {
-    error.value = err?.data?.message || err.message || 'Failed to fetch inquiry'
+    error.value = err?.data?.message || err.message || t('errors.api.load_failed')
   } finally {
     pending.value = false
   }
@@ -313,7 +315,7 @@ const submitQuote = async () => {
     await fetchInquiry()
   } catch (err: any) {
     quoteError.value = true
-    quoteMessage.value = err?.data?.message || err.message || 'Failed to submit quote'
+    quoteMessage.value = err?.data?.message || err.message || t('errors.api.quote_failed')
   } finally {
     submittingQuote.value = false
   }
@@ -342,7 +344,7 @@ const convertToOrder = async () => {
     await fetchInquiry()
   } catch (err: any) {
     convertError.value = true
-    convertMessage.value = err?.data?.message || err.message || 'Failed to convert inquiry'
+    convertMessage.value = err?.data?.message || err.message || t('errors.api.inquiry_convert_failed')
   } finally {
     converting.value = false
   }
@@ -350,8 +352,8 @@ const convertToOrder = async () => {
 
 const statusClass = (status: string) => {
   if (status === 'pending') return 'bg-yellow-100 text-yellow-800'
-  if (status === 'contacted' || status === 'quoted') return 'bg-blue-100 text-blue-800'
-  if (status === 'negotiating') return 'bg-indigo-100 text-indigo-800'
+  if (status === 'contacted' || status === 'quoted') return 'bg-orange-100 text-orange-800'
+  if (status === 'negotiating') return 'bg-amber-100 text-amber-800'
   if (status === 'won') return 'bg-green-100 text-green-800'
   if (status === 'lost' || status === 'closed') return 'bg-gray-100 text-gray-800'
   return 'bg-gray-100 text-gray-800'
@@ -359,7 +361,7 @@ const statusClass = (status: string) => {
 
 const priorityClass = (priority: string) => {
   if (priority === 'high' || priority === 'urgent') return 'bg-red-100 text-red-800'
-  if (priority === 'normal') return 'bg-blue-100 text-blue-800'
+  if (priority === 'normal') return 'bg-orange-100 text-orange-800'
   return 'bg-gray-100 text-gray-800'
 }
 

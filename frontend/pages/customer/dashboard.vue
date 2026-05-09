@@ -47,7 +47,7 @@
       <div class="bg-white overflow-hidden shadow rounded-lg mb-8">
         <div class="px-4 py-5 sm:p-6">
           <div class="flex items-center">
-            <div class="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-700 text-2xl">
+            <div class="h-16 w-16 rounded-full bg-orange-100 flex items-center justify-center font-bold text-orange-700 text-2xl">
               {{ user?.firstName?.charAt(0) }}{{ user?.lastName?.charAt(0) }}
             </div>
             <div class="ml-5">
@@ -81,7 +81,7 @@
           </div>
           <div class="bg-gray-50 px-5 py-3">
             <div class="text-sm">
-              <NuxtLink to="/customer/orders" class="font-medium text-blue-600 hover:text-blue-500">
+              <NuxtLink :to="localePath('/customer/orders')" class="font-medium text-orange-600 hover:text-orange-500">
                 {{ t('customer.dashboard.view_all_orders') }} <span aria-hidden="true">&rarr;</span>
               </NuxtLink>
             </div>
@@ -107,7 +107,7 @@
           </div>
           <div class="bg-gray-50 px-5 py-3">
             <div class="text-sm">
-              <NuxtLink to="/customer/profile" class="font-medium text-blue-600 hover:text-blue-500">
+              <NuxtLink :to="localePath('/customer/profile')" class="font-medium text-orange-600 hover:text-orange-500">
                 {{ t('customer.dashboard.update_profile') }} <span aria-hidden="true">&rarr;</span>
               </NuxtLink>
             </div>
@@ -121,10 +121,10 @@
         <div v-if="recentOrders.length > 0" class="bg-white shadow overflow-hidden sm:rounded-md">
           <ul role="list" class="divide-y divide-gray-200">
             <li v-for="order in recentOrders" :key="order.id">
-              <NuxtLink :to="`/customer/orders/${order.id}`" class="block hover:bg-gray-50">
+              <NuxtLink :to="localePath(`/customer/orders/${order.id}`)" class="block hover:bg-gray-50">
                 <div class="px-4 py-4 sm:px-6">
                   <div class="flex items-center justify-between">
-                    <p class="text-sm font-medium text-blue-600 truncate">Order #{{ order.orderNumber || order.id.substring(0,8) }}</p>
+                    <p class="text-sm font-medium text-orange-600 truncate">Order #{{ order.orderNumber || order.id.substring(0,8) }}</p>
                     <div class="ml-2 flex-shrink-0 flex">
                       <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                         {{ order.status }}
@@ -162,6 +162,7 @@ import { ref, onMounted } from 'vue'
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const { t } = useI18n()
+const localePath = useLocalePath()
 const { user, isPending } = useAuth()
 const api = useApi()
 const tts = useTTS()
@@ -177,7 +178,7 @@ onMounted(async () => {
     recentOrders.value = res.data || []
     tts.playWelcome()
   } catch (err: any) {
-    error.value = err?.message || 'Failed to load dashboard data'
+    error.value = err?.message || t('customer.dashboard.error')
   } finally { pending.value = false }
 })
 </script>

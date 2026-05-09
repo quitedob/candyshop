@@ -13,6 +13,8 @@ import (
 	systemsettingSvc "candypro/api/internal/services/systemsetting"
 	trade "candypro/api/internal/services/trade"
 	user "candypro/api/internal/services/user"
+
+	"gorm.io/gorm"
 )
 
 type Services struct {
@@ -30,12 +32,13 @@ type Services struct {
 	Project        *oem.ProjectService
 	Trade          *trade.TradeService
 	Shipment       *trade.ShipmentService
+	Logistics      *trade.LogisticsService
 	TradeDocDetail *trade.TradeDocumentDetailService
 	ActivityLog    *activitylogSvc.ActivityLogService
 	SystemSetting  *systemsettingSvc.SystemSettingService
 }
 
-func New(repos *repositoryCommon.AdminPortalRepositories, cfg *config.Config, authSvc *auth.AuthService) *Services {
+func New(repos *repositoryCommon.AdminPortalRepositories, cfg *config.Config, authSvc *auth.AuthService, db *gorm.DB) *Services {
 	if repos == nil {
 		return &Services{Auth: authSvc}
 	}
@@ -48,7 +51,7 @@ func New(repos *repositoryCommon.AdminPortalRepositories, cfg *config.Config, au
 		Inquiry:        inquiry.NewInquiryService(repos.Inquiry, cfg),
 		Order:          order.NewOrderServiceWithConfig(repos.Order, cfg),
 		Payment:        order.NewPaymentService(repos.Payment, repos.Order),
-		Invoice:        order.NewInvoiceService(repos.Invoice),
+		Invoice:        order.NewInvoiceService(repos.Invoice, repos.Order, repos.DocumentAdjustment),
 		Product:        product.NewProductService(repos.Product),
 		Price:          product.NewPriceService(repos.Price),
 		Content:        content.NewContentService(repos.Content),
@@ -57,6 +60,7 @@ func New(repos *repositoryCommon.AdminPortalRepositories, cfg *config.Config, au
 		Project:        oem.NewProjectService(repos.Project),
 		Trade:          trade.NewTradeService(repos.Trade),
 		Shipment:       trade.NewShipmentService(repos.Shipment),
+		Logistics:      trade.NewLogisticsService(repos.Shipment, repos.ShipmentEvent, repos.Order, repos.Trade, db),
 		TradeDocDetail: trade.NewTradeDocumentDetailService(repos.TradeDocDetail),
 		ActivityLog:    activitylogSvc.NewActivityLogService(repos.ActivityLog),
 		SystemSetting:  systemsettingSvc.NewSystemSettingService(repos.SystemSetting),

@@ -1,4 +1,5 @@
 import { computed } from 'vue'
+import { useLocalePath } from '#i18n'
 
 export interface User {
   id: string
@@ -37,6 +38,8 @@ const decodeJwtPayload = (token: string): JwtPayload | null => {
 }
 
 export const useAuth = () => {
+  const { t } = useI18n()
+  const localePath = useLocalePath()
   const token = useCookie<string | null>('auth_token', {
     maxAge: 60 * 60 * 24 * 7,
     httpOnly: false, // must be false for client-side JS access in SPA; use secure + sameSite instead
@@ -188,7 +191,7 @@ export const useAuth = () => {
       initialized.value = true
       return response
     } catch (error: any) {
-      throw new Error(error.data?.message || 'Login failed')
+      throw new Error(error.data?.message || t('auth.errors.login_failed'))
     }
   }
 
@@ -199,7 +202,7 @@ export const useAuth = () => {
         body: userData
       })
     } catch (error: any) {
-      throw new Error(error.data?.message || 'Registration failed')
+      throw new Error(error.data?.message || t('auth.errors.register_failed'))
     }
   }
 
@@ -218,7 +221,7 @@ export const useAuth = () => {
 
     clearAuthState()
     initialized.value = false
-    await navigateTo('/auth/login')
+    await navigateTo(localePath('/auth/login'))
   }
 
   const resendVerificationEmail = async () => {
@@ -227,7 +230,7 @@ export const useAuth = () => {
         method: 'POST'
       })
     } catch (error: any) {
-      throw new Error(error.data?.message || 'Failed to resend verification email')
+      throw new Error(error.data?.message || t('auth.errors.resend_failed'))
     }
   }
 
@@ -239,7 +242,7 @@ export const useAuth = () => {
         body: { token }
       })
     } catch (error: any) {
-      throw new Error(error.data?.message || 'Failed to verify email')
+      throw new Error(error.data?.message || t('auth.errors.verify_failed'))
     }
   }
 

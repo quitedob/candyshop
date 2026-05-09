@@ -1,9 +1,11 @@
 package api
 
 import (
+	"log"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	adminportalroutes "candypro/api/internal/api/routes/adminportal"
 	authscoperoutes "candypro/api/internal/api/routes/authscope"
@@ -23,8 +25,10 @@ import (
 
 // RouterWithShutdown contains the router and rate limiter for proper shutdown
 type RouterWithShutdown struct {
-	Router  *gin.Engine
-	Limiter *middleware.RateLimiter
+	Router              *gin.Engine
+	Limiter             *middleware.RateLimiter
+	AIPublicLimiter     *middleware.RateLimiter
+	InquiryPublicLimiter *middleware.RateLimiter
 }
 
 // SetupRouter configures and returns the Gin router with all routes and middleware
@@ -47,7 +51,7 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 	}
 	if err := router.SetTrustedProxies(trustedProxies); err != nil {
 		// Non-fatal: log and continue with default behavior
-		_ = err
+		log.Printf("Warning: SetTrustedProxies failed, using Gin defaults: %v", err)
 	}
 
 	// Custom recovery middleware
@@ -57,7 +61,7 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 	router.Use(middleware.RequestID())
 
 	// Security headers middleware
-	router.Use(middleware.SecurityHeaders())
+	router.Use(middleware.SecurityHeaders(cfg.Server.Environment))
 
 	// CORS middleware
 	corsConfig := cors.Config{
@@ -77,15 +81,26 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 	// Request logging
 	router.Use(gin.Logger())
 
-	// Static files for uploads
-	router.Static("/uploads", cfg.Upload.UploadPath)
+	// 上传文件：敏感子目录禁止直链（见 registerUploadRoutes）
+	registerUploadRoutes(router, cfg)
+
+	aiPublicLimiter := middleware.NewRateLimiter(cfg.Security.PublicAIRateLimitPerMinute, time.Minute)
+	publicAIMiddlewares := []gin.HandlerFunc{
+		middleware.DisablePublicAIRoutes(cfg),
+		middleware.PublicAIRateLimit(aiPublicLimiter, cfg.Security.PublicAIRateLimitPerMinute),
+	}
+
+	inquiryPublicLimiter := middleware.NewRateLimiter(cfg.Security.PublicInquiryRateLimitPerMinute, time.Minute)
+	publicInquiryMiddlewares := []gin.HandlerFunc{
+		middleware.PublicInquiryRateLimit(inquiryPublicLimiter, cfg.Security.PublicInquiryRateLimitPerMinute),
+	}
 
 	// API routes
 	api := router.Group("/api/v1")
 	{
 		// Public routes (preferred explicit namespace)
 		public := api.Group("/public")
-		publicroutes.Register(public, h)
+		publicroutes.Register(public, h, publicInquiryMiddlewares...)
 
 		// Auth routes
 		auth := api.Group("/auth")
@@ -101,7 +116,7 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 
 		// System routes (preferred explicit namespace)
 		system := api.Group("/system")
-		systemroutes.Register(system, h, cfg)
+		systemroutes.Register(system, h, cfg, publicAIMiddlewares...)
 	}
 
 	// Swagger documentation (if enabled)
@@ -127,7 +142,9 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 	})
 
 	return &RouterWithShutdown{
-		Router:  router,
-		Limiter: limiter,
+		Router:               router,
+		Limiter:              limiter,
+		AIPublicLimiter:      aiPublicLimiter,
+		InquiryPublicLimiter: inquiryPublicLimiter,
 	}
 }

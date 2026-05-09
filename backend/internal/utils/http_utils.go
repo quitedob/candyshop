@@ -2,6 +2,7 @@ package utils
 
 import (
 	modelsProduct "candypro/api/internal/models/product"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -35,7 +36,8 @@ func InvalidRequestResponse(c *gin.Context, message string) {
 // BindJSONOrInvalidRequest binds JSON and writes standard 400 response on failure.
 func BindJSONOrInvalidRequest(c *gin.Context, dst interface{}) bool {
 	if err := c.ShouldBindJSON(dst); err != nil {
-		InvalidRequestResponse(c, err.Error())
+		log.Printf("bind error: %v", err)
+		InvalidRequestResponse(c, "Invalid request payload")
 		return false
 	}
 	return true

@@ -41,6 +41,7 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	// Order Payments (admin)
 	group.GET("/orders/:id/payments", h.AdminPortal.AdminGetOrderPayments)
 	group.POST("/orders/:id/payments", h.AdminPortal.AdminCreatePayment)
+	group.GET("/orders/:id/payments/:paymentId/file", h.AdminPortal.AdminDownloadPaymentProofFile)
 	group.PUT("/orders/:id/payments/:paymentId/confirm", h.AdminPortal.AdminConfirmPayment)
 	group.PUT("/orders/:id/payments/:paymentId/refund", h.AdminPortal.AdminRefundPayment)
 
@@ -66,6 +67,7 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 
 	// Content
 	group.GET("/content", h.AdminPortal.AdminGetContent)
+	group.POST("/content/ai-generate", h.AdminPortal.AdminAIGenerateContent)
 	group.GET("/content/:id", h.AdminPortal.AdminGetContentByID)
 	group.POST("/content", h.AdminPortal.AdminCreateContent)
 	group.PUT("/content/:id", h.AdminPortal.AdminUpdateContent)
@@ -136,15 +138,35 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.GET("/shipments/:id", h.AdminPortal.AdminGetShipment)
 	group.PUT("/shipments/:id", h.AdminPortal.AdminUpdateShipment)
 	group.DELETE("/shipments/:id", h.AdminPortal.AdminDeleteShipment)
+	// Shipment logistics orchestration
+	group.GET("/shipments/:id/timeline", h.AdminPortal.AdminGetShipmentTimeline)
+	group.POST("/shipments/:id/events", h.AdminPortal.AdminAddTrackingEvent)
+	group.POST("/shipments/:id/dispatch", h.AdminPortal.AdminDispatchShipment)
+	group.POST("/shipments/:id/confirm-delivery", h.AdminPortal.AdminConfirmDelivery)
 
-	// Invoices
+	// Invoices（from-order 须在 :id 之前注册）
 	group.GET("/invoices", h.AdminPortal.AdminGetInvoices)
+	group.POST("/invoices/from-order", h.AdminPortal.AdminCreateInvoiceFromOrder)
 	group.POST("/invoices", h.AdminPortal.AdminCreateInvoice)
 	group.GET("/invoices/stats", h.AdminPortal.AdminGetInvoiceStats)
 	group.GET("/invoices/:id", h.AdminPortal.AdminGetInvoice)
 	group.PUT("/invoices/:id", h.AdminPortal.AdminUpdateInvoice)
 	group.POST("/invoices/:id/send", h.AdminPortal.AdminSendInvoice)
 	group.DELETE("/invoices/:id", h.AdminPortal.AdminDeleteInvoice)
+
+	// 跨境：仓库、市场画像、成本栈、OEM 预留、合规 Copilot
+	group.GET("/warehouses", h.AdminPortal.AdminListWarehouses)
+	group.POST("/warehouses", h.AdminPortal.AdminUpsertWarehouse)
+	group.PUT("/warehouses/:id/stock", h.AdminPortal.AdminUpsertWarehouseStock)
+	group.GET("/products/:id/market-profile", h.AdminPortal.AdminGetProductMarketProfile)
+	group.PUT("/products/:id/market-profile", h.AdminPortal.AdminPutProductMarketProfile)
+	group.GET("/products/:id/market-costs", h.AdminPortal.AdminGetProductMarketCosts)
+	group.PUT("/products/:id/market-costs", h.AdminPortal.AdminPutProductMarketCost)
+	group.GET("/products/:id/channel-inventory", h.AdminPortal.AdminListProductChannelInventory)
+	group.PUT("/products/:id/channel-inventory", h.AdminPortal.AdminPutProductChannelInventory)
+	group.POST("/oem-projects/:id/inventory-holds", h.AdminPortal.AdminCreateOEMInventoryHold)
+	group.GET("/oem-projects/:id/inventory-holds", h.AdminPortal.AdminListOEMInventoryHolds)
+	group.POST("/products/:id/compliance-suggest", h.AdminPortal.AdminProductComplianceSuggest)
 
 	// Pricing
 	group.GET("/price-lists", h.AdminPortal.AdminGetPriceLists)
@@ -161,23 +183,23 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.PUT("/oem-projects/:id", h.AdminPortal.AdminUpdateOEMProject)
 	group.PUT("/oem-projects/:id/status", h.AdminPortal.AdminUpdateOEMStatus)
 
-		// Reports
-		group.GET("/reports/revenue-trends", h.AdminPortal.GetRevenueTrends)
-		group.GET("/reports/order-trends", h.AdminPortal.GetOrderTrends)
-		group.GET("/reports/top-products", h.AdminPortal.GetTopProducts)
-		group.GET("/reports/conversion-trends", h.AdminPortal.GetConversionTrends)
+	// Reports
+	group.GET("/reports/revenue-trends", h.AdminPortal.GetRevenueTrends)
+	group.GET("/reports/order-trends", h.AdminPortal.GetOrderTrends)
+	group.GET("/reports/top-products", h.AdminPortal.GetTopProducts)
+	group.GET("/reports/conversion-trends", h.AdminPortal.GetConversionTrends)
 
-		// Financial
-		group.GET("/financial/overview", h.AdminPortal.GetFinancialOverview)
-		group.GET("/financial/outstanding-invoices", h.AdminPortal.GetOutstandingInvoices)
-		group.GET("/financial/payment-breakdown", h.AdminPortal.GetPaymentBreakdown)
+	// Financial
+	group.GET("/financial/overview", h.AdminPortal.GetFinancialOverview)
+	group.GET("/financial/outstanding-invoices", h.AdminPortal.GetOutstandingInvoices)
+	group.GET("/financial/payment-breakdown", h.AdminPortal.GetPaymentBreakdown)
 
-		// Staff & Audit
-		group.GET("/staff", h.AdminPortal.GetStaffList)
-		group.GET("/staff/:id/activity", h.AdminPortal.GetStaffActivity)
-		group.GET("/audit-log", h.AdminPortal.GetAuditLog)
+	// Staff & Audit
+	group.GET("/staff", h.AdminPortal.GetStaffList)
+	group.GET("/staff/:id/activity", h.AdminPortal.GetStaffActivity)
+	group.GET("/audit-log", h.AdminPortal.GetAuditLog)
 
-		// Settings
-		group.GET("/settings", h.AdminPortal.GetSettings)
-		group.PUT("/settings/:key", h.AdminPortal.UpdateSetting)
-	}
+	// Settings
+	group.GET("/settings", h.AdminPortal.GetSettings)
+	group.PUT("/settings/:key", h.AdminPortal.UpdateSetting)
+}

@@ -14,7 +14,7 @@ import (
 
 // NewTradeAgent creates a smart agent that acts as a Trade Coordinator,
 // guiding the user through Quotation -> PI -> CI -> etc.
-// Utilizing Eino's PlanExecute mechanism.
+// 人工审核：长链路可扩展为 compose.Graph + internal/trade.NewHitlNode；此处以 ChatModelAgent + submit_quotation_for_human_review 工具实现报价审批闭环。
 func NewTradeAgent(ctx context.Context) (adk.Agent, error) {
 	// Initialize tools
 	piTool, err := einotool.NewGeneratePITool(ctx)
@@ -77,6 +77,11 @@ func NewTradeAgent(ctx context.Context) (adk.Agent, error) {
 		return nil, err
 	}
 
+	quoteReviewTool, err := einotool.NewQuotationHumanReviewTool(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	llmModel := commonModel.NewChatModel() // Needs API key in env (.env loaded via config)
 
 	// Since we're using a standard ReAct style ChatModelAgent we pass the tools.
@@ -91,6 +96,7 @@ func NewTradeAgent(ctx context.Context) (adk.Agent, error) {
 				Tools: []tool.BaseTool{
 					piTool, ciTool, compTool, scTool, plTool, cooTool,
 					hcTool, ingTool, sliTool, lcTool, insTool, trackTool,
+					quoteReviewTool,
 				},
 			},
 			ReturnDirectly: map[string]bool{

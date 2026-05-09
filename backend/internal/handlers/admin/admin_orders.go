@@ -116,7 +116,7 @@ func (h *Handler) AdminUpdateOrderStatus(c *gin.Context) {
 		}
 	} else {
 		// Fallback: country-based payment policy for users without a company
-		if requiresFullPrepaymentCountry(order.ShippingAddress.Country) &&
+		if h.requiresFullPrepaymentCountry(order.ShippingAddress.Country) &&
 			requiresPaidBeforeExecution(targetStatus) &&
 			!isPaidInFull(order.PaymentStatus) {
 			utils.ErrorResponse(c, http.StatusUnprocessableEntity, "payment_policy_violation",
@@ -144,7 +144,7 @@ func (h *Handler) AdminUpdateOrderStatus(c *gin.Context) {
 		order.DeliveredAt = &now
 	}
 
-	if err := h.services.Order.UpdateOrder(c.Request.Context(), order); err != nil {
+	if err := h.services.Order.UpdateOrderForAdmin(c.Request.Context(), order, previousStatus, targetStatus); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to update order")
 		return
 	}

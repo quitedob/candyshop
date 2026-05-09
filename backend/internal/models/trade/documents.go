@@ -77,9 +77,12 @@ type ShipmentTracking struct {
 	PortOfDischarge string     `gorm:"type:varchar(255)" json:"portOfDischarge"`
 	ETD             *time.Time `json:"etd"`                                              // Estimated Time of Departure
 	ETA             *time.Time `json:"eta"`                                              // Estimated Time of Arrival
-	Status          string     `gorm:"type:varchar(50);default:'PENDING'" json:"status"` // PENDING, IN_TRANSIT, DELIVERED
-	CreatedAt       time.Time  `json:"createdAt"`
-	UpdatedAt       time.Time  `json:"updatedAt"`
+	Status           string     `gorm:"type:varchar(50);default:'PENDING'" json:"status"` // PENDING, DISPATCHED, IN_TRANSIT, DELIVERED
+	DeliveredAt      *time.Time `json:"deliveredAt,omitempty"`
+	DeliveryProofURL string     `gorm:"type:varchar(500)" json:"deliveryProofUrl,omitempty"`
+	SignedBy         string     `gorm:"type:varchar(255)" json:"signedBy,omitempty"`
+	CreatedAt        time.Time  `json:"createdAt"`
+	UpdatedAt        time.Time  `json:"updatedAt"`
 }
 
 // SettlementRecord represents payment milestones and statuses

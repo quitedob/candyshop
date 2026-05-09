@@ -10,7 +10,7 @@
             </h1>
             <p class="mt-1 text-sm text-gray-600">{{ t('customer.cart.subtitle') }}</p>
           </div>
-          <NuxtLink to="/customer/products" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors">
+          <NuxtLink :to="localePath('/customer/products')" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors">
             <Icon name="heroicons:arrow-left" class="h-4 w-4" />
             {{ t('customer.cart.continue_shopping') }}
           </NuxtLink>
@@ -40,7 +40,7 @@
         </div>
         <h2 class="text-2xl font-semibold text-gray-900 mb-2">{{ t('customer.cart.empty_title') }}</h2>
         <p class="text-gray-600 mb-6">{{ t('customer.cart.empty_desc') }}</p>
-        <NuxtLink to="/customer/products" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-medium rounded-xl hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg shadow-orange-200">
+        <NuxtLink :to="localePath('/customer/products')" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-medium rounded-xl hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg shadow-orange-200">
           <Icon name="heroicons:sparkles" class="h-5 w-5" />
           {{ t('customer.cart.browse_products') }}
         </NuxtLink>
@@ -63,15 +63,15 @@
                   <div class="flex items-start justify-between gap-4">
                     <div>
                       <h3 class="text-lg font-semibold text-gray-900">{{ item.name }}</h3>
-                      <p class="text-sm text-gray-500 mt-0.5">{{ item.category || 'Candy' }}</p>
+                      <p class="text-sm text-gray-500 mt-0.5">{{ item.category || t('customer.cart.default_category') }}</p>
                       <div class="flex items-center gap-2 mt-2">
                         <span v-if="item.halalCertified" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">
                           <Icon name="heroicons:check-badge" class="h-3 w-3" />
-                          Halal
+                          {{ t('customer.cart.badge_halal') }}
                         </span>
-                        <span v-if="item.oemAvailable" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium">
+                        <span v-if="item.oemAvailable" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 text-xs font-medium">
                           <Icon name="heroicons:sparkles" class="h-3 w-3" />
-                          OEM
+                          {{ t('customer.cart.badge_oem') }}
                         </span>
                       </div>
                     </div>
@@ -93,8 +93,8 @@
                       <span class="text-sm text-gray-500">MOQ: {{ item.moq || 1 }}</span>
                     </div>
                     <div class="text-right">
-                      <p class="text-lg font-bold text-orange-600">{{ item.currency || 'USD' }} {{ ((item.unitPrice || 0) * item.quantity).toLocaleString() }}</p>
-                      <p class="text-xs text-gray-500">{{ item.currency || 'USD' }} {{ (item.unitPrice || 0).toLocaleString() }} / unit</p>
+                      <p class="text-lg font-bold text-orange-600">{{ cur(item.currency) }} {{ ((item.unitPrice || 0) * item.quantity).toLocaleString() }}</p>
+                      <p class="text-xs text-gray-500">{{ t('customer.cart.unit_price_per', { currency: cur(item.currency), price: (item.unitPrice || 0).toLocaleString() }) }}</p>
                     </div>
                   </div>
 
@@ -125,11 +125,11 @@
             <div class="p-6 space-y-4">
               <div class="flex justify-between text-sm">
                 <span class="text-gray-600">{{ t('customer.cart.items_count', { count: cartItems.length }) }}</span>
-                <span class="font-medium text-gray-900">{{ cartItems.reduce((sum, i) => sum + i.quantity, 0) }} units</span>
+                <span class="font-medium text-gray-900">{{ t('customer.cart.units_count', { count: cartItems.reduce((sum, i) => sum + i.quantity, 0) }) }}</span>
               </div>
               <div class="flex justify-between text-sm">
                 <span class="text-gray-600">{{ t('customer.cart.subtotal') }}</span>
-                <span class="font-medium text-gray-900">{{ summary.currency || 'USD' }} {{ (summary.subtotal || 0).toLocaleString() }}</span>
+                <span class="font-medium text-gray-900">{{ cur(summary.currency) }} {{ (summary.subtotal || 0).toLocaleString() }}</span>
               </div>
               <div class="flex justify-between text-sm">
                 <span class="text-gray-600">{{ t('customer.cart.estimated_tax') }}</span>
@@ -142,7 +142,7 @@
               <div class="pt-4 border-t border-gray-100">
                 <div class="flex justify-between">
                   <span class="text-base font-semibold text-gray-900">{{ t('customer.cart.subtotal_label') }}</span>
-                  <span class="text-xl font-bold text-orange-600">{{ summary.currency || 'USD' }} {{ (summary.subtotal || 0).toLocaleString() }}</span>
+                  <span class="text-xl font-bold text-orange-600">{{ cur(summary.currency) }} {{ (summary.subtotal || 0).toLocaleString() }}</span>
                 </div>
                 <p class="text-xs text-gray-400 mt-1">{{ t('customer.cart.tax_shipping_note') }}</p>
               </div>
@@ -176,7 +176,7 @@
                   <Icon v-else name="heroicons:credit-card" class="h-5 w-5" />
                   {{ checkingOut ? t('customer.cart.processing') : t('customer.cart.proceed_checkout') }}
                 </button>
-                <NuxtLink to="/customer/orders/new" class="w-full py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2">
+                <NuxtLink :to="localePath('/customer/orders/new')" class="w-full py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2">
                   <Icon name="heroicons:sparkles" class="h-5 w-5" />
                   {{ t('customer.cart.ai_assist') }}
                 </NuxtLink>
@@ -192,10 +192,67 @@
       </div>
     </div>
 
-    <!-- Success Toast -->
+    <!-- 结账后合规/价格/库存警告确认（与后端 checkout 响应字段对齐） -->
+    <Teleport to="body">
+      <Transition name="slide-up">
+        <div
+          v-if="showCheckoutReviewModal"
+          class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="t('customer.cart.checkout_review_title')"
+        >
+          <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col">
+            <div class="px-6 py-4 border-b border-amber-100 bg-amber-50">
+              <h2 class="text-lg font-semibold text-amber-900">{{ t('customer.cart.checkout_review_title') }}</h2>
+              <p class="text-sm text-amber-800 mt-1">{{ t('customer.cart.checkout_review_subtitle') }}</p>
+            </div>
+            <div class="px-6 py-4 overflow-y-auto space-y-4 text-sm">
+              <div v-if="checkoutReviewCountry">
+                <p class="font-medium text-gray-900">{{ t('customer.cart.checkout_destination') }}: {{ checkoutReviewCountry }}</p>
+              </div>
+              <div v-if="checkoutComplianceWarnings.length">
+                <p class="font-medium text-gray-800 mb-2">{{ t('customer.cart.checkout_compliance_section') }}</p>
+                <ul class="list-disc pl-5 space-y-1 text-amber-900">
+                  <li v-for="(w, i) in checkoutComplianceWarnings" :key="'c'+i">{{ w }}</li>
+                </ul>
+              </div>
+              <div v-if="checkoutInventoryWarnings.length">
+                <p class="font-medium text-gray-800 mb-2">{{ t('customer.cart.checkout_inventory_section') }}</p>
+                <ul class="list-disc pl-5 space-y-1 text-gray-800">
+                  <li v-for="(w, i) in checkoutInventoryWarnings" :key="'i'+i">{{ w }}</li>
+                </ul>
+              </div>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-100 flex gap-3 justify-end bg-gray-50">
+              <button
+                type="button"
+                class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
+                @click="cancelCheckoutReview"
+              >
+                {{ t('customer.cart.checkout_review_stay') }}
+              </button>
+              <button
+                type="button"
+                class="px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 text-white font-medium hover:from-orange-600 hover:to-amber-600"
+                @click="confirmCheckoutReviewNavigate"
+              >
+                {{ t('customer.cart.checkout_review_continue') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Toast：成功 / 失败样式区分 -->
     <Transition name="slide-up">
-      <div v-if="showToast" class="fixed bottom-6 right-6 bg-emerald-600 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 z-50">
-        <Icon name="heroicons:check-circle" class="h-5 w-5" />
+      <div
+        v-if="showToast"
+        :class="toastIsError ? 'bg-red-600' : 'bg-emerald-600'"
+        class="fixed bottom-6 right-6 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 z-50"
+      >
+        <Icon :name="toastIsError ? 'heroicons:exclamation-circle' : 'heroicons:check-circle'" class="h-5 w-5" />
         {{ toastMessage }}
       </div>
     </Transition>
@@ -211,6 +268,8 @@ definePageMeta({
 })
 
 const { t, locale } = useI18n()
+const localePath = useLocalePath()
+const { currencyOrDefault: cur } = useDisplay()
 const api = useApi()
 const tts = useTTS()
 
@@ -221,6 +280,12 @@ const checkingOut = ref(false)
 const showAddressForm = ref(false)
 const showToast = ref(false)
 const toastMessage = ref('')
+const toastIsError = ref(false)
+const showCheckoutReviewModal = ref(false)
+const checkoutPendingOrderId = ref<string | null>(null)
+const checkoutComplianceWarnings = ref<string[]>([])
+const checkoutInventoryWarnings = ref<string[]>([])
+const checkoutReviewCountry = ref('')
 
 const shippingAddress = ref<any>(null)
 const tempAddress = reactive({
@@ -240,7 +305,7 @@ const summary = computed(() => {
     taxAmount: null as number | null,   // TBD by sales team
     shippingAmount: null as number | null, // TBD by incoterms
     totalAmount: subtotal,
-    currency: cartItems.value[0]?.currency || 'USD'
+    currency: cur(cartItems.value[0]?.currency)
   }
 })
 
@@ -301,15 +366,36 @@ const clearCart = async () => {
   }
 }
 
+/** 解析后端 /user/cart/checkout 返回的合规与库存/价格警告 */
+function extractCheckoutReview(res: Record<string, any>) {
+  const compliance = res?.compliance
+  const inventory = res?.inventory
+  const country = typeof compliance?.country === 'string' ? compliance.country : ''
+  const cw = Array.isArray(compliance?.warnings) ? compliance.warnings.filter(Boolean) : []
+  const iw = Array.isArray(inventory?.warnings) ? inventory.warnings.filter(Boolean) : []
+  return { country, complianceWarnings: cw as string[], inventoryWarnings: iw as string[] }
+}
+
 const proceedToCheckout = async () => {
   checkingOut.value = true
   try {
     const res = await api.checkoutCart({
       shippingAddress: showAddressForm.value ? tempAddress : shippingAddress.value
     })
-    const orderId = res.id || res.orderId
-    if (orderId) {
-      await navigateTo(`/customer/orders/${orderId}`)
+    const orderId = (res?.id || res?.orderId) as string | undefined
+    const { country, complianceWarnings, inventoryWarnings } = extractCheckoutReview(res)
+    const hasReview =
+      complianceWarnings.length > 0 ||
+      inventoryWarnings.length > 0
+
+    if (orderId && hasReview) {
+      checkoutPendingOrderId.value = orderId
+      checkoutReviewCountry.value = country
+      checkoutComplianceWarnings.value = complianceWarnings
+      checkoutInventoryWarnings.value = inventoryWarnings
+      showCheckoutReviewModal.value = true
+    } else if (orderId) {
+      await navigateTo(localePath(`/customer/orders/${orderId}`))
     } else {
       showNotification(t('customer.cart.checkout_success'))
     }
@@ -320,8 +406,33 @@ const proceedToCheckout = async () => {
   }
 }
 
+/** 用户确认已阅读警告后跳转订单详情 */
+const confirmCheckoutReviewNavigate = async () => {
+  const id = checkoutPendingOrderId.value
+  showCheckoutReviewModal.value = false
+  checkoutPendingOrderId.value = null
+  checkoutComplianceWarnings.value = []
+  checkoutInventoryWarnings.value = []
+  checkoutReviewCountry.value = ''
+  if (id) {
+    await navigateTo(localePath(`/customer/orders/${id}`))
+  }
+}
+
+/** 留在购物车（订单已创建，仅关闭弹窗并刷新） */
+const cancelCheckoutReview = async () => {
+  showCheckoutReviewModal.value = false
+  checkoutPendingOrderId.value = null
+  checkoutComplianceWarnings.value = []
+  checkoutInventoryWarnings.value = []
+  checkoutReviewCountry.value = ''
+  await fetchCart()
+  showNotification(t('customer.cart.checkout_review_order_created'))
+}
+
 const showNotification = (message: string, isError = false) => {
   toastMessage.value = message
+  toastIsError.value = isError
   showToast.value = true
   setTimeout(() => { showToast.value = false }, 3000)
 }

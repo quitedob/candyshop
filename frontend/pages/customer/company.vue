@@ -95,6 +95,7 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
+const { t } = useI18n()
 const api = useApi()
 const company = ref<any>(null)
 const pending = ref(true)
@@ -114,7 +115,7 @@ const load = async () => {
   try {
     company.value = await api.get('/user/company')
   } catch (e: any) {
-    error.value = e?.message || 'Failed to load company'
+    error.value = e?.message || t('errors.api.load_failed')
   } finally {
     pending.value = false
   }
@@ -138,7 +139,7 @@ const saveCompany = async () => {
     saveSuccess.value = true
     setTimeout(() => { saveSuccess.value = false }, 3000)
   } catch (e: any) {
-    saveError.value = e?.message || 'Failed to save'
+    saveError.value = e?.message || t('errors.api.save_failed')
   } finally {
     saving.value = false
   }
@@ -167,7 +168,7 @@ const handleKYBFile = async (event: Event) => {
     await load()
     setTimeout(() => { kybSuccess.value = false }, 4000)
   } catch (e: any) {
-    kybError.value = e?.message || 'Failed to upload document'
+    kybError.value = e?.message || t('errors.api.upload_failed')
   } finally {
     uploadingKYB.value = false
     if (kybFileInput.value) kybFileInput.value.value = ''

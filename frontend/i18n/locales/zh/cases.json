@@ -21,6 +21,10 @@
     "timeline": "项目时间线",
     "similar": "类似案例",
     "cta_title": "准备好书写您的成功故事了吗？",
-    "cta_subtitle": "让我们一起探讨如何帮助您的品牌取得类似的成果。"
+    "cta_subtitle": "让我们一起探讨如何帮助您的品牌取得类似的成果。",
+    "fallback_client": "案例",
+    "fallback_industry": "通用",
+    "timeline_step": "第 {n} 步",
+    "whatsapp_similar": "您好，我想咨询与「{client}」类似的项目。"
   }
 }

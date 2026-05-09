@@ -35,7 +35,7 @@
                 </td>
                 <td class="px-4 py-3 text-gray-500">{{ p.minQuantity || 1 }}</td>
                 <td class="px-4 py-3 text-orange-600 font-semibold">{{ p.unitPrice }}</td>
-                <td class="px-4 py-3 text-gray-500">{{ p.currency || 'USD' }}</td>
+                <td class="px-4 py-3 text-gray-500">{{ cur(p.currency) }}</td>
               </tr>
             </tbody>
           </table>
@@ -49,6 +49,8 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
+const { t } = useI18n()
+const { currencyOrDefault: cur } = useDisplay()
 const api = useApi()
 const priceList = ref<any>(null)
 const pending = ref(true)
@@ -69,7 +71,7 @@ const load = async () => {
       }))
     }
   } catch (e: any) {
-    error.value = e?.message || 'Failed to load pricing'
+    error.value = e?.message || t('errors.api.load_failed')
   } finally {
     pending.value = false
   }

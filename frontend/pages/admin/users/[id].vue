@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="mb-6">
-      <NuxtLink to="/admin/users" class="flex items-center text-sm font-medium text-blue-600 hover:text-blue-500">
+      <NuxtLink :to="localePath('/admin/users')" class="flex items-center text-sm font-medium text-orange-600 hover:text-orange-500">
         <Icon name="heroicons:arrow-left" class="mr-1 h-4 w-4" />
         {{ t('admin.user_detail.back') }}
       </NuxtLink>
@@ -36,11 +36,11 @@
           </div>
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-gray-500">{{ t('admin.user_detail.company') }}</dt>
-            <dd class="mt-1 text-sm text-gray-900">{{ user.company || 'N/A' }}</dd>
+            <dd class="mt-1 text-sm text-gray-900">{{ user.company ? user.company : t('common.display.na') }}</dd>
           </div>
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-gray-500">{{ t('admin.user_detail.role') }}</dt>
-            <dd class="mt-1 text-sm text-gray-900">{{ user.role?.name || user.role || 'Customer' }}</dd>
+            <dd class="mt-1 text-sm text-gray-900">{{ displayRole }}</dd>
           </div>
           
           <div class="sm:col-span-2 mt-6">
@@ -49,13 +49,13 @@
             <form @submit.prevent="updateStatus" class="flex items-end gap-4">
               <div>
                 <label for="status" class="block text-sm font-medium text-gray-700">{{ t('admin.user_detail.account_status') }}</label>
-                <select id="status" v-model="statusInput" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                  <option value="active">Active</option>
-                  <option value="suspended">Suspended</option>
-                  <option value="inactive">Inactive</option>
+                <select id="status" v-model="statusInput" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm rounded-md">
+                  <option value="active">{{ t('admin.user_detail.status_active') }}</option>
+                  <option value="suspended">{{ t('admin.user_detail.status_suspended') }}</option>
+                  <option value="inactive">{{ t('admin.user_detail.status_inactive') }}</option>
                 </select>
               </div>
-              <button type="submit" :disabled="updating" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
+              <button type="submit" :disabled="updating" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50">
                 <span v-if="updating">{{ t('admin.user_detail.updating') }}</span>
                 <span v-else>{{ t('admin.user_detail.update_status') }}</span>
               </button>
@@ -71,22 +71,22 @@
             <form @submit.prevent="updateProfile" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700">{{ t('admin.user_detail.first_name') }}</label>
-                <input v-model="profileInput.firstName" type="text" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500" />
+                <input v-model="profileInput.firstName" type="text" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">{{ t('admin.user_detail.last_name') }}</label>
-                <input v-model="profileInput.lastName" type="text" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500" />
+                <input v-model="profileInput.lastName" type="text" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">{{ t('admin.user_detail.company') }}</label>
-                <input v-model="profileInput.company" type="text" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500" />
+                <input v-model="profileInput.company" type="text" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">{{ t('admin.user_detail.phone') }}</label>
-                <input v-model="profileInput.phone" type="text" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500" />
+                <input v-model="profileInput.phone" type="text" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500" />
               </div>
               <div class="sm:col-span-2">
-                <button type="submit" :disabled="savingProfile" class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50">
+                <button type="submit" :disabled="savingProfile" class="inline-flex justify-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-700 disabled:opacity-50">
                   {{ savingProfile ? t('admin.user_detail.saving') : t('admin.user_detail.save_profile') }}
                 </button>
               </div>
@@ -98,13 +98,13 @@
             <form @submit.prevent="updateRole" class="flex flex-wrap items-end gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700">{{ t('admin.user_detail.role') }}</label>
-                <select v-model="roleInput" class="mt-1 block rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500">
-                  <option value="customer">Customer</option>
-                  <option value="admin">Admin</option>
-                  <option value="superadmin">Superadmin</option>
+                <select v-model="roleInput" class="mt-1 block rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500">
+                  <option value="customer">{{ t('admin.user_detail.role_option_customer') }}</option>
+                  <option value="admin">{{ t('admin.user_detail.role_option_admin') }}</option>
+                  <option value="superadmin">{{ t('admin.user_detail.role_option_superadmin') }}</option>
                 </select>
               </div>
-              <button type="submit" :disabled="updatingRole" class="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50">
+              <button type="submit" :disabled="updatingRole" class="inline-flex justify-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-700 disabled:opacity-50">
                 {{ updatingRole ? t('admin.user_detail.updating_role') : t('admin.user_detail.update_role') }}
               </button>
             </form>
@@ -123,7 +123,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, onMounted, computed } from 'vue'
 
 definePageMeta({
   layout: 'admin',
@@ -132,11 +132,12 @@ definePageMeta({
 
 const route = useRoute()
 const { token, user: authUser } = useAuth()
-const { t } = useI18n()
+const { t, te } = useI18n()
+const localePath = useLocalePath()
 
 // Guard: only superadmin can access user management
 if (authUser.value?.role !== 'superadmin') {
-  navigateTo('/admin')
+  navigateTo(localePath('/admin'))
 }
 
 const config = useRuntimeConfig()
@@ -146,6 +147,13 @@ const id = route.params.id as string
 const user = ref<any>(null)
 const pending = ref(true)
 const error = ref('')
+
+const displayRole = computed(() => {
+  if (!user.value) return t('roles.customer')
+  const raw = String(user.value.role?.name || user.value.role || 'customer').toLowerCase()
+  const key = `roles.${raw}`
+  return te(key) ? t(key) : t('roles.customer')
+})
 
 const statusInput = ref('active')
 const updating = ref(false)
@@ -177,7 +185,7 @@ const fetchUser = async () => {
     profileInput.company = res.company || ''
     profileInput.phone = res.phone || ''
   } catch (err: any) {
-    error.value = err.message || 'Failed to fetch user'
+    error.value = err.message ? err.message : t('errors.api.load_failed')
   } finally {
     pending.value = false
   }
@@ -200,7 +208,7 @@ const updateStatus = async () => {
     setTimeout(() => { updateMessage.value = '' }, 3000)
   } catch (err: any) {
     updateError.value = true
-    updateMessage.value = err?.data?.message || err.message || 'Failed to update status'
+    updateMessage.value = err?.data?.message || err.message || t('errors.api.status_failed')
   } finally {
     updating.value = false
   }
@@ -227,7 +235,7 @@ const updateProfile = async () => {
     updateMessage.value = t('admin.user_detail.profile_updated')
   } catch (err: any) {
     updateError.value = true
-    updateMessage.value = err?.data?.message || err.message || 'Failed to update profile'
+    updateMessage.value = err?.data?.message || err.message || t('errors.api.save_failed')
   } finally {
     savingProfile.value = false
   }
@@ -253,7 +261,7 @@ const updateRole = async () => {
     updateMessage.value = t('admin.user_detail.role_updated')
   } catch (err: any) {
     updateError.value = true
-    updateMessage.value = err?.data?.message || err.message || 'Failed to update role'
+    updateMessage.value = err?.data?.message || err.message || t('errors.api.save_failed')
   } finally {
     updatingRole.value = false
   }
@@ -271,10 +279,10 @@ const deleteUser = async () => {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token.value}` }
     })
-    await navigateTo('/admin/users')
+    await navigateTo(localePath('/admin/users'))
   } catch (err: any) {
     updateError.value = true
-    updateMessage.value = err?.data?.message || err.message || 'Failed to delete user'
+    updateMessage.value = err?.data?.message || err.message || t('errors.api.delete_failed')
   } finally {
     deletingUser.value = false
   }

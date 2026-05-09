@@ -91,9 +91,10 @@ func (h *Handler) Chatbot(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"reply":       reply,
-		"input":       prompt,
+		"reply": reply,
+		// 不回传用户原文，降低隐私泄露与提示词复述风险；前端如需展示可仅用本地 state
 		"generatedAt": time.Now(),
+		"notice":      "AI-generated content is for general information only and is not legal, regulatory, or financial advice.",
 	})
 }
 
@@ -156,11 +157,14 @@ func (h *Handler) GenerateQuotation(c *gin.Context) {
 	}
 
 	var req struct {
-		Prompt               string `json:"prompt"`
-		InquiryID            string `json:"inquiryId"`
-		Currency             string `json:"currency"`
-		CustomerRequirements string `json:"customerRequirements"`
-		TargetCountry        string `json:"targetCountry"`
+		Prompt               string   `json:"prompt"`
+		InquiryID            string   `json:"inquiryId"`
+		Currency             string   `json:"currency"`
+		CustomerRequirements string   `json:"customerRequirements"`
+		TargetCountry        string   `json:"targetCountry"`
+		ProductID            string   `json:"productId"`
+		ProductIDs           []string `json:"productIds"`
+		MarketCode           string   `json:"marketCode"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
@@ -193,6 +197,40 @@ func (h *Handler) GenerateQuotation(c *gin.Context) {
 		)
 	}
 
+	// 可选：注入目的国/市场成本栈摘要，供模型起草参考（非对外报价承诺）
+	marketCode := strings.TrimSpace(req.MarketCode)
+	if marketCode == "" {
+		marketCode = strings.TrimSpace(req.TargetCountry)
+	}
+	if marketCode == "" {
+		marketCode = "GLOBAL"
+	}
+	var costInject []gin.H
+	if h.services != nil && h.services.Product != nil {
+		ids := append([]string{}, req.ProductIDs...)
+		if pid := strings.TrimSpace(req.ProductID); pid != "" {
+			ids = append([]string{pid}, ids...)
+		}
+		seen := map[string]struct{}{}
+		for _, raw := range ids {
+			pid := strings.TrimSpace(raw)
+			if pid == "" {
+				continue
+			}
+			if _, dup := seen[pid]; dup {
+				continue
+			}
+			seen[pid] = struct{}{}
+			j, err := h.services.Product.BuildPricingCostContextJSON(c.Request.Context(), pid, marketCode)
+			if err != nil || j == "" || j == "{}" {
+				continue
+			}
+			costInject = append(costInject, gin.H{"productId": pid, "costStackJSON": j})
+			prompt += "\n\n---\nCost stack reference for product " + pid +
+				" (read-only internal data, not a binding quote; drafting guidance only):\n" + j
+		}
+	}
+
 	quotation, err := h.aiService.Generate(c.Request.Context(), prompt)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
@@ -202,10 +240,19 @@ func (h *Handler) GenerateQuotation(c *gin.Context) {
 		return
 	}
 
+	pricingAssist := gin.H{
+		"disclaimerZh":     "成本栈与模型输出仅供内部起草参考，不构成对客户的价格承诺，须人工复核。",
+		"disclaimerEn":     "Cost stack and model output are non-binding drafting aids; human review is required before any customer commitment.",
+		"injectedProducts": len(costInject),
+	}
+	if len(costInject) > 0 {
+		pricingAssist["summaries"] = costInject
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"quotation":   quotation,
-		"currency":    currency,
-		"generatedAt": time.Now(),
+		"quotation":     quotation,
+		"currency":      currency,
+		"generatedAt":   time.Now(),
+		"pricingAssist": pricingAssist,
 	})
 }
 

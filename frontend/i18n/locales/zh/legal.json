@@ -2,6 +2,16 @@
   "legal": {
     "privacy_title": "隐私政策",
     "terms_title": "服务条款",
+    "data_processing_title": "数据处理与人工智能说明",
+    "data_processing_subtitle": "说明本平台如何处理询价、订单及 AI 相关功能中的数据。",
+    "data_processing_scope": "范围",
+    "data_processing_scope_body": "为履行 B2B OEM 合作，我们可能处理您提供的商业联系人、公司信息、收发货与账单信息、选品与询价内容、以及您上传的文件（如规格、付款凭证、KYB 材料等），用于报价、下单、合规核验、物流与客户支持。",
+    "data_processing_ai": "人工智能",
+    "data_processing_ai_body": "在启用 AI 功能时，您的文本可能被发送至所配置的模型服务以生成摘要、建议或检索结果。输出仅供一般参考，不构成法律、监管或通关等专业意见。可通过服务端环境变量 DISABLE_PUBLIC_AI_ROUTES 关闭无需登录的公开 AI 路由。",
+    "data_processing_retention": "保存期限",
+    "data_processing_retention_body": "保存期限遵循运营、会计需求及适用法律。技术与组织措施详见《隐私政策》。",
+    "data_processing_contact": "疑问",
+    "data_processing_contact_body": "与数据相关的请求请通过《隐私政策》中的联系方式与我们联系。",
     "last_updated": "最后更新：{date}",
     "privacy": {
       "intro_title": "1. 引言",

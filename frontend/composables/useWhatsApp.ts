@@ -29,7 +29,7 @@ export const useWhatsApp = () => {
    * Get the configured WhatsApp number
    */
   const getWhatsAppNumber = (): string => {
-    return config.public.whatsappNumber || '1234567890'
+    return config.public.whatsappNumber ? String(config.public.whatsappNumber) : '1234567890'
   }
 
   /**
@@ -43,7 +43,8 @@ export const useWhatsApp = () => {
 
     // Add product info if provided
     if (options.product) {
-      message = `Hi, I'm interested in "${options.product}"${options.category ? ` from ${options.category} category` : ''}. Can you provide more information?`
+      const categoryPart = options.category ? t('whatsapp.category_part', { name: options.category }) : ''
+      message = t('whatsapp.product_inquiry', { product: options.product, categoryPart })
     }
 
     const encodedMessage = encodeURIComponent(message)
@@ -57,16 +58,16 @@ export const useWhatsApp = () => {
   const createInquiryLink = (info: WhatsAppContactInfo): string => {
     const phone = info.phone || getWhatsAppNumber()
 
-    let message = `Hi, I'd like to inquire about your OEM candy services.\n\n`
+    let message = t('whatsapp.inquiry_intro')
 
-    if (info.fullName) message += `Name: ${info.fullName}\n`
-    if (info.company) message += `Company: ${info.company}\n`
-    if (info.email) message += `Email: ${info.email}\n`
-    if (info.country) message += `Country: ${info.country}\n`
-    if (info.product) message += `Product: ${info.product}\n`
-    if (info.quantity) message += `Quantity: ${info.quantity}\n`
+    if (info.fullName) message += `${t('whatsapp.field_name')}: ${info.fullName}\n`
+    if (info.company) message += `${t('whatsapp.field_company')}: ${info.company}\n`
+    if (info.email) message += `${t('whatsapp.field_email')}: ${info.email}\n`
+    if (info.country) message += `${t('whatsapp.field_country')}: ${info.country}\n`
+    if (info.product) message += `${t('whatsapp.field_product')}: ${info.product}\n`
+    if (info.quantity) message += `${t('whatsapp.field_quantity')}: ${info.quantity}\n`
 
-    message += `\n${info.message || 'Please provide more information about pricing and lead times.'}`
+    message += `\n${info.message || t('whatsapp.inquiry_followup')}`
 
     return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
   }

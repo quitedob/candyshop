@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="mb-6">
-      <NuxtLink to="/customer/oem-projects" class="flex items-center text-sm font-medium text-blue-600 hover:text-blue-500">
+      <NuxtLink :to="localePath('/customer/oem-projects')" class="flex items-center text-sm font-medium text-orange-600 hover:text-orange-500">
         <Icon name="heroicons:arrow-left" class="mr-1 h-4 w-4" />
         {{ t('customer.oemProjects.back') }}
       </NuxtLink>
@@ -138,8 +138,8 @@
       </div>
 
       <!-- Notes/Feedback -->
-      <div v-if="project.adminNotes" class="bg-blue-50 shadow overflow-hidden sm:rounded-lg">
-        <div class="px-4 py-5 sm:px-6 bg-blue-100 border-b border-blue-200">
+      <div v-if="project.adminNotes" class="bg-orange-50 shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6 bg-orange-100 border-b border-blue-200">
           <h3 class="text-lg leading-6 font-medium text-blue-900">{{ t('customer.oemProjects.notes_from_team') }}</h3>
         </div>
         <div class="px-4 py-5 sm:p-6">
@@ -158,6 +158,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 const route = useRoute()
 const api = useApi()
 const { t } = useI18n()
+const localePath = useLocalePath()
 
 const project = ref<any>(null)
 const pending = ref(true)
@@ -173,7 +174,7 @@ const steps = [
 const fetchProject = async () => {
   pending.value = true; error.value = ''
   try { project.value = await api.get<any>(`/user/oem-projects/${route.params.id}`) }
-  catch (err: any) { error.value = err?.message || 'Failed to fetch project' }
+  catch (err: any) { error.value = err?.message || t('errors.api.load_failed') }
   finally { pending.value = false }
 }
 
@@ -181,19 +182,19 @@ const getStepIndex = (status: string) => { const idx = steps.findIndex(s => s.ke
 const getStepClass = (stepKey: string) => {
   const currentIdx = getStepIndex(project.value?.status || 'inquiry')
   const stepIdx = steps.findIndex(s => s.key === stepKey)
-  if (stepIdx < currentIdx) return 'bg-green-500'; if (stepIdx === currentIdx) return 'bg-blue-500'; return 'bg-gray-300'
+  if (stepIdx < currentIdx) return 'bg-green-500'; if (stepIdx === currentIdx) return 'bg-orange-500'; return 'bg-gray-300'
 }
 const getStepLineClass = (idx: number) => { const currentIdx = getStepIndex(project.value?.status || 'inquiry'); return idx < currentIdx ? 'bg-green-500' : 'bg-gray-300' }
 const statusBadgeClass = (status: string) => {
   const currentIdx = getStepIndex(status); const maxIdx = steps.length - 1
   if (currentIdx >= maxIdx) return 'bg-green-100 text-green-800'
-  if (currentIdx >= 4) return 'bg-blue-100 text-blue-800'
+  if (currentIdx >= 4) return 'bg-orange-100 text-orange-800'
   return 'bg-yellow-100 text-yellow-800'
 }
 const sampleStatusClass = (status: string) => {
   if (status === 'approved') return 'bg-green-100 text-green-800'
   if (status === 'rejected') return 'bg-red-100 text-red-800'
-  if (status === 'shipped') return 'bg-blue-100 text-blue-800'
+  if (status === 'shipped') return 'bg-orange-100 text-orange-800'
   return 'bg-gray-100 text-gray-800'
 }
 

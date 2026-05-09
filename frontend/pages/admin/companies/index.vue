@@ -47,18 +47,18 @@
             <td class="py-4 pl-4 pr-3 text-sm sm:pl-6">
               <div class="font-medium text-gray-900">{{ company.name }}</div>
             </td>
-            <td class="px-3 py-4 text-sm text-gray-500">{{ company.taxId || '-' }}</td>
+            <td class="px-3 py-4 text-sm text-gray-500">{{ cell(company.taxId) }}</td>
             <td class="px-3 py-4 text-sm">
               <span :class="[statusBadgeClass(company.status), 'inline-flex rounded-full px-2 text-xs font-semibold leading-5']">
-                {{ company.status || 'pending' }}
+                {{ enumLabel('company_status', company.status) }}
               </span>
             </td>
-            <td class="px-3 py-4 text-sm text-gray-500">{{ company.creditLimit ? `${company.currency || 'USD'} ${company.creditLimit.toLocaleString()}` : '-' }}</td>
-            <td class="px-3 py-4 text-sm text-gray-500">{{ company.paymentTerms || '-' }}</td>
-            <td class="px-3 py-4 text-sm text-gray-500">{{ company.priceListName || '-' }}</td>
-            <td class="px-3 py-4 text-sm text-gray-500">{{ company.verifiedAt ? new Date(company.verifiedAt).toLocaleDateString() : '-' }}</td>
+            <td class="px-3 py-4 text-sm text-gray-500">{{ company.creditLimit ? `${cur(company.currency)} ${company.creditLimit.toLocaleString()}` : cell(null) }}</td>
+            <td class="px-3 py-4 text-sm text-gray-500">{{ cell(company.paymentTerms) }}</td>
+            <td class="px-3 py-4 text-sm text-gray-500">{{ cell(company.priceListName) }}</td>
+            <td class="px-3 py-4 text-sm text-gray-500">{{ company.verifiedAt ? new Date(company.verifiedAt).toLocaleDateString() : cell(null) }}</td>
             <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-              <NuxtLink :to="`/admin/companies/${company.id}`" class="text-blue-600 hover:text-blue-900 mr-3">{{ t('admin.companies.view') }}</NuxtLink>
+              <NuxtLink :to="localePath(`/admin/companies/${company.id}`)" class="text-orange-600 hover:text-orange-900 mr-3">{{ t('admin.companies.view') }}</NuxtLink>
               <button v-if="company.status === 'pending'" type="button" class="text-green-600 hover:text-green-900 mr-3" @click="verifyCompany(company.id, 'verified')">{{ t('admin.companies.verify') }}</button>
               <button v-if="company.status === 'pending'" type="button" class="text-red-600 hover:text-red-900" @click="verifyCompany(company.id, 'rejected')">{{ t('admin.companies.reject') }}</button>
             </td>
@@ -93,6 +93,8 @@ definePageMeta({
 
 const { token } = useAuth()
 const { t } = useI18n()
+const localePath = useLocalePath()
+const { currencyOrDefault: cur, cell, enumLabel } = useDisplay()
 const config = useRuntimeConfig()
 const baseURL = config.public.apiBase || '/api/v1'
 
@@ -122,7 +124,7 @@ const fetchCompanies = async () => {
     companies.value = res.data || []
     pagination.value = res.pagination
   } catch (err: any) {
-    error.value = err?.data?.message || err.message || 'Failed to fetch companies'
+    error.value = err?.data?.message || err.message || t('errors.api.load_failed')
   } finally {
     pending.value = false
   }
@@ -137,7 +139,7 @@ const verifyCompany = async (id: string, status: string) => {
     })
     await fetchCompanies()
   } catch (err: any) {
-    alert(err?.data?.message || err.message || 'Failed to verify company')
+    alert(err?.data?.message || err.message || t('errors.api.company_verify_failed'))
   }
 }
 

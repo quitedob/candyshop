@@ -6,7 +6,7 @@
         <p class="mt-1 max-w-2xl text-sm text-gray-500">{{ t('customer.inquiries.subtitle') }}</p>
       </div>
       <div>
-        <NuxtLink to="/customer/inquiries/new" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+        <NuxtLink :to="localePath('/customer/inquiries/new')" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700">
           {{ t('customer.inquiries.new_inquiry') }}
         </NuxtLink>
       </div>
@@ -26,7 +26,7 @@
       <h3 class="mt-2 text-sm font-medium text-gray-900">{{ t('customer.inquiries.no_inquiries') }}</h3>
       <p class="mt-1 text-sm text-gray-500">{{ t('customer.inquiries.no_inquiries_desc') }}</p>
       <div class="mt-6">
-        <NuxtLink to="/products" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+        <NuxtLink to="/products" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700">
           {{ t('customer.inquiries.browse_products') }}
         </NuxtLink>
       </div>
@@ -53,14 +53,14 @@
             <td class="px-6 py-4 whitespace-nowrap">
               <span :class="[
                 inquiry.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                inquiry.status === 'contacted' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800',
+                inquiry.status === 'contacted' ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-800',
                 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium'
               ]">
                 {{ inquiry.status }}
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-             <NuxtLink :to="`/customer/inquiries/${inquiry.id}`" class="text-blue-600 hover:text-blue-900">{{ t('customer.inquiries.view_details') }}</NuxtLink>
+             <NuxtLink :to="localePath(`/customer/inquiries/${inquiry.id}`)" class="text-orange-600 hover:text-orange-900">{{ t('customer.inquiries.view_details') }}</NuxtLink>
             </td>
           </tr>
         </tbody>
@@ -101,6 +101,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
+const localePath = useLocalePath()
 
 const inquiries = ref<any[]>([])
 const pagination = ref<any>(null)
@@ -115,7 +116,7 @@ const fetchInquiries = async () => {
     inquiries.value = res.data || []
     pagination.value = res.pagination || null
   } catch (err: any) {
-    error.value = err?.message || 'Failed to fetch inquiries'
+    error.value = err?.message || t('errors.api.load_failed')
   } finally { pending.value = false }
 }
 

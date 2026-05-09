@@ -13,7 +13,7 @@
           @click="selectedRange = range.value"
           class="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors"
           :class="selectedRange === range.value
-            ? 'bg-blue-600 text-white'
+            ? 'bg-orange-600 text-white'
             : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'"
         >
           {{ range.label }}
@@ -49,8 +49,8 @@
         <div class="bg-white rounded-lg shadow p-6">
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-medium text-gray-900">{{ t('admin.analytics.revenue_trends') }}</h2>
-            <div class="h-10 w-10 rounded-lg bg-indigo-50 flex items-center justify-center">
-              <Icon name="heroicons:currency-dollar" class="h-5 w-5 text-indigo-600" />
+            <div class="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
+              <Icon name="heroicons:currency-dollar" class="h-5 w-5 text-orange-600" />
             </div>
           </div>
           <div class="h-72">
@@ -97,8 +97,8 @@
         <div class="bg-white rounded-lg shadow p-6">
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-medium text-gray-900">{{ t('admin.analytics.top_products') }}</h2>
-            <div class="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
-              <Icon name="heroicons:trophy" class="h-5 w-5 text-blue-600" />
+            <div class="h-10 w-10 rounded-lg bg-orange-50 flex items-center justify-center">
+              <Icon name="heroicons:trophy" class="h-5 w-5 text-orange-600" />
             </div>
           </div>
           <div class="overflow-hidden overflow-x-auto">

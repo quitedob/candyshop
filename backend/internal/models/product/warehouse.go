@@ -7,9 +7,11 @@ type Warehouse struct {
 	ID        string    `json:"id" gorm:"primaryKey"`
 	Name      string    `json:"name" gorm:"not null"`
 	Code      string    `json:"code" gorm:"uniqueIndex;not null"`
+	Type      string    `json:"type" gorm:"type:varchar(40)"` // factory, transit, overseas, bonded
 	Address   string    `json:"address" gorm:"type:text"`
 	Country   string    `json:"country" gorm:"type:varchar(100)"`
 	IsActive  bool      `json:"isActive" gorm:"default:true"`
+	IsDefault bool      `json:"isDefault" gorm:"default:false;index"` // 默认发货仓（单仓回退）
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
@@ -17,8 +19,8 @@ type Warehouse struct {
 // WarehouseStock represents stock level of a product in a specific warehouse.
 type WarehouseStock struct {
 	ID          uint      `json:"id" gorm:"primaryKey"`
-	WarehouseID string    `json:"warehouseId" gorm:"not null;index"`
-	ProductID   string    `json:"productId" gorm:"not null;index"`
+	WarehouseID string    `json:"warehouseId" gorm:"not null;uniqueIndex:idx_wh_prod"`
+	ProductID   string    `json:"productId" gorm:"not null;uniqueIndex:idx_wh_prod"`
 	VariantID   *string   `json:"variantId" gorm:"index"`
 	Quantity    int       `json:"quantity" gorm:"default:0"`
 	Reserved    int       `json:"reserved" gorm:"default:0"` // reserved for pending orders

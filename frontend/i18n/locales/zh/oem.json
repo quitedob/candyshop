@@ -2,6 +2,7 @@
   "oem": {
     "title": "OEM定制解决方案",
     "subtitle": "为您的品牌提供专业糖果定制",
+    "customize_message": "请选择定制选项",
     "quick_odm": "快速ODM",
     "full_oem": "深度OEM",
     "process": "OEM流程",

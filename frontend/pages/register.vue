@@ -1,5 +1,8 @@
 <script setup lang="ts">
-await navigateTo('/auth/register', { replace: true })
+import { useLocalePath } from '#i18n'
+
+const localePath = useLocalePath()
+await navigateTo(localePath('/auth/register'), { replace: true })
 </script>
 
 <template>

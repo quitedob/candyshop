@@ -21,8 +21,13 @@
     "submitting": "提交中...",
     "success": "感谢您的咨询！我们已收到您的信息，将在24小时内与您联系。",
     "error": "抱歉，提交失败。请重试或通过WhatsApp联系我们。",
+    "files_max": "最多允许 {max} 个文件",
+    "file_too_large": "文件 {name} 过大，单文件最大 {max} MB。",
+    "file_type_unsupported": "文件 {name} 类型不支持，请使用 JPG、PNG、WebP 或 PDF。",
     "privacy_note": "您的信息是安全的，不会被被盗用。",
     "message_placeholder": "告诉我们更多关于您的需求...",
+    "summary": "摘要",
+    "not_specified": "未填写",
     "interested_products_hint": "用逗号分隔多个产品",
     "options": {
       "countries": {
@@ -157,5 +162,12 @@
         "answer": "我们提供所有必需的出口文件（商业发票、装箱单、原产地证明、健康证）。对于进口清关，我们与经验丰富的无船承运人合作，在目的港为您提供协助。"
       }
     ]
+  },
+  "input_file": {
+    "upload": "点击上传或拖拽文件到此处",
+    "max_size": "单文件最大 {size} MB",
+    "error_too_large": "文件「{name}」超过 {max} MB 限制",
+    "error_type": "文件「{name}」类型不支持",
+    "error_max_files": "最多允许 {count} 个文件"
   }
 }

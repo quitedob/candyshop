@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -16,6 +17,17 @@ type Config struct {
 	Security SecurityConfig
 	JWT      JWTConfig
 	AI       AIConfig
+	KYB      KYBConfig
+}
+
+// KYBConfig 客户激活与小额免审策略
+type KYBConfig struct {
+	// BypassMaxOrderUSD pending 用户允许下单/购物车结算的最大美元金额；0 表示关闭免审
+	BypassMaxOrderUSD float64
+	// BypassSampleMaxOrderUSD 当订单行全部为样品 SKU 时的更高免审额度；0 表示不启用
+	BypassSampleMaxOrderUSD float64
+	// SampleProductIDs 样品 SKU（产品 ID），逗号分隔配置于环境变量
+	SampleProductIDs []string
 }
 
 // ServerConfig holds HTTP server configuration
@@ -38,6 +50,7 @@ type DatabaseConfig struct {
 	MaxIdleConns    int
 	MaxOpenConns    int
 	ConnMaxLifetime int // in minutes
+	Environment     string
 }
 
 // EmailConfig holds email configuration
@@ -56,13 +69,25 @@ type UploadConfig struct {
 	AllowedTypes []string
 	UploadPath   string
 	UploadURL    string
+	// S3 / cloud storage
+	StorageDriver string // "local" or "s3"
+	S3Bucket      string
+	S3Region      string
+	S3AccessKey   string
+	S3SecretKey   string
+	S3Endpoint    string // optional: MinIO / compatible endpoint
+	S3CDNDomain   string // optional: CloudFront CDN domain for public URLs
 }
 
 // SecurityConfig holds security-related configuration
 type SecurityConfig struct {
 	CORSAllowedOrigins []string
 	RateLimitPerMinute int
-	EnableSwagger      bool
+	// PublicAIRateLimitPerMinute 针对未登录 /system AI 路由的独立 IP 限流（更严）
+	PublicAIRateLimitPerMinute int
+	// PublicInquiryRateLimitPerMinute 针对 POST /public/inquiry 的独立 IP 限流（防刷询盘）
+	PublicInquiryRateLimitPerMinute int
+	EnableSwagger            bool
 }
 
 // JWTConfig holds JWT configuration
@@ -92,6 +117,7 @@ func Load() (*Config, error) {
 			MaxIdleConns:    getEnvInt("DB_MAX_IDLE_CONNS", 10),
 			MaxOpenConns:    getEnvInt("DB_MAX_OPEN_CONNS", 100),
 			ConnMaxLifetime: getEnvInt("DB_CONN_MAX_LIFETIME_MIN", 60),
+			Environment:     getEnv("ENVIRONMENT", "development"),
 		},
 		Email: EmailConfig{
 			SMTPHost:     getEnv("SMTP_HOST", "smtp.gmail.com"),
@@ -106,21 +132,31 @@ func Load() (*Config, error) {
 			AllowedTypes: []string{"image/jpeg", "image/png", "image/webp", "application/pdf"},
 			UploadPath:   getEnv("UPLOAD_PATH", "./uploads"),
 			UploadURL:    getEnv("UPLOAD_URL", "/uploads"),
+			StorageDriver: getEnv("STORAGE_DRIVER", "local"),
+			S3Bucket:      getEnv("S3_BUCKET", ""),
+			S3Region:      getEnv("S3_REGION", "us-east-1"),
+			S3AccessKey:   getEnv("S3_ACCESS_KEY", ""),
+			S3SecretKey:   getEnv("S3_SECRET_KEY", ""),
+			S3Endpoint:    getEnv("S3_ENDPOINT", ""),
+			S3CDNDomain:   getEnv("S3_CDN_DOMAIN", ""),
 		},
 		Security: SecurityConfig{
-			CORSAllowedOrigins: parseCORSOrigins(),
-			RateLimitPerMinute: getEnvInt("RATE_LIMIT_PER_MINUTE", 60),
-			EnableSwagger:      getEnv("ENABLE_SWAGGER", "true") == "true",
+			CORSAllowedOrigins:       parseCORSOrigins(),
+			RateLimitPerMinute:       getEnvInt("RATE_LIMIT_PER_MINUTE", 60),
+			PublicAIRateLimitPerMinute: getEnvInt("PUBLIC_AI_RATE_LIMIT_PER_MINUTE", 15),
+			PublicInquiryRateLimitPerMinute: getEnvInt("PUBLIC_INQUIRY_RATE_LIMIT_PER_MINUTE", 10),
+			EnableSwagger:            getEnv("ENABLE_SWAGGER", "true") == "true",
 		},
 		JWT: JWTConfig{
 			Secret:               getEnv("JWT_SECRET", ""),
 			AccessTokenDuration:  getEnvInt("JWT_ACCESS_MINUTES", 15),
 			RefreshTokenDuration: getEnvInt("JWT_REFRESH_DAYS", 7),
 		},
-		AI: AIConfig{
-			OpenAIAPIKey:         getEnv("OPENAI_API_KEY", ""),
-			OpenAIModel:          getEnv("OPENAI_MODEL", "gpt-4o"),
-			OpenAIEmbeddingModel: getEnv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small"),
+		AI:  LoadAIConfig(),
+		KYB: KYBConfig{
+			BypassMaxOrderUSD:       getEnvFloat("KYB_BYPASS_MAX_ORDER_USD", 0),
+			BypassSampleMaxOrderUSD: getEnvFloat("KYB_BYPASS_SAMPLE_MAX_ORDER_USD", 0),
+			SampleProductIDs:        parseCommaSeparated(getEnv("KYB_SAMPLE_PRODUCT_IDS", "")),
 		},
 	}
 
@@ -152,6 +188,21 @@ func Load() (*Config, error) {
 
 // parseCORSOrigins reads CORS origins from CORS_ORIGINS env var (comma-separated)
 // or falls back to FRONTEND_URL + localhost:3001.
+// parseCommaSeparated 解析逗号分隔 ID 列表（去空、去首尾空格）
+func parseCommaSeparated(raw string) []string {
+	if strings.TrimSpace(raw) == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if s := strings.TrimSpace(p); s != "" {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
 func parseCORSOrigins() []string {
 	raw := os.Getenv("CORS_ORIGINS")
 	if raw != "" {
@@ -189,6 +240,20 @@ func getEnvInt(key string, defaultValue int) int {
 	}
 	value, err := strconv.Atoi(valueStr)
 	if err != nil {
+		log.Printf("Warning: invalid %s=%q, fallback to %d", key, valueStr, defaultValue)
+		return defaultValue
+	}
+	return value
+}
+
+func getEnvFloat(key string, defaultValue float64) float64 {
+	valueStr := os.Getenv(key)
+	if valueStr == "" {
+		return defaultValue
+	}
+	value, err := strconv.ParseFloat(valueStr, 64)
+	if err != nil {
+		log.Printf("Warning: invalid %s=%q, fallback to %f", key, valueStr, defaultValue)
 		return defaultValue
 	}
 	return value

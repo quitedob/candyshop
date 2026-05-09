@@ -2,12 +2,10 @@ package customer
 
 import (
 modelsUser "candypro/api/internal/models/user"
+"candypro/api/internal/storage"
 "candypro/api/internal/utils"
-"fmt"
-"io"
 "net/http"
 "os"
-"path/filepath"
 "strings"
 "time"
 
@@ -138,79 +136,14 @@ func (h *Handler) CustomerUploadKYBDocument(c *gin.Context) {
 		return
 	}
 
-	// SEC-9: Validate magic bytes to prevent MIME spoofing
-	magicBuf := make([]byte, 512)
-	n, _ := file.Read(magicBuf)
-	detectedType := http.DetectContentType(magicBuf[:n])
-	allowedDetected := map[string]bool{
-		"application/pdf": true,
-		"image/jpeg":      true,
-		"image/png":       true,
-	}
-	if !allowedDetected[detectedType] {
-		utils.InvalidRequestResponse(c, "File content does not match declared type")
-		return
-	}
-	// Seek back to start after reading magic bytes
-	if seeker, ok := file.(io.Seeker); ok {
-		if _, seekErr := seeker.Seek(0, io.SeekStart); seekErr != nil {
-			utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to process file")
-			return
-		}
-	}
-
-	// Save file using admin upload path
-	uploadPath := h.cfg.Upload.UploadPath
-	if uploadPath == "" {
-		uploadPath = "./uploads"
-	}
-
-	ext := ".pdf"
-	switch contentType {
-	case "image/jpeg":
-		ext = ".jpg"
-	case "image/png":
-		ext = ".png"
-	}
-
-	filename := fmt.Sprintf("kyb_%s_%d%s", (*user.CompanyID)[:8], time.Now().Unix(), ext)
-	// SEC-10: Use filepath.Join instead of string concatenation
-	dir := filepath.Join(uploadPath, "kyb")
-
-	// Validate resolved path is under upload path
-	absUploadPath, absUploadErr := filepath.Abs(uploadPath)
-	if absUploadErr != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to resolve upload path")
-		return
-	}
-	absDir, absDirErr := filepath.Abs(dir)
-	if absDirErr != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to resolve directory path")
-		return
-	}
-	if !strings.HasPrefix(absDir, absUploadPath) {
-		utils.ErrorResponse(c, http.StatusForbidden, "forbidden", "Invalid upload path")
-		return
-	}
-
-	if mkErr := os.MkdirAll(dir, 0755); mkErr != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to create upload directory")
-		return
-	}
-
-	dst, createErr := os.Create(filepath.Join(dir, filename))
-	if createErr != nil {
+	fileURL, uploadErr := h.storage.Upload(c.Request.Context(), file, storage.UploadOptions{
+		Folder:   "kyb",
+		FileName: header.Filename,
+	})
+	if uploadErr != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to save file")
 		return
 	}
-	defer dst.Close()
-
-	if _, copyErr := io.Copy(dst, file); copyErr != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to write file")
-		return
-	}
-
-	fileURL := "/uploads/kyb/" + filename
 
 	// Update company business license URL
 	company, compErr := h.services.Company.GetCompany(c.Request.Context(), *user.CompanyID)
@@ -228,4 +161,50 @@ func (h *Handler) CustomerUploadKYBDocument(c *gin.Context) {
 		"message": "KYB document uploaded successfully",
 		"url":     fileURL,
 	})
+}
+
+// CustomerDownloadKYBDocumentFile 认证用户下载本公司 KYB 证照文件（禁止直链 /uploads/kyb）。
+func (h *Handler) CustomerDownloadKYBDocumentFile(c *gin.Context) {
+	if h.services == nil || h.cfg == nil {
+		utils.ServiceUnavailableResponse(c)
+		return
+	}
+	userID, ok := contextUserID(c)
+	if !ok {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "unauthorized", "User not identified")
+		return
+	}
+	user, err := h.services.User.GetByID(c.Request.Context(), userID)
+	if err != nil || user.CompanyID == nil {
+		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "No company profile found")
+		return
+	}
+	company, err := h.services.Company.GetCompany(c.Request.Context(), *user.CompanyID)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Company not found")
+		return
+	}
+	if strings.TrimSpace(company.BusinessLicense) == "" {
+		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "No KYB document on file")
+		return
+	}
+	if h.cfg.Upload.StorageDriver == "s3" {
+		presigned, err := h.storage.GetPresignedURL(c.Request.Context(), company.BusinessLicense, 15*time.Minute)
+		if err != nil {
+			utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to generate download link")
+			return
+		}
+		c.Redirect(http.StatusTemporaryRedirect, presigned)
+		return
+	}
+	local, err := utils.LocalPathFromUploadURL(h.cfg.Upload.UploadPath, company.BusinessLicense)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid_request", "Invalid document path")
+		return
+	}
+	if _, statErr := os.Stat(local); statErr != nil {
+		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "File not found on server")
+		return
+	}
+	c.File(local)
 }

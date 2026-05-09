@@ -16,6 +16,8 @@ type TradeRepository interface {
 	ListTransactionsByUserID(ctx context.Context, userID string, page, pageSize int) ([]modelsTrade.TradeTransaction, int64, error)
 	ListAllTransactions(ctx context.Context, page, pageSize int, status string) ([]modelsTrade.TradeTransaction, int64, error)
 	UpdateTransaction(ctx context.Context, transaction *modelsTrade.TradeTransaction) error
+	CountTransactionsByOrderID(ctx context.Context, orderID string) (int64, error)
+	GetFirstTransactionByOrderID(ctx context.Context, orderID string) (*modelsTrade.TradeTransaction, error)
 
 	// Documents
 	CreateDocument(ctx context.Context, doc *modelsTrade.TradeDocument) error
@@ -100,6 +102,28 @@ func (r *tradeRepository) ListTransactionsByUserID(ctx context.Context, userID s
 // UpdateTransaction updates a transaction
 func (r *tradeRepository) UpdateTransaction(ctx context.Context, transaction *modelsTrade.TradeTransaction) error {
 	return r.db.WithContext(ctx).Save(transaction).Error
+}
+
+// CountTransactionsByOrderID returns how many trade rows reference the order (idempotency / dedupe).
+func (r *tradeRepository) CountTransactionsByOrderID(ctx context.Context, orderID string) (int64, error) {
+	var n int64
+	err := r.db.WithContext(ctx).Model(&modelsTrade.TradeTransaction{}).
+		Where("order_id = ?", orderID).
+		Count(&n).Error
+	return n, err
+}
+
+// GetFirstTransactionByOrderID 返回关联订单的第一条贸易主单（用于金额与订单对齐）
+func (r *tradeRepository) GetFirstTransactionByOrderID(ctx context.Context, orderID string) (*modelsTrade.TradeTransaction, error) {
+	var transaction modelsTrade.TradeTransaction
+	err := r.db.WithContext(ctx).
+		Where("order_id = ?", orderID).
+		Order("id ASC").
+		First(&transaction).Error
+	if err != nil {
+		return nil, err
+	}
+	return &transaction, nil
 }
 
 // CreateDocument creates a new trade document

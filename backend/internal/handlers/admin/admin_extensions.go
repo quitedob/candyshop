@@ -383,10 +383,11 @@ func (h *Handler) AdminQuoteInquiry(c *gin.Context) {
 
 	inquiryID := c.Param("id")
 	var req struct {
-		QuotedAmount  float64  `json:"quotedAmount" binding:"required"`
-		ValidUntil    *string  `json:"validUntil"`
-		Products      []string `json:"products"`
-		CustomerNotes string   `json:"customerNotes"`
+		QuotedAmount         float64  `json:"quotedAmount" binding:"required"`
+		ValidUntil           *string  `json:"validUntil"`
+		Products             []string `json:"products"`
+		CustomerNotes        string   `json:"customerNotes"`
+		RequestHumanReview   bool     `json:"requestHumanReview"` // 与 Eino submit_quotation_for_human_review 工具配合的人审标记
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
@@ -426,6 +427,9 @@ func (h *Handler) AdminQuoteInquiry(c *gin.Context) {
 		return
 	}
 
+	if req.RequestHumanReview {
+		c.Header("X-Quotation-Human-Review", "1")
+	}
 	c.JSON(http.StatusOK, inquiry)
 }
 

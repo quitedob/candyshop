@@ -16,7 +16,7 @@
             <option value="DDP">DDP</option>
           </select>
           <input v-model="createForm.currency" maxlength="3" class="w-20 rounded-md border border-gray-300 px-2 py-2 text-sm uppercase" :placeholder="t('customer.trades.currency_placeholder')" />
-          <button @click="createTrade" :disabled="creating" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+          <button @click="createTrade" :disabled="creating" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-50">
             {{ creating ? t('customer.trades.starting') : t('customer.trades.start_new') }}
           </button>
         </div>
@@ -34,7 +34,7 @@
       <h3 class="mt-2 text-sm font-medium text-gray-900">{{ t('customer.trades.no_trades') }}</h3>
       <p class="mt-1 text-sm text-gray-500">{{ t('customer.trades.no_trades_desc') }}</p>
       <div class="mt-6">
-        <NuxtLink to="/customer/inquiries" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+        <NuxtLink :to="localePath('/customer/inquiries')" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700">
           {{ t('customer.trades.view_inquiries') }}
         </NuxtLink>
       </div>
@@ -52,18 +52,18 @@
         <tbody class="bg-white divide-y divide-gray-200">
           <tr v-for="trade in trades" :key="trade.id" class="hover:bg-gray-50">
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ new Date(trade.createdAt || trade.created_at).toLocaleDateString() }}</td>
-            <td class="px-6 py-4 text-sm text-gray-900">{{ trade.incoterms || trade.terms || 'TBD' }}</td>
+            <td class="px-6 py-4 text-sm text-gray-900">{{ trade.incoterms || trade.terms || t('common.display.tbd') }}</td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span :class="[
                 trade.status === 'DRAFT' || trade.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
                 trade.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
                 trade.status === 'CANCELLED' ? 'bg-gray-100 text-gray-800' :
-                'bg-blue-100 text-blue-800',
+                'bg-orange-100 text-orange-800',
                 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium'
-              ]">{{ trade.status }}</span>
+              ]">{{ enumLabel('trade_status', trade.status) }}</span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-              <NuxtLink :to="`/customer/trades/${trade.id}`" class="text-blue-600 hover:text-blue-900">{{ t('customer.trades.open_dashboard') }}</NuxtLink>
+              <NuxtLink :to="localePath(`/customer/trades/${trade.id}`)" class="text-orange-600 hover:text-orange-900">{{ t('customer.trades.open_dashboard') }}</NuxtLink>
             </td>
           </tr>
         </tbody>
@@ -103,6 +103,8 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
+const localePath = useLocalePath()
+const { currencyOrDefault: cur, incotermsOrDefault: defInc, enumLabel } = useDisplay()
 
 const trades = ref<any[]>([])
 const pagination = ref<any>(null)
@@ -110,7 +112,7 @@ const pending = ref(true)
 const error = ref('')
 const page = ref(1)
 const creating = ref(false)
-const createForm = reactive({ incoterms: '', currency: 'USD' })
+const createForm = reactive({ incoterms: '', currency: cur(null) })
 
 const fetchTrades = async () => {
   pending.value = true; error.value = ''
@@ -119,17 +121,17 @@ const fetchTrades = async () => {
     trades.value = res.data || []
     pagination.value = res.pagination || null
   } catch (err: any) {
-    error.value = err?.message || 'Failed to fetch trades'
+    error.value = err?.message || t('errors.api.load_failed')
   } finally { pending.value = false }
 }
 
 const createTrade = async () => {
   creating.value = true
   try {
-    await api.post('/user/trades', { incoterms: createForm.incoterms || 'FOB', currency: (createForm.currency || 'USD').toUpperCase() })
+    await api.post('/user/trades', { incoterms: defInc(createForm.incoterms), currency: cur(createForm.currency).toUpperCase() })
     await fetchTrades()
   } catch (err: any) {
-    error.value = err?.message || 'Failed to start trade'
+    error.value = err?.message || t('errors.api.trade_start_failed')
   } finally { creating.value = false }
 }
 

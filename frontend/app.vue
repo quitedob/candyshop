@@ -16,8 +16,8 @@
         </NuxtLayout>
         <template #error="{ error, clearError }">
           <div class="error-boundary">
-            <p>{{ error.message || 'Something went wrong' }}</p>
-            <button class="btn btn-highlight btn-sm" @click="clearError">{{ $t('errors.retry') || 'Try again' }}</button>
+            <p>{{ error.message || $t('errors.boundary') }}</p>
+            <button class="btn btn-highlight btn-sm" @click="clearError">{{ $t('errors.retry') }}</button>
           </div>
         </template>
       </NuxtErrorBoundary>
@@ -47,6 +47,8 @@
 import { computed } from 'vue'
 
 const route = useRoute()
+const { t } = useI18n()
+const titleTemplate = computed(() => t('seo.title_template'))
 const toast = useToast()
 const authLegacyRoutes = ['/login', '/register', '/forgot-password', '/reset-password']
 
@@ -61,7 +63,7 @@ const showMarketingChrome = computed(() => {
 
 // Set page title template
 useHead({
-  titleTemplate: '%s | Candy Manufacturer - OEM & Private Label Solutions'
+  titleTemplate
 })
 </script>
 
@@ -76,7 +78,7 @@ useHead({
   overflow: hidden;
   z-index: 10000;
   padding: 0.75rem 1.5rem;
-  background: var(--color-primary, #1a1f3a);
+  background: var(--color-primary, #1c1917);
   color: #fff;
   font-weight: 600;
   text-decoration: none;
@@ -103,17 +105,20 @@ useHead({
   text-align: center;
 }
 
-/* Toast notifications */
+/* Toast：右下角为主，预留刘海/手势条；窄屏限制最大宽度避免溢出 */
 .toast {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
+  bottom: max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem));
+  right: max(1rem, calc(env(safe-area-inset-right, 0px) + 0.25rem));
+  left: auto;
+  max-width: min(28rem, calc(100vw - 2rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
   padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
   color: #fff;
   font-weight: 500;
   z-index: 10000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
 }
 .toast--success { background-color: #22c55e; }
 .toast--error { background-color: #ef4444; }

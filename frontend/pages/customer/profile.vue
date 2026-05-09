@@ -6,7 +6,7 @@
           <h3 class="text-lg leading-6 font-medium text-gray-900">{{ t('customer.profile.title') }}</h3>
           <p class="mt-1 max-w-2xl text-sm text-gray-500">{{ t('customer.profile.subtitle') }}</p>
         </div>
-        <button v-if="!isEditing" @click="startEditing" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+        <button v-if="!isEditing" @click="startEditing" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-600 hover:bg-orange-700">
           {{ t('customer.profile.edit_profile') }}
         </button>
       </div>
@@ -18,7 +18,7 @@
           </div>
           <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
             <dt class="text-sm font-medium text-gray-500">{{ t('customer.profile.role') }}</dt>
-            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 capitalize">{{ user?.role?.name || user?.role || 'Customer' }}</dd>
+            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 capitalize">{{ roleLabel }}</dd>
           </div>
           <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
             <dt class="text-sm font-medium text-gray-500">{{ t('customer.profile.email') }}</dt>
@@ -58,7 +58,7 @@
             <button type="button" @click="cancelEditing" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
               {{ t('customer.profile.cancel') }}
             </button>
-            <button type="submit" :disabled="isSaving" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50">
+            <button type="submit" :disabled="isSaving" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50">
               {{ isSaving ? t('customer.profile.saving') : t('customer.profile.save_changes') }}
             </button>
           </div>
@@ -88,7 +88,7 @@
             </p>
           </div>
           <div>
-            <button type="submit" :disabled="isChangingPwd" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50">
+            <button type="submit" :disabled="isChangingPwd" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50">
               {{ isChangingPwd ? t('customer.profile.updating') : t('customer.profile.update_password') }}
             </button>
           </div>
@@ -100,12 +100,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const { user } = useAuth()
-const { t } = useI18n()
+const { t, te } = useI18n()
 const api = useApi()
 
 const isEditing = ref(false)
@@ -113,6 +113,12 @@ const isSaving = ref(false)
 const profileMessage = ref('')
 const profileError = ref(false)
 const editForm = reactive({ firstName: '', lastName: '', company: '', phone: '' })
+
+const roleLabel = computed(() => {
+  const raw = String(user.value?.role?.name || user.value?.role || 'customer').toLowerCase()
+  const key = `roles.${raw}`
+  return te(key) ? t(key) : t('roles.customer')
+})
 
 const startEditing = () => {
   editForm.firstName = user.value?.firstName || ''

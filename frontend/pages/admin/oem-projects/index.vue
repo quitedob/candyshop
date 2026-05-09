@@ -70,7 +70,7 @@
             <td class="px-3 py-4 text-sm text-gray-500">{{ project.assignedTo || '-' }}</td>
             <td class="px-3 py-4 text-sm text-gray-500">{{ project.createdAt ? new Date(project.createdAt).toLocaleDateString() : '-' }}</td>
             <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-              <NuxtLink :to="`/admin/oem-projects/${project.id}`" class="text-blue-600 hover:text-blue-900" @click.stop>{{ t('admin.oemProjects.view') }}</NuxtLink>
+              <NuxtLink :to="localePath(`/admin/oem-projects/${project.id}`)" class="text-orange-600 hover:text-orange-900" @click.stop>{{ t('admin.oemProjects.view') }}</NuxtLink>
             </td>
           </tr>
         </tbody>
@@ -100,6 +100,7 @@ definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
+const localePath = useLocalePath()
 const router = useRouter()
 
 const projects = ref<any[]>([])
@@ -130,16 +131,16 @@ const fetchProjects = async () => {
     projects.value = res.data || []
     pagination.value = res.pagination
   } catch (err: any) {
-    error.value = err?.message || 'Failed to fetch projects'
+    error.value = err?.message || t('errors.api.load_failed')
   } finally { pending.value = false }
 }
 
-const navigateToDetail = (id: string) => router.push(`/admin/oem-projects/${id}`)
+const navigateToDetail = (id: string) => router.push(localePath(`/admin/oem-projects/${id}`))
 
 const getStepIndex = (status: string) => { const idx = steps.findIndex(s => s.key === status); return idx >= 0 ? idx : 0 }
 const stepClass = (status: string, stepKey: string) => {
   const currentIdx = getStepIndex(status); const stepIdx = steps.findIndex(s => s.key === stepKey)
-  if (stepIdx < currentIdx) return 'bg-green-500'; if (stepIdx === currentIdx) return 'bg-blue-500'; return 'bg-gray-300'
+  if (stepIdx < currentIdx) return 'bg-green-500'; if (stepIdx === currentIdx) return 'bg-orange-500'; return 'bg-gray-300'
 }
 const nextPage = () => { if (pagination.value && page.value < pagination.value.totalPages) page.value += 1 }
 const prevPage = () => { if (page.value > 1) page.value -= 1 }

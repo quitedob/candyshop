@@ -150,7 +150,7 @@
           v-model="form.state.message"
           :label="$t('form.message')"
           :rows="4"
-          :placeholder="t('form.message_placeholder') || 'Tell us more about your requirements...'"
+          :placeholder="t('form.message_placeholder')"
         />
       </div>
 
@@ -198,7 +198,7 @@
 
         <p class="inquiry-form__privacy">
           <Icon name="lucide:shield-check" size="14" />
-          {{ t('form.privacy_note') || 'Your information is secure and will not be shared.' }}
+          {{ t('form.privacy_note') }}
         </p>
       </div>
     </div>

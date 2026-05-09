@@ -42,7 +42,7 @@ interface InquiryFormOptions {
 }
 
 export const useInquiry = (options: InquiryFormOptions = {}) => {
-  const { t } = useI18n()
+  const { t, te } = useI18n()
   const { submitInquiry } = useApi()
 
   // Form state
@@ -96,9 +96,9 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
     // Required validation
     if (rule.required) {
       if (Array.isArray(value) && value.length === 0) {
-        fieldErrors.push(t(`validation.required.${field}`) || `${field} is required`)
+        fieldErrors.push(te(`validation.required.${String(field)}`) ? t(`validation.required.${String(field)}`) : t('validation.required.default', { field: String(field) }))
       } else if (!value) {
-        fieldErrors.push(t(`validation.required.${field}`) || `${field} is required`)
+        fieldErrors.push(te(`validation.required.${String(field)}`) ? t(`validation.required.${String(field)}`) : t('validation.required.default', { field: String(field) }))
       }
     }
 
@@ -106,7 +106,7 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
     if (rule.email && typeof value === 'string' && value) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(value)) {
-        fieldErrors.push(t('validation.email') || 'Invalid email format')
+        fieldErrors.push(t('validation.email'))
       }
     }
 
@@ -114,22 +114,23 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
     if (rule.phone && typeof value === 'string' && value) {
       const phoneRegex = /^[\d\s+\-()]+$/
       if (!phoneRegex.test(value)) {
-        fieldErrors.push(t('validation.phone') || 'Invalid phone format')
+        fieldErrors.push(t('validation.phone'))
       }
     }
 
     // Min length validation
     if (rule.minLength && typeof value === 'string' && value.length < rule.minLength) {
       fieldErrors.push(
-        t(`validation.minLength.${field}`, { min: rule.minLength }) ||
-        `${field} must be at least ${rule.minLength} characters`
+        te(`validation.minLength.${String(field)}`)
+          ? t(`validation.minLength.${String(field)}`, { min: rule.minLength })
+          : t('validation.minLength.default', { min: rule.minLength })
       )
     }
 
     // Pattern validation
     if (rule.pattern && typeof value === 'string' && value) {
       if (!rule.pattern.test(value)) {
-        fieldErrors.push(t(`validation.pattern.${field}`) || `${field} format is invalid`)
+        fieldErrors.push(te(`validation.pattern.${String(field)}`) ? t(`validation.pattern.${String(field)}`) : t('validation.pattern.default'))
       }
     }
 
@@ -141,7 +142,7 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
       } else if (typeof result === 'string') {
         fieldErrors.push(result)
       } else if (result === false) {
-        fieldErrors.push(t(`validation.invalid.${field}`) || `${field} is invalid`)
+        fieldErrors.push(te(`validation.invalid.${String(field)}`) ? t(`validation.invalid.${String(field)}`) : t('validation.invalid.default'))
       }
     }
 
@@ -232,19 +233,19 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
     Array.from(files).forEach(file => {
       // Check file count
       if (state.files.length >= maxFiles) {
-        errors.value.files = [`Maximum ${maxFiles} files allowed`]
+        errors.value.files = [t('form.files_max', { max: maxFiles })]
         return
       }
 
       // Check file size
       if (file.size > maxSize) {
-        errors.value.files = [`File ${file.name} is too large. Max size is 5MB`]
+        errors.value.files = [t('form.file_too_large', { name: file.name, max: 5 })]
         return
       }
 
       // Check file type
       if (!allowedTypes.includes(file.type)) {
-        errors.value.files = [`File ${file.name} is not supported. Use JPG, PNG, WebP, or PDF`]
+        errors.value.files = [t('form.file_type_unsupported', { name: file.name })]
         return
       }
 
@@ -298,7 +299,7 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
       return response
     } catch (err: unknown) {
       const error = err as { message?: string }
-      const errorMessage = error?.message || t('form.error') || 'Submission failed'
+      const errorMessage = error?.message ?? t('form.error')
       errors.value._form = [errorMessage]
       options.onError?.({ message: errorMessage })
       return false
@@ -372,7 +373,7 @@ export const useQuickInquiry = () => {
     }
 
     router.push({
-      path: localePath('/contact'),
+      path: localePath('/customer/inquiries/new'),
       query
     })
   }

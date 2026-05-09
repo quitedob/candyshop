@@ -13,14 +13,57 @@ import (
 	modelsCommon "candypro/api/internal/models/common"
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
+	modelsUser "candypro/api/internal/models/user"
 	servicesCommon "candypro/api/internal/services/common"
 	inquiryService "candypro/api/internal/services/inquiry"
 	orderService "candypro/api/internal/services/order"
 	productService "candypro/api/internal/services/product"
+	userService "candypro/api/internal/services/user"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
+
+// fakeUserRepo 测试用用户仓储：默认返回已激活用户，满足 KYB 校验
+type fakeUserRepo struct{}
+
+func (f *fakeUserRepo) FindByID(ctx context.Context, id string) (*modelsUser.User, error) {
+	if strings.TrimSpace(id) == "" {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return &modelsUser.User{ID: id, Status: "active"}, nil
+}
+func (f *fakeUserRepo) FindByEmail(ctx context.Context, email string) (*modelsUser.User, error) {
+	return nil, gorm.ErrRecordNotFound
+}
+func (f *fakeUserRepo) FindByResetToken(ctx context.Context, token string) (*modelsUser.User, error) {
+	return nil, gorm.ErrRecordNotFound
+}
+func (f *fakeUserRepo) FindAll(ctx context.Context, page, limit int) ([]modelsUser.User, int64, error) {
+	return nil, 0, nil
+}
+func (f *fakeUserRepo) FindRecent(ctx context.Context, limit int) ([]modelsUser.User, error) {
+	return nil, nil
+}
+func (f *fakeUserRepo) Create(ctx context.Context, user *modelsUser.User) error {
+	return nil
+}
+func (f *fakeUserRepo) Update(ctx context.Context, user *modelsUser.User) error {
+	return nil
+}
+func (f *fakeUserRepo) Delete(ctx context.Context, id string) error {
+	return nil
+}
+func (f *fakeUserRepo) CountAll(ctx context.Context) (int64, error) {
+	return 0, nil
+}
+func (f *fakeUserRepo) CountCreatedSince(ctx context.Context, since time.Time) (int64, error) {
+	return 0, nil
+}
+func (f *fakeUserRepo) ActivateUsersByCompanyID(ctx context.Context, companyID string) error {
+	return nil
+}
 
 type fakeProductRepo struct {
 	products map[string]modelsProduct.Product
@@ -75,6 +118,58 @@ func (f *fakeProductRepo) FindVariantsByProductID(ctx context.Context, productID
 
 func (f *fakeProductRepo) FindAllFiltered(ctx context.Context, page, limit int, halal, oemOnly, featuredOnly bool, search, sort string, minMOQ, maxMOQ int, categorySlug ...string) ([]modelsProduct.Product, int64, error) {
 	return []modelsProduct.Product{}, 0, nil
+}
+
+func (f *fakeProductRepo) FindMarketProfilesForProducts(ctx context.Context, productIDs []string, marketCode string) ([]modelsProduct.ProductMarketProfile, error) {
+	return nil, nil
+}
+
+func (f *fakeProductRepo) UpsertProductMarketProfile(ctx context.Context, row *modelsProduct.ProductMarketProfile) error {
+	return nil
+}
+
+func (f *fakeProductRepo) FindMarketCostStacksForProduct(ctx context.Context, productID string) ([]modelsProduct.ProductMarketCostStack, error) {
+	return nil, nil
+}
+
+func (f *fakeProductRepo) UpsertProductMarketCostStack(ctx context.Context, row *modelsProduct.ProductMarketCostStack) error {
+	return nil
+}
+
+func (f *fakeProductRepo) ListWarehouses(ctx context.Context) ([]modelsProduct.Warehouse, error) {
+	return nil, nil
+}
+
+func (f *fakeProductRepo) SaveWarehouse(ctx context.Context, w *modelsProduct.Warehouse) error {
+	return nil
+}
+
+func (f *fakeProductRepo) UpsertWarehouseStock(ctx context.Context, row *modelsProduct.WarehouseStock) error {
+	return nil
+}
+
+func (f *fakeProductRepo) SaveOEMProjectInventoryHold(ctx context.Context, row *modelsProduct.OEMProjectInventoryHold) error {
+	return nil
+}
+
+func (f *fakeProductRepo) ListOEMInventoryHoldsByProject(ctx context.Context, projectID string) ([]modelsProduct.OEMProjectInventoryHold, error) {
+	return nil, nil
+}
+
+func (f *fakeProductRepo) SumActiveOEMHoldsForProduct(ctx context.Context, productID string) (int64, error) {
+	return 0, nil
+}
+
+func (f *fakeProductRepo) ListChannelInventoriesForProduct(ctx context.Context, productID string) ([]modelsProduct.ChannelInventory, error) {
+	return nil, nil
+}
+
+func (f *fakeProductRepo) FindChannelInventory(ctx context.Context, productID, channelCode string) (*modelsProduct.ChannelInventory, error) {
+	return nil, gorm.ErrRecordNotFound
+}
+
+func (f *fakeProductRepo) UpsertChannelInventory(ctx context.Context, row *modelsProduct.ChannelInventory) error {
+	return nil
 }
 
 type fakeInquiryRepo struct{}
@@ -145,6 +240,21 @@ func (f *fakeOrderRepo) CreateWithStockReservation(ctx context.Context, order *m
 func (f *fakeOrderRepo) Update(ctx context.Context, order *modelsOrder.Order) error {
 	return nil
 }
+func (f *fakeOrderRepo) UpdateWithOutbox(ctx context.Context, order *modelsOrder.Order, outbox *modelsOrder.EventOutbox) error {
+	return nil
+}
+func (f *fakeOrderRepo) ListPendingOutbox(ctx context.Context, eventType string, limit int) ([]modelsOrder.EventOutbox, error) {
+	return nil, nil
+}
+func (f *fakeOrderRepo) IncrementOutboxAttempt(ctx context.Context, id uint) error {
+	return nil
+}
+func (f *fakeOrderRepo) UpdateOutboxResult(ctx context.Context, id uint, status, lastErr string, processedAt *time.Time) error {
+	return nil
+}
+func (f *fakeOrderRepo) FindInquiryTradeHints(ctx context.Context, inquiryID string) (incoterms, commercialNotes string, err error) {
+	return "", "", nil
+}
 func (f *fakeOrderRepo) UpdateWithStockAdjustment(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error {
 	return nil
 }
@@ -172,6 +282,23 @@ func (f *fakeOrderRepo) ConfirmPendingOrder(ctx context.Context, id string, conf
 		return gorm.ErrRecordNotFound
 	}
 	f.createdOrder.Status = "pending"
+	f.createdOrder.StockReserved = true
+	f.createdOrder.ConfirmedAt = &confirmedAt
+	f.createdOrder.UpdatedAt = confirmedAt
+	return nil
+}
+func (f *fakeOrderRepo) ConfirmAndReserveStock(ctx context.Context, id string, stockDeltas map[string]int, confirmedAt time.Time) error {
+	if f.createdOrder == nil || f.createdOrder.ID != id {
+		return context.Canceled
+	}
+	if f.forceConfirmNotFound {
+		f.createdOrder.Status = "cancelled"
+		f.createdOrder.StockReserved = false
+		f.createdOrder.UpdatedAt = confirmedAt
+		return gorm.ErrRecordNotFound
+	}
+	f.createdOrder.Status = "pending"
+	f.createdOrder.StockReserved = true
 	f.createdOrder.ConfirmedAt = &confirmedAt
 	f.createdOrder.UpdatedAt = confirmedAt
 	return nil
@@ -225,6 +352,7 @@ func TestCustomerCreateOrder_ComplianceViolation(t *testing.T) {
 			Status:        "active",
 			MOQ:           10,
 			StockQuantity: 1000,
+			BasePrice:     1.2,
 			Ingredients:   "Sugar, Titanium Dioxide (E171), Flavor",
 			Allergens:     "none",
 		},
@@ -274,6 +402,7 @@ func TestCustomerCreateOrder_CompliancePass(t *testing.T) {
 			Status:        "active",
 			MOQ:           10,
 			StockQuantity: 1000,
+			BasePrice:     1.2,
 			Ingredients:   "Sugar, Pectin, Flavor",
 			Allergens:     "none",
 		},
@@ -321,6 +450,7 @@ func TestCustomerCreateOrder_InventoryViolation(t *testing.T) {
 			Status:         "active",
 			MOQ:            10,
 			StockQuantity:  20,
+			BasePrice:      1.1,
 			Ingredients:    "Sugar, pectin",
 			Allergens:      "none",
 			HalalCertified: true,
@@ -482,12 +612,13 @@ func buildTestCustomerOrderHandler(products map[string]modelsProduct.Product) (*
 	orderRepo := &fakeOrderRepo{}
 
 	svcs := &servicesCommon.UserPortalServices{
+		User:    userService.NewUserService(&fakeUserRepo{}),
 		Product: productService.NewProductService(&fakeProductRepo{products: products}),
 		Inquiry: inquiryService.NewInquiryService(&fakeInquiryRepo{}, cfg),
 		Order:   orderService.NewOrderService(orderRepo),
 	}
 
-	return NewHandler(cfg, svcs), orderRepo
+	return NewHandler(cfg, svcs, nil), orderRepo
 }
 
 func performCustomerCreateOrder(handler *Handler, userID string, body map[string]interface{}) *httptest.ResponseRecorder {

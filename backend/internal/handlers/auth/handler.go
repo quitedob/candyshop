@@ -18,3 +18,10 @@ func NewHandler(cfg *config.Config, svcs *servicesCommon.AuthScopeServices) *Han
 		loginTracker: NewLoginAttemptTracker(),
 	}
 }
+
+// StopLoginTracker stops the login attempt tracker's background cleanup goroutine.
+func (h *Handler) StopLoginTracker() {
+	if h.loginTracker != nil {
+		h.loginTracker.Stop()
+	}
+}

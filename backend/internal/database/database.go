@@ -12,6 +12,7 @@ import (
 import (
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"time"
 
@@ -24,6 +25,10 @@ import (
 
 // db is the global database connection (unexported)
 var db *gorm.DB
+
+var pgvectorAvailable bool
+
+var safeDBNamePattern = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
 // Connect initializes the database connection
 func Connect(cfg *config.DatabaseConfig) (*gorm.DB, error) {
@@ -38,11 +43,9 @@ func Connect(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 	)
 
 	// Configure GORM logger based on environment
-	gormLogger := logger.Default
-	if cfg.SSLMode == "disable" {
+	gormLogger := logger.Default.LogMode(logger.Warn)
+	if cfg.Environment == "development" {
 		gormLogger = logger.Default.LogMode(logger.Info)
-	} else {
-		gormLogger = logger.Default.LogMode(logger.Warn)
 	}
 
 	dbConn, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
@@ -68,9 +71,36 @@ func Connect(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
+	available, err := ensurePgvector(dbConn)
+	if err != nil {
+		log.Printf("Note: pgvector capability check failed (semantic search may be keyword-only): %v", err)
+	}
+	pgvectorAvailable = available
+	if pgvectorAvailable {
+		log.Println("pgvector extension available; semantic search enabled")
+	} else {
+		log.Println("pgvector extension unavailable; semantic search will fall back to keyword-only mode")
+	}
+
 	log.Println("Database connection established")
 	db = dbConn
 	return dbConn, nil
+}
+
+func ensurePgvector(db *gorm.DB) (bool, error) {
+	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS vector").Error; err != nil {
+		log.Printf("Note: CREATE EXTENSION vector failed: %v", err)
+	}
+
+	var installed bool
+	if err := db.Raw("SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector')").Scan(&installed).Error; err != nil {
+		return false, err
+	}
+	return installed, nil
+}
+
+func PgvectorAvailable() bool {
+	return pgvectorAvailable
 }
 
 // ensureDatabase connects to the postgres default database and creates the target
@@ -96,11 +126,15 @@ func ensureDatabase(cfg *config.DatabaseConfig) error {
 		return nil
 	}
 
-	// Create the database (use quoteIdent to safely quote the name)
+	// Validate database name against safe pattern before DDL
+	if !safeDBNamePattern.MatchString(cfg.Database) {
+		return fmt.Errorf("database name %q contains unsafe characters", cfg.Database)
+	}
+
 	log.Printf("Creating database %s...", cfg.Database)
 	if err := adminDB.Exec(fmt.Sprintf(`CREATE DATABASE "%s"`, cfg.Database)).Error; err != nil {
 		// If CREATE fails because another process just created it, that's okay
-		if err != nil && !strings.Contains(err.Error(), "already exists") {
+		if !strings.Contains(err.Error(), "already exists") {
 			return fmt.Errorf("failed to create database %s: %w", cfg.Database, err)
 		}
 	}
@@ -111,7 +145,7 @@ func ensureDatabase(cfg *config.DatabaseConfig) error {
 // AutoMigrate runs auto migration for all models in dependency order
 func AutoMigrate(db *gorm.DB) error {
 	// Phase 1: Migrate tables without foreign key dependencies first
-	phase1 := []interface{}{
+	phase1 := []any{
 		&modelsAuth.Role{},
 		&modelsUser.Company{},
 		&modelsAuth.RefreshToken{},
@@ -126,6 +160,11 @@ func AutoMigrate(db *gorm.DB) error {
 		&modelsCommon.ActivityLog{},
 		&modelsCommon.SystemSetting{},
 		&modelsTrade.ComplianceRequirement{},
+		&modelsOrder.StockTransaction{},
+		&modelsOrder.EventOutbox{},
+		&modelsOrder.CountryPaymentPolicy{},
+		&modelsOrder.DocumentAdjustment{},
+		&modelsTrade.ShipmentEvent{},
 	}
 	for _, model := range phase1 {
 		if err := db.AutoMigrate(model); err != nil {
@@ -134,15 +173,19 @@ func AutoMigrate(db *gorm.DB) error {
 	}
 
 	// Phase 2: Migrate tables with foreign key dependencies
-	phase2 := []interface{}{
+	phase2 := []any{
 		&modelsUser.User{},
 		&modelsProduct.Product{},
 		&modelsProduct.ProductVariant{},
+		&modelsProduct.ProductMarketProfile{},
+		&modelsProduct.ProductMarketCostStack{},
 		&modelsProduct.Warehouse{},
 		&modelsProduct.WarehouseStock{},
 		&modelsProduct.ProductBatch{},
 		&modelsProduct.Inquiry{},
 		&modelsProduct.OEMProject{},
+		&modelsProduct.OEMProjectInventoryHold{},
+		&modelsProduct.ChannelInventory{},
 		&modelsProduct.BlogPost{},
 		&modelsProduct.CaseStudy{},
 		&modelsOrder.Order{},
@@ -165,6 +208,12 @@ func AutoMigrate(db *gorm.DB) error {
 	for _, model := range phase2 {
 		if err := db.AutoMigrate(model); err != nil {
 			return fmt.Errorf("failed to auto migrate (phase 2): %w", err)
+		}
+	}
+
+	if pgvectorAvailable {
+		if err := db.AutoMigrate(&modelsProduct.ProductEmbedding{}); err != nil {
+			return fmt.Errorf("failed to auto migrate product embeddings: %w", err)
 		}
 	}
 
@@ -219,4 +268,33 @@ func SeedDatabase(db *gorm.DB) error {
 
 	log.Println("Database seeding completed")
 	return nil
+}
+
+// SeedCountryPaymentPolicies ensures default country payment policies exist.
+// Called separately from the main seed to support existing databases.
+func SeedCountryPaymentPolicies(db *gorm.DB) {
+	var count int64
+	db.Model(&modelsOrder.CountryPaymentPolicy{}).Count(&count)
+	if count > 0 {
+		return
+	}
+	policies := []modelsOrder.CountryPaymentPolicy{
+		{
+			Country:                "india",
+			RequiresFullPrepayment: true,
+			AllowedTerms:           "100% T/T before production",
+			Note:                   "India orders follow stricter risk-control policy: full prepayment is required before production scheduling.",
+		},
+		{
+			Country:                "pakistan",
+			RequiresFullPrepayment: true,
+			AllowedTerms:           "100% T/T before production",
+			Note:                   "Pakistan orders follow stricter risk-control policy: full prepayment is required before production scheduling.",
+		},
+	}
+	for _, p := range policies {
+		if err := db.Where("country = ?", p.Country).FirstOrCreate(&p).Error; err != nil {
+			log.Printf("Warning: failed to seed payment policy for %s: %v", p.Country, err)
+		}
+	}
 }

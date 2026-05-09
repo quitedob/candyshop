@@ -4,6 +4,7 @@ import (
 	"time"
 
 	common "candypro/api/internal/models/common"
+	"github.com/pgvector/pgvector-go"
 	"gorm.io/gorm"
 )
 
@@ -39,6 +40,19 @@ type Product struct {
 	ViewCount      int                `json:"viewCount" gorm:"default:0"`
 	CreatedAt      time.Time          `json:"createdAt"`
 	UpdatedAt      time.Time          `json:"updatedAt"`
+}
+
+// ProductEmbedding stores semantic-search vectors separately so baseline product migration works on plain Postgres.
+type ProductEmbedding struct {
+	ProductID  string            `json:"productId" gorm:"primaryKey;type:varchar(255)"`
+	Embedding  *pgvector.Vector  `json:"-" gorm:"type:vector(1536)"`
+	CreatedAt  time.Time         `json:"createdAt"`
+	UpdatedAt  time.Time         `json:"updatedAt"`
+	Product    Product           `json:"-" gorm:"foreignKey:ProductID;references:ID;constraint:OnDelete:CASCADE"`
+}
+
+func (ProductEmbedding) TableName() string {
+	return "product_embeddings"
 }
 
 // Category represents a product category
@@ -80,8 +94,12 @@ type Inquiry struct {
 	ValidUntil            *time.Time         `json:"validUntil"`
 	InternalNotes         string             `json:"internalNotes" gorm:"type:text"`
 	CustomerNotes         string             `json:"customerNotes" gorm:"type:text"`
-	CreatedAt             time.Time          `json:"createdAt"`
-	UpdatedAt             time.Time          `json:"updatedAt"`
+	// Incoterms 询盘阶段议定的贸易术语（如 CIF New York），映射至 Trade.Terms
+	Incoterms string `json:"incoterms" gorm:"type:varchar(50)"`
+	// NegotiatedPaymentTerms 议定付款方式（如 30% T/T 预付），写入 Trade.CommercialNotes
+	NegotiatedPaymentTerms string `json:"negotiatedPaymentTerms" gorm:"type:varchar(255)"`
+	CreatedAt              time.Time          `json:"createdAt"`
+	UpdatedAt              time.Time          `json:"updatedAt"`
 }
 
 // Use shared common model types to avoid cross-package duplication and reduce cycle risk.

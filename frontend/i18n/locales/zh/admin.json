@@ -2,6 +2,11 @@
   "admin": {
     "brand": "CandyPro 管理后台",
     "logout": "退出登录",
+    "a11y": {
+      "openNav": "打开侧边导航",
+      "closeNav": "关闭侧边导航",
+      "toggleSidebar": "展开或收起侧边栏"
+    },
     "nav": {
       "dashboard": "仪表盘",
       "users": "用户管理",
@@ -186,6 +191,7 @@
       "col_customer": "客户",
       "col_amount": "金额",
       "col_status": "状态",
+      "col_actions": "操作",
       "edit": "编辑",
       "delete": "删除",
       "edit_order": "编辑订单",
@@ -225,6 +231,11 @@
       "showing": "显示第 {from} 到 {to} 条，共 {total} 条",
       "previous": "上一页",
       "next": "下一页",
+      "preview": "预览",
+      "ai_generate": "AI 生成",
+      "ai_generating": "生成中...",
+      "ai_topic_placeholder": "输入主题，让AI为您撰写文章...",
+      "convert_to_md": "转为MD",
       "back": "返回订单列表",
       "loading_details": "正在加载订单详情...",
       "placed_on": "下单时间",
@@ -368,6 +379,7 @@
       "add_content": "添加内容",
       "tab_posts": "文章",
       "tab_cases": "案例研究",
+      "category_general": "通用",
       "loading": "正在加载内容...",
       "no_data": "暂无内容。",
       "col_title": "标题",
@@ -668,7 +680,13 @@
       "danger_zone": "危险操作",
       "deleting": "删除中...",
       "delete_user": "删除用户",
-      "confirm_delete": "确定永久删除此用户？"
+      "confirm_delete": "确定永久删除此用户？",
+      "status_active": "正常",
+      "status_suspended": "已暂停",
+      "status_inactive": "未激活",
+      "role_option_customer": "客户",
+      "role_option_admin": "管理员",
+      "role_option_superadmin": "超级管理员"
     },
     "inventory": {
       "title": "库存管理",
@@ -779,6 +797,7 @@
       "status_paid": "已支付",
       "status_overdue": "逾期",
       "status_cancelled": "已取消",
+      "status_unknown": "未知",
       "col_invoice": "发票",
       "col_order": "订单",
       "col_customer": "客户",
@@ -803,6 +822,7 @@
       "currency": "货币",
       "total_amount": "总金额",
       "paid_amount": "已付金额",
+      "paid_amount_line": "已付：{currency} {amount}",
       "invoice_date": "发票日期",
       "due_date": "到期日",
       "status": "状态",

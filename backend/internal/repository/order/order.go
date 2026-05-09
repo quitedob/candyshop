@@ -7,7 +7,6 @@ import (
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"time"
 
@@ -80,21 +79,22 @@ func (r *OrderRepository) Create(ctx context.Context, order *modelsOrder.Order) 
 // CreateWithStockReservation creates an order and atomically deducts product stock.
 func (r *OrderRepository) CreateWithStockReservation(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		now := time.Now()
+		var all []*modelsOrder.StockTransaction
 		for productID, qty := range stockDeltas {
 			if qty <= 0 {
 				continue
 			}
-			res := tx.Model(&modelsProduct.Product{}).
-				Where("id = ? AND stock_quantity >= ?", productID, qty).
-				Update("stock_quantity", gorm.Expr("stock_quantity - ?", qty))
-			if res.Error != nil {
-				return res.Error
+			recs, err := deductStockForProductLine(tx, productID, qty, modelsOrder.StockReasonOrderCreated, order.ID, order.UserID, now)
+			if err != nil {
+				return err
 			}
-			if res.RowsAffected == 0 {
-				return fmt.Errorf("insufficient stock for product %s during reservation", productID)
-			}
+			all = append(all, recs...)
 		}
-		return tx.Create(order).Error
+		if err := tx.Create(order).Error; err != nil {
+			return err
+		}
+		return writeStockAuditEntries(tx, all)
 	})
 }
 
@@ -107,26 +107,41 @@ func (r *OrderRepository) Update(ctx context.Context, order *modelsOrder.Order) 
 // Positive delta reserves additional stock; negative delta releases stock.
 func (r *OrderRepository) UpdateWithStockAdjustment(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		now := time.Now()
+		var extra []*modelsOrder.StockTransaction
 		for productID, delta := range stockDeltas {
 			switch {
 			case delta > 0:
-				res := tx.Model(&modelsProduct.Product{}).
-					Where("id = ? AND stock_quantity >= ?", productID, delta).
-					Update("stock_quantity", gorm.Expr("stock_quantity - ?", delta))
-				if res.Error != nil {
-					return res.Error
-				}
-				if res.RowsAffected == 0 {
-					return fmt.Errorf("insufficient stock for product %s during update adjustment", productID)
-				}
-			case delta < 0:
-				releaseQty := -delta
-				if err := tx.Model(&modelsProduct.Product{}).
-					Where("id = ?", productID).
-					Update("stock_quantity", gorm.Expr("stock_quantity + ?", releaseQty)).Error; err != nil {
+				recs, err := deductStockForProductLine(tx, productID, delta, modelsOrder.StockReasonOrderUpdated, order.ID, order.UserID, now)
+				if err != nil {
 					return err
 				}
+				extra = append(extra, recs...)
+			case delta < 0:
+				releaseQty := -delta
+				var p modelsProduct.Product
+				if err := tx.Where("id = ?", productID).First(&p).Error; err != nil {
+					return err
+				}
+				before := p.StockQuantity
+				if err := restoreLegacyProductStock(tx, productID, releaseQty); err != nil {
+					return err
+				}
+				after := before + releaseQty
+				extra = append(extra, &modelsOrder.StockTransaction{
+					ProductID:   productID,
+					Change:      releaseQty,
+					StockBefore: before,
+					StockAfter:  after,
+					Reason:      modelsOrder.StockReasonOrderUpdated,
+					ReferenceID: order.ID,
+					OperatorID:  order.UserID,
+					CreatedAt:   now,
+				})
 			}
+		}
+		if err := writeStockAuditEntries(tx, extra); err != nil {
+			return err
 		}
 		return tx.Save(order).Error
 	})
@@ -140,35 +155,48 @@ func (r *OrderRepository) Delete(ctx context.Context, id string) error {
 // ReleaseStockForOrder returns reserved stock and marks the order as not reserved.
 func (r *OrderRepository) ReleaseStockForOrder(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		beforeStock := readStockLevels(tx, stockDeltas)
 		for productID, qty := range stockDeltas {
 			if qty <= 0 {
 				continue
 			}
-			if err := tx.Model(&modelsProduct.Product{}).
-				Where("id = ?", productID).
-				Update("stock_quantity", gorm.Expr("stock_quantity + ?", qty)).Error; err != nil {
+			if err := restoreLegacyProductStock(tx, productID, qty); err != nil {
 				return err
 			}
 		}
 		order.StockReserved = false
-		return tx.Save(order).Error
+		if err := tx.Save(order).Error; err != nil {
+			return err
+		}
+		// Negate deltas for audit: releasing stock means positive change
+		negDeltas := make(map[string]int, len(stockDeltas))
+		for pid, qty := range stockDeltas {
+			negDeltas[pid] = -qty
+		}
+		return writeStockAudit(tx, negDeltas, beforeStock, modelsOrder.StockReasonOrderCancelled, order.ID, order.UserID)
 	})
 }
 
 // DeleteWithStockRestore restores reserved stock and deletes the order in one transaction.
 func (r *OrderRepository) DeleteWithStockRestore(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		beforeStock := readStockLevels(tx, stockDeltas)
 		for productID, qty := range stockDeltas {
 			if qty <= 0 {
 				continue
 			}
-			if err := tx.Model(&modelsProduct.Product{}).
-				Where("id = ?", productID).
-				Update("stock_quantity", gorm.Expr("stock_quantity + ?", qty)).Error; err != nil {
+			if err := restoreLegacyProductStock(tx, productID, qty); err != nil {
 				return err
 			}
 		}
-		return tx.Delete(&modelsOrder.Order{}, "id = ?", order.ID).Error
+		if err := tx.Delete(&modelsOrder.Order{}, "id = ?", order.ID).Error; err != nil {
+			return err
+		}
+		negDeltas := make(map[string]int, len(stockDeltas))
+		for pid, qty := range stockDeltas {
+			negDeltas[pid] = -qty
+		}
+		return writeStockAudit(tx, negDeltas, beforeStock, modelsOrder.StockReasonOrderDeleted, order.ID, order.UserID)
 	})
 }
 
@@ -191,14 +219,56 @@ func (r *OrderRepository) ConfirmPendingOrder(ctx context.Context, id string, co
 	return nil
 }
 
-// ReleaseExpiredPendingConfirmationOrders releases stock for expired pending_confirmation drafts and marks them cancelled.
+// ConfirmAndReserveStock atomically confirms a pending_confirmation order and reserves stock.
+// Used for AI draft orders that defer stock reservation until customer confirmation.
+func (r *OrderRepository) ConfirmAndReserveStock(ctx context.Context, id string, stockDeltas map[string]int, confirmedAt time.Time) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Verify order is still pending_confirmation
+		var order modelsOrder.Order
+		if err := tx.Where("id = ? AND status = ?", id, "pending_confirmation").First(&order).Error; err != nil {
+			return err
+		}
+
+		now := time.Now()
+		var all []*modelsOrder.StockTransaction
+		for productID, qty := range stockDeltas {
+			if qty <= 0 {
+				continue
+			}
+			recs, err := deductStockForProductLine(tx, productID, qty, modelsOrder.StockReasonOrderConfirmed, id, order.UserID, now)
+			if err != nil {
+				return err
+			}
+			all = append(all, recs...)
+		}
+
+		// Update order: status → pending, stock_reserved → true
+		res := tx.Model(&modelsOrder.Order{}).
+			Where("id = ? AND status = ?", id, "pending_confirmation").
+			Updates(map[string]interface{}{
+				"status":         "pending",
+				"stock_reserved": true,
+				"confirmed_at":   confirmedAt,
+				"updated_at":     confirmedAt,
+			})
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		return writeStockAuditEntries(tx, all)
+	})
+}
+
+// ReleaseExpiredPendingConfirmationOrders releases stock (if reserved) for expired pending_confirmation drafts and marks them cancelled.
 func (r *OrderRepository) ReleaseExpiredPendingConfirmationOrders(ctx context.Context, olderThan time.Time, limit int) (int, error) {
 	released := 0
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var orders []modelsOrder.Order
 		query := tx.
 			Clauses(clause.Locking{Strength: "UPDATE", Options: "SKIP LOCKED"}).
-			Where("status = ? AND stock_reserved = ? AND created_at <= ?", "pending_confirmation", true, olderThan).
+			Where("status = ? AND created_at <= ?", "pending_confirmation", olderThan).
 			Order("created_at ASC")
 		if limit > 0 {
 			query = query.Limit(limit)
@@ -209,20 +279,29 @@ func (r *OrderRepository) ReleaseExpiredPendingConfirmationOrders(ctx context.Co
 
 		now := time.Now()
 		for _, order := range orders {
-			stockDeltas := buildStockDeltasFromItems(order.Items)
-			for productID, qty := range stockDeltas {
-				if qty <= 0 {
-					continue
+			// Only release stock if it was actually reserved (legacy orders)
+			if order.StockReserved {
+				stockDeltas := buildStockDeltasFromItems(order.Items)
+				beforeStock := readStockLevels(tx, stockDeltas)
+				for productID, qty := range stockDeltas {
+					if qty <= 0 {
+						continue
+					}
+					if err := tx.Model(&modelsProduct.Product{}).
+						Where("id = ?", productID).
+						Update("stock_quantity", gorm.Expr("stock_quantity + ?", qty)).Error; err != nil {
+						return err
+					}
 				}
-				if err := tx.Model(&modelsProduct.Product{}).
-					Where("id = ?", productID).
-					Update("stock_quantity", gorm.Expr("stock_quantity + ?", qty)).Error; err != nil {
-					return err
+				negDeltas := make(map[string]int, len(stockDeltas))
+				for pid, qty := range stockDeltas {
+					negDeltas[pid] = -qty
 				}
+				_ = writeStockAudit(tx, negDeltas, beforeStock, modelsOrder.StockReasonDraftExpired, order.ID, "system")
 			}
 
 			res := tx.Model(&modelsOrder.Order{}).
-				Where("id = ? AND status = ? AND stock_reserved = ?", order.ID, "pending_confirmation", true).
+				Where("id = ? AND status = ?", order.ID, "pending_confirmation").
 				Updates(map[string]interface{}{
 					"status":         "cancelled",
 					"stock_reserved": false,
@@ -455,4 +534,58 @@ func (r *OrderRepository) RevenueByDay(ctx context.Context, days int) ([]map[str
 		}
 	}
 	return result, nil
+}
+
+// readStockLevels returns a map of productID → current stock_quantity for the given deltas.
+func readStockLevels(tx *gorm.DB, deltas map[string]int) map[string]int {
+	ids := make([]string, 0, len(deltas))
+	for id := range deltas {
+		ids = append(ids, id)
+	}
+	if len(ids) == 0 {
+		return map[string]int{}
+	}
+	type row struct {
+		ID            string
+		StockQuantity int
+	}
+	var rows []row
+	tx.Model(&modelsProduct.Product{}).Select("id, stock_quantity").Where("id IN ?", ids).Find(&rows)
+	levels := make(map[string]int, len(rows))
+	for _, r := range rows {
+		levels[r.ID] = r.StockQuantity
+	}
+	return levels
+}
+
+// writeStockAuditEntries 批量写入库存流水
+func writeStockAuditEntries(tx *gorm.DB, records []*modelsOrder.StockTransaction) error {
+	if len(records) == 0 {
+		return nil
+	}
+	return tx.Create(records).Error
+}
+
+// writeStockAudit writes StockTransaction records for each product delta within the current transaction.
+func writeStockAudit(tx *gorm.DB, deltas map[string]int, beforeStock map[string]int, reason, referenceID, operatorID string) error {
+	now := time.Now()
+	records := make([]*modelsOrder.StockTransaction, 0, len(deltas))
+	for productID, change := range deltas {
+		if change == 0 {
+			continue
+		}
+		before := beforeStock[productID]
+		after := before + (-change) // change is negative for deduction, positive for restoration
+		records = append(records, &modelsOrder.StockTransaction{
+			ProductID:   productID,
+			Change:      -change, // store as actual stock delta (negative = deducted, positive = restored)
+			StockBefore: before,
+			StockAfter:  after,
+			Reason:      reason,
+			ReferenceID: referenceID,
+			OperatorID:  operatorID,
+			CreatedAt:   now,
+		})
+	}
+	return writeStockAuditEntries(tx, records)
 }

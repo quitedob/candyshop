@@ -1,29 +1,67 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-      <div class="bg-white shadow sm:rounded-lg overflow-hidden">
-        <div class="px-4 py-5 sm:p-6">
-          <div class="text-center">
-            <Icon v-if="verifying" name="heroicons:clock" class="mx-auto h-12 w-12 text-gray-400" />
-            <Icon v-else-if="success" name="heroicons:check-circle" class="mx-auto h-12 w-12 text-green-500" />
-            <Icon v-else name="heroicons:x-circle" class="mx-auto h-12 w-12 text-red-500" />
+  <div class="auth-page">
+    <div class="auth-page__container">
+      <div class="auth-card">
+        <div class="auth-page__header auth-page__header--tight">
+          <NuxtLink :to="localePath('/')" class="auth-page__logo">
+            <svg viewBox="0 0 180 40" fill="none" class="auth-page__logo-svg">
+              <circle cx="20" cy="20" r="16" fill="var(--color-highlight)" opacity="0.2"/>
+              <path d="M14 20C14 16.6863 16.6863 14 20 14C23.3137 14 26 16.6863 26 20C26 23.3137 23.3137 26 20 26C16.6863 26 14 23.3137 14 20Z" stroke="var(--color-highlight)" stroke-width="2.5"/>
+              <circle cx="17" cy="17" r="2" fill="var(--color-accent)"/>
+              <circle cx="23" cy="23" r="2" fill="var(--color-primary)"/>
+              <text x="45" y="27" font-family="Georgia, serif" font-size="18" font-weight="500" fill="var(--color-primary)">CandyPro</text>
+              <text x="145" y="27" font-family="system-ui, sans-serif" font-size="10" font-weight="600" fill="var(--color-accent)">OEM</text>
+            </svg>
+          </NuxtLink>
+        </div>
 
-            <h3 class="mt-4 text-lg font-medium text-gray-900">
-              {{ verifying ? t('auth.verifying_email') : success ? t('auth.email_verified') : t('auth.email_verification_failed') }}
-            </h3>
+        <Icon
+          v-if="verifying"
+          name="heroicons:clock"
+          class="auth-verify-icon"
+          aria-hidden="true"
+        />
+        <Icon
+          v-else-if="success"
+          name="heroicons:check-circle"
+          class="auth-verify-icon auth-verify-icon--ok"
+          aria-hidden="true"
+        />
+        <Icon
+          v-else
+          name="heroicons:x-circle"
+          class="auth-verify-icon auth-verify-icon--fail"
+          aria-hidden="true"
+        />
 
-            <p class="mt-2 text-sm text-gray-600">
-              {{ success ? t('auth.email_verified_message') : errorMessage }}
-            </p>
+        <h2 class="auth-verify-title">
+          {{ verifying ? t('auth.verifying_email') : success ? t('auth.email_verified') : t('auth.email_verification_failed') }}
+        </h2>
 
-            <div class="mt-6">
-              <NuxtLink v-if="success || (!verifying && !success)" to="/auth/login" class="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700">
-                {{ t('auth.go_to_login') }}
-              </NuxtLink>
-            </div>
-          </div>
+        <p class="auth-verify-text">
+          {{
+            verifying
+              ? t('auth.verify_please_wait')
+              : success
+                ? t('auth.email_verified_message')
+                : errorMessage
+          }}
+        </p>
+
+        <div class="auth-verify-actions">
+          <NuxtLink
+            v-if="success || (!verifying && !success)"
+            :to="localePath('/auth/login')"
+            class="auth-btn auth-btn--auto"
+          >
+            {{ t('auth.go_to_login') }}
+          </NuxtLink>
         </div>
       </div>
+
+      <p class="auth-page__footer">
+        © {{ new Date().getFullYear() }} {{ t('auth.footer_rights') }}
+      </p>
     </div>
   </div>
 </template>
@@ -38,6 +76,7 @@ definePageMeta({
 
 const route = useRoute()
 const { t } = useI18n()
+const localePath = useLocalePath()
 const { verifyEmail } = useAuth()
 
 const verifying = ref(true)

@@ -16,7 +16,7 @@ func TestGenerateID(t *testing.T) {
 		t.Error("GenerateID returned duplicate IDs")
 	}
 
-	if len(id1) != 16 {
+	if len(id1) != 32 {
 		t.Errorf("GenerateID returned ID with unexpected length: %d", len(id1))
 	}
 }

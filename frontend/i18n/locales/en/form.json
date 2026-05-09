@@ -21,8 +21,13 @@
     "submitting": "Submitting...",
     "success": "Thank you! Your inquiry has been received. We will contact you within 24 hours.",
     "error": "Sorry, there was an error submitting your inquiry. Please try again or contact us via WhatsApp.",
+    "files_max": "Maximum {max} files allowed",
+    "file_too_large": "File {name} is too large. Maximum size is {max} MB.",
+    "file_type_unsupported": "File {name} is not a supported type. Use JPG, PNG, WebP, or PDF.",
     "privacy_note": "Your information is secure and will not be shared.",
     "message_placeholder": "Tell us more about your requirements...",
+    "summary": "Summary",
+    "not_specified": "Not specified",
     "interested_products_hint": "Separate multiple products with commas",
     "options": {
       "countries": {
@@ -157,5 +162,12 @@
         "answer": "We provide all necessary export documentation (commercial invoice, packing list, certificates of origin, health certificates). For import clearance, we work with experienced freight forwarders who can assist at destination ports."
       }
     ]
+  },
+  "input_file": {
+    "upload": "Click to upload or drag and drop",
+    "max_size": "Max {size} MB per file",
+    "error_too_large": "File \"{name}\" exceeds {max} MB limit",
+    "error_type": "File \"{name}\" is not a supported type",
+    "error_max_files": "Maximum {count} files allowed"
   }
 }

@@ -67,3 +67,15 @@ func (r *ShipmentRepository) Update(ctx context.Context, shipment *modelsTrade.S
 func (r *ShipmentRepository) Delete(ctx context.Context, id uint) error {
 	return r.db.WithContext(ctx).Delete(&modelsTrade.ShipmentTracking{}, id).Error
 }
+
+// FindByTransactionIDs returns shipments for multiple transaction IDs (batch preload).
+func (r *ShipmentRepository) FindByTransactionIDs(ctx context.Context, transactionIDs []uint) ([]modelsTrade.ShipmentTracking, error) {
+	if len(transactionIDs) == 0 {
+		return nil, nil
+	}
+	var shipments []modelsTrade.ShipmentTracking
+	if err := r.db.WithContext(ctx).Where("transaction_id IN ?", transactionIDs).Order("created_at asc").Find(&shipments).Error; err != nil {
+		return nil, err
+	}
+	return shipments, nil
+}

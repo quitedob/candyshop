@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -204,7 +205,11 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 
 	// Async update last login
-	go h.services.User.UpdateLastLogin(context.Background(), user.ID)
+	go func() {
+		if err := h.services.User.UpdateLastLogin(context.Background(), user.ID); err != nil {
+			log.Printf("Warning: failed to update last login for user %s: %v", user.ID, err)
+		}
+	}()
 
 	c.JSON(http.StatusOK, gin.H{
 		"access_token":  accessToken,

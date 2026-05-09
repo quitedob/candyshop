@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-6">
-    <NuxtLink to="/customer/invoices" class="inline-flex items-center gap-1 text-sm text-orange-600 hover:text-orange-800">
+    <NuxtLink :to="localePath('/customer/invoices')" class="inline-flex items-center gap-1 text-sm text-orange-600 hover:text-orange-800">
       <Icon name="heroicons:arrow-left" class="h-4 w-4" />
       {{ $t('customer.invoices.back') }}
     </NuxtLink>
@@ -46,6 +46,8 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
+const { t } = useI18n()
+const localePath = useLocalePath()
 const route = useRoute()
 const api = useApi()
 const invoice = ref<any>(null)
@@ -56,7 +58,7 @@ const fetchInvoice = async () => {
   try {
     invoice.value = await api.get(`/user/invoices/${route.params.id}`)
   } catch (e: any) {
-    error.value = e?.message || 'Invoice not found'
+    error.value = e?.message || t('customer.invoices.not_found')
   } finally {
     pending.value = false
   }

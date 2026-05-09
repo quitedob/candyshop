@@ -4,12 +4,13 @@ import (
 	"bytes"
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
-	modelsTrade "candypro/api/internal/models/trade"
+	"candypro/api/internal/kyb"
 	"candypro/api/internal/utils"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"strings"
 	"time"
@@ -140,6 +141,7 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 			utils.InvalidRequestResponse(c, fmt.Sprintf("No price available for product %s. Please contact support.", productID))
 			return
 		}
+		unitPrice = h.services.Product.ResolveCheckoutUnitPrice(c.Request.Context(), product, unitPrice, req.ShippingAddress.Country)
 
 		orderItem := modelsOrder.OrderItem{
 			ProductID:      productID,
@@ -153,7 +155,7 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 		subtotal += float64(it.Quantity) * unitPrice
 	}
 
-	compliance := h.services.Order.ValidateCountryCompliance(req.ShippingAddress.Country, selectedProducts)
+	compliance := h.services.Product.ValidateComplianceWithMarketProfiles(c.Request.Context(), req.ShippingAddress.Country, selectedProducts)
 	if len(compliance.Violations) > 0 {
 		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
 			Error:   "compliance_violation",
@@ -166,7 +168,12 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 		})
 		return
 	}
-	inventory := h.services.Order.ValidateInventory(items, productByID)
+	ids := make([]string, 0, len(productByID))
+	for id := range productByID {
+		ids = append(ids, id)
+	}
+	sellable, _ := h.services.Product.EffectiveSellableByProducts(c.Request.Context(), ids, modelsProduct.ChannelWebstore)
+	inventory := h.services.Order.ValidateInventoryWithSellable(items, productByID, sellable)
 	if len(inventory.Violations) > 0 {
 		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
 			Error:   "inventory_violation",
@@ -179,7 +186,12 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 		return
 	}
 
-	currency := strings.ToUpper(strings.TrimSpace(req.Currency))
+	currencyNorm, curErr := utils.NormalizeISOCurrency(req.Currency)
+	if curErr != nil {
+		utils.InvalidRequestResponse(c, curErr.Error())
+		return
+	}
+	currency := currencyNorm
 	if currency == "" {
 		currency = "USD"
 	}
@@ -190,21 +202,28 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 	}
 
 	totalAmount := subtotal + req.TaxAmount + req.ShippingAmount
+	if math.IsNaN(totalAmount) || math.IsInf(totalAmount, 0) || totalAmount < 0 {
+		utils.InvalidRequestResponse(c, "Invalid order total")
+		return
+	}
+	if !h.ensureActiveOrKYBBypassForAmount(c, userID, totalAmount, kyb.LineProductIDs(items)...) {
+		return
+	}
 	now := time.Now()
 	order := &modelsOrder.Order{
-		ID:             utils.GenerateID(),
-		OrderNumber:    orderNumber,
-		UserID:         userID,
-		InquiryID:      inquiryID,
-		Status:         "pending",
-		PaymentStatus:  "unpaid",
-		Items:          items,
-		StockReserved:  true,
-		Subtotal:       subtotal,
-		TaxAmount:      req.TaxAmount,
+		ID:            utils.GenerateID(),
+		OrderNumber:   orderNumber,
+		UserID:        userID,
+		InquiryID:     inquiryID,
+		Status:        "pending",
+		PaymentStatus: "unpaid",
+		Items:         items,
+		StockReserved: true,
+		Subtotal:      subtotal,
+		TaxAmount:     req.TaxAmount,
 		ShippingAmount: req.ShippingAmount,
-		TotalAmount:    totalAmount,
-		Currency:       currency,
+		TotalAmount:   totalAmount,
+		Currency:      currency,
 		ShippingAddress: modelsOrder.Address{
 			Street:  strings.TrimSpace(req.ShippingAddress.Street),
 			City:    strings.TrimSpace(req.ShippingAddress.City),
@@ -217,7 +236,14 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 	}
 
 	if err := h.services.Order.CreateOrderWithStockReservation(c.Request.Context(), order); err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "insufficient stock") {
+		if utils.IsDuplicateKeyError(err) {
+			c.JSON(http.StatusConflict, modelsProduct.ErrorResponse{
+				Error:   "conflict",
+				Message: "Order number already exists. Omit orderNumber to auto-generate a unique one.",
+			})
+			return
+		}
+		if errors.Is(err, modelsOrder.ErrInsufficientStock) {
 			c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
 				Error:   "inventory_violation",
 				Message: "Inventory changed while creating order. Please retry with latest stock.",
@@ -244,6 +270,8 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 }
 
 // CustomerConfirmOrder confirms an AI-drafted order before final processing.
+// The confirm flow only accepts compliance acknowledgement; item edits and
+// price changes are rejected — the server-authoritative draft data is used.
 func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 	if h.services == nil {
 		utils.ServiceUnavailableResponse(c)
@@ -281,24 +309,19 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 		return
 	}
 
-	if order.Status != "pending_confirmation" || !order.StockReserved {
+	if order.Status != "pending_confirmation" {
 		c.JSON(http.StatusConflict, modelsProduct.ErrorResponse{
 			Error:   "invalid_state",
-			Message: "Only pending_confirmation orders with reserved stock can be confirmed",
+			Message: "Only pending_confirmation orders can be confirmed",
 		})
 		return
 	}
-	confirmReq := struct {
-		ComplianceAck bool `json:"complianceAck"`
-		Items         []struct {
-			ProductID      string  `json:"productId"`
-			Quantity       int     `json:"quantity"`
-			UnitPrice      float64 `json:"unitPrice"`
-			Specifications string  `json:"specifications"`
-		} `json:"items"`
-	}{}
+
+	// Parse compliance acknowledgement only — no item/price edits allowed.
+	var complianceAck bool
 	if c.Request.Body != nil {
 		rawBody, readErr := io.ReadAll(c.Request.Body)
+		c.Request.Body = io.NopCloser(bytes.NewReader(rawBody))
 		if readErr != nil {
 			c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
 				Error:   "invalid_request",
@@ -308,45 +331,21 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 		}
 		trimmedBody := bytes.TrimSpace(rawBody)
 		if len(trimmedBody) > 0 {
-			if err := json.Unmarshal(trimmedBody, &confirmReq); err != nil {
+			var parsed struct {
+				ComplianceAck bool `json:"complianceAck"`
+			}
+			if err := json.Unmarshal(trimmedBody, &parsed); err != nil {
 				c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
 					Error:   "invalid_request",
 					Message: "Invalid JSON body",
 				})
 				return
 			}
+			complianceAck = parsed.ComplianceAck
 		}
 	}
 
-	// M1: Apply edited items if provided by the user
-	if len(confirmReq.Items) > 0 {
-		updatedItems := make(modelsOrder.OrderItemArray, 0, len(confirmReq.Items))
-		var newSubtotal float64
-		for _, it := range confirmReq.Items {
-			pid := strings.TrimSpace(it.ProductID)
-			if pid == "" || it.Quantity < 1 {
-				continue
-			}
-			qty := it.Quantity
-			price := it.UnitPrice
-			if price < 0 {
-				price = 0
-			}
-			updatedItems = append(updatedItems, modelsOrder.OrderItem{
-				ProductID:      pid,
-				Quantity:       qty,
-				UnitPrice:      price,
-				Specifications: strings.TrimSpace(it.Specifications),
-			})
-			newSubtotal += float64(qty) * price
-		}
-		if len(updatedItems) > 0 {
-			order.Items = updatedItems
-			order.Subtotal = newSubtotal
-			order.TotalAmount = newSubtotal + order.TaxAmount + order.ShippingAmount
-		}
-	}
-	if !order.ComplianceOfficialEvidence && !confirmReq.ComplianceAck {
+	if !order.ComplianceOfficialEvidence && !complianceAck {
 		c.JSON(http.StatusConflict, modelsProduct.ErrorResponse{
 			Error:   "compliance_ack_required",
 			Message: "No official compliance evidence found. Explicit compliance acknowledgement is required before confirming this draft.",
@@ -357,8 +356,19 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 		return
 	}
 
+	if !h.ensureActiveOrKYBBypassForAmount(c, userID, order.TotalAmount, kyb.LineProductIDs(order.Items)...) {
+		return
+	}
+
 	now := time.Now()
-	if err := h.services.Order.ConfirmPendingOrder(c.Request.Context(), orderID, now); err != nil {
+	if err := h.services.Order.ConfirmAndReserveOrder(c.Request.Context(), orderID, order.Items, now); err != nil {
+		if errors.Is(err, modelsOrder.ErrInsufficientStock) {
+			c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
+				Error:   "inventory_violation",
+				Message: "Insufficient stock to confirm this order. Please reduce quantities or try again later.",
+			})
+			return
+		}
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			latest, latestErr := h.services.Order.GetOrder(c.Request.Context(), orderID)
 			if latestErr != nil {
@@ -398,22 +408,6 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 	order.Status = "pending"
 	order.ConfirmedAt = &now
 	order.UpdatedAt = now
-
-	// Auto-create a trade transaction linked to this confirmed order
-	if h.services.Trade != nil {
-		trade := &modelsTrade.TradeTransaction{
-			UserID:      order.UserID,
-			OrderID:     &order.ID,
-			Status:      modelsTrade.TradeStatusPending,
-			Currency:    order.Currency,
-			TotalAmount: order.TotalAmount,
-			Terms:       "FOB",
-		}
-		if order.InquiryID != nil {
-			trade.InquiryID = order.InquiryID
-		}
-		_ = h.services.Trade.CreateTransaction(c.Request.Context(), trade)
-	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Order confirmed successfully",
@@ -496,27 +490,36 @@ func (h *Handler) CustomerCancelOrder(c *gin.Context) {
 		return
 	}
 
-	// Only allow cancellation of pending orders
-	if order.Status != "pending" {
+	// Only allow cancellation of pending and pending_confirmation orders
+	if order.Status != "pending" && order.Status != "pending_confirmation" {
 		c.JSON(http.StatusConflict, modelsProduct.ErrorResponse{
 			Error:   "invalid_state",
-			Message: fmt.Sprintf("Cannot cancel order in '%s' status. Only pending orders can be cancelled.", order.Status),
+			Message: fmt.Sprintf("Cannot cancel order in '%s' status. Only pending or pending_confirmation orders can be cancelled.", order.Status),
 		})
 		return
 	}
 
-	// Release reserved stock and update status to cancelled
-	order.Status = "cancelled"
-	order.StockReserved = false
 	now := time.Now()
+	order.Status = "cancelled"
 	order.UpdatedAt = now
 
-	if err := h.services.Order.ReleaseOrderStock(c.Request.Context(), order); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to cancel order",
-		})
-		return
+	if order.StockReserved {
+		if err := h.services.Order.ReleaseOrderStock(c.Request.Context(), order); err != nil {
+			c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
+				Error:   "internal_error",
+				Message: "Failed to cancel order and release stock",
+			})
+			return
+		}
+	} else {
+		order.StockReserved = false
+		if err := h.services.Order.UpdateOrder(c.Request.Context(), order); err != nil {
+			c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
+				Error:   "internal_error",
+				Message: "Failed to cancel order",
+			})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{

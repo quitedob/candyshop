@@ -24,12 +24,12 @@
         <tbody class="divide-y divide-gray-200 bg-white">
           <tr v-for="quote in quotes" :key="quote.id">
             <td class="px-6 py-4 text-sm text-gray-900">
-              <NuxtLink :to="`/customer/inquiries/${quote.inquiryId || quote.id}`" class="text-blue-600 hover:text-blue-900">{{ quote.id }}</NuxtLink>
+              <NuxtLink :to="localePath(`/customer/inquiries/${quote.inquiryId || quote.id}`)" class="text-orange-600 hover:text-orange-900">{{ quote.id }}</NuxtLink>
             </td>
             <td class="px-6 py-4 text-sm text-gray-700">{{ formatCurrency(quote.quotedAmount) }}</td>
             <td class="px-6 py-4 text-sm text-gray-700">{{ formatDate(quote.validUntil) }}</td>
             <td class="px-6 py-4 text-sm">
-              <span class="inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">{{ quote.status }}</span>
+              <span class="inline-flex rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800">{{ quote.status }}</span>
             </td>
           </tr>
         </tbody>
@@ -45,6 +45,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
+const localePath = useLocalePath()
 
 const quotes = ref<any[]>([])
 const pending = ref(true)
@@ -56,7 +57,7 @@ const fetchQuotes = async () => {
     const res = await api.get<any>('/user/quotes?page=1&limit=50')
     quotes.value = res.data || []
   } catch (err: any) {
-    error.value = err?.message || 'Failed to load quotes'
+    error.value = err?.message || t('errors.api.load_failed')
   } finally { pending.value = false }
 }
 

@@ -32,6 +32,6 @@ func New(repos *repositoryCommon.PublicRepositories, cfg *config.Config) *Servic
 		OEM:      oem.NewOEMService(repos.OEM),
 		Factory:  oem.NewFactoryService(repos.Factory),
 		Content:  content.NewContentService(repos.Content),
-		Search:   search.NewService(repos),
+		Search:   search.NewService(repos, cfg),
 	}
 }

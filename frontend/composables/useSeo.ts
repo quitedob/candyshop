@@ -200,6 +200,7 @@ export const useArticleSchema = (article: {
   author?: { name: string }
   category?: string
 }) => {
+  const { t } = useI18n()
   const config = useRuntimeConfig()
   const siteUrl = config.public.siteUrl
 
@@ -211,7 +212,7 @@ export const useArticleSchema = (article: {
     image: article.thumbnail ? [article.thumbnail] : [],
     author: {
       '@type': 'Person',
-      name: article.author?.name || 'CandyPro Team'
+      name: article.author?.name || t('seo.default_author')
     },
     publisher: {
       '@type': 'Organization',

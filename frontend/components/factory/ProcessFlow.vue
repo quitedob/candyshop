@@ -155,7 +155,7 @@ defineProps<Props>()
 .process-step--active .process-step__icon,
 .process-step--active .process-step__number {
   background-color: var(--color-highlight);
-  box-shadow: 0 0 0 4px rgba(255, 107, 74, 0.2);
+  box-shadow: 0 0 0 4px rgba(var(--color-highlight-rgb), 0.2);
 }
 
 .process-step__content {

@@ -86,12 +86,12 @@
 
     <!-- Summary -->
     <div v-if="showSummary" class="oem-options__summary">
-      <h4 class="oem-options__summary-title">{{ $t('oem.title') }} {{ $t('form.summary') || 'Summary' }}</h4>
+      <h4 class="oem-options__summary-title">{{ $t('oem.title') }} {{ $t('form.summary') }}</h4>
       <ul class="oem-options__summary-list">
         <li v-for="(option, index) in options" :key="index">
           <span class="oem-options__summary-label">{{ option.title }}:</span>
           <span class="oem-options__summary-value">
-            {{ getSelectedLabel(option, index) || $t('form.not_specified') || 'Not specified' }}
+            {{ getSelectedLabel(option, index) || $t('form.not_specified') }}
           </span>
         </li>
       </ul>

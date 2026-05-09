@@ -28,7 +28,7 @@
 
         <div class="input-file__text">
           <p class="input-file__text-primary">
-            {{ t('input_file.upload') || 'Click to upload or drag and drop' }}
+            {{ t('input_file.upload') }}
           </p>
           <p class="input-file__text-secondary">
             {{ acceptText }}
@@ -85,14 +85,14 @@ const acceptText = computed(() => {
     }
     return map[ext] || ext
   })
-  return `${t('input_file.max_size', { size: props.maxSize }) || `Max ${props.maxSize}MB per file`}, ${extensions.join(', ')}`
+  return `${t('input_file.max_size', { size: props.maxSize })}, ${extensions.join(', ')}`
 })
 
 const validateFile = (file: File): boolean => {
   // Check file size
   const maxSizeBytes = props.maxSize * 1024 * 1024
   if (file.size > maxSizeBytes) {
-    emit('error', `File "${file.name}" exceeds ${props.maxSize}MB limit`)
+    emit('error', t('input_file.error_too_large', { name: file.name, max: props.maxSize }))
     return false
   }
 
@@ -100,7 +100,7 @@ const validateFile = (file: File): boolean => {
   if (props.accept) {
     const acceptedTypes = props.accept.split(',')
     if (!acceptedTypes.includes(file.type)) {
-      emit('error', `File "${file.name}" is not a supported type`)
+      emit('error', t('input_file.error_type', { name: file.name }))
       return false
     }
   }
@@ -126,7 +126,7 @@ const handleDrop = (event: DragEvent) => {
 const processFiles = (files: FileList) => {
   // Check file count
   if (files.length > props.maxFiles) {
-    emit('error', `Maximum ${props.maxFiles} files allowed`)
+    emit('error', t('input_file.error_max_files', { count: props.maxFiles }))
     return
   }
 
@@ -182,7 +182,7 @@ defineExpose({
 
 .input-file__dropzone--dragover {
   border-color: var(--color-highlight);
-  background-color: rgba(255, 107, 74, 0.05);
+  background-color: rgba(var(--color-highlight-rgb), 0.05);
 }
 
 .input-file__input {
@@ -215,7 +215,7 @@ defineExpose({
 
 .input-file__dropzone:hover .input-file__icon {
   color: var(--color-highlight);
-  background-color: rgba(255, 107, 74, 0.1);
+  background-color: rgba(var(--color-highlight-rgb), 0.1);
 }
 
 .input-file__text {

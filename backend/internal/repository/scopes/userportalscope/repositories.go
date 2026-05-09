@@ -25,6 +25,7 @@ type Repositories struct {
 	Project        *oem.ProjectRepository
 	Trade          trade.TradeRepository
 	Shipment       *trade.ShipmentRepository
+	ShipmentEvent  *trade.ShipmentEventRepository
 	TradeDocDetail *trade.TradeDocumentDetailRepository
 	Notification   *notificationrepo.NotificationRepository
 }
@@ -43,6 +44,7 @@ func New(db *gorm.DB) *Repositories {
 		Project:        oem.NewProjectRepository(db),
 		Trade:          trade.NewTradeRepository(db),
 		Shipment:       trade.NewShipmentRepository(db),
+			ShipmentEvent:  trade.NewShipmentEventRepository(db),
 		TradeDocDetail: trade.NewTradeDocumentDetailRepository(db),
 		Notification:   notificationrepo.NewNotificationRepository(db),
 	}

@@ -10,6 +10,8 @@ import (
 	product "candypro/api/internal/services/product"
 	trade "candypro/api/internal/services/trade"
 	user "candypro/api/internal/services/user"
+
+	"gorm.io/gorm"
 )
 
 type Services struct {
@@ -25,11 +27,12 @@ type Services struct {
 	OEM            *oem.ProjectService
 	Trade          *trade.TradeService
 	Shipment       *trade.ShipmentService
+	Logistics      *trade.LogisticsService
 	TradeDocDetail *trade.TradeDocumentDetailService
 	Notification   *notificationsvc.NotificationService
 }
 
-func New(repos *repositoryCommon.UserPortalRepositories, cfg *config.Config) *Services {
+func New(repos *repositoryCommon.UserPortalRepositories, cfg *config.Config, db *gorm.DB) *Services {
 	if repos == nil {
 		return &Services{}
 	}
@@ -42,13 +45,14 @@ func New(repos *repositoryCommon.UserPortalRepositories, cfg *config.Config) *Se
 		Inquiry:        inquiry.NewInquiryService(repos.Inquiry, cfg),
 		Order:          order.NewOrderService(repos.Order),
 		Payment:        order.NewPaymentService(repos.Payment, repos.Order),
-		Invoice:        order.NewInvoiceService(repos.Invoice),
+		Invoice:        order.NewInvoiceService(repos.Invoice, repos.Order, nil),
 		Cart:           order.NewCartService(repos.Cart),
 		Product:        product.NewProductService(repos.Product),
 		Price:          product.NewPriceService(repos.Price),
 		OEM:            oem.NewProjectService(repos.Project),
 		Trade:          trade.NewTradeService(repos.Trade),
 		Shipment:       trade.NewShipmentService(repos.Shipment),
+		Logistics:      trade.NewLogisticsService(repos.Shipment, repos.ShipmentEvent, repos.Order, repos.Trade, db),
 		TradeDocDetail: trade.NewTradeDocumentDetailService(repos.TradeDocDetail),
 		Notification:   notificationsvc.NewNotificationService(repos.Notification),
 	}

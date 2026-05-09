@@ -1,53 +1,72 @@
 <template>
-  <div class="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-    <div class="sm:mx-auto sm:w-full sm:max-w-md">
-      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-        {{ t('auth_extra.set_new_password') }}
-      </h2>
-    </div>
+  <div class="auth-page">
+    <div class="auth-page__container">
+      <div class="auth-page__header">
+        <NuxtLink :to="localePath('/')" class="auth-page__logo">
+          <svg viewBox="0 0 180 40" fill="none" class="auth-page__logo-svg">
+            <circle cx="20" cy="20" r="16" fill="var(--color-highlight)" opacity="0.2"/>
+            <path d="M14 20C14 16.6863 16.6863 14 20 14C23.3137 14 26 16.6863 26 20C26 23.3137 23.3137 26 20 26C16.6863 26 14 23.3137 14 20Z" stroke="var(--color-highlight)" stroke-width="2.5"/>
+            <circle cx="17" cy="17" r="2" fill="var(--color-accent)"/>
+            <circle cx="23" cy="23" r="2" fill="var(--color-primary)"/>
+            <text x="45" y="27" font-family="Georgia, serif" font-size="18" font-weight="500" fill="var(--color-primary)">CandyPro</text>
+            <text x="145" y="27" font-family="system-ui, sans-serif" font-size="10" font-weight="600" fill="var(--color-accent)">OEM</text>
+          </svg>
+        </NuxtLink>
+        <h1 class="auth-page__title">{{ t('auth_extra.set_new_password') }}</h1>
+      </div>
 
-    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-      <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-        <form v-if="!success" class="space-y-6" @submit.prevent="handleReset">
-          <div>
-            <label for="password" class="block text-sm font-medium text-gray-700">
-              {{ t('auth_extra.new_password') }}
-            </label>
-            <div class="mt-1">
-              <input id="password" v-model="form.newPassword" type="password" required minlength="8" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-            </div>
+      <div class="auth-card">
+        <form v-if="!success" class="auth-form" @submit.prevent="handleReset">
+          <div class="auth-field">
+            <label for="password" class="auth-label">{{ t('auth_extra.new_password') }}</label>
+            <input
+              id="password"
+              v-model="form.newPassword"
+              type="password"
+              required
+              minlength="8"
+              autocomplete="new-password"
+              class="auth-input"
+            />
           </div>
 
-          <div>
-            <label for="confirm" class="block text-sm font-medium text-gray-700">
-              {{ t('auth_extra.confirm_password') }}
-            </label>
-            <div class="mt-1">
-              <input id="confirm" v-model="form.confirmPassword" type="password" required minlength="8" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-            </div>
+          <div class="auth-field">
+            <label for="confirm" class="auth-label">{{ t('auth_extra.confirm_password') }}</label>
+            <input
+              id="confirm"
+              v-model="form.confirmPassword"
+              type="password"
+              required
+              minlength="8"
+              autocomplete="new-password"
+              class="auth-input"
+            />
           </div>
 
-          <div>
-            <button type="submit" :disabled="loading" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
-              <span v-if="loading">{{ t('auth_extra.resetting') }}</span>
-              <span v-else>{{ t('auth_extra.reset_password') }}</span>
-            </button>
-          </div>
+          <button type="submit" :disabled="loading" class="auth-btn">
+            <span v-if="loading" class="auth-spinner" aria-hidden="true" />
+            <span v-if="loading" class="sr-only">{{ t('auth_extra.resetting') }}</span>
+            <span v-else>{{ t('auth_extra.reset_password') }}</span>
+          </button>
 
-          <div v-if="errorMsg" class="mt-4 p-4 text-sm text-red-700 bg-red-100 rounded-md">
+          <div v-if="errorMsg" class="auth-alert auth-alert--error" role="alert">
             {{ errorMsg }}
           </div>
         </form>
 
-        <div v-else class="text-center space-y-4">
-          <div class="p-4 text-sm text-green-700 bg-green-100 rounded-md">
+        <div v-else class="auth-form">
+          <div class="auth-alert auth-alert--success" role="status">
             {{ t('auth_extra.reset_success') }}
           </div>
-          <NuxtLink to="/auth/login" class="inline-flex justify-center w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+          <NuxtLink :to="localePath('/auth/login')" class="auth-btn auth-btn--secondary auth-btn--auto">
             {{ t('auth_extra.go_to_login') }}
           </NuxtLink>
         </div>
       </div>
+
+      <p class="auth-page__footer">
+        © {{ new Date().getFullYear() }} {{ t('auth.footer_rights') }}
+      </p>
     </div>
   </div>
 </template>
@@ -61,6 +80,7 @@ definePageMeta({
 })
 
 const { t } = useI18n()
+const localePath = useLocalePath()
 const route = useRoute()
 const config = useRuntimeConfig()
 const baseURL = config.public.apiBase || '/api/v1'

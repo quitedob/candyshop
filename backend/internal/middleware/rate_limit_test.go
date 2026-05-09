@@ -77,7 +77,7 @@ func TestRateLimitMiddleware(t *testing.T) {
 
 func TestSecurityHeaders(t *testing.T) {
 	router := gin.New()
-	router.Use(SecurityHeaders())
+	router.Use(SecurityHeaders("development"))
 	router.GET("/test", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
@@ -87,16 +87,37 @@ func TestSecurityHeaders(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	expectedHeaders := map[string]string{
-		"X-Frame-Options":           "DENY",
-		"X-Content-Type-Options":    "nosniff",
-		"X-Xss-Protection":          "1; mode=block",
-		"Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+		"X-Frame-Options":        "DENY",
+		"X-Content-Type-Options": "nosniff",
+		"X-Xss-Protection":       "1; mode=block",
 	}
 
 	for header, expected := range expectedHeaders {
 		if got := w.Header().Get(header); got != expected {
 			t.Errorf("Header %s = %s, want %s", header, got, expected)
 		}
+	}
+
+	// HSTS should NOT be set in non-production
+	if hsts := w.Header().Get("Strict-Transport-Security"); hsts != "" {
+		t.Errorf("HSTS should not be set in development, got %s", hsts)
+	}
+}
+
+func TestSecurityHeadersProduction(t *testing.T) {
+	router := gin.New()
+	router.Use(SecurityHeaders("production"))
+	router.GET("/test", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok"})
+	})
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	expected := "max-age=63072000; includeSubDomains; preload"
+	if got := w.Header().Get("Strict-Transport-Security"); got != expected {
+		t.Errorf("HSTS = %s, want %s", got, expected)
 	}
 }
 

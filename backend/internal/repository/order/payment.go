@@ -47,19 +47,45 @@ func (r *PaymentRepository) Update(ctx context.Context, payment *modelsOrder.Pay
 }
 
 // ConfirmPayment sets payment status to confirmed with admin user and timestamp.
+// 仅当当前为 pending 时更新成功，避免并发双确认。
 func (r *PaymentRepository) ConfirmPayment(ctx context.Context, id, confirmedBy string) error {
 	now := time.Now()
-	return r.db.WithContext(ctx).Model(&modelsOrder.Payment{}).
-		Where("id = ?", id).
+	res := r.db.WithContext(ctx).Model(&modelsOrder.Payment{}).
+		Where("id = ? AND status = ?", id, "pending").
 		Updates(map[string]interface{}{
 			"status":       "confirmed",
 			"confirmed_by": confirmedBy,
 			"confirmed_at": now,
 			"updated_at":   now,
-		}).Error
+		})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrPaymentStateMismatch
+	}
+	return nil
 }
 
-// UpdateStatus updates payment status.
+// MarkPaymentRefunded 将已确认付款标为已退款（仅 status=confirmed 时生效，避免并发双退）
+func (r *PaymentRepository) MarkPaymentRefunded(ctx context.Context, id string) error {
+	now := time.Now()
+	res := r.db.WithContext(ctx).Model(&modelsOrder.Payment{}).
+		Where("id = ? AND status = ?", id, "confirmed").
+		Updates(map[string]interface{}{
+			"status":     "refunded",
+			"updated_at": now,
+		})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrPaymentStateMismatch
+	}
+	return nil
+}
+
+// UpdateStatus updates payment status（保留通用更新；退款请优先 MarkPaymentRefunded）
 func (r *PaymentRepository) UpdateStatus(ctx context.Context, id, status string) error {
 	now := time.Now()
 	return r.db.WithContext(ctx).Model(&modelsOrder.Payment{}).

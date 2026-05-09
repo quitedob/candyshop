@@ -56,6 +56,11 @@
         <h3 class="product-card__title">{{ product.name }}</h3>
         <p class="product-card__summary">{{ product.summary }}</p>
 
+        <!-- Price -->
+        <p v-if="product.unitPrice" class="product-card__price">
+          {{ $t('product.price_from') }} ${{ product.unitPrice.toLocaleString() }}{{ $t('product.price_per_unit') }}
+        </p>
+
         <!-- Meta -->
         <div class="product-card__meta">
           <span v-if="product.moq" class="product-card__meta-item">
@@ -209,7 +214,7 @@ const requestSample = () => {
 }
 
 .product-card__badge--featured {
-  background-color: rgba(255, 107, 74, 0.9);
+  background-color: rgba(var(--color-highlight-rgb), 0.9);
   color: white;
 }
 
@@ -341,6 +346,13 @@ const requestSample = () => {
   padding: var(--spacing-xs) var(--spacing-sm);
   background-color: var(--color-bg-alt);
   border-radius: var(--radius-sm);
+}
+
+.product-card__price {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-highlight);
+  margin-bottom: var(--spacing-sm);
 }
 
 /* Compact variant */

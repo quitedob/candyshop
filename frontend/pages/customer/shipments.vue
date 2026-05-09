@@ -17,7 +17,7 @@
     <div v-else-if="!trades.length" class="text-center py-16 text-gray-500">
       <Icon name="heroicons:truck" class="h-12 w-12 mx-auto mb-3 text-gray-300" />
       <p>{{ $t('customer.shipments.no_trades') }}</p>
-      <NuxtLink to="/customer/trades" class="mt-4 inline-block text-orange-600 hover:underline text-sm">
+      <NuxtLink :to="localePath('/customer/trades')" class="mt-4 inline-block text-orange-600 hover:underline text-sm">
         {{ $t('customer.shipments.view_trades') }}
       </NuxtLink>
     </div>
@@ -29,7 +29,7 @@
             <h3 class="font-semibold text-gray-900">{{ $t('customer.shipments.trade_label') }} #{{ trade.id }}</h3>
             <p class="text-sm text-gray-500">{{ trade.status }} · {{ trade.incoterms || trade.terms }}</p>
           </div>
-          <NuxtLink :to="`/customer/trades/${trade.id}`" class="text-sm text-orange-600 hover:text-orange-800">
+          <NuxtLink :to="localePath(`/customer/trades/${trade.id}`)" class="text-sm text-orange-600 hover:text-orange-800">
             {{ $t('customer.shipments.view_trade') }}
           </NuxtLink>
         </div>
@@ -56,6 +56,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
+const localePath = useLocalePath()
 const trades = ref<any[]>([])
 const shipmentMap = ref<Record<string, any[]>>({})
 const pending = ref(true)

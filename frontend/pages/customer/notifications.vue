@@ -29,11 +29,11 @@
         </div>
         <p class="mt-1 text-sm text-gray-600 ml-4">{{ item.message }}</p>
         <div class="mt-1 ml-4">
-          <NuxtLink v-if="item.type === 'order'" :to="`/customer/orders/${item.reference}`"
+          <NuxtLink v-if="item.type === 'order'" :to="localePath(`/customer/orders/${item.reference}`)"
             class="text-xs text-orange-600 hover:underline">
             {{ t('customer.notifications.view_order') }}
           </NuxtLink>
-          <NuxtLink v-else-if="item.type === 'inquiry'" :to="`/customer/inquiries/${item.reference}`"
+          <NuxtLink v-else-if="item.type === 'inquiry'" :to="localePath(`/customer/inquiries/${item.reference}`)"
             class="text-xs text-orange-600 hover:underline">
             {{ t('customer.notifications.view_inquiry') }}
           </NuxtLink>
@@ -50,6 +50,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
+const localePath = useLocalePath()
 
 const notifications = ref<any[]>([])
 const pending = ref(true)
@@ -64,7 +65,7 @@ const fetchNotifications = async () => {
     const res = await api.get<any>('/user/notifications')
     notifications.value = res.data || []
   } catch (err: any) {
-    error.value = err?.message || 'Failed to load notifications'
+    error.value = err?.message || t('errors.api.load_failed')
   } finally {
     pending.value = false
   }

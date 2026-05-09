@@ -59,18 +59,18 @@
                 <div class="font-medium text-gray-900">{{ trade.user.firstName }} {{ trade.user.lastName }}</div>
                 <div class="text-xs text-gray-500">{{ trade.user.email }}</div>
               </template>
-              <template v-else>{{ trade.userId || '-' }}</template>
+              <template v-else>{{ cell(trade.userId) }}</template>
             </td>
-            <td class="px-3 py-4 text-sm text-gray-500">{{ trade.tradeType || '-' }}</td>
-            <td class="px-3 py-4 text-sm text-gray-500">{{ trade.currency || 'USD' }} {{ (trade.totalAmount || 0).toLocaleString() }}</td>
+            <td class="px-3 py-4 text-sm text-gray-500">{{ cell(trade.tradeType) }}</td>
+            <td class="px-3 py-4 text-sm text-gray-500">{{ cur(trade.currency) }} {{ (trade.totalAmount || 0).toLocaleString() }}</td>
             <td class="px-3 py-4 text-sm">
               <span :class="[statusBadgeClass(trade.status), 'inline-flex rounded-full px-2 text-xs font-semibold leading-5']">
-                {{ trade.status }}
+                {{ enumLabel('trade_status', trade.status) }}
               </span>
             </td>
-            <td class="px-3 py-4 text-sm text-gray-500">{{ trade.createdAt ? new Date(trade.createdAt).toLocaleDateString() : '-' }}</td>
+            <td class="px-3 py-4 text-sm text-gray-500">{{ trade.createdAt ? new Date(trade.createdAt).toLocaleDateString() : cell(null) }}</td>
             <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-              <NuxtLink :to="`/admin/trades/${trade.id}`" class="text-blue-600 hover:text-blue-900" @click.stop>{{ t('admin.trades.view') }}</NuxtLink>
+              <NuxtLink :to="localePath(`/admin/trades/${trade.id}`)" class="text-orange-600 hover:text-orange-900" @click.stop>{{ t('admin.trades.view') }}</NuxtLink>
             </td>
           </tr>
         </tbody>
@@ -102,6 +102,8 @@ definePageMeta({
 })
 
 const { t } = useI18n()
+const localePath = useLocalePath()
+const { currencyOrDefault: cur, cell, enumLabel } = useDisplay()
 const api = useApi()
 const router = useRouter()
 
@@ -130,20 +132,20 @@ const fetchTrades = async () => {
     trades.value = res.data || []
     pagination.value = res.pagination
   } catch (err: any) {
-    error.value = err?.message || 'Failed to fetch trades'
+    error.value = err?.message || t('errors.api.load_failed')
   } finally {
     pending.value = false
   }
 }
 
 const navigateToDetail = (id: string) => {
-  router.push(`/admin/trades/${id}`)
+  router.push(localePath(`/admin/trades/${id}`))
 }
 
 const statusBadgeClass = (status: string) => {
   if (status === 'draft') return 'bg-gray-100 text-gray-800'
   if (status === 'pending') return 'bg-yellow-100 text-yellow-800'
-  if (status === 'confirmed' || status === 'in_progress') return 'bg-blue-100 text-blue-800'
+  if (status === 'confirmed' || status === 'in_progress') return 'bg-orange-100 text-orange-800'
   if (status === 'completed') return 'bg-green-100 text-green-800'
   if (status === 'cancelled') return 'bg-red-100 text-red-800'
   return 'bg-gray-100 text-gray-800'

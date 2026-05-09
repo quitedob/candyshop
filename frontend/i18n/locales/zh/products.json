@@ -1,5 +1,7 @@
 {
   "product": {
+    "price_from": "起",
+    "price_per_unit": "/件",
     "categories_title": "浏览分类",
     "categories": {
       "gummy_candy": "软糖",
@@ -36,12 +38,21 @@
     "flavors": "口味",
     "shapes": "形状",
     "certifications": "认证",
+    "shelf_life": "保质期",
+    "storage": "储存条件",
     "applications": "应用场景",
     "related_products": "相关产品",
     "no_products": "未找到产品",
     "try_different_filters": "请尝试调整筛选条件或浏览其他分类",
     "register_to_order": "注册后下单",
-    "pending_approval": "审核中"
+    "pending_approval": "审核中",
+    "category_placeholder_lead": "2–4 周",
+    "category_placeholder_capacity": "10–20 吨/日",
+    "category_placeholder_packaging": "袋装、罐装、礼盒等",
+    "category_placeholder_moq": "1,000 件起",
+    "faq_moq_answer_default": "标准品起订量一般为 1,000 件起，具体以报价为准。",
+    "faq_lead_answer_default": "常规订单约 2–3 周；定制 OEM 订单约 4–6 周，视复杂度而定。",
+    "faq_cert_answer": "我们通过 HACCP、ISO 22000、BRC A 级与清真等认证。"
   },
   "filters": {
     "title": "筛选产品",

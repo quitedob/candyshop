@@ -1,7 +1,9 @@
+// Package order 的目的国基线合规规则以本文件为运行时来源；变更请在 Git 留痕并与 ProductMarketProfile 版本字段对齐治理。
 package order
 
 import (
 	modelsProduct "candypro/api/internal/models/product"
+	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -23,7 +25,25 @@ type ComplianceValidationResult struct {
 
 // ValidateCountryCompliance validates product set against destination country baseline rules.
 func (s *OrderService) ValidateCountryCompliance(country string, products []modelsProduct.Product) ComplianceValidationResult {
+	return ValidateCountryComplianceRules(country, products)
+}
+
+// ValidateCountryComplianceWithProfiles 合并硬编码规则与 ProductMarketProfile 配置
+func (s *OrderService) ValidateCountryComplianceWithProfiles(country string, products []modelsProduct.Product, profiles []modelsProduct.ProductMarketProfile) ComplianceValidationResult {
+	return ValidateCountryComplianceRulesWithProfiles(country, products, profiles)
+}
+
+// ValidateCountryComplianceRules is the standalone version of the compliance validator.
+// It can be called from any handler scope without needing an OrderService instance.
+func ValidateCountryComplianceRules(country string, products []modelsProduct.Product) ComplianceValidationResult {
 	return validateCountryCompliance(country, products)
+}
+
+// ValidateCountryComplianceRulesWithProfiles 基线规则 + 数据库市场画像
+func ValidateCountryComplianceRulesWithProfiles(country string, products []modelsProduct.Product, profiles []modelsProduct.ProductMarketProfile) ComplianceValidationResult {
+	r := validateCountryCompliance(country, products)
+	mergeProductMarketProfiles(&r, canonicalComplianceCountry(country), products, profiles)
+	return r
 }
 
 func validateCountryCompliance(country string, products []modelsProduct.Product) ComplianceValidationResult {
@@ -133,6 +153,16 @@ func validateCountryCompliance(country string, products []modelsProduct.Product)
 	return result
 }
 
+// CanonicalComplianceCountry 将用户输入的目的国归一化为内部规则键（供画像 market 匹配）
+func CanonicalComplianceCountry(country string) string {
+	return canonicalComplianceCountry(country)
+}
+
+// ComplianceProfileMarketCode 将目的国映射为 ProductMarketProfile.market_code（EU/US/GCC…）
+func ComplianceProfileMarketCode(country string) string {
+	return profileMarketFromCanon(canonicalComplianceCountry(country))
+}
+
 func canonicalComplianceCountry(country string) string {
 	normalized := strings.ToLower(strings.TrimSpace(country))
 	switch normalized {
@@ -151,6 +181,60 @@ func canonicalComplianceCountry(country string) string {
 	default:
 		return normalized
 	}
+}
+
+func profileMarketFromCanon(canon string) string {
+	switch canon {
+	case "eu":
+		return "EU"
+	case "usa":
+		return "US"
+	case "saudi arabia":
+		return "GCC"
+	default:
+		return strings.ToUpper(strings.TrimSpace(canon))
+	}
+}
+
+func mergeProductMarketProfiles(result *ComplianceValidationResult, canon string, products []modelsProduct.Product, profiles []modelsProduct.ProductMarketProfile) {
+	if result == nil || len(profiles) == 0 {
+		return
+	}
+	want := profileMarketFromCanon(canon)
+	for _, p := range products {
+		pid := strings.TrimSpace(p.ID)
+		if pid == "" {
+			pid = strings.TrimSpace(p.Name)
+		}
+		if pid == "" {
+			pid = "unknown-product"
+		}
+		ingredients := strings.ToLower(strings.TrimSpace(p.Ingredients))
+		certText := strings.ToLower(strings.Join(p.Certifications, " "))
+		for _, prof := range profiles {
+			if prof.ProductID != pid || !strings.EqualFold(strings.TrimSpace(prof.MarketCode), want) {
+				continue
+			}
+			var blocked []string
+			_ = json.Unmarshal(prof.BlockedIngredientPatterns, &blocked)
+			for _, pat := range blocked {
+				pt := strings.ToLower(strings.TrimSpace(pat))
+				if pt != "" && strings.Contains(ingredients, pt) {
+					result.Violations = append(result.Violations, fmt.Sprintf("Product %s violates market profile ban on '%s' for %s.", pid, pat, want))
+				}
+			}
+			var req []string
+			_ = json.Unmarshal(prof.RequiredCertKeywords, &req)
+			for _, kw := range req {
+				k := strings.ToLower(strings.TrimSpace(kw))
+				if k != "" && !strings.Contains(certText, k) {
+					result.Warnings = append(result.Warnings, fmt.Sprintf("Product %s market profile expects certification keyword '%s'.", pid, kw))
+				}
+			}
+		}
+	}
+	result.Violations = dedupeLower(result.Violations)
+	result.Warnings = dedupeLower(result.Warnings)
 }
 
 func containsAny(text string, tokens ...string) bool {

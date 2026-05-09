@@ -9,10 +9,15 @@ import (
 )
 
 // Register wires system routes under /api/v1/system.
-func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) {
-	group.POST("/chatbot", h.System.Chatbot)
-	group.POST("/recommend-products", h.System.RecommendProducts)
-	group.POST("/search", h.System.AISearch)
+// publicAI 为针对未登录 AI 的额外中间件链（关闭开关 + 独立限流），与全局限流叠加。
+func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, publicAI ...gin.HandlerFunc) {
+	pub := group.Group("")
+	for _, mw := range publicAI {
+		pub.Use(mw)
+	}
+	pub.POST("/chatbot", h.System.Chatbot)
+	pub.POST("/recommend-products", h.System.RecommendProducts)
+	pub.POST("/search", h.System.AISearch)
 
 	systemProtected := group.Group("")
 	systemProtected.Use(middleware.AuthMiddleware(cfg))

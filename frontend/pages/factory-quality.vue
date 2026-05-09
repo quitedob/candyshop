@@ -43,19 +43,19 @@
           <div class="factory-hero__audio mt-4 flex gap-2 flex-wrap">
             <button @click="tts.playFactoryTour()" class="px-3 py-1.5 text-sm bg-orange-100 text-orange-700 rounded-full hover:bg-orange-200 transition-colors flex items-center gap-1">
               <Icon name="heroicons:play" class="h-4 w-4" />
-              {{ t('factory.audio_tour') || 'Factory Tour' }}
+              {{ t('factory.audio_tour') }}
             </button>
             <button @click="tts.playQualityAssurance()" class="px-3 py-1.5 text-sm bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors flex items-center gap-1">
               <Icon name="heroicons:play" class="h-4 w-4" />
-              {{ t('factory.quality_audio') || 'Quality Assurance' }}
+              {{ t('factory.quality_audio') }}
             </button>
             <button @click="tts.playProductionCapacity()" class="px-3 py-1.5 text-sm bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-colors flex items-center gap-1">
               <Icon name="heroicons:play" class="h-4 w-4" />
-              {{ t('factory.capacity_audio') || 'Production Capacity' }}
+              {{ t('factory.capacity_audio') }}
             </button>
-            <button @click="tts.playCertifications()" class="px-3 py-1.5 text-sm bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200 transition-colors flex items-center gap-1">
+            <button @click="tts.playCertifications()" class="px-3 py-1.5 text-sm bg-orange-100 text-orange-700 rounded-full hover:bg-orange-200 transition-colors flex items-center gap-1">
               <Icon name="heroicons:play" class="h-4 w-4" />
-              {{ t('factory.certifications_audio') || 'Certifications' }}
+              {{ t('factory.certifications_audio') }}
             </button>
           </div>
         </div>

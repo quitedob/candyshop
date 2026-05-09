@@ -8,12 +8,11 @@ import (
 	"fmt"
 	"mime/multipart"
 	"net/http"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 
+	"candypro/api/internal/storage"
 	"candypro/api/internal/utils"
 
 	"github.com/gin-gonic/gin"
@@ -90,17 +89,7 @@ func (h *Handler) SubmitInquiry(c *gin.Context) {
 	// Handle file uploads
 	var files []string
 	if fileHeaders, ok := form.File["files"]; ok {
-		uploadPath := h.cfg.Upload.UploadPath
-		if err := os.MkdirAll(uploadPath, 0755); err != nil {
-			c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-				Error:   "internal_error",
-				Message: "Failed to create upload directory",
-			})
-			return
-		}
-
 		for _, fileHeader := range fileHeaders {
-			// Validate file size
 			if fileHeader.Size > h.cfg.Upload.MaxFileSize {
 				c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
 					Error:   "bad_request",
@@ -109,7 +98,6 @@ func (h *Handler) SubmitInquiry(c *gin.Context) {
 				return
 			}
 
-			// Validate file type from header
 			contentType := fileHeader.Header.Get("Content-Type")
 			if !isAllowedType(contentType, h.cfg.Upload.AllowedTypes) {
 				c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
@@ -119,7 +107,6 @@ func (h *Handler) SubmitInquiry(c *gin.Context) {
 				return
 			}
 
-			// SEC-9: Validate magic bytes to prevent MIME spoofing
 			f, fErr := fileHeader.Open()
 			if fErr != nil {
 				c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
@@ -128,34 +115,12 @@ func (h *Handler) SubmitInquiry(c *gin.Context) {
 				})
 				return
 			}
-			magicBuf := make([]byte, 512)
-			n, _ := f.Read(magicBuf)
+
+			url, uploadErr := h.storage.Upload(c.Request.Context(), f, storage.UploadOptions{
+				FileName: fileHeader.Filename,
+			})
 			f.Close()
-			detectedType := http.DetectContentType(magicBuf[:n])
-			if !isAllowedType(detectedType, h.cfg.Upload.AllowedTypes) {
-				c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-					Error:   "bad_request",
-					Message: fmt.Sprintf("File %s content does not match declared type", fileHeader.Filename),
-				})
-				return
-			}
-
-			// Generate unique filename using secure random
-			ext := filepath.Ext(fileHeader.Filename)
-			filename := utils.GenerateUniqueFilename(ext)
-			// Sanitize filename to prevent directory traversal
-			filename = filepath.Base(filename)
-			if filename == "." || filename == ".." || filename == string(filepath.Separator) {
-				c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-					Error:   "bad_request",
-					Message: "Invalid filename generated",
-				})
-				return
-			}
-			filePath := filepath.Join(uploadPath, filename)
-
-			// Save file
-			if err := c.SaveUploadedFile(fileHeader, filePath); err != nil {
+			if uploadErr != nil {
 				c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
 					Error:   "internal_error",
 					Message: fmt.Sprintf("Failed to save file %s", fileHeader.Filename),
@@ -163,7 +128,7 @@ func (h *Handler) SubmitInquiry(c *gin.Context) {
 				return
 			}
 
-			files = append(files, filePath)
+			files = append(files, url)
 		}
 	}
 
@@ -197,11 +162,34 @@ func (h *Handler) SubmitInquiry(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	// Early compliance pre-check: warn about potential issues for the target country.
+	// This is advisory only — it does not block inquiry submission.
+	var complianceWarnings []string
+	targetCountry := inquiry.TargetCountry
+	if targetCountry != "" && len(interestedProducts) > 0 && h.services.Product != nil {
+		var checkProducts []modelsProduct.Product
+		for _, pid := range interestedProducts {
+			if p, err := h.services.Product.GetProductByID(c.Request.Context(), pid); err == nil {
+				checkProducts = append(checkProducts, *p)
+			}
+		}
+		if len(checkProducts) > 0 {
+			result := h.services.Product.ValidateComplianceWithMarketProfiles(c.Request.Context(), targetCountry, checkProducts)
+			complianceWarnings = append(complianceWarnings, result.Violations...)
+			complianceWarnings = append(complianceWarnings, result.Warnings...)
+		}
+	}
+
+	response := gin.H{
 		"success":   true,
 		"message":   "Thank you for your inquiry. We will contact you within 24 hours.",
 		"inquiryId": inquiry.ID,
-	})
+	}
+	if len(complianceWarnings) > 0 {
+		response["complianceWarnings"] = complianceWarnings
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // ===== Helper Functions =====

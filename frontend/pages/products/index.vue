@@ -50,12 +50,12 @@
     <!-- All Products Grid -->
     <section class="products-all section section-lg">
       <div class="container">
-        <h2 class="section-title">{{ $t('product.all_products') || 'All Products' }}</h2>
+        <h2 class="section-title">{{ $t('product.all_products') }}</h2>
         <div v-if="productsStatus === 'pending'" class="products-grid">
           <SkeletonLoader v-for="i in 8" :key="i" width="100%" height="300px" borderRadius="16px" />
         </div>
         <div v-else-if="productsError" class="text-error">{{ productsError }}</div>
-        <div v-else-if="!products || products.length === 0" class="text-center text-light py-8">{{ $t('product.no_products') || 'No products found' }}</div>
+        <div v-else-if="!products || products.length === 0" class="text-center text-light py-8">{{ $t('product.no_products') }}</div>
         <div v-else class="products-grid">
           <ProductCard v-for="product in products" :key="product.id" :product="product" />
         </div>
@@ -96,7 +96,7 @@ const { getCategories, getProducts } = useApi()
 
 const orderingCtaPath = computed(() => {
   if (isAuthenticated.value) {
-    return localePath(isAdmin.value ? '/admin' : '/contact')
+    return localePath(isAdmin.value ? '/admin' : '/customer/products')
   }
   return localePath('/auth/register')
 })

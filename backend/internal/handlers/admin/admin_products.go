@@ -6,7 +6,6 @@ import (
 )
 
 import (
-	"errors"
 	"net/http"
 	"regexp"
 	"strings"
@@ -16,7 +15,6 @@ import (
 	"candypro/api/internal/utils"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 type adminProductUpdateRequest struct {
@@ -100,7 +98,7 @@ func (h *Handler) AdminCreateProduct(c *gin.Context) {
 	product.UpdatedAt = now
 
 	if err := h.services.Product.CreateProduct(c.Request.Context(), &product); err != nil {
-		if isDuplicateErr(err) {
+		if utils.IsDuplicateKeyError(err) {
 			c.JSON(http.StatusConflict, modelsProduct.ErrorResponse{
 				Error:   "conflict",
 				Message: "product slug or id already exists",
@@ -169,7 +167,7 @@ func (h *Handler) AdminUpdateProduct(c *gin.Context) {
 	}
 
 	if err := h.services.Product.UpdateProduct(c.Request.Context(), product); err != nil {
-		if isDuplicateErr(err) {
+		if utils.IsDuplicateKeyError(err) {
 			c.JSON(http.StatusConflict, modelsProduct.ErrorResponse{
 				Error:   "conflict",
 				Message: "product slug already exists",
@@ -183,10 +181,18 @@ func (h *Handler) AdminUpdateProduct(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	out := gin.H{
 		"message": "Product updated successfully",
 		"product": product,
-	})
+	}
+	if country := strings.TrimSpace(c.Query("complianceSuggestCountry")); country != "" && h.aiService != nil {
+		q := strings.TrimSpace(product.Name) + " " + strings.TrimSpace(product.Ingredients) + " " + strings.TrimSpace(product.Allergens)
+		out["complianceCopilot"] = gin.H{
+			"disclaimer": "RAG output is not legal advice; hard rules and profiles still govern release.",
+			"lookup":     h.aiService.LookupCompliance(country, q, 5),
+		}
+	}
+	c.JSON(http.StatusOK, out)
 }
 
 // AdminDeleteProduct deletes a product
@@ -338,15 +344,4 @@ func normalizeSlug(input string) string {
 		b.WriteRune(r)
 	}
 	return strings.Trim(b.String(), "-")
-}
-
-func isDuplicateErr(err error) bool {
-	if err == nil {
-		return false
-	}
-	if errors.Is(err, gorm.ErrDuplicatedKey) {
-		return true
-	}
-	msg := strings.ToLower(err.Error())
-	return strings.Contains(msg, "duplicate") || strings.Contains(msg, "unique constraint")
 }

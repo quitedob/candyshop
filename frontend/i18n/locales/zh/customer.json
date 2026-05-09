@@ -5,6 +5,7 @@
     "nav": {
       "dashboard": "仪表盘",
       "products": "产品目录",
+      "logout": "退出登录",
       "cart": "订单请求",
       "orders": "我的订单",
       "inquiries": "我的询价",
@@ -16,7 +17,14 @@
       "shipments": "物流追踪",
       "company": "公司资料",
       "pricing": "我的价格",
-      "profile": "个人资料"
+      "profile": "个人资料",
+      "help": "帮助",
+      "resources": "资源中心"
+    },
+    "a11y": {
+      "openMenu": "打开导航菜单",
+      "closeMenu": "关闭导航菜单",
+      "cart": "订单请求与购物车"
     },
     "page_titles": {
       "dashboard": "仪表盘",
@@ -29,7 +37,33 @@
       "shipments": "物流追踪",
       "company": "公司资料",
       "pricing": "我的价格",
-      "profile": "账户资料"
+      "profile": "账户资料",
+      "help": "帮助中心",
+      "resources": "资源中心"
+    },
+    "help": {
+      "title": "帮助中心",
+      "subtitle": "下单、合规与支持相关快速入口。",
+      "link_cart": "订单请求（购物车）",
+      "desc_cart": "提交 SKU 选择供销售审核。",
+      "link_orders": "我的订单",
+      "desc_orders": "从待确认到生产、发货全流程跟踪。",
+      "link_inquiry": "新建询价",
+      "desc_inquiry": "发起 OEM 或批量报价沟通。",
+      "link_faq": "常见问题（官网）",
+      "link_contact": "联系我们"
+    },
+    "resources": {
+      "title": "B2B 资源",
+      "subtitle": "质量、OEM 能力、案例与行业文章。",
+      "factory": "工厂与质量",
+      "factory_desc": "产能与质量体系。",
+      "oem": "OEM 方案",
+      "oem_desc": "贴牌与定制选项。",
+      "cases": "客户案例",
+      "cases_desc": "按区域与渠道的参考项目。",
+      "blog": "博客与洞察",
+      "blog_desc": "糖果行业法规与市场趋势。"
     },
     "dashboard": {
       "loading": "正在加载仪表盘...",
@@ -121,7 +155,20 @@
       "compliance_no_evidence": "此草稿未记录官方合规证据。请在手动合规审查后再确认。",
       "compliance_ack": "我已手动审查目的国合规要求，并接受继续操作的责任。",
       "confirming": "确认中...",
-      "confirm_order": "确认订单"
+      "confirm_order": "确认订单",
+      "detail_title": "订单 #{id}",
+      "payment_status_unpaid": "未付款",
+      "payment_status_paid": "已付款",
+      "payment_status_refunded": "已退款",
+      "pending_request_title": "我们已收到您的订单请求。",
+      "pending_request_body": "销售团队将在 24 小时内与您联系，确认订单细节、价格与交期。",
+      "error_compliance_ack": "请先勾选并完成人工合规确认。",
+      "error_select_file": "请选择要上传的文件。",
+      "payment_method_bank": "银行转账",
+      "payment_method_swift": "SWIFT 汇款",
+      "payment_method_other": "其他",
+      "spec_na": "无",
+      "date_na": "暂无"
     },
     "orders_new": {
       "ai_title": "AI辅助订单草稿",
@@ -129,6 +176,9 @@
       "order_intention": "订单意向",
       "order_intention_placeholder": "示例：需要清真水果软糖用于沙特零售，自有品牌，保质期12个月。",
       "target_country": "目标国家",
+      "target_country_placeholder": "例如：沙特阿拉伯",
+      "ai_no_products_matched": "未匹配到合适的产品，请调整描述后重试。",
+      "ai_draft_generated": "AI 草稿已生成。",
       "requested_quantity": "需求数量",
       "budget": "预算（可选）",
       "currency": "货币",
@@ -291,7 +341,15 @@
       "doc_status": "状态",
       "view": "查看",
       "compliance_title": "合规与认证",
-      "compliance_pending": "AI验证后合规检查将显示在此处。"
+      "compliance_pending": "AI验证后合规检查将显示在此处。",
+      "doc_pi": "形式发票",
+      "doc_ci": "商业发票",
+      "doc_bl": "提单",
+      "doc_sc": "销售合同",
+      "doc_pl": "装箱单",
+      "doc_coo": "原产地证",
+      "doc_hc": "卫生证书",
+      "agent_ai": "AI"
     },
     "notifications": {
       "title": "通知",
@@ -395,6 +453,11 @@
       "ai_assist": "AI订单助手",
       "compliance_note": "所有订单需根据目的地国家进行合规性验证。",
       "tbd": "待定",
+      "default_category": "糖果",
+      "unit_price_per": "{currency} {price} / 单位",
+      "units_count": "{count} 件",
+      "badge_halal": "清真",
+      "badge_oem": "OEM",
       "subtotal_label": "商品小计",
       "tax_shipping_note": "税费和运费将在形式发票中由销售团队确认。",
       "retry": "重试",
@@ -406,7 +469,16 @@
       "cleared": "购物车已清空",
       "clear_error": "清空购物车失败",
       "processing": "处理中...",
-      "checkout_error": "结账失败"
+      "checkout_error": "结账失败",
+      "checkout_success": "订单已提交",
+      "checkout_review_title": "提交前请确认",
+      "checkout_review_subtitle": "订单已创建，请确认您已阅读以下提示。",
+      "checkout_destination": "目的国/地区",
+      "checkout_compliance_section": "合规提示",
+      "checkout_inventory_section": "价格、库存与备货提示",
+      "checkout_review_stay": "留在购物车",
+      "checkout_review_continue": "查看订单",
+      "checkout_review_order_created": "订单已创建，购物车已刷新，可在「我的订单」中查看。"
     },
     "invoices": {
       "no_invoices": "暂无发票。",
@@ -421,7 +493,8 @@
       "amount": "总金额",
       "due_date": "到期日",
       "issued_date": "开票日期",
-      "notes": "备注"
+      "notes": "备注",
+      "not_found": "未找到该发票。"
     },
     "shipments": {
       "subtitle": "追踪所有活跃贸易的物流状态。",
@@ -476,6 +549,15 @@
       "sort_moq_low": "最小起订量：从低到高",
       "sort_moq_high": "最小起订量：从高到低",
       "featured": "精选",
+      "halal_certified": "清真认证",
+      "moq_units": "{count} 件",
+      "select_flavor": "口味",
+      "select_weight": "规格 / 包装",
+      "sku_label": "SKU：",
+      "flavors": "口味",
+      "shapes": "造型",
+      "oem_private_label_hint": "支持定制贴牌，请联系获取 OEM 报价与要求说明。",
+      "oem_short": "OEM",
       "unit_price": "单价",
       "add_to_cart": "加入订单",
       "place_order": "下单",

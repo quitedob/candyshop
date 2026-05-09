@@ -19,6 +19,9 @@
     "email_placeholder": "输入您的邮箱",
     "all_posts": "全部文章",
     "loading_posts": "正在加载文章...",
-    "no_posts": "该分类下暂无文章。"
+    "no_posts": "该分类下暂无文章。",
+    "newsletter_invalid": "请输入有效的邮箱地址。",
+    "newsletter_redirect": "正在打开联系表单…",
+    "cta_questions": "对我们的糖果制造能力有疑问？"
   }
 }

@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="mb-6">
-      <NuxtLink to="/admin/trades" class="flex items-center text-sm font-medium text-blue-600 hover:text-blue-500">
+      <NuxtLink :to="localePath('/admin/trades')" class="flex items-center text-sm font-medium text-orange-600 hover:text-orange-500">
         <Icon name="heroicons:arrow-left" class="mr-1 h-4 w-4" />
         {{ t('admin.trades.back') }}
       </NuxtLink>
@@ -18,7 +18,7 @@
             <h3 class="text-lg leading-6 font-medium text-gray-900">{{ t('admin.trades.transaction') }} #{{ trade.reference || trade.id }}</h3>
             <p class="mt-1 text-sm text-gray-500">{{ t('admin.trades.created_on') }} {{ formatDate(trade.createdAt) }}</p>
           </div>
-          <span :class="statusBadgeClass(trade.status)" class="inline-flex rounded-full px-3 py-1 text-sm font-semibold">{{ trade.status }}</span>
+          <span :class="statusBadgeClass(trade.status)" class="inline-flex rounded-full px-3 py-1 text-sm font-semibold">{{ enumLabel('trade_status', trade.status) }}</span>
         </div>
         <div class="px-4 py-5 sm:p-6">
           <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-3 text-sm">
@@ -31,22 +31,22 @@
             </div>
             <div>
               <dt class="text-gray-500">{{ t('admin.trades.incoterms') }}</dt>
-              <dd class="mt-1 font-medium text-gray-900">{{ trade.terms || trade.incoterms || '-' }}</dd>
+              <dd class="mt-1 font-medium text-gray-900">{{ cell(trade.terms || trade.incoterms) }}</dd>
             </div>
             <div>
               <dt class="text-gray-500">{{ t('admin.trades.total_amount') }}</dt>
-              <dd class="mt-1 font-medium text-gray-900">{{ trade.currency || 'USD' }} {{ (trade.totalAmount || 0).toLocaleString() }}</dd>
+              <dd class="mt-1 font-medium text-gray-900">{{ cur(trade.currency) }} {{ (trade.totalAmount || 0).toLocaleString() }}</dd>
             </div>
             <div v-if="trade.orderId">
               <dt class="text-gray-500">{{ t('admin.trades.order_id') }}</dt>
               <dd class="mt-1">
-                <NuxtLink :to="`/admin/orders/${trade.orderId}`" class="text-blue-600 hover:underline font-medium">{{ trade.orderId }}</NuxtLink>
+                <NuxtLink :to="localePath(`/admin/orders/${trade.orderId}`)" class="text-orange-600 hover:underline font-medium">{{ trade.orderId }}</NuxtLink>
               </dd>
             </div>
             <div v-if="trade.inquiryId">
               <dt class="text-gray-500">{{ t('admin.trades.inquiry_id') }}</dt>
               <dd class="mt-1">
-                <NuxtLink :to="`/admin/inquiries/${trade.inquiryId}`" class="text-blue-600 hover:underline font-medium">{{ trade.inquiryId }}</NuxtLink>
+                <NuxtLink :to="localePath(`/admin/inquiries/${trade.inquiryId}`)" class="text-orange-600 hover:underline font-medium">{{ trade.inquiryId }}</NuxtLink>
               </dd>
             </div>
           </dl>
@@ -72,7 +72,7 @@
             </select>
           </div>
           <button @click="updateStatus" :disabled="updatingStatus"
-            class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50">
+            class="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 disabled:opacity-50">
             {{ updatingStatus ? t('admin.trades.updating') : t('admin.trades.update') }}
           </button>
           <p v-if="statusMessage" class="text-sm" :class="statusError ? 'text-red-600' : 'text-green-600'">{{ statusMessage }}</p>
@@ -126,7 +126,7 @@
               <div v-if="rdoc.data.totalAmount"><span class="font-medium">Amount:</span> {{ rdoc.data.currency }} {{ rdoc.data.totalAmount?.toLocaleString() }}</div>
               <div v-if="rdoc.data.incoterms"><span class="font-medium">Incoterms:</span> {{ rdoc.data.incoterms }}</div>
             </div>
-            <button @click="openRichDocModal(rdoc)" class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+            <button @click="openRichDocModal(rdoc)" class="text-xs text-orange-600 hover:text-orange-800 font-medium">
               {{ rdoc.data ? t('admin.trades.edit') : t('admin.trades.create') }}
             </button>
           </div>
@@ -147,12 +147,12 @@
               <div>
                 <label class="block text-xs font-medium text-gray-700 mb-0.5">{{ field.label }}</label>
                 <input v-model="richDocForm[field.key]" :type="field.type || 'text'"
-                  class="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                  class="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-orange-500" />
               </div>
             </template>
             <div class="flex gap-3 pt-2">
               <button type="submit" :disabled="savingRichDoc"
-                class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50">
+                class="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 disabled:opacity-50">
                 {{ savingRichDoc ? t('admin.trades.saving') : t('admin.trades.save') }}
               </button>
               <button type="button" @click="editingRichDoc = null"
@@ -176,6 +176,8 @@ definePageMeta({ layout: 'admin', middleware: ['auth'] })
 const route = useRoute()
 const api = useApi()
 const { t } = useI18n()
+const localePath = useLocalePath()
+const { currencyOrDefault: cur, cell, enumLabel } = useDisplay()
 
 const trade = ref<any>(null)
 const documents = ref<any[]>([])
@@ -328,7 +330,7 @@ const fetchTrade = async () => {
     trade.value = await api.get<any>(`/admin/trades/${route.params.id}`)
     statusInput.value = trade.value.status || 'DRAFT'
   } catch (err: any) {
-    error.value = err?.message || 'Failed to fetch trade'
+    error.value = err?.message || t('errors.api.load_failed')
   } finally {
     pending.value = false
   }
@@ -368,7 +370,7 @@ const updateStatus = async () => {
     setTimeout(() => { statusMessage.value = '' }, 3000)
   } catch (err: any) {
     statusError.value = true
-    statusMessage.value = err?.message || 'Failed to update status'
+    statusMessage.value = err?.message || t('errors.api.status_failed')
   } finally {
     updatingStatus.value = false
   }
@@ -379,7 +381,7 @@ const confirmDoc = async (docId: string) => {
     await api.put(`/admin/trades/${route.params.id}/documents/${docId}`, { status: 'CONFIRMED' })
     await fetchDocuments()
   } catch (err: any) {
-    alert(err?.message || 'Failed to confirm document')
+    alert(err?.message || t('errors.api.document_confirm_failed'))
   }
 }
 
@@ -413,7 +415,7 @@ const saveRichDoc = async () => {
     else if (endpoint === 'health-certificate') hcData.value = result
     editingRichDoc.value = null
   } catch (err: any) {
-    richDocError.value = err?.message || 'Failed to save'
+    richDocError.value = err?.message || t('errors.api.document_save_failed')
   } finally {
     savingRichDoc.value = false
   }
@@ -424,8 +426,8 @@ const formatDate = (d: string) => d ? new Date(d).toLocaleString() : '-'
 const statusBadgeClass = (status: string) => {
   const map: Record<string, string> = {
     DRAFT: 'bg-gray-100 text-gray-800', PENDING: 'bg-yellow-100 text-yellow-800',
-    CONFIRMED: 'bg-blue-100 text-blue-800', PAID: 'bg-indigo-100 text-indigo-800',
-    SHIPPED: 'bg-purple-100 text-purple-800', COMPLETED: 'bg-green-100 text-green-800',
+    CONFIRMED: 'bg-orange-100 text-orange-800', PAID: 'bg-amber-100 text-amber-800',
+    SHIPPED: 'bg-amber-100 text-amber-800', COMPLETED: 'bg-green-100 text-green-800',
     CANCELLED: 'bg-red-100 text-red-800',
   }
   return map[status] || 'bg-gray-100 text-gray-800'

@@ -15,10 +15,15 @@ type InventoryValidationResult struct {
 
 // ValidateInventory validates quantities against current product inventory and MOQ.
 func (s *OrderService) ValidateInventory(items []modelsOrder.OrderItem, productsByID map[string]modelsProduct.Product) InventoryValidationResult {
-	return validateInventory(items, productsByID)
+	return validateInventoryWithSellable(items, productsByID, nil)
 }
 
-func validateInventory(items []modelsOrder.OrderItem, productsByID map[string]modelsProduct.Product) InventoryValidationResult {
+// ValidateInventoryWithSellable 使用每 SKU 有效可售量（如 OMS 渠道封顶后）；sellable 为 nil 时回退 Product.StockQuantity
+func (s *OrderService) ValidateInventoryWithSellable(items []modelsOrder.OrderItem, productsByID map[string]modelsProduct.Product, sellable map[string]int) InventoryValidationResult {
+	return validateInventoryWithSellable(items, productsByID, sellable)
+}
+
+func validateInventoryWithSellable(items []modelsOrder.OrderItem, productsByID map[string]modelsProduct.Product, sellable map[string]int) InventoryValidationResult {
 	result := InventoryValidationResult{
 		Warnings:   make([]string, 0, 8),
 		Violations: make([]string, 0, 8),
@@ -55,6 +60,11 @@ func validateInventory(items []modelsOrder.OrderItem, productsByID map[string]mo
 		}
 
 		stock := product.StockQuantity
+		if sellable != nil {
+			if sv, ok := sellable[productID]; ok {
+				stock = sv
+			}
+		}
 		if stock <= 0 {
 			result.Violations = append(result.Violations, fmt.Sprintf("Product %s is out of stock.", productID))
 			continue

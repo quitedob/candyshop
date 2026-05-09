@@ -1,10 +1,11 @@
 package product
 
 import (
-	modelsProduct "candypro/api/internal/models/product"
 	"context"
 	"strings"
 
+	modelsProduct "candypro/api/internal/models/product"
+	"github.com/pgvector/pgvector-go"
 	"gorm.io/gorm"
 )
 
@@ -121,13 +122,33 @@ func (r *ProductRepository) FindRelated(ctx context.Context, slug string, limit 
 // Search searches products by query
 func (r *ProductRepository) Search(ctx context.Context, query string, limit int) ([]modelsProduct.Product, error) {
 	var products []modelsProduct.Product
-	// Since escapeLikePattern is now in common, wait we need to use strings.Replace
-	// Actually no, we should just use common.EscapeLikePattern! Wait, we made escapeLikePattern local to content.go!
-	// Let's just implement a local escape in product.go so we don't have circular dependencies if imported!
 	searchPattern := "%" + escapeLikePattern(query) + "%"
-	if err := r.db.WithContext(ctx).Where("name ILIKE ? OR summary ILIKE ? OR description ILIKE ?",
-		searchPattern, searchPattern, searchPattern).
-		Limit(limit).Find(&products).Error; err != nil {
+	if err := r.db.WithContext(ctx).
+		Where("status = ?", "active").
+		Where("name ILIKE ? OR summary ILIKE ? OR description ILIKE ?", searchPattern, searchPattern, searchPattern).
+		Limit(limit).
+		Find(&products).Error; err != nil {
+		return nil, err
+	}
+	return products, nil
+}
+
+// SearchVectorSimilar uses pgvector cosine distance (<=>) against the optional product_embeddings table.
+func (r *ProductRepository) SearchVectorSimilar(ctx context.Context, embedding []float32, limit int) ([]modelsProduct.Product, error) {
+	if len(embedding) == 0 || limit <= 0 {
+		return nil, nil
+	}
+
+	vec := pgvector.NewVector(embedding)
+	var products []modelsProduct.Product
+	err := r.db.WithContext(ctx).Raw(`
+		SELECT p.*
+		FROM product_embeddings pe
+		JOIN products p ON p.id = pe.product_id
+		WHERE p.status = 'active' AND pe.embedding IS NOT NULL
+		ORDER BY pe.embedding <=> ?::vector
+		LIMIT ?`, vec, limit).Scan(&products).Error
+	if err != nil {
 		return nil, err
 	}
 	return products, nil

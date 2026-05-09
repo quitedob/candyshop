@@ -102,10 +102,10 @@
           <div class="products__empty-icon">
             <Icon name="lucide:search" size="48" />
           </div>
-          <h3>{{ $t('product.no_products') || 'No products found' }}</h3>
-          <p>{{ $t('product.try_different_filters') || 'Try adjusting your filters' }}</p>
+          <h3>{{ $t('product.no_products') }}</h3>
+          <p>{{ $t('product.try_different_filters') }}</p>
           <button class="btn btn-outline" @click="clearFilters">
-            {{ $t('filters.clear') || 'Clear Filters' }}
+            {{ $t('filters.clear') }}
           </button>
         </div>
 
@@ -171,22 +171,22 @@
           <div class="capability-card">
             <Icon name="lucide:box" size="32" />
             <h4>{{ $t('oem.moq') }}</h4>
-            <p>{{ category.minMOQ || '1,000 pcs' }}</p>
+            <p>{{ category.minMOQ || t('product.category_placeholder_moq') }}</p>
           </div>
           <div class="capability-card">
             <Icon name="lucide:clock" size="32" />
             <h4>{{ $t('oem.lead_time') }}</h4>
-            <p>{{ category.leadTime || '2-4 weeks' }}</p>
+            <p>{{ category.leadTime || t('product.category_placeholder_lead') }}</p>
           </div>
           <div class="capability-card">
             <Icon name="lucide:package" size="32" />
             <h4>{{ $t('factory.daily_output') }}</h4>
-            <p>{{ category.dailyCapacity || '10-20 tons' }}</p>
+            <p>{{ category.dailyCapacity || t('product.category_placeholder_capacity') }}</p>
           </div>
           <div class="capability-card">
             <Icon name="lucide:settings" size="32" />
             <h4>{{ $t('oem.custom_packaging') }}</h4>
-            <p>{{ category.packagingOptions || 'Bag, Jar, Gift Box' }}</p>
+            <p>{{ category.packagingOptions || t('product.category_placeholder_packaging') }}</p>
           </div>
         </div>
       </div>
@@ -261,7 +261,7 @@
 import { ref, computed } from 'vue'
 import { useI18n, useLocalePath } from '#i18n'
 
-const { t, locale } = useI18n()
+const { t, te, locale } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
 const router = useRouter()
@@ -291,7 +291,7 @@ const category = computed(() => {
   const data = categoryData.value
   if (!data) {
     return {
-      name: t(`product.categories.${categorySlug.value.replace(/-/g, '_')}`) || categorySlug.value,
+      name: te(`product.categories.${categorySlug.value.replace(/-/g, '_')}`) ? t(`product.categories.${categorySlug.value.replace(/-/g, '_')}`) : categorySlug.value,
       description: '',
       productCount: 0,
       image: `/images/categories/${categorySlug.value}.jpg`
@@ -373,21 +373,21 @@ const relatedCategories = computed(() => {
   return allCategories.filter(c => c.slug !== categorySlug.value)
 })
 
-// Category FAQs
-const categoryFAQs = [
+// Category FAQs（随分类与语言变化）
+const categoryFAQs = computed(() => [
   {
-    question: t('oem.moq') + '?',
-    answer: category.value.minMOQ || 'Our minimum order quantity starts from 1,000 pieces for standard items.'
+    question: `${t('oem.moq')}?`,
+    answer: category.value.minMOQ || t('product.faq_moq_answer_default')
   },
   {
-    question: t('oem.lead_time') + '?',
-    answer: category.value.leadTime || 'Standard orders take 2-3 weeks, custom OEM orders take 4-6 weeks.'
+    question: `${t('oem.lead_time')}?`,
+    answer: category.value.leadTime || t('product.faq_lead_answer_default')
   },
   {
-    question: t('factory.certifications') + '?',
-    answer: 'We are HACCP, ISO22000, BRC Grade A, and Halal certified.'
+    question: `${t('factory.certifications')}?`,
+    answer: t('product.faq_cert_answer')
   }
-]
+])
 
 // Pagination
 const visiblePages = computed(() => {
