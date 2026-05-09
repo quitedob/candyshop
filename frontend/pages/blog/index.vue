@@ -66,7 +66,7 @@
               </span>
               <span class="featured-post__date">
                 <Icon name="lucide:calendar" size="14" />
-                {{ formatDate(featuredPost.publishedAt) }}
+                {{ fmtDate(featuredPost.publishedAt) }}
               </span>
               <span class="featured-post__read-time">
                 <Icon name="lucide:clock" size="14" />
@@ -106,7 +106,7 @@
                 <h3 class="post-card__title">{{ post.title }}</h3>
                 <p class="post-card__excerpt">{{ post.excerpt }}</p>
                 <div class="post-card__meta">
-                  <span>{{ formatDate(post.publishedAt) }}</span>
+                  <span>{{ fmtDate(post.publishedAt) }}</span>
                   <span>{{ post.readTime }} min read</span>
                 </div>
               </div>
@@ -257,10 +257,8 @@ const getCategoryName = (categoryId: string) => {
   return mapCategoryName(categoryId)
 }
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-}
+const { formatDate } = useDisplay()
+const fmtDate = (dateString: string) => formatDate(dateString, { month: 'short', day: 'numeric', year: 'numeric' })
 
 const setCategory = (categoryId: string) => {
   activeCategory.value = categoryId
@@ -327,7 +325,7 @@ useSeo({
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .category-tab:hover {

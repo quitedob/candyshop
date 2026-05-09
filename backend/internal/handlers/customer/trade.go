@@ -13,20 +13,20 @@ import (
 // CustomerListTradeTransactions lists current user's trades with pagination.
 func (h *Handler) CustomerListTradeTransactions(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResponse(c, http.StatusUnauthorized, "unauthorized", "User not identified")
+		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	page, limit := utils.ParsePagination(c, 10, 50)
 	transactions, totalItems, err := h.services.Trade.ListTransactions(c.Request.Context(), userID, page, limit)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to fetch transactions")
+		utils.ErrorResp(c, http.StatusInternalServerError, "trade_fetch_failed")
 		return
 	}
 
@@ -44,30 +44,30 @@ func (h *Handler) CustomerListTradeTransactions(c *gin.Context) {
 // CustomerGetTradeTransaction gets a single trade owned by current user.
 func (h *Handler) CustomerGetTradeTransaction(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResponse(c, http.StatusUnauthorized, "unauthorized", "User not identified")
+		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		utils.InvalidRequestResponse(c, "invalid ID format")
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	trans, err := h.services.Trade.GetTransaction(c.Request.Context(), uint(id))
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Transaction not found")
+		utils.ErrorResp(c, http.StatusNotFound, "trade_not_found")
 		return
 	}
 
 	if trans.UserID != userID {
-		utils.ErrorResponse(c, http.StatusForbidden, "forbidden", "You do not have access to this transaction")
+		utils.ErrorResp(c, http.StatusForbidden, "forbidden")
 		return
 	}
 
@@ -77,13 +77,13 @@ func (h *Handler) CustomerGetTradeTransaction(c *gin.Context) {
 // CustomerCreateTradeTransaction creates a trade owned by current user.
 func (h *Handler) CustomerCreateTradeTransaction(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResponse(c, http.StatusUnauthorized, "unauthorized", "User not identified")
+		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
@@ -96,7 +96,7 @@ func (h *Handler) CustomerCreateTradeTransaction(c *gin.Context) {
 		Terms       string  `json:"terms"`
 		Incoterms   string  `json:"incoterms"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -116,7 +116,7 @@ func (h *Handler) CustomerCreateTradeTransaction(c *gin.Context) {
 	}
 
 	if err := h.services.Trade.CreateTransaction(c.Request.Context(), transaction); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to create transaction")
+		utils.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 		return
 	}
 

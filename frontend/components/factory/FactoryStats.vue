@@ -62,7 +62,7 @@ defineProps<Props>()
   padding: var(--spacing-lg);
   background-color: white;
   border-radius: var(--radius-lg);
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .stat:hover {

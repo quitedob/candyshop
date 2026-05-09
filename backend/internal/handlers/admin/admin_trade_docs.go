@@ -24,17 +24,17 @@ type adminCreateTradeDocumentRequest struct {
 // AdminCreateTradeDocument creates a new trade document for a transaction.
 func (h *Handler) AdminCreateTradeDocument(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid transaction ID")
+		utils.InvalidResp(c, "invalid_transaction_id")
 		return
 	}
 
 	var req adminCreateTradeDocumentRequest
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -64,7 +64,7 @@ func (h *Handler) AdminCreateTradeDocument(c *gin.Context) {
 	}
 
 	if err := h.services.Trade.AddDocument(c.Request.Context(), doc); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to create trade document")
+		utils.ErrorResp(c, http.StatusInternalServerError, "trade_doc_create_failed")
 		return
 	}
 	c.JSON(http.StatusCreated, doc)
@@ -73,20 +73,20 @@ func (h *Handler) AdminCreateTradeDocument(c *gin.Context) {
 // AdminDeleteTradeDocument removes a trade document.
 func (h *Handler) AdminDeleteTradeDocument(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	docID, err := parseUintParam(c, "docId")
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid document ID")
+		utils.InvalidResp(c, "invalid_document_id")
 		return
 	}
 	if _, fetchErr := h.services.Trade.GetDocument(c.Request.Context(), docID); fetchErr != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Trade document not found")
+		utils.ErrorResp(c, http.StatusNotFound, "not_found")
 		return
 	}
 	if err := h.services.Trade.DeleteDocument(c.Request.Context(), docID); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to delete trade document")
+		utils.ErrorResp(c, http.StatusInternalServerError, "trade_doc_delete_failed")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Document deleted", "id": docID})
@@ -97,17 +97,17 @@ func (h *Handler) AdminDeleteTradeDocument(c *gin.Context) {
 // AdminGetSalesContract returns the sales contract for a trade transaction.
 func (h *Handler) AdminGetSalesContract(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid transaction ID")
+		utils.InvalidResp(c, "invalid_transaction_id")
 		return
 	}
 	sc, err := h.services.TradeDocDetail.GetSalesContract(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Sales contract not found")
+		utils.ErrorResp(c, http.StatusNotFound, "sales_contract_not_found")
 		return
 	}
 	c.JSON(http.StatusOK, sc)
@@ -116,12 +116,12 @@ func (h *Handler) AdminGetSalesContract(c *gin.Context) {
 // AdminCreateSalesContract creates a sales contract for a trade transaction.
 func (h *Handler) AdminCreateSalesContract(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid transaction ID")
+		utils.InvalidResp(c, "invalid_transaction_id")
 		return
 	}
 	var req struct {
@@ -134,9 +134,9 @@ func (h *Handler) AdminCreateSalesContract(c *gin.Context) {
 		TotalAmount     float64  `json:"totalAmount"`
 		Currency        string   `json:"currency"`
 		SignDate         *string `json:"signDate"`
-		ValidUntil      *string  `json:"validUntil"`
+		ValidUntil      *string `json:"validUntil"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 	sc := &modelsTrade.SalesContract{
@@ -161,7 +161,7 @@ func (h *Handler) AdminCreateSalesContract(c *gin.Context) {
 		}
 	}
 	if err := h.services.TradeDocDetail.CreateSalesContract(c.Request.Context(), sc); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to create sales contract")
+		utils.ErrorResp(c, http.StatusInternalServerError, "sales_contract_create_failed")
 		return
 	}
 	c.JSON(http.StatusCreated, sc)
@@ -170,17 +170,17 @@ func (h *Handler) AdminCreateSalesContract(c *gin.Context) {
 // AdminUpdateSalesContract updates an existing sales contract.
 func (h *Handler) AdminUpdateSalesContract(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid transaction ID")
+		utils.InvalidResp(c, "invalid_transaction_id")
 		return
 	}
 	sc, err := h.services.TradeDocDetail.GetSalesContract(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Sales contract not found")
+		utils.ErrorResp(c, http.StatusNotFound, "sales_contract_not_found")
 		return
 	}
 	var req struct {
@@ -194,7 +194,7 @@ func (h *Handler) AdminUpdateSalesContract(c *gin.Context) {
 		SignDate        *string `json:"signDate"`
 		ValidUntil      *string `json:"validUntil"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 	if req.BuyerName != "" {
@@ -229,7 +229,7 @@ func (h *Handler) AdminUpdateSalesContract(c *gin.Context) {
 		}
 	}
 	if err := h.services.TradeDocDetail.UpdateSalesContract(c.Request.Context(), sc); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to update sales contract")
+		utils.ErrorResp(c, http.StatusInternalServerError, "sales_contract_update_failed")
 		return
 	}
 	c.JSON(http.StatusOK, sc)
@@ -240,17 +240,17 @@ func (h *Handler) AdminUpdateSalesContract(c *gin.Context) {
 // AdminGetPackingList returns the packing list for a trade transaction.
 func (h *Handler) AdminGetPackingList(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid transaction ID")
+		utils.InvalidResp(c, "invalid_transaction_id")
 		return
 	}
 	pl, err := h.services.TradeDocDetail.GetPackingList(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Packing list not found")
+		utils.ErrorResp(c, http.StatusNotFound, "packing_list_not_found")
 		return
 	}
 	c.JSON(http.StatusOK, pl)
@@ -259,12 +259,12 @@ func (h *Handler) AdminGetPackingList(c *gin.Context) {
 // AdminCreatePackingList creates a packing list for a trade transaction.
 func (h *Handler) AdminCreatePackingList(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid transaction ID")
+		utils.InvalidResp(c, "invalid_transaction_id")
 		return
 	}
 	var req struct {
@@ -276,7 +276,7 @@ func (h *Handler) AdminCreatePackingList(c *gin.Context) {
 		TotalVolume      float64 `json:"totalVolume"`
 		MarksAndNumbers  string  `json:"marksAndNumbers"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 	pl := &modelsTrade.PackingList{
@@ -290,7 +290,7 @@ func (h *Handler) AdminCreatePackingList(c *gin.Context) {
 		MarksAndNumbers:  req.MarksAndNumbers,
 	}
 	if err := h.services.TradeDocDetail.CreatePackingList(c.Request.Context(), pl); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to create packing list")
+		utils.ErrorResp(c, http.StatusInternalServerError, "packing_list_create_failed")
 		return
 	}
 	c.JSON(http.StatusCreated, pl)
@@ -299,17 +299,17 @@ func (h *Handler) AdminCreatePackingList(c *gin.Context) {
 // AdminUpdatePackingList updates an existing packing list.
 func (h *Handler) AdminUpdatePackingList(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid transaction ID")
+		utils.InvalidResp(c, "invalid_transaction_id")
 		return
 	}
 	pl, err := h.services.TradeDocDetail.GetPackingList(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Packing list not found")
+		utils.ErrorResp(c, http.StatusNotFound, "packing_list_not_found")
 		return
 	}
 	var req struct {
@@ -320,7 +320,7 @@ func (h *Handler) AdminUpdatePackingList(c *gin.Context) {
 		TotalVolume      float64 `json:"totalVolume"`
 		MarksAndNumbers  string  `json:"marksAndNumbers"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 	if req.TotalCartons > 0 {
@@ -342,7 +342,7 @@ func (h *Handler) AdminUpdatePackingList(c *gin.Context) {
 		pl.MarksAndNumbers = req.MarksAndNumbers
 	}
 	if err := h.services.TradeDocDetail.UpdatePackingList(c.Request.Context(), pl); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to update packing list")
+		utils.ErrorResp(c, http.StatusInternalServerError, "packing_list_update_failed")
 		return
 	}
 	c.JSON(http.StatusOK, pl)
@@ -353,17 +353,17 @@ func (h *Handler) AdminUpdatePackingList(c *gin.Context) {
 // AdminGetCertificateOfOrigin returns the certificate of origin for a transaction.
 func (h *Handler) AdminGetCertificateOfOrigin(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid transaction ID")
+		utils.InvalidResp(c, "invalid_transaction_id")
 		return
 	}
 	coo, err := h.services.TradeDocDetail.GetCertificateOfOrigin(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Certificate of origin not found")
+		utils.ErrorResp(c, http.StatusNotFound, "coo_not_found")
 		return
 	}
 	c.JSON(http.StatusOK, coo)
@@ -372,12 +372,12 @@ func (h *Handler) AdminGetCertificateOfOrigin(c *gin.Context) {
 // AdminCreateCertificateOfOrigin creates a COO for a trade transaction.
 func (h *Handler) AdminCreateCertificateOfOrigin(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid transaction ID")
+		utils.InvalidResp(c, "invalid_transaction_id")
 		return
 	}
 	var req struct {
@@ -388,7 +388,7 @@ func (h *Handler) AdminCreateCertificateOfOrigin(c *gin.Context) {
 		HSCode             string  `json:"hsCode"`
 		IssueDate          *string `json:"issueDate"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 	coo := &modelsTrade.CertificateOfOrigin{
@@ -405,7 +405,7 @@ func (h *Handler) AdminCreateCertificateOfOrigin(c *gin.Context) {
 		}
 	}
 	if err := h.services.TradeDocDetail.CreateCertificateOfOrigin(c.Request.Context(), coo); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to create certificate of origin")
+		utils.ErrorResp(c, http.StatusInternalServerError, "coo_create_failed")
 		return
 	}
 	c.JSON(http.StatusCreated, coo)
@@ -414,17 +414,17 @@ func (h *Handler) AdminCreateCertificateOfOrigin(c *gin.Context) {
 // AdminUpdateCertificateOfOrigin updates a COO.
 func (h *Handler) AdminUpdateCertificateOfOrigin(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid transaction ID")
+		utils.InvalidResp(c, "invalid_transaction_id")
 		return
 	}
 	coo, err := h.services.TradeDocDetail.GetCertificateOfOrigin(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Certificate of origin not found")
+		utils.ErrorResp(c, http.StatusNotFound, "coo_not_found")
 		return
 	}
 	var req struct {
@@ -434,7 +434,7 @@ func (h *Handler) AdminUpdateCertificateOfOrigin(c *gin.Context) {
 		HSCode             string  `json:"hsCode"`
 		IssueDate          *string `json:"issueDate"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 	if req.CountryOfOrigin != "" {
@@ -455,7 +455,7 @@ func (h *Handler) AdminUpdateCertificateOfOrigin(c *gin.Context) {
 		}
 	}
 	if err := h.services.TradeDocDetail.UpdateCertificateOfOrigin(c.Request.Context(), coo); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to update certificate of origin")
+		utils.ErrorResp(c, http.StatusInternalServerError, "coo_update_failed")
 		return
 	}
 	c.JSON(http.StatusOK, coo)
@@ -466,17 +466,17 @@ func (h *Handler) AdminUpdateCertificateOfOrigin(c *gin.Context) {
 // AdminGetHealthCertificate returns the health certificate for a transaction.
 func (h *Handler) AdminGetHealthCertificate(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid transaction ID")
+		utils.InvalidResp(c, "invalid_transaction_id")
 		return
 	}
 	hc, err := h.services.TradeDocDetail.GetHealthCertificate(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Health certificate not found")
+		utils.ErrorResp(c, http.StatusNotFound, "health_cert_not_found")
 		return
 	}
 	c.JSON(http.StatusOK, hc)
@@ -485,12 +485,12 @@ func (h *Handler) AdminGetHealthCertificate(c *gin.Context) {
 // AdminCreateHealthCertificate creates a health certificate for a transaction.
 func (h *Handler) AdminCreateHealthCertificate(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid transaction ID")
+		utils.InvalidResp(c, "invalid_transaction_id")
 		return
 	}
 	var req struct {
@@ -502,7 +502,7 @@ func (h *Handler) AdminCreateHealthCertificate(c *gin.Context) {
 		IssueDate          *string `json:"issueDate"`
 		ValidUntil         *string `json:"validUntil"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 	hc := &modelsTrade.HealthCertificate{
@@ -524,7 +524,7 @@ func (h *Handler) AdminCreateHealthCertificate(c *gin.Context) {
 		}
 	}
 	if err := h.services.TradeDocDetail.CreateHealthCertificate(c.Request.Context(), hc); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to create health certificate")
+		utils.ErrorResp(c, http.StatusInternalServerError, "health_cert_create_failed")
 		return
 	}
 	c.JSON(http.StatusCreated, hc)
@@ -533,17 +533,17 @@ func (h *Handler) AdminCreateHealthCertificate(c *gin.Context) {
 // AdminUpdateHealthCertificate updates a health certificate.
 func (h *Handler) AdminUpdateHealthCertificate(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid transaction ID")
+		utils.InvalidResp(c, "invalid_transaction_id")
 		return
 	}
 	hc, err := h.services.TradeDocDetail.GetHealthCertificate(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Health certificate not found")
+		utils.ErrorResp(c, http.StatusNotFound, "health_cert_not_found")
 		return
 	}
 	var req struct {
@@ -554,7 +554,7 @@ func (h *Handler) AdminUpdateHealthCertificate(c *gin.Context) {
 		IssueDate          *string `json:"issueDate"`
 		ValidUntil         *string `json:"validUntil"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 	if req.IssuingAuthority != "" {
@@ -580,7 +580,7 @@ func (h *Handler) AdminUpdateHealthCertificate(c *gin.Context) {
 		}
 	}
 	if err := h.services.TradeDocDetail.UpdateHealthCertificate(c.Request.Context(), hc); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to update health certificate")
+		utils.ErrorResp(c, http.StatusInternalServerError, "health_cert_update_failed")
 		return
 	}
 	c.JSON(http.StatusOK, hc)
@@ -591,17 +591,17 @@ func (h *Handler) AdminUpdateHealthCertificate(c *gin.Context) {
 // AdminGetSettlements returns all settlement milestones for a transaction.
 func (h *Handler) AdminGetSettlements(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid transaction ID")
+		utils.InvalidResp(c, "invalid_transaction_id")
 		return
 	}
 	records, err := h.services.TradeDocDetail.ListSettlements(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to fetch settlements")
+		utils.ErrorResp(c, http.StatusInternalServerError, "settlement_fetch_failed")
 		return
 	}
 	c.JSON(http.StatusOK, records)
@@ -610,12 +610,12 @@ func (h *Handler) AdminGetSettlements(c *gin.Context) {
 // AdminCreateSettlement creates a payment milestone for a transaction.
 func (h *Handler) AdminCreateSettlement(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid transaction ID")
+		utils.InvalidResp(c, "invalid_transaction_id")
 		return
 	}
 	var req struct {
@@ -625,7 +625,7 @@ func (h *Handler) AdminCreateSettlement(c *gin.Context) {
 		DueDate       *string `json:"dueDate"`
 		LCReference   string  `json:"lcReference"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 	record := &modelsTrade.SettlementRecord{
@@ -641,7 +641,7 @@ func (h *Handler) AdminCreateSettlement(c *gin.Context) {
 		}
 	}
 	if err := h.services.TradeDocDetail.CreateSettlement(c.Request.Context(), record); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to create settlement")
+		utils.ErrorResp(c, http.StatusInternalServerError, "settlement_create_failed")
 		return
 	}
 	c.JSON(http.StatusCreated, record)
@@ -650,17 +650,17 @@ func (h *Handler) AdminCreateSettlement(c *gin.Context) {
 // AdminUpdateSettlement updates a settlement record.
 func (h *Handler) AdminUpdateSettlement(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	settlementID, err := parseUintParam(c, "settlementId")
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid settlement ID")
+		utils.InvalidResp(c, "invalid_settlement_id")
 		return
 	}
 	record, err := h.services.TradeDocDetail.GetSettlement(c.Request.Context(), settlementID)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Settlement not found")
+		utils.ErrorResp(c, http.StatusNotFound, "not_found")
 		return
 	}
 	var req struct {
@@ -669,7 +669,7 @@ func (h *Handler) AdminUpdateSettlement(c *gin.Context) {
 		PaymentDate *string `json:"paymentDate"`
 		LCReference string  `json:"lcReference"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 	if req.Status != "" {
@@ -687,7 +687,7 @@ func (h *Handler) AdminUpdateSettlement(c *gin.Context) {
 		record.LCReference = req.LCReference
 	}
 	if err := h.services.TradeDocDetail.UpdateSettlement(c.Request.Context(), record); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to update settlement")
+		utils.ErrorResp(c, http.StatusInternalServerError, "settlement_update_failed")
 		return
 	}
 	c.JSON(http.StatusOK, record)
@@ -696,16 +696,16 @@ func (h *Handler) AdminUpdateSettlement(c *gin.Context) {
 // AdminDeleteSettlement removes a settlement record.
 func (h *Handler) AdminDeleteSettlement(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	settlementID, err := parseUintParam(c, "settlementId")
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid settlement ID")
+		utils.InvalidResp(c, "invalid_settlement_id")
 		return
 	}
 	if err := h.services.TradeDocDetail.DeleteSettlement(c.Request.Context(), settlementID); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to delete settlement")
+		utils.ErrorResp(c, http.StatusInternalServerError, "settlement_delete_failed")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Settlement deleted", "id": settlementID})
@@ -716,17 +716,17 @@ func (h *Handler) AdminDeleteSettlement(c *gin.Context) {
 // AdminGetCompliance returns all compliance requirements for a trade transaction.
 func (h *Handler) AdminGetCompliance(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid transaction ID")
+		utils.InvalidResp(c, "invalid_transaction_id")
 		return
 	}
 	comps, err := h.services.Trade.ListCompliance(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to fetch compliance requirements")
+		utils.ErrorResp(c, http.StatusInternalServerError, "trade_compliance_fetch_failed")
 		return
 	}
 	c.JSON(http.StatusOK, comps)
@@ -735,22 +735,22 @@ func (h *Handler) AdminGetCompliance(c *gin.Context) {
 // AdminUpdateCompliance updates a compliance requirement status.
 func (h *Handler) AdminUpdateCompliance(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	compID, err := parseUintParam(c, "compId")
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid compliance ID")
+		utils.InvalidResp(c, "invalid_compliance_id")
 		return
 	}
 	var req struct {
 		Status string `json:"status" binding:"required"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 	if err := h.services.Trade.UpdateComplianceStatus(c.Request.Context(), compID, req.Status); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to update compliance status")
+		utils.ErrorResp(c, http.StatusInternalServerError, "trade_compliance_update_failed")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Compliance status updated", "id": compID, "status": req.Status})
@@ -787,29 +787,29 @@ func generateDocNo(prefix string) string {
 
 func (h *Handler) AdminGetProformaInvoice(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
-	if err != nil { utils.InvalidRequestResponse(c, "Invalid transaction ID"); return }
+	if err != nil { utils.InvalidResp(c, "invalid_transaction_id"); return }
 	pi, err := h.services.TradeDocDetail.GetProformaInvoice(c.Request.Context(), id)
-	if err != nil { utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Proforma invoice not found"); return }
+	if err != nil { utils.ErrorResp(c, http.StatusNotFound, "proforma_invoice_not_found"); return }
 	c.JSON(http.StatusOK, pi)
 }
 
 func (h *Handler) AdminCreateProformaInvoice(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
-	if err != nil { utils.InvalidRequestResponse(c, "Invalid transaction ID"); return }
+	if err != nil { utils.InvalidResp(c, "invalid_transaction_id"); return }
 	var req modelsTrade.ProformaInvoice
-	if !utils.BindJSONOrInvalidRequest(c, &req) { return }
+	if !utils.BindJSONOrInvalid(c, &req) { return }
 	req.TransactionID = id
 	if err := h.services.TradeDocDetail.CreateProformaInvoice(c.Request.Context(), &req); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to create proforma invoice"); return
+		utils.ErrorResp(c, http.StatusInternalServerError, "proforma_invoice_create_failed"); return
 	}
 	c.JSON(http.StatusCreated, req)
 }
 
 func (h *Handler) AdminUpdateProformaInvoice(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
-	if err != nil { utils.InvalidRequestResponse(c, "Invalid transaction ID"); return }
+	if err != nil { utils.InvalidResp(c, "invalid_transaction_id"); return }
 	pi, err := h.services.TradeDocDetail.GetProformaInvoice(c.Request.Context(), id)
-	if err != nil { utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Proforma invoice not found"); return }
+	if err != nil { utils.ErrorResp(c, http.StatusNotFound, "proforma_invoice_not_found"); return }
 	var req struct {
 		BuyerName      string   `json:"buyerName"`
 		SellerName     string   `json:"sellerName"`
@@ -822,7 +822,7 @@ func (h *Handler) AdminUpdateProformaInvoice(c *gin.Context) {
 		Status         string   `json:"status"`
 		ValidUntil     *string  `json:"validUntil"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) { return }
+	if !utils.BindJSONOrInvalid(c, &req) { return }
 	if req.BuyerName != "" { pi.BuyerName = req.BuyerName }
 	if req.SellerName != "" { pi.SellerName = req.SellerName }
 	if req.Incoterms != "" { pi.Incoterms = req.Incoterms }
@@ -836,7 +836,7 @@ func (h *Handler) AdminUpdateProformaInvoice(c *gin.Context) {
 		if t, parseErr := time.Parse(time.RFC3339, *req.ValidUntil); parseErr == nil { pi.ValidUntil = &t }
 	}
 	if err := h.services.TradeDocDetail.UpdateProformaInvoice(c.Request.Context(), pi); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to update proforma invoice"); return
+		utils.ErrorResp(c, http.StatusInternalServerError, "proforma_invoice_update_failed"); return
 	}
 	c.JSON(http.StatusOK, pi)
 }
@@ -845,29 +845,29 @@ func (h *Handler) AdminUpdateProformaInvoice(c *gin.Context) {
 
 func (h *Handler) AdminGetCommercialInvoice(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
-	if err != nil { utils.InvalidRequestResponse(c, "Invalid transaction ID"); return }
+	if err != nil { utils.InvalidResp(c, "invalid_transaction_id"); return }
 	ci, err := h.services.TradeDocDetail.GetCommercialInvoice(c.Request.Context(), id)
-	if err != nil { utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Commercial invoice not found"); return }
+	if err != nil { utils.ErrorResp(c, http.StatusNotFound, "commercial_invoice_not_found"); return }
 	c.JSON(http.StatusOK, ci)
 }
 
 func (h *Handler) AdminCreateCommercialInvoice(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
-	if err != nil { utils.InvalidRequestResponse(c, "Invalid transaction ID"); return }
+	if err != nil { utils.InvalidResp(c, "invalid_transaction_id"); return }
 	var req modelsTrade.CommercialInvoice
-	if !utils.BindJSONOrInvalidRequest(c, &req) { return }
+	if !utils.BindJSONOrInvalid(c, &req) { return }
 	req.TransactionID = id
 	if err := h.services.TradeDocDetail.CreateCommercialInvoice(c.Request.Context(), &req); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to create commercial invoice"); return
+		utils.ErrorResp(c, http.StatusInternalServerError, "commercial_invoice_create_failed"); return
 	}
 	c.JSON(http.StatusCreated, req)
 }
 
 func (h *Handler) AdminUpdateCommercialInvoice(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
-	if err != nil { utils.InvalidRequestResponse(c, "Invalid transaction ID"); return }
+	if err != nil { utils.InvalidResp(c, "invalid_transaction_id"); return }
 	ci, err := h.services.TradeDocDetail.GetCommercialInvoice(c.Request.Context(), id)
-	if err != nil { utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Commercial invoice not found"); return }
+	if err != nil { utils.ErrorResp(c, http.StatusNotFound, "commercial_invoice_not_found"); return }
 	var req struct {
 		BuyerName      string  `json:"buyerName"`
 		SellerName     string  `json:"sellerName"`
@@ -881,7 +881,7 @@ func (h *Handler) AdminUpdateCommercialInvoice(c *gin.Context) {
 		PINumber       string  `json:"piNumber"`
 		ShipDate       *string `json:"shipDate"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) { return }
+	if !utils.BindJSONOrInvalid(c, &req) { return }
 	if req.BuyerName != "" { ci.BuyerName = req.BuyerName }
 	if req.SellerName != "" { ci.SellerName = req.SellerName }
 	if req.Incoterms != "" { ci.Incoterms = req.Incoterms }
@@ -896,7 +896,7 @@ func (h *Handler) AdminUpdateCommercialInvoice(c *gin.Context) {
 		if t, parseErr := time.Parse(time.RFC3339, *req.ShipDate); parseErr == nil { ci.ShipDate = &t }
 	}
 	if err := h.services.TradeDocDetail.UpdateCommercialInvoice(c.Request.Context(), ci); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to update commercial invoice"); return
+		utils.ErrorResp(c, http.StatusInternalServerError, "commercial_invoice_update_failed"); return
 	}
 	c.JSON(http.StatusOK, ci)
 }
@@ -905,29 +905,29 @@ func (h *Handler) AdminUpdateCommercialInvoice(c *gin.Context) {
 
 func (h *Handler) AdminGetBillOfLading(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
-	if err != nil { utils.InvalidRequestResponse(c, "Invalid transaction ID"); return }
+	if err != nil { utils.InvalidResp(c, "invalid_transaction_id"); return }
 	bl, err := h.services.TradeDocDetail.GetBillOfLading(c.Request.Context(), id)
-	if err != nil { utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Bill of lading not found"); return }
+	if err != nil { utils.ErrorResp(c, http.StatusNotFound, "bill_of_lading_not_found"); return }
 	c.JSON(http.StatusOK, bl)
 }
 
 func (h *Handler) AdminCreateBillOfLading(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
-	if err != nil { utils.InvalidRequestResponse(c, "Invalid transaction ID"); return }
+	if err != nil { utils.InvalidResp(c, "invalid_transaction_id"); return }
 	var req modelsTrade.BillOfLading
-	if !utils.BindJSONOrInvalidRequest(c, &req) { return }
+	if !utils.BindJSONOrInvalid(c, &req) { return }
 	req.TransactionID = id
 	if err := h.services.TradeDocDetail.CreateBillOfLading(c.Request.Context(), &req); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to create bill of lading"); return
+		utils.ErrorResp(c, http.StatusInternalServerError, "bill_of_lading_create_failed"); return
 	}
 	c.JSON(http.StatusCreated, req)
 }
 
 func (h *Handler) AdminUpdateBillOfLading(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
-	if err != nil { utils.InvalidRequestResponse(c, "Invalid transaction ID"); return }
+	if err != nil { utils.InvalidResp(c, "invalid_transaction_id"); return }
 	bl, err := h.services.TradeDocDetail.GetBillOfLading(c.Request.Context(), id)
-	if err != nil { utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Bill of lading not found"); return }
+	if err != nil { utils.ErrorResp(c, http.StatusNotFound, "bill_of_lading_not_found"); return }
 	var req struct {
 		Shipper          string  `json:"shipper"`
 		Consignee        string  `json:"consignee"`
@@ -945,7 +945,7 @@ func (h *Handler) AdminUpdateBillOfLading(c *gin.Context) {
 		Status           string  `json:"status"`
 		OnBoardDate      *string `json:"onBoardDate"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) { return }
+	if !utils.BindJSONOrInvalid(c, &req) { return }
 	if req.Shipper != "" { bl.Shipper = req.Shipper }
 	if req.Consignee != "" { bl.Consignee = req.Consignee }
 	if req.NotifyParty != "" { bl.NotifyParty = req.NotifyParty }
@@ -964,7 +964,7 @@ func (h *Handler) AdminUpdateBillOfLading(c *gin.Context) {
 		if t, parseErr := time.Parse(time.RFC3339, *req.OnBoardDate); parseErr == nil { bl.OnBoardDate = &t }
 	}
 	if err := h.services.TradeDocDetail.UpdateBillOfLading(c.Request.Context(), bl); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to update bill of lading"); return
+		utils.ErrorResp(c, http.StatusInternalServerError, "bill_of_lading_update_failed"); return
 	}
 	c.JSON(http.StatusOK, bl)
 }

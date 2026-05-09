@@ -107,7 +107,7 @@
                 allowfullscreen=""
                 loading="lazy"
                 referrerpolicy="no-referrer-when-downgrade"
-                title="Factory Location"
+                :title="t('contact.factory_location')"
               ></iframe>
             </div>
 
@@ -119,7 +119,7 @@
                   href="https://facebook.com/candypro"
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="Facebook"
+                  :aria-label="t('common.a11y.facebook')"
                   class="social-link social-link--facebook"
                 >
                   <Icon name="lucide:facebook" size="24" />
@@ -128,7 +128,7 @@
                   href="https://linkedin.com/company/candypro"
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="LinkedIn"
+                  :aria-label="t('common.a11y.linkedin')"
                   class="social-link social-link--linkedin"
                 >
                   <Icon name="lucide:linkedin" size="24" />
@@ -137,7 +137,7 @@
                   href="https://instagram.com/candypro"
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="Instagram"
+                  :aria-label="t('common.a11y.instagram')"
                   class="social-link social-link--instagram"
                 >
                   <Icon name="lucide:instagram" size="24" />
@@ -146,7 +146,7 @@
                   href="https://youtube.com/@candypro"
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="YouTube"
+                  :aria-label="t('common.a11y.youtube')"
                   class="social-link social-link--youtube"
                 >
                   <Icon name="lucide:youtube" size="24" />
@@ -155,7 +155,7 @@
                   href="https://twitter.com/candypro"
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="Twitter"
+                  :aria-label="t('common.a11y.twitter')"
                   class="social-link social-link--twitter"
                 >
                   <Icon name="lucide:twitter" size="24" />
@@ -434,7 +434,7 @@ useSeo({
   background-color: var(--color-bg-alt);
   border-radius: var(--radius-full);
   color: var(--color-text);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .social-link:hover {
@@ -471,7 +471,7 @@ useSeo({
   background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
   color: white;
   text-decoration: none;
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .whatsapp-card:hover {

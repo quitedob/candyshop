@@ -110,7 +110,7 @@ const handleChange = (event: Event) => {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .input-radio-group__option:hover:not(.input-radio-group__option--disabled) {
@@ -135,7 +135,7 @@ const handleChange = (event: Event) => {
   height: 18px;
   border: 2px solid var(--color-border);
   border-radius: var(--radius-full);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
   flex-shrink: 0;
 }
 

@@ -24,7 +24,8 @@
     "a11y": {
       "openMenu": "Open navigation menu",
       "closeMenu": "Close navigation menu",
-      "cart": "Order requests and shopping cart"
+      "cart": "Order requests and shopping cart",
+      "portalNav": "Customer portal"
     },
     "page_titles": {
       "dashboard": "Dashboard",
@@ -400,7 +401,15 @@
       "cancel": "Cancel",
       "submitting": "Submitting...",
       "submit": "Submit Project",
-      "project_created": "Project created successfully!"
+      "project_created": "Project created successfully!",
+      "inquiry": "Inquiry",
+      "sampling": "Sampling",
+      "formulation": "Formulation",
+      "quotation": "Quotation",
+      "contract": "Contract",
+      "production": "Production",
+      "delivery": "Delivery",
+      "completed": "Completed"
     },
     "help": {
       "title": "Help Center",

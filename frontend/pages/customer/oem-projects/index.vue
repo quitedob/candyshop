@@ -51,7 +51,7 @@
                 <span class="ml-1 text-xs text-gray-500">{{ project.status }}</span>
               </div>
             </td>
-            <td class="px-3 py-4 text-sm text-gray-500">{{ project.createdAt ? new Date(project.createdAt).toLocaleDateString() : '-' }}</td>
+            <td class="px-3 py-4 text-sm text-gray-500">{{ formatDate(project.createdAt) }}</td>
             <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
               <NuxtLink :to="localePath(`/customer/oem-projects/${project.id}`)" class="text-orange-600 hover:text-orange-900">{{ t('customer.oemProjects.view') }}</NuxtLink>
             </td>
@@ -83,6 +83,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
+const { formatDate } = useDisplay()
 const localePath = useLocalePath()
 
 const projects = ref<any[]>([])
@@ -93,10 +94,10 @@ const page = ref(1)
 const pageSize = 20
 
 const steps = [
-  { key: 'inquiry', label: 'Inquiry' }, { key: 'sampling', label: 'Sampling' },
-  { key: 'formulation', label: 'Formulation' }, { key: 'quotation', label: 'Quotation' },
-  { key: 'contract', label: 'Contract' }, { key: 'production', label: 'Production' },
-  { key: 'delivery', label: 'Delivery' }, { key: 'completed', label: 'Completed' }
+  { key: 'inquiry', label: t('customer.oemProjects.inquiry') }, { key: 'sampling', label: t('customer.oemProjects.sampling') },
+  { key: 'formulation', label: t('customer.oemProjects.formulation') }, { key: 'quotation', label: t('customer.oemProjects.quotation') },
+  { key: 'contract', label: t('customer.oemProjects.contract') }, { key: 'production', label: t('customer.oemProjects.production') },
+  { key: 'delivery', label: t('customer.oemProjects.delivery') }, { key: 'completed', label: t('customer.oemProjects.completed') }
 ]
 
 const fetchProjects = async () => {

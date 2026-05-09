@@ -154,6 +154,11 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.POST("/invoices/:id/send", h.AdminPortal.AdminSendInvoice)
 	group.DELETE("/invoices/:id", h.AdminPortal.AdminDeleteInvoice)
 
+	// Inventory
+	group.GET("/inventory", h.AdminPortal.AdminGetInventory)
+	group.PUT("/inventory/:productId", h.AdminPortal.AdminUpdateInventory)
+	group.GET("/inventory/:productId/history", h.AdminPortal.AdminGetInventoryHistory)
+
 	// 跨境：仓库、市场画像、成本栈、OEM 预留、合规 Copilot
 	group.GET("/warehouses", h.AdminPortal.AdminListWarehouses)
 	group.POST("/warehouses", h.AdminPortal.AdminUpsertWarehouse)
@@ -202,4 +207,17 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	// Settings
 	group.GET("/settings", h.AdminPortal.GetSettings)
 	group.PUT("/settings/:key", h.AdminPortal.UpdateSetting)
+
+	// Translations
+	if h.AdminPortal.Translations != nil {
+		t := h.AdminPortal.Translations
+		group.GET("/translations", t.ListTranslations)
+		group.GET("/translations/groups", t.ListGroups)
+		group.GET("/translations/:id", t.GetTranslation)
+		group.POST("/translations", t.CreateTranslation)
+		group.PUT("/translations/:id", t.UpdateTranslation)
+		group.DELETE("/translations/:id", t.DeleteTranslation)
+		group.POST("/translations/import", t.ImportTranslations)
+		group.GET("/translations/export", t.ExportTranslations)
+	}
 }

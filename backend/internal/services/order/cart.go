@@ -15,6 +15,7 @@ type cartRepository interface {
 	Delete(ctx context.Context, id uint) error
 	ClearByUserID(ctx context.Context, userID string) error
 	CountByUserID(ctx context.Context, userID string) (int64, error)
+	UpsertItem(ctx context.Context, item *modelsOrder.CartItem) (*modelsOrder.CartItem, error)
 }
 
 // CartService provides cart business logic.
@@ -32,31 +33,14 @@ func (s *CartService) GetCart(ctx context.Context, userID string) ([]modelsOrder
 	return s.repo.FindByUserID(ctx, userID)
 }
 
-// AddItem adds a product to the cart, merging quantity if the product already exists.
+// AddItem adds a product to the cart, merging quantity atomically if the product already exists.
 func (s *CartService) AddItem(ctx context.Context, userID string, item *modelsOrder.CartItem) (*modelsOrder.CartItem, error) {
 	if item.Quantity < 1 {
 		item.Quantity = 1
 	}
 	item.UserID = userID
 
-	// N-11: Check for existing item with same ProductID and merge
-	existing, err := s.repo.FindByUserIDAndProductID(ctx, userID, item.ProductID)
-	if err == nil && existing != nil {
-		existing.Quantity += item.Quantity
-		// Update price to latest server-side price
-		if item.UnitPrice > 0 {
-			existing.UnitPrice = item.UnitPrice
-		}
-		if err := s.repo.Update(ctx, existing); err != nil {
-			return nil, err
-		}
-		return existing, nil
-	}
-
-	if err := s.repo.Create(ctx, item); err != nil {
-		return nil, err
-	}
-	return item, nil
+	return s.repo.UpsertItem(ctx, item)
 }
 
 // UpdateItem changes the quantity of a cart item.

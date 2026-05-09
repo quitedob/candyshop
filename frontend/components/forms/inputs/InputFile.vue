@@ -177,7 +177,7 @@ defineExpose({
   border: 2px dashed var(--color-border);
   border-radius: var(--radius-lg);
   background-color: var(--color-bg-alt);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .input-file__dropzone--dragover {
@@ -210,7 +210,7 @@ defineExpose({
   color: var(--color-text-light);
   background-color: white;
   border-radius: var(--radius-full);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .input-file__dropzone:hover .input-file__icon {

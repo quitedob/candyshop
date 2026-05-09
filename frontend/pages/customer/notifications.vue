@@ -50,6 +50,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
+const { formatDate: fmtDate } = useDisplay()
 const localePath = useLocalePath()
 
 const notifications = ref<any[]>([])
@@ -95,7 +96,7 @@ const formatDate = (value: string | null | undefined) => {
   if (!value) return t('customer.common.na')
   const dt = new Date(value)
   if (Number.isNaN(dt.getTime())) return t('customer.common.na')
-  return dt.toLocaleString()
+  return fmtDate(dt.toISOString(), { dateStyle: 'medium', timeStyle: 'short' })
 }
 
 onMounted(fetchNotifications)

@@ -24,7 +24,7 @@
         </div>
         <div>
           <p class="text-gray-500">{{ $t('customer.invoices.amount') }}</p>
-          <p class="font-medium text-lg text-orange-600">{{ invoice.currency }} {{ (invoice.totalAmount || 0).toLocaleString() }}</p>
+          <p class="font-medium text-lg text-orange-600">{{ invoice.currency }} {{ formatNumber(invoice.totalAmount || 0) }}</p>
         </div>
         <div>
           <p class="text-gray-500">{{ $t('customer.invoices.due_date') }}</p>
@@ -47,6 +47,7 @@
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const { t } = useI18n()
+const { formatNumber, formatDate } = useDisplay()
 const localePath = useLocalePath()
 const route = useRoute()
 const api = useApi()
@@ -64,7 +65,6 @@ const fetchInvoice = async () => {
   }
 }
 
-const formatDate = (d: string) => d ? new Date(d).toLocaleDateString() : '-'
 
 const statusClass = (status: string) => {
   const map: Record<string, string> = {

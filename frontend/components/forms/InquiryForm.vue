@@ -347,7 +347,7 @@ defineExpose({
   background-color: var(--color-bg-alt);
   border: 2px solid var(--color-border);
   border-radius: var(--radius-full);
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .inquiry-form__step--active .inquiry-form__step-number {
@@ -483,7 +483,7 @@ defineExpose({
   color: var(--color-text-light);
   background-color: transparent;
   border-radius: var(--radius-sm);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .inquiry-form__file-remove:hover {

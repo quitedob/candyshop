@@ -16,6 +16,7 @@ type Handler struct {
 	countryPaymentPolicy *orderSvc.CountryPaymentPolicyService
 	aiService            *tradeSvc.AIService
 	storage              storage.StorageService
+	Translations         *TranslationHandler
 }
 
 func NewHandler(cfg *config.Config, svcs *servicesCommon.AdminPortalServices, policySvc *orderSvc.CountryPaymentPolicyService, st storage.StorageService) *Handler {
@@ -24,6 +25,9 @@ func NewHandler(cfg *config.Config, svcs *servicesCommon.AdminPortalServices, po
 		services:             svcs,
 		countryPaymentPolicy: policySvc,
 		storage:              st,
+	}
+	if svcs != nil && svcs.Translation != nil {
+		h.Translations = NewTranslationHandler(svcs.Translation)
 	}
 	if cfg != nil {
 		aiSvc, err := tradeSvc.NewAIService(cfg.AI)

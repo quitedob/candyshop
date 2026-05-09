@@ -33,7 +33,7 @@
           </NuxtLink>
 
           <!-- Desktop / tablet: scroll when many items (avoids overflow on narrow widths) -->
-          <nav class="customer-header__nav hide-mobile" aria-label="Customer portal">
+          <nav class="customer-header__nav hide-mobile" :aria-label="t('customer.a11y.portalNav')">
             <ul class="customer-header__nav-list">
               <li v-for="item in navigation" :key="item.key" class="customer-header__nav-item">
                 <NuxtLink
@@ -359,7 +359,7 @@ onUnmounted(() => {
   font-weight: 500;
   color: var(--color-text-light);
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .customer-header__nav-link:hover {
@@ -500,7 +500,7 @@ onUnmounted(() => {
   font-weight: 500;
   color: var(--color-text-light);
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
   box-sizing: border-box;
 }
 
@@ -574,7 +574,7 @@ onUnmounted(() => {
 /* Slide Transition */
 .slide-down-enter-active,
 .slide-down-leave-active {
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .slide-down-enter-from,

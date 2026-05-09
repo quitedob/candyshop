@@ -3,10 +3,10 @@ package admin
 import (
 	"errors"
 	modelsOrder "candypro/api/internal/models/order"
-	modelsProduct "candypro/api/internal/models/product"
 	"candypro/api/internal/utils"
 	orderSvc "candypro/api/internal/services/order"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -51,26 +51,23 @@ type adminUpdateOrderRequest struct {
 // AdminCreateOrder creates a new order.
 func (h *Handler) AdminCreateOrder(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	var req adminCreateOrderRequest
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	userID := strings.TrimSpace(req.UserID)
 	if userID == "" {
-		utils.InvalidRequestResponse(c, "userId is required")
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	if _, err := h.services.User.GetByID(c.Request.Context(), userID); err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "User not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 
@@ -78,10 +75,7 @@ func (h *Handler) AdminCreateOrder(c *gin.Context) {
 	if req.InquiryID != nil && strings.TrimSpace(*req.InquiryID) != "" {
 		trimmed := strings.TrimSpace(*req.InquiryID)
 		if _, err := h.services.Inquiry.GetInquiry(c.Request.Context(), trimmed); err != nil {
-			c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-				Error:   "not_found",
-				Message: "Inquiry not found",
-			})
+			utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 			return
 		}
 		inquiryID = &trimmed
@@ -145,10 +139,7 @@ func (h *Handler) AdminCreateOrder(c *gin.Context) {
 	if h.requiresFullPrepaymentForOrder(c.Request.Context(), order.ShippingAddress.Country, order.UserID) &&
 		requiresPaidBeforeExecution(order.Status) &&
 		!isPaidInFull(order.PaymentStatus) {
-		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-			Error:   "payment_policy_violation",
-			Message: "Full prepayment is required for this order before it can be moved to execution stages",
-		})
+		utils.ErrorResp(c, http.StatusUnprocessableEntity, "payment_policy_violation")
 		return
 	}
 
@@ -160,16 +151,10 @@ func (h *Handler) AdminCreateOrder(c *gin.Context) {
 	}
 	if createErr != nil {
 		if errors.Is(createErr, modelsOrder.ErrInsufficientStock) {
-			c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-				Error:   "inventory_violation",
-				Message: "Inventory changed while creating order. Please retry with latest stock.",
-			})
+			utils.ErrorResp(c, http.StatusUnprocessableEntity, "inventory_violation")
 			return
 		}
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to create order",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "order_create_failed")
 		return
 	}
 
@@ -179,17 +164,14 @@ func (h *Handler) AdminCreateOrder(c *gin.Context) {
 // AdminUpdateOrder updates an order.
 func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	orderID := c.Param("id")
 	order, err := h.services.Order.GetOrder(c.Request.Context(), orderID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Order not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "order_not_found")
 		return
 	}
 	previousStatus := strings.ToLower(strings.TrimSpace(order.Status))
@@ -197,21 +179,18 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 	origFin := orderSvc.SnapshotOrderFinancial(order)
 
 	var req adminUpdateOrderRequest
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	if req.UserID != nil {
 		userID := strings.TrimSpace(*req.UserID)
 		if userID == "" {
-			utils.InvalidRequestResponse(c, "userId cannot be empty")
+			utils.InvalidResp(c, "invalid_request")
 			return
 		}
 		if _, userErr := h.services.User.GetByID(c.Request.Context(), userID); userErr != nil {
-			c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-				Error:   "not_found",
-				Message: "User not found",
-			})
+			utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
 			return
 		}
 		order.UserID = userID
@@ -224,10 +203,7 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 			order.Inquiry = nil
 		} else {
 			if _, inquiryErr := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID); inquiryErr != nil {
-				c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-					Error:   "not_found",
-					Message: "Inquiry not found",
-				})
+				utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 				return
 			}
 			order.InquiryID = &inquiryID
@@ -277,11 +253,8 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 
 	// Validate status transition before any side-effects.
 	if currentStatus != previousStatus {
-		if err := validateStatusTransition(previousStatus, currentStatus); err != nil {
-			c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-				Error:   "invalid_status_transition",
-				Message: err.Error(),
-			})
+		if err := modelsOrder.ValidateOrderStatusTransition(previousStatus, currentStatus); err != nil {
+			utils.ErrorResp(c, http.StatusUnprocessableEntity, "invalid_status_transition")
 			return
 		}
 	}
@@ -289,10 +262,7 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 	if h.requiresFullPrepaymentForOrder(c.Request.Context(), order.ShippingAddress.Country, order.UserID) &&
 		requiresPaidBeforeExecution(order.Status) &&
 		!isPaidInFull(order.PaymentStatus) {
-		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-			Error:   "payment_policy_violation",
-			Message: "Full prepayment is required for this order before it can be moved to execution stages",
-		})
+		utils.ErrorResp(c, http.StatusUnprocessableEntity, "payment_policy_violation")
 		return
 	}
 
@@ -300,10 +270,7 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 	company := h.resolveUserCompany(c, order.UserID)
 	if company != nil && requiresPaidBeforeExecution(currentStatus) && !isPaidInFull(order.PaymentStatus) {
 		if !requiresPrepaymentByTerms(company.PaymentTerms) && company.CreditLimit > 0 && order.TotalAmount > company.CreditLimit {
-			c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-				Error:   "credit_limit_exceeded",
-				Message: "Order amount exceeds the customer's credit limit",
-			})
+			utils.ErrorResp(c, http.StatusUnprocessableEntity, "credit_limit_exceeded")
 			return
 		}
 	}
@@ -311,10 +278,7 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 	newFin := orderSvc.SnapshotOrderFinancial(order)
 	if orderSvc.OrderFinancialChanged(origFin, newFin) && orderSvc.OrderStatusRequiresFinancialReason(previousStatus) {
 		if strings.TrimSpace(req.FinancialAdjustmentReason) == "" {
-			c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-				Error:   "financial_adjustment_reason_required",
-				Message: "Changing order financial fields while the order is confirmed (or later) requires financialAdjustmentReason for audit.",
-			})
+			utils.ErrorResp(c, http.StatusUnprocessableEntity, "financial_adjustment_reason_required")
 			return
 		}
 	}
@@ -322,10 +286,7 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 	if previousStatus != "cancelled" && currentStatus == "cancelled" && order.StockReserved {
 		order.UpdatedAt = time.Now()
 		if err := h.services.Order.ReleaseOrderStock(c.Request.Context(), order); err != nil {
-			c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-				Error:   "internal_error",
-				Message: "Failed to release reserved stock for cancelled order",
-			})
+			utils.ErrorResp(c, http.StatusInternalServerError, "order_stock_release_failed")
 			return
 		}
 		h.syncOrderFinancialSideEffects(c, order, origFin, newFin, previousStatus, req.FinancialAdjustmentReason)
@@ -341,16 +302,10 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 		order.UpdatedAt = time.Now()
 		if err := h.services.Order.UpdateOrderWithStockAdjustment(c.Request.Context(), order, stockAdjustment); err != nil {
 			if errors.Is(err, modelsOrder.ErrInsufficientStock) {
-				c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-					Error:   "inventory_violation",
-					Message: "Inventory changed while updating order items. Please retry with latest stock.",
-				})
+				utils.ErrorResp(c, http.StatusUnprocessableEntity, "inventory_violation")
 				return
 			}
-			c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-				Error:   "internal_error",
-				Message: "Failed to update order with inventory adjustment",
-			})
+			utils.ErrorResp(c, http.StatusInternalServerError, "order_update_stock_failed")
 			return
 		}
 		h.syncOrderFinancialSideEffects(c, order, origFin, newFin, previousStatus, req.FinancialAdjustmentReason)
@@ -374,12 +329,17 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 		order.DeliveredAt = &now
 	}
 
-	if err := h.services.Order.UpdateOrder(c.Request.Context(), order); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to update order",
-		})
-		return
+	// Route through UpdateOrderForAdmin to trigger outbox when transitioning to confirmed
+	if currentStatus != previousStatus {
+		if err := h.services.Order.UpdateOrderForAdmin(c.Request.Context(), order, previousStatus, currentStatus); err != nil {
+			utils.ErrorResp(c, http.StatusInternalServerError, "order_update_failed")
+			return
+		}
+	} else {
+		if err := h.services.Order.UpdateOrder(c.Request.Context(), order); err != nil {
+			utils.ErrorResp(c, http.StatusInternalServerError, "order_update_failed")
+			return
+		}
 	}
 
 	h.syncOrderFinancialSideEffects(c, order, origFin, newFin, previousStatus, req.FinancialAdjustmentReason)
@@ -398,27 +358,28 @@ func (h *Handler) syncOrderFinancialSideEffects(c *gin.Context, order *modelsOrd
 	if !orderSvc.OrderFinancialChanged(origFin, newFin) {
 		return
 	}
-	_ = h.services.Trade.SyncTradeTotalFromOrder(c.Request.Context(), order)
+	if err := h.services.Trade.SyncTradeTotalFromOrder(c.Request.Context(), order); err != nil {
+		log.Printf("Warning: failed to sync trade total for order %s: %v", order.ID, err)
+	}
 	if orderSvc.OrderStatusRequiresFinancialReason(previousStatus) && strings.TrimSpace(reason) != "" {
 		actor := adminActorID(c)
-		_ = h.services.Invoice.RecordOrderFinancialAdjustment(c.Request.Context(), order.ID, actor, reason, origFin, newFin)
+		if err := h.services.Invoice.RecordOrderFinancialAdjustment(c.Request.Context(), order.ID, actor, reason, origFin, newFin); err != nil {
+			log.Printf("Warning: failed to record order financial adjustment for order %s: %v", order.ID, err)
+		}
 	}
 }
 
 // AdminDeleteOrder deletes an order.
 func (h *Handler) AdminDeleteOrder(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	orderID := c.Param("id")
 	order, err := h.services.Order.GetOrder(c.Request.Context(), orderID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Order not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "order_not_found")
 		return
 	}
 
@@ -429,10 +390,7 @@ func (h *Handler) AdminDeleteOrder(c *gin.Context) {
 		deleteErr = h.services.Order.DeleteOrder(c.Request.Context(), orderID)
 	}
 	if deleteErr != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to delete order",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "order_delete_failed")
 		return
 	}
 
@@ -469,29 +427,4 @@ func buildItemQuantityMap(items []modelsOrder.OrderItem) map[string]int {
 		qtyByProduct[productID] += item.Quantity
 	}
 	return qtyByProduct
-}
-
-// validStatusTransitions defines the allowed order status flow.
-// Each key maps to the set of statuses it can transition to.
-var validStatusTransitions = map[string]map[string]bool{
-	"pending":              {"confirmed": true, "cancelled": true},
-	"pending_confirmation": {"pending": true, "confirmed": true, "cancelled": true},
-	"confirmed":            {"production": true, "cancelled": true},
-	"production":           {"shipped": true, "cancelled": true},
-	"shipped":              {"delivered": true},
-	"delivered":            {},
-	"cancelled":            {},
-}
-
-// validateStatusTransition checks whether moving from prev to next is allowed.
-func validateStatusTransition(prev, next string) error {
-	allowed, known := validStatusTransitions[prev]
-	if !known {
-		// Unknown current status — allow any transition to avoid blocking legacy data.
-		return nil
-	}
-	if allowed[next] {
-		return nil
-	}
-	return fmt.Errorf("cannot transition order from '%s' to '%s'", prev, next)
 }

@@ -24,7 +24,8 @@
     "a11y": {
       "openMenu": "打开导航菜单",
       "closeMenu": "关闭导航菜单",
-      "cart": "订单请求与购物车"
+      "cart": "订单请求与购物车",
+      "portalNav": "客户门户"
     },
     "page_titles": {
       "dashboard": "仪表盘",
@@ -424,7 +425,15 @@
       "cancel": "取消",
       "submitting": "提交中...",
       "submit": "提交项目",
-      "project_created": "项目创建成功！"
+      "project_created": "项目创建成功！",
+      "inquiry": "询价",
+      "sampling": "样品",
+      "formulation": "配方",
+      "quotation": "报价",
+      "contract": "合同",
+      "production": "生产",
+      "delivery": "交货",
+      "completed": "已完成"
     },
     "cart": {
       "title": "订单请求",

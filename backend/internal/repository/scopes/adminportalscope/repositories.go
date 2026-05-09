@@ -5,10 +5,12 @@ import (
 	auth "candypro/api/internal/repository/auth"
 	content "candypro/api/internal/repository/content"
 	inquiry "candypro/api/internal/repository/inquiry"
+	notificationrepo "candypro/api/internal/repository/notification"
 	oem "candypro/api/internal/repository/oem"
 	order "candypro/api/internal/repository/order"
 	product "candypro/api/internal/repository/product"
 	systemsetting "candypro/api/internal/repository/systemsetting"
+	translation "candypro/api/internal/repository/translation"
 	trade "candypro/api/internal/repository/trade"
 	user "candypro/api/internal/repository/user"
 
@@ -33,8 +35,11 @@ type Repositories struct {
 	Shipment       *trade.ShipmentRepository
 	ShipmentEvent  *trade.ShipmentEventRepository
 	TradeDocDetail *trade.TradeDocumentDetailRepository
-	ActivityLog    *activitylog.ActivityLogRepository
-	SystemSetting  *systemsetting.SystemSettingRepository
+	ActivityLog       *activitylog.ActivityLogRepository
+	SystemSetting     *systemsetting.SystemSettingRepository
+	StockTransaction  *order.StockTransactionRepository
+	Translation       *translation.TranslationRepository
+	Notification      *notificationrepo.NotificationRepository
 }
 
 func New(db *gorm.DB) *Repositories {
@@ -57,7 +62,10 @@ func New(db *gorm.DB) *Repositories {
 			ShipmentEvent:  trade.NewShipmentEventRepository(db),
 		TradeDocDetail: trade.NewTradeDocumentDetailRepository(db),
 		ActivityLog:    activitylog.NewActivityLogRepository(db),
-		SystemSetting:  systemsetting.NewSystemSettingRepository(db),
+		SystemSetting:     systemsetting.NewSystemSettingRepository(db),
+		StockTransaction:  order.NewStockTransactionRepository(db),
+		Translation:       translation.New(db),
+		Notification:      notificationrepo.NewNotificationRepository(db),
 	}
 }
 

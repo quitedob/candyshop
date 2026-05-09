@@ -167,7 +167,7 @@ const paymentChartOptions = {
 const revenueChartData = computed(() => ({
   labels: revenueData.value.map(d => d.month || d.Month),
   datasets: [{
-    label: 'Revenue',
+    label: t('admin.financial.revenue'),
     data: revenueData.value.map(d => d.revenue || d.Revenue || 0),
     borderColor: '#10B981',
     backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -183,8 +183,7 @@ const lineChartOptions = {
   scales: { y: { beginAtZero: true } }
 }
 
-const formatNumber = (num: number) => num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-const formatDate = (d: string) => d ? new Date(d).toLocaleDateString() : '-'
+const { formatNumber, formatDate } = useDisplay()
 const isOverdue = (inv: any) => {
   const due = inv.due_date || inv.dueDate
   if (!due) return false

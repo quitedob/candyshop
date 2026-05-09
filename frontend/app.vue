@@ -15,7 +15,7 @@
           <NuxtPage />
         </NuxtLayout>
         <template #error="{ error, clearError }">
-          <div class="error-boundary">
+          <div class="error-boundary" role="alert">
             <p>{{ error.message || $t('errors.boundary') }}</p>
             <button class="btn btn-highlight btn-sm" @click="clearError">{{ $t('errors.retry') }}</button>
           </div>
@@ -78,11 +78,11 @@ useHead({
   overflow: hidden;
   z-index: 10000;
   padding: 0.75rem 1.5rem;
-  background: var(--color-primary, #1c1917);
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
   font-weight: 600;
   text-decoration: none;
-  border-radius: 0 0 0.5rem 0;
+  border-radius: 0 0 var(--radius-md) 0;
 }
 .skip-to-content:focus {
   position: fixed;
@@ -113,19 +113,20 @@ useHead({
   left: auto;
   max-width: min(28rem, calc(100vw - 2rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
   padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  color: #fff;
+  border-radius: var(--radius-md);
+  color: var(--color-text-on-primary);
   font-weight: 500;
   z-index: 10000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lg);
   box-sizing: border-box;
+  overscroll-behavior: contain;
 }
-.toast--success { background-color: #22c55e; }
-.toast--error { background-color: #ef4444; }
-.toast--warning { background-color: #f59e0b; }
-.toast--info { background-color: #3b82f6; }
+.toast--success { background-color: var(--color-success); }
+.toast--error { background-color: var(--color-error); }
+.toast--warning { background-color: var(--color-warning); }
+.toast--info { background-color: var(--color-info); }
 .toast-enter-active,
-.toast-leave-active { transition: all 0.3s ease; }
+.toast-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
 .toast-enter-from,
 .toast-leave-to { opacity: 0; transform: translateY(1rem); }
 
@@ -138,6 +139,7 @@ useHead({
   height: 3px;
   width: 0%;
   transition: width 0.2s, opacity 0.4s;
+  transform-origin: left;
   opacity: 1;
   background: linear-gradient(
     to right,

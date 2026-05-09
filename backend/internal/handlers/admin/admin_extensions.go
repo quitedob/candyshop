@@ -20,24 +20,18 @@ func (h *Handler) GetDashboard(c *gin.Context) {
 // GetSalesReport returns aggregate sales report.
 func (h *Handler) GetSalesReport(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	totalOrders, err := h.services.Order.CountOrders(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to count orders",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 		return
 	}
 	totalSales, err := h.services.Order.SumSales(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to aggregate sales",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 		return
 	}
 
@@ -45,10 +39,7 @@ func (h *Handler) GetSalesReport(c *gin.Context) {
 	monthStart = time.Date(monthStart.Year(), monthStart.Month(), 1, 0, 0, 0, 0, monthStart.Location())
 	monthSales, err := h.services.Order.SumSalesSince(c.Request.Context(), monthStart)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to aggregate monthly sales",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 		return
 	}
 
@@ -64,16 +55,13 @@ func (h *Handler) GetSalesReport(c *gin.Context) {
 // GetInquiriesReport returns aggregate inquiry report.
 func (h *Handler) GetInquiriesReport(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	totalInquiries, err := h.services.Inquiry.CountInquiries(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to count inquiries",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 		return
 	}
 
@@ -82,10 +70,7 @@ func (h *Handler) GetInquiriesReport(c *gin.Context) {
 	for _, status := range statuses {
 		count, countErr := h.services.Inquiry.CountInquiriesByStatus(c.Request.Context(), status)
 		if countErr != nil {
-			c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-				Error:   "internal_error",
-				Message: "Failed to count inquiries by status",
-			})
+			utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 			return
 		}
 		byStatus[status] = count
@@ -101,7 +86,7 @@ func (h *Handler) GetInquiriesReport(c *gin.Context) {
 // AdminCreateUser creates a new user.
 func (h *Handler) AdminCreateUser(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -116,23 +101,17 @@ func (h *Handler) AdminCreateUser(c *gin.Context) {
 		RoleName  string `json:"roleName"`
 		Status    string `json:"status"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	exists, err := h.services.User.EmailExists(c.Request.Context(), req.Email)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to validate email",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 		return
 	}
 	if exists {
-		c.JSON(http.StatusConflict, modelsProduct.ErrorResponse{
-			Error:   "email_exists",
-			Message: "Email is already registered",
-		})
+		utils.ErrorResp(c, http.StatusConflict, "email_exists")
 		return
 	}
 
@@ -149,10 +128,7 @@ func (h *Handler) AdminCreateUser(c *gin.Context) {
 	if strings.TrimSpace(req.RoleID) != "" || strings.TrimSpace(req.RoleName) != "" {
 		resolvedRoleID, roleErr := h.services.Auth.ResolveRoleID(c.Request.Context(), req.RoleID, req.RoleName)
 		if roleErr != nil {
-			c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-				Error:   "invalid_request",
-				Message: roleErr.Error(),
-			})
+			utils.InvalidResp(c, "invalid_request")
 			return
 		}
 		user.RoleID = resolvedRoleID
@@ -163,10 +139,7 @@ func (h *Handler) AdminCreateUser(c *gin.Context) {
 	}
 
 	if err := h.services.Auth.Register(c.Request.Context(), user); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to create user",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "user_create_failed")
 		return
 	}
 
@@ -185,24 +158,18 @@ func (h *Handler) AdminCreateUser(c *gin.Context) {
 // AdminDeleteUser deletes a user by id.
 func (h *Handler) AdminDeleteUser(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID := c.Param("id")
 	if _, err := h.services.User.GetByID(c.Request.Context(), userID); err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "User not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 
 	if err := h.services.User.DeleteUser(c.Request.Context(), userID); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to delete user",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "user_delete_failed")
 		return
 	}
 
@@ -215,7 +182,7 @@ func (h *Handler) AdminDeleteUser(c *gin.Context) {
 // AdminUpdateUserRole updates user role.
 func (h *Handler) AdminUpdateUserRole(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -224,34 +191,25 @@ func (h *Handler) AdminUpdateUserRole(c *gin.Context) {
 		RoleID   string `json:"roleId"`
 		RoleName string `json:"roleName"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "User not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 
 	resolvedRoleID, resolveErr := h.services.Auth.ResolveRoleID(c.Request.Context(), req.RoleID, req.RoleName)
 	if resolveErr != nil {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: resolveErr.Error(),
-		})
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	user.RoleID = resolvedRoleID
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to update role",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "user_role_update_failed")
 		return
 	}
 
@@ -265,17 +223,14 @@ func (h *Handler) AdminUpdateUserRole(c *gin.Context) {
 // AdminGetInquiry returns inquiry details for admins.
 func (h *Handler) AdminGetInquiry(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	inquiryID := c.Param("id")
 	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Inquiry not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
 	c.JSON(http.StatusOK, inquiry)
@@ -284,7 +239,7 @@ func (h *Handler) AdminGetInquiry(c *gin.Context) {
 // AdminAssignInquiry assigns inquiry to a sales/admin user.
 func (h *Handler) AdminAssignInquiry(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -293,20 +248,13 @@ func (h *Handler) AdminAssignInquiry(c *gin.Context) {
 		AssignedTo string `json:"assignedTo" binding:"required"`
 		Priority   string `json:"priority"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: err.Error(),
-		})
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Inquiry not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
 
@@ -317,10 +265,7 @@ func (h *Handler) AdminAssignInquiry(c *gin.Context) {
 	inquiry.UpdatedAt = time.Now()
 
 	if err := h.services.Inquiry.UpdateInquiry(c.Request.Context(), inquiry); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to assign inquiry",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "inquiry_update_failed")
 		return
 	}
 
@@ -330,17 +275,14 @@ func (h *Handler) AdminAssignInquiry(c *gin.Context) {
 // AdminAnalyzeInquiry returns a lightweight AI-style analysis payload.
 func (h *Handler) AdminAnalyzeInquiry(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	inquiryID := c.Param("id")
 	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Inquiry not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
 
@@ -377,7 +319,7 @@ func (h *Handler) AdminAnalyzeInquiry(c *gin.Context) {
 // AdminQuoteInquiry writes quote result back to inquiry.
 func (h *Handler) AdminQuoteInquiry(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -389,20 +331,13 @@ func (h *Handler) AdminQuoteInquiry(c *gin.Context) {
 		CustomerNotes        string   `json:"customerNotes"`
 		RequestHumanReview   bool     `json:"requestHumanReview"` // 与 Eino submit_quotation_for_human_review 工具配合的人审标记
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: err.Error(),
-		})
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Inquiry not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
 
@@ -420,10 +355,7 @@ func (h *Handler) AdminQuoteInquiry(c *gin.Context) {
 	}
 
 	if err := h.services.Inquiry.UpdateInquiry(c.Request.Context(), inquiry); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to save quote",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "inquiry_update_failed")
 		return
 	}
 
@@ -436,7 +368,7 @@ func (h *Handler) AdminQuoteInquiry(c *gin.Context) {
 // AdminGetProducts returns paginated product list for admin.
 func (h *Handler) AdminGetProducts(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -444,10 +376,7 @@ func (h *Handler) AdminGetProducts(c *gin.Context) {
 	category := strings.TrimSpace(c.Query("category"))
 	products, err := h.services.Product.GetProducts(c.Request.Context(), page, limit, category)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to fetch products",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "product_fetch_failed")
 		return
 	}
 
@@ -457,17 +386,14 @@ func (h *Handler) AdminGetProducts(c *gin.Context) {
 // AdminGetProduct returns a single product for admin.
 func (h *Handler) AdminGetProduct(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	productID := c.Param("id")
 	product, err := h.services.Product.GetProductByID(c.Request.Context(), productID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Product not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "product_not_found")
 		return
 	}
 	c.JSON(http.StatusOK, product)
@@ -476,7 +402,7 @@ func (h *Handler) AdminGetProduct(c *gin.Context) {
 // AdminUpdateProductStatus updates product status only.
 func (h *Handler) AdminUpdateProductStatus(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -484,30 +410,24 @@ func (h *Handler) AdminUpdateProductStatus(c *gin.Context) {
 	var req struct {
 		Status string `json:"status" binding:"required"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: err.Error(),
-		})
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	product, err := h.services.Product.GetProductByID(c.Request.Context(), productID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Product not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "product_not_found")
 		return
 	}
 
-	product.Status = req.Status
+	product.Status = strings.TrimSpace(req.Status)
+	if !modelsProduct.IsValidProductStatus(product.Status) {
+		utils.InvalidResp(c, "product_status_invalid")
+		return
+	}
 	product.UpdatedAt = time.Now()
 	if err := h.services.Product.UpdateProduct(c.Request.Context(), product); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to update product status",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "product_update_failed")
 		return
 	}
 

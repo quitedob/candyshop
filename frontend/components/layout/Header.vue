@@ -5,7 +5,7 @@
     <div class="container">
       <div class="header__inner">
         <!-- Logo -->
-        <NuxtLink :to="localePath('/')" class="header__logo" aria-label="Go to homepage">
+        <NuxtLink :to="localePath('/')" class="header__logo" :aria-label="t('common.a11y.go_to_homepage')">
           <svg viewBox="0 0 180 40" fill="none" xmlns="http://www.w3.org/2000/svg" class="header__logo-svg">
             <circle cx="20" cy="20" r="16" fill="var(--color-highlight)" opacity="0.2"/>
             <path d="M14 20C14 16.6863 16.6863 14 20 14C23.3137 14 26 16.6863 26 20C26 23.3137 23.3137 26 20 26C16.6863 26 14 23.3137 14 20Z" stroke="var(--color-highlight)" stroke-width="2.5"/>
@@ -17,7 +17,7 @@
         </NuxtLink>
 
         <!-- Desktop Navigation -->
-        <nav class="header__nav hide-mobile" aria-label="Main navigation">
+        <nav class="header__nav hide-mobile" :aria-label="t('common.a11y.main_navigation')">
           <ul class="header__nav-list">
             <li
               v-for="item in navItems"
@@ -51,7 +51,7 @@
         <!-- Right Side Actions -->
         <div class="header__actions">
           <!-- Language Switcher -->
-          <div class="header__lang hide-mobile" role="group" aria-label="Language">
+          <div class="header__lang hide-mobile" role="group" :aria-label="t('common.a11y.language')">
             <button
               v-for="loc in locales"
               :key="loc"
@@ -59,7 +59,7 @@
               :aria-pressed="locale === loc"
               @click="switchLocale(loc)"
             >
-              {{ loc.toUpperCase() }}
+              {{ $t(`languages.${loc}_short`) }}
             </button>
           </div>
 
@@ -69,7 +69,7 @@
             target="_blank"
             rel="noopener noreferrer"
             class="header__whatsapp hide-mobile"
-            aria-label="Contact us on WhatsApp"
+            :aria-label="t('common.a11y.contact_whatsapp')"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
@@ -100,7 +100,7 @@
             ref="menuToggleRef"
             class="header__toggle hide-desktop"
             :aria-expanded="isMenuOpen"
-            aria-label="Toggle menu"
+            :aria-label="t('common.a11y.toggle_menu')"
             @click="toggleMenu"
           >
             <span /><span /><span />
@@ -124,11 +124,11 @@
       <nav
         v-if="isMenuOpen"
         class="header__drawer hide-desktop"
-        aria-label="Mobile navigation"
+        :aria-label="t('common.a11y.mobile_navigation')"
       >
         <div class="header__drawer-head">
           <span class="header__drawer-title">{{ $t('nav.home') }}</span>
-          <button class="header__drawer-close" aria-label="Close menu" @click="closeMenu">
+          <button class="header__drawer-close" :aria-label="t('common.a11y.close_menu')" @click="closeMenu">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
               <line x1="4" y1="4" x2="16" y2="16"/><line x1="16" y1="4" x2="4" y2="16"/>
             </svg>
@@ -167,14 +167,14 @@
         </ul>
 
         <div class="header__drawer-footer">
-          <div class="header__drawer-lang" role="group" aria-label="Language">
+          <div class="header__drawer-lang" role="group" :aria-label="t('common.a11y.language')">
             <button
               v-for="loc in locales"
               :key="loc"
               :class="['header__lang-btn', { 'header__lang-btn--active': locale === loc }]"
               @click="switchLocale(loc)"
             >
-              {{ loc.toUpperCase() }}
+              {{ $t(`languages.${loc}_short`) }}
             </button>
           </div>
           <template v-if="!isAuthenticated">
@@ -437,7 +437,7 @@ watch(() => route.path, closeMenu)
   font-weight: 600;
   color: var(--color-text-light);
   border-radius: var(--radius-full);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
   cursor: pointer;
 }
 
@@ -491,7 +491,7 @@ watch(() => route.path, closeMenu)
   height: 2px;
   background: var(--color-primary);
   border-radius: 2px;
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
   transform-origin: center;
 }
 

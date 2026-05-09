@@ -104,7 +104,7 @@ const buttonClasses = computed(() => {
   text-align: center;
   white-space: nowrap;
   user-select: none;
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
   cursor: pointer;
   border: 2px solid transparent;
   border-radius: var(--radius-md);

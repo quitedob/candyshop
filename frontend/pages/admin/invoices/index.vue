@@ -37,11 +37,13 @@
       <div class="flex flex-wrap items-center gap-4">
         <div class="flex-1 min-w-[200px]">
           <div class="relative">
+            <label for="invoice-search" class="sr-only">{{ t('admin.invoices.search') }}</label>
             <Icon name="heroicons:magnifying-glass" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input v-model="searchQuery" type="text" :placeholder="t('admin.invoices.search')" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+            <input id="invoice-search" v-model="searchQuery" name="search" type="text" :placeholder="t('admin.invoices.search')" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </div>
         </div>
-        <select v-model="statusFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+        <label for="invoice-filter-status" class="sr-only">{{ t('admin.invoices.filter_status') }}</label>
+        <select id="invoice-filter-status" v-model="statusFilter" name="statusFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
           <option value="all">{{ t('admin.invoices.filter_all') }}</option>
           <option value="draft">{{ t('admin.invoices.status_draft') }}</option>
           <option value="sent">{{ t('admin.invoices.status_sent') }}</option>
@@ -49,8 +51,10 @@
           <option value="overdue">{{ t('admin.invoices.status_overdue') }}</option>
           <option value="cancelled">{{ t('admin.invoices.status_cancelled') }}</option>
         </select>
-        <input v-model="dateFrom" type="date" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
-        <input v-model="dateTo" type="date" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        <label for="invoice-dateFrom" class="sr-only">{{ t('admin.invoices.date_from') }}</label>
+        <input id="invoice-dateFrom" v-model="dateFrom" name="dateFrom" type="date" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        <label for="invoice-dateTo" class="sr-only">{{ t('admin.invoices.date_to') }}</label>
+        <input id="invoice-dateTo" v-model="dateTo" name="dateTo" type="date" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
       </div>
     </div>
 
@@ -98,15 +102,15 @@
                 <div class="text-xs text-gray-500">{{ invoice.customerEmail }}</div>
               </td>
               <td class="px-6 py-4 text-right">
-                <span class="font-semibold text-gray-900">{{ cur(invoice.currency) }} {{ (invoice.totalAmount || 0).toLocaleString() }}</span>
-                <p v-if="invoice.paidAmount > 0" class="text-xs text-emerald-600">{{ t('admin.invoices.paid_amount_line', { currency: cur(invoice.currency), amount: invoice.paidAmount.toLocaleString() }) }}</p>
+                <span class="font-semibold text-gray-900">{{ cur(invoice.currency) }} {{ formatNumber(invoice.totalAmount || 0) }}</span>
+                <p v-if="invoice.paidAmount > 0" class="text-xs text-emerald-600">{{ t('admin.invoices.paid_amount_line', { currency: cur(invoice.currency), amount: formatNumber(invoice.paidAmount) }) }}</p>
               </td>
               <td class="px-6 py-4 text-sm text-gray-600">
-                {{ invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString() : cell(null) }}
+                {{ formatDate(invoice.invoiceDate) }}
               </td>
               <td class="px-6 py-4 text-sm">
                 <span :class="isOverdue(invoice) ? 'text-red-600 font-medium' : 'text-gray-600'">
-                  {{ invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : cell(null) }}
+                  {{ formatDate(invoice.dueDate) }}
                 </span>
               </td>
               <td class="px-6 py-4">
@@ -143,28 +147,28 @@
     <!-- Create/Edit Modal -->
     <div v-if="showModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="closeModal"></div>
-        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:max-w-2xl sm:align-middle">
+        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closeModal" :aria-label="t('common.close')"></button>
+        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl sm:my-8 sm:max-w-2xl sm:align-middle">
           <div class="bg-gradient-to-r from-orange-500 to-amber-600 px-6 py-4">
             <h3 class="text-lg font-semibold text-white">{{ editingId ? t('admin.invoices.edit_invoice') : t('admin.invoices.create_invoice') }}</h3>
           </div>
           <form @submit.prevent="saveInvoice" class="p-6 space-y-4">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.invoice_number') }}</label>
-                <input v-model="form.invoiceNumber" type="text" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                <label for="invoice-invoiceNumber" class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.invoice_number') }}</label>
+                <input id="invoice-invoiceNumber" v-model="form.invoiceNumber" name="invoiceNumber" type="text" autocomplete="off" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.type') }}</label>
-                <select v-model="form.type" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
-                  <option value="invoice">Invoice</option>
-                  <option value="proforma">Proforma</option>
-                  <option value="credit_note">Credit Note</option>
+                <label for="invoice-type" class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.type') }}</label>
+                <select id="invoice-type" v-model="form.type" name="type" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <option value="invoice">{{ enumLabel('invoice_type', 'invoice') }}</option>
+                  <option value="proforma">{{ enumLabel('invoice_type', 'proforma') }}</option>
+                  <option value="credit_note">{{ enumLabel('invoice_type', 'credit_note') }}</option>
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.order') }}</label>
-                <select v-model="form.orderId" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                <label for="invoice-orderId" class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.order') }}</label>
+                <select id="invoice-orderId" v-model="form.orderId" name="orderId" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
                   <option value="">{{ t('admin.invoices.select_order') }}</option>
                   <option v-for="order in orders" :key="order.id" :value="order.id">
                     #{{ order.orderNumber || order.id.substring(0, 8) }}
@@ -172,39 +176,39 @@
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.currency') }}</label>
-                <input v-model="form.currency" type="text" :placeholder="t('common.defaults.currency')" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 uppercase" />
+                <label for="invoice-currency" class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.currency') }}</label>
+                <input id="invoice-currency" v-model="form.currency" name="currency" type="text" autocomplete="off" :placeholder="t('common.defaults.currency')" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 uppercase" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.total_amount') }}</label>
-                <input v-model.number="form.totalAmount" type="number" step="0.01" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                <label for="invoice-totalAmount" class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.total_amount') }}</label>
+                <input id="invoice-totalAmount" v-model.number="form.totalAmount" name="totalAmount" type="number" step="0.01" autocomplete="off" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.paid_amount') }}</label>
-                <input v-model.number="form.paidAmount" type="number" step="0.01" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                <label for="invoice-paidAmount" class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.paid_amount') }}</label>
+                <input id="invoice-paidAmount" v-model.number="form.paidAmount" name="paidAmount" type="number" step="0.01" autocomplete="off" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.invoice_date') }}</label>
-                <input v-model="form.invoiceDate" type="date" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                <label for="invoice-invoiceDate" class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.invoice_date') }}</label>
+                <input id="invoice-invoiceDate" v-model="form.invoiceDate" name="invoiceDate" type="date" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.due_date') }}</label>
-                <input v-model="form.dueDate" type="date" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                <label for="invoice-dueDate" class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.due_date') }}</label>
+                <input id="invoice-dueDate" v-model="form.dueDate" name="dueDate" type="date" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.status') }}</label>
-                <select v-model="form.status" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
-                  <option value="draft">Draft</option>
-                  <option value="sent">Sent</option>
-                  <option value="paid">Paid</option>
-                  <option value="overdue">Overdue</option>
-                  <option value="cancelled">Cancelled</option>
+                <label for="invoice-status" class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.status') }}</label>
+                <select id="invoice-status" v-model="form.status" name="status" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <option value="draft">{{ t('admin.status_options.draft') }}</option>
+                  <option value="sent">{{ t('admin.status_options.sent') }}</option>
+                  <option value="paid">{{ t('admin.status_options.paid') }}</option>
+                  <option value="overdue">{{ t('admin.status_options.overdue') }}</option>
+                  <option value="cancelled">{{ t('admin.status_options.cancelled') }}</option>
                 </select>
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.notes') }}</label>
-              <textarea v-model="form.notes" rows="2" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
+              <label for="invoice-notes" class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.notes') }}</label>
+              <textarea id="invoice-notes" v-model="form.notes" name="notes" rows="2" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
             </div>
             <div v-if="formError" class="text-sm text-red-600">{{ formError }}</div>
             <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
@@ -224,8 +228,8 @@
     <!-- Invoice Preview Modal -->
     <div v-if="showPreviewModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showPreviewModal = false"></div>
-        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:max-w-3xl sm:align-middle">
+        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="showPreviewModal = false" :aria-label="t('common.close')"></button>
+        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl sm:my-8 sm:max-w-3xl sm:align-middle">
           <div class="bg-gradient-to-r from-gray-700 to-gray-900 px-6 py-4 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-white">{{ t('admin.invoices.invoice_preview') }}</h3>
             <div class="flex items-center gap-2">
@@ -242,10 +246,10 @@
             <!-- Invoice Header -->
             <div class="flex justify-between items-start mb-8">
               <div>
-                <h1 class="text-2xl font-bold text-gray-900">INVOICE</h1>
+                <h1 class="text-2xl font-bold text-gray-900">{{ t('admin.invoices.invoice_heading') }}</h1>
                 <p class="text-gray-500 mt-1">{{ previewInvoice.invoiceNumber }}</p>
                 <p class="text-sm text-gray-500 mt-1">
-                  {{ previewInvoice.type === 'proforma' ? 'PROFORMA INVOICE' : previewInvoice.type === 'credit_note' ? 'CREDIT NOTE' : 'TAX INVOICE' }}
+                  {{ previewInvoice.type === 'proforma' ? t('admin.invoices.proforma_heading') : previewInvoice.type === 'credit_note' ? t('admin.invoices.credit_note_heading') : t('admin.invoices.tax_heading') }}
                 </p>
               </div>
               <div class="text-right">
@@ -257,18 +261,18 @@
             <!-- Dates & Status -->
             <div class="grid grid-cols-2 gap-8 mb-8">
               <div>
-                <p class="text-sm font-medium text-gray-500 mb-1">Invoice Date</p>
-                <p class="text-gray-900">{{ previewInvoice.invoiceDate ? new Date(previewInvoice.invoiceDate).toLocaleDateString() : cell(null) }}</p>
+                <p class="text-sm font-medium text-gray-500 mb-1">{{ t('admin.invoices.invoice_date') }}</p>
+                <p class="text-gray-900">{{ formatDate(previewInvoice.invoiceDate) }}</p>
               </div>
               <div>
-                <p class="text-sm font-medium text-gray-500 mb-1">Due Date</p>
-                <p class="text-gray-900">{{ previewInvoice.dueDate ? new Date(previewInvoice.dueDate).toLocaleDateString() : cell(null) }}</p>
+                <p class="text-sm font-medium text-gray-500 mb-1">{{ t('admin.invoices.due_date') }}</p>
+                <p class="text-gray-900">{{ formatDate(previewInvoice.dueDate) }}</p>
               </div>
             </div>
 
             <!-- Bill To -->
             <div class="mb-8">
-              <p class="text-sm font-medium text-gray-500 mb-1">Bill To</p>
+              <p class="text-sm font-medium text-gray-500 mb-1">{{ t('admin.invoices.bill_to') }}</p>
               <p class="font-semibold text-gray-900">{{ previewInvoice.customerName }}</p>
               <p class="text-sm text-gray-600">{{ previewInvoice.customerEmail }}</p>
             </div>
@@ -276,12 +280,12 @@
             <!-- Amount Summary -->
             <div class="border-t border-b border-gray-200 py-6 mb-8">
               <div class="flex justify-between items-center">
-                <span class="text-lg font-medium text-gray-700">Total Amount</span>
-                <span class="text-3xl font-bold text-gray-900">{{ cur(previewInvoice.currency) }} {{ (previewInvoice.totalAmount || 0).toLocaleString() }}</span>
+                <span class="text-lg font-medium text-gray-700">{{ t('admin.invoices.total_amount') }}</span>
+                <span class="text-3xl font-bold text-gray-900">{{ cur(previewInvoice.currency) }} {{ formatNumber(previewInvoice.totalAmount || 0) }}</span>
               </div>
               <div v-if="previewInvoice.paidAmount > 0" class="mt-2 flex justify-between items-center">
-                <span class="text-emerald-600">Paid Amount</span>
-                <span class="text-lg font-semibold text-emerald-600">{{ cur(previewInvoice.currency) }} {{ previewInvoice.paidAmount.toLocaleString() }}</span>
+                <span class="text-emerald-600">{{ t('admin.invoices.paid_amount') }}</span>
+                <span class="text-lg font-semibold text-emerald-600">{{ cur(previewInvoice.currency) }} {{ formatNumber(previewInvoice.paidAmount) }}</span>
               </div>
             </div>
 
@@ -305,7 +309,7 @@ definePageMeta({ layout: 'admin', middleware: ['auth'] })
 const api = useApi()
 const { t, te } = useI18n()
 const localePath = useLocalePath()
-const { currencyOrDefault: cur, cell } = useDisplay()
+const { currencyOrDefault: cur, cell, enumLabel, formatNumber, formatDate } = useDisplay()
 
 const invoices = ref<any[]>([])
 const orders = ref<any[]>([])

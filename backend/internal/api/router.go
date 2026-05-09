@@ -15,6 +15,7 @@ import (
 	"candypro/api/internal/config"
 	"candypro/api/internal/handlers"
 	"candypro/api/internal/middleware"
+	"candypro/api/internal/utils"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -73,6 +74,9 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 		MaxAge:           12 * 60 * 60,
 	}
 	router.Use(cors.New(corsConfig))
+
+	// Locale middleware — sets "locale" in gin.Context for i18n
+	router.Use(middleware.LocaleMiddleware())
 
 	// Rate limiting middleware
 	rateLimitHandler, limiter := middleware.RateLimit(&cfg.Security)
@@ -135,10 +139,7 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 
 	// 404 handler
 	router.NoRoute(func(c *gin.Context) {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error":   "not_found",
-			"message": "The requested resource was not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "not_found")
 	})
 
 	return &RouterWithShutdown{

@@ -16,6 +16,11 @@ import (
 func (s *OrderService) UpdateOrderForAdmin(ctx context.Context, order *modelsOrder.Order, previousStatus, targetStatus string) error {
 	prev := strings.ToLower(strings.TrimSpace(previousStatus))
 	next := strings.ToLower(strings.TrimSpace(targetStatus))
+
+	if err := modelsOrder.ValidateOrderStatusTransition(prev, next); err != nil {
+		return err
+	}
+
 	if next == "confirmed" && prev != "confirmed" {
 		payload, err := json.Marshal(map[string]string{"orderId": order.ID})
 		if err != nil {

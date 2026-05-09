@@ -305,7 +305,7 @@ onMounted(() => {
   overflow: hidden;
   background-color: var(--color-bg-alt);
   border: 2px solid var(--color-border);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .oem-choice:hover .oem-choice__image,

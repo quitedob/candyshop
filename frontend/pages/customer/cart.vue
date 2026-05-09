@@ -40,7 +40,7 @@
         </div>
         <h2 class="text-2xl font-semibold text-gray-900 mb-2">{{ t('customer.cart.empty_title') }}</h2>
         <p class="text-gray-600 mb-6">{{ t('customer.cart.empty_desc') }}</p>
-        <NuxtLink :to="localePath('/customer/products')" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-medium rounded-xl hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg shadow-orange-200">
+        <NuxtLink :to="localePath('/customer/products')" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-medium rounded-xl hover:from-orange-600 hover:to-amber-600 shadow-lg shadow-orange-200">
           <Icon name="heroicons:sparkles" class="h-5 w-5" />
           {{ t('customer.cart.browse_products') }}
         </NuxtLink>
@@ -93,8 +93,8 @@
                       <span class="text-sm text-gray-500">MOQ: {{ item.moq || 1 }}</span>
                     </div>
                     <div class="text-right">
-                      <p class="text-lg font-bold text-orange-600">{{ cur(item.currency) }} {{ ((item.unitPrice || 0) * item.quantity).toLocaleString() }}</p>
-                      <p class="text-xs text-gray-500">{{ t('customer.cart.unit_price_per', { currency: cur(item.currency), price: (item.unitPrice || 0).toLocaleString() }) }}</p>
+                      <p class="text-lg font-bold text-orange-600">{{ cur(item.currency) }} {{ formatNumber((item.unitPrice || 0) * item.quantity) }}</p>
+                      <p class="text-xs text-gray-500">{{ t('customer.cart.unit_price_per', { currency: cur(item.currency), price: formatNumber(item.unitPrice || 0) }) }}</p>
                     </div>
                   </div>
 
@@ -129,7 +129,7 @@
               </div>
               <div class="flex justify-between text-sm">
                 <span class="text-gray-600">{{ t('customer.cart.subtotal') }}</span>
-                <span class="font-medium text-gray-900">{{ cur(summary.currency) }} {{ (summary.subtotal || 0).toLocaleString() }}</span>
+                <span class="font-medium text-gray-900">{{ cur(summary.currency) }} {{ formatNumber(summary.subtotal || 0) }}</span>
               </div>
               <div class="flex justify-between text-sm">
                 <span class="text-gray-600">{{ t('customer.cart.estimated_tax') }}</span>
@@ -142,7 +142,7 @@
               <div class="pt-4 border-t border-gray-100">
                 <div class="flex justify-between">
                   <span class="text-base font-semibold text-gray-900">{{ t('customer.cart.subtotal_label') }}</span>
-                  <span class="text-xl font-bold text-orange-600">{{ cur(summary.currency) }} {{ (summary.subtotal || 0).toLocaleString() }}</span>
+                  <span class="text-xl font-bold text-orange-600">{{ cur(summary.currency) }} {{ formatNumber(summary.subtotal || 0) }}</span>
                 </div>
                 <p class="text-xs text-gray-400 mt-1">{{ t('customer.cart.tax_shipping_note') }}</p>
               </div>
@@ -171,7 +171,7 @@
 
               <!-- Action Buttons -->
               <div class="pt-4 space-y-3">
-                <button @click="proceedToCheckout" :disabled="checkingOut" class="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg shadow-orange-200 disabled:opacity-50 flex items-center justify-center gap-2">
+                <button @click="proceedToCheckout" :disabled="checkingOut" class="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-amber-600 shadow-lg shadow-orange-200 disabled:opacity-50 flex items-center justify-center gap-2">
                   <Icon v-if="checkingOut" name="heroicons:arrow-path" class="h-5 w-5 animate-spin" />
                   <Icon v-else name="heroicons:credit-card" class="h-5 w-5" />
                   {{ checkingOut ? t('customer.cart.processing') : t('customer.cart.proceed_checkout') }}
@@ -269,7 +269,7 @@ definePageMeta({
 
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
-const { currencyOrDefault: cur } = useDisplay()
+const { currencyOrDefault: cur, formatNumber } = useDisplay()
 const api = useApi()
 const tts = useTTS()
 
@@ -443,7 +443,7 @@ onMounted(fetchCart)
 <style scoped>
 .slide-up-enter-active,
 .slide-up-leave-active {
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 .slide-up-enter-from,
 .slide-up-leave-to {

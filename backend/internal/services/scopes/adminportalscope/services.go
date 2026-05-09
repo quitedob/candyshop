@@ -3,14 +3,17 @@ package adminportalscope
 import (
 	"candypro/api/internal/config"
 	repositoryCommon "candypro/api/internal/repository/common"
+	orderRepo "candypro/api/internal/repository/order"
 	auth "candypro/api/internal/services/auth"
 	activitylogSvc "candypro/api/internal/services/activitylog"
 	content "candypro/api/internal/services/content"
 	inquiry "candypro/api/internal/services/inquiry"
+	notificationsvc "candypro/api/internal/services/notification"
 	oem "candypro/api/internal/services/oem"
 	order "candypro/api/internal/services/order"
 	product "candypro/api/internal/services/product"
 	systemsettingSvc "candypro/api/internal/services/systemsetting"
+	translationSvc "candypro/api/internal/services/translation"
 	trade "candypro/api/internal/services/trade"
 	user "candypro/api/internal/services/user"
 
@@ -34,14 +37,17 @@ type Services struct {
 	Shipment       *trade.ShipmentService
 	Logistics      *trade.LogisticsService
 	TradeDocDetail *trade.TradeDocumentDetailService
-	ActivityLog    *activitylogSvc.ActivityLogService
-	SystemSetting  *systemsettingSvc.SystemSettingService
+	ActivityLog     *activitylogSvc.ActivityLogService
+	SystemSetting   *systemsettingSvc.SystemSettingService
+	StockTransaction *orderRepo.StockTransactionRepository
+	Translation      *translationSvc.TranslationService
+	Notification     *notificationsvc.NotificationService
 }
 
 func New(repos *repositoryCommon.AdminPortalRepositories, cfg *config.Config, authSvc *auth.AuthService, db *gorm.DB) *Services {
 	if repos == nil {
 		return &Services{Auth: authSvc}
-	}
+		}
 
 	userSvc := user.NewUserService(repos.User)
 
@@ -63,6 +69,9 @@ func New(repos *repositoryCommon.AdminPortalRepositories, cfg *config.Config, au
 		Logistics:      trade.NewLogisticsService(repos.Shipment, repos.ShipmentEvent, repos.Order, repos.Trade, db),
 		TradeDocDetail: trade.NewTradeDocumentDetailService(repos.TradeDocDetail),
 		ActivityLog:    activitylogSvc.NewActivityLogService(repos.ActivityLog),
-		SystemSetting:  systemsettingSvc.NewSystemSettingService(repos.SystemSetting),
-	}
+		SystemSetting:    systemsettingSvc.NewSystemSettingService(repos.SystemSetting),
+		StockTransaction: repos.StockTransaction,
+		Translation:      translationSvc.NewService(repos.Translation),
+		Notification:     notificationsvc.NewNotificationService(repos.Notification),
+		}
 }

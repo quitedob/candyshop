@@ -161,6 +161,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 const route = useRoute()
 const { token } = useAuth()
 const { t } = useI18n()
+const { formatDate } = useDisplay()
 const api = useApi()
 const config = useRuntimeConfig()
 const baseURL = config.public.apiBase || '/api/v1'
@@ -245,7 +246,7 @@ const formatKey = (key: string) => key.replace(/([A-Z])/g, ' $1').replace(/^./, 
 const formatVal = (val: any) => {
   if (val === null || val === undefined) return '-'
   if (typeof val === 'boolean') return val ? 'Yes' : 'No'
-  if (typeof val === 'string' && val.match(/^\d{4}-\d{2}-\d{2}T/)) return new Date(val).toLocaleDateString()
+  if (typeof val === 'string' && val.match(/^\d{4}-\d{2}-\d{2}T/)) return formatDate(val)
   return String(val)
 }
 

@@ -14,14 +14,14 @@ import (
 // @Router /admin/inquiries [get]
 func (h *Handler) AdminGetInquiries(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	page, limit := utils.ParsePagination(c, 20, 100)
 	inquiries, total, err := h.services.Inquiry.GetInquiries(c.Request.Context(), page, limit)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to fetch inquiries")
+		utils.ErrorResp(c, http.StatusInternalServerError, "inquiry_fetch_failed")
 		return
 	}
 
@@ -40,7 +40,7 @@ func (h *Handler) AdminGetInquiries(c *gin.Context) {
 // @Router /admin/inquiries/{id}/status [put]
 func (h *Handler) AdminUpdateInquiryStatus(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -48,18 +48,18 @@ func (h *Handler) AdminUpdateInquiryStatus(c *gin.Context) {
 	var req struct {
 		Status string `json:"status" binding:"required"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Inquiry not found")
+		utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
 
 	if err := h.services.Inquiry.UpdateInquiryStatus(c.Request.Context(), id, req.Status); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "invalid_request", err.Error())
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 

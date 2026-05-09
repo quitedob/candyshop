@@ -115,8 +115,8 @@
                 <tr v-for="(product, idx) in topProducts" :key="idx" class="hover:bg-gray-50 transition-colors">
                   <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ idx + 1 }}</td>
                   <td class="px-4 py-3 text-sm text-gray-700">{{ product.name || product.productName || '-' }}</td>
-                  <td class="px-4 py-3 text-sm text-gray-700 text-right font-medium">${{ (product.revenue || 0).toLocaleString() }}</td>
-                  <td class="px-4 py-3 text-sm text-gray-700 text-right">{{ (product.quantity || product.totalQuantity || 0).toLocaleString() }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700 text-right font-medium">{{ cur() }} {{ formatNumber(product.revenue || 0) }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700 text-right">{{ formatNumber(product.quantity || product.totalQuantity || 0) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -163,6 +163,7 @@ ChartJS.register(
 definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
 const { t } = useI18n()
+const { formatNumber, currencyOrDefault: cur } = useDisplay()
 const api = useApi()
 
 const pending = ref(true)
@@ -188,7 +189,7 @@ const lineChartOptions = {
     legend: { display: false },
     tooltip: {
       callbacks: {
-        label: (ctx: any) => `$${(ctx.parsed.y || 0).toLocaleString()}`
+        label: (ctx: any) => `${cur()} ${formatNumber(ctx.parsed.y || 0)}`
       }
     }
   },
@@ -196,7 +197,7 @@ const lineChartOptions = {
     y: {
       beginAtZero: true,
       ticks: {
-        callback: (value: any) => '$' + value.toLocaleString()
+        callback: (value: any) => cur() + ' ' + formatNumber(value)
       }
     }
   }

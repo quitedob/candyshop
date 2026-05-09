@@ -4,6 +4,7 @@ import (
 	modelsProduct "candypro/api/internal/models/product"
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	ordersvc "candypro/api/internal/services/order"
@@ -99,20 +100,40 @@ func (s *ProductService) GetProductsFiltered(ctx context.Context, page, limit in
 	}, nil
 }
 
-// GetProduct returns a product by slug or ID (UUID fallback).
+// GetProduct returns a product by slug or ID (UUID fallback). Only active products are returned for public access.
 func (s *ProductService) GetProduct(ctx context.Context, slugOrID string) (*modelsProduct.Product, error) {
 	// Try slug first
 	p, err := s.repo.FindBySlug(ctx, slugOrID)
 	if err == nil {
+		if p.Status != modelsProduct.ProductStatusActive {
+			return nil, fmt.Errorf("product not found")
+		}
 		return p, nil
 	}
 	// Fallback: try by ID (UUID format)
-	return s.repo.FindByID(ctx, slugOrID)
+	p, err = s.repo.FindByID(ctx, slugOrID)
+	if err == nil {
+		if p.Status != modelsProduct.ProductStatusActive {
+			return nil, fmt.Errorf("product not found")
+		}
+		return p, nil
+	}
+	return nil, err
 }
 
 // GetProductByID returns a product by ID.
 func (s *ProductService) GetProductByID(ctx context.Context, id string) (*modelsProduct.Product, error) {
 	return s.repo.FindByID(ctx, id)
+}
+
+// IncrementViewCount increments the view count for a product (best-effort).
+func (s *ProductService) IncrementViewCount(ctx context.Context, productID string) error {
+	product, err := s.repo.FindByID(ctx, productID)
+	if err != nil {
+		return err
+	}
+	product.ViewCount++
+	return s.repo.Update(ctx, product)
 }
 
 // GetFeaturedProducts returns featured products.

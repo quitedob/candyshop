@@ -1,6 +1,8 @@
 package admin
 
 import (
+	modelsCommon "candypro/api/internal/models/common"
+	modelsOrder "candypro/api/internal/models/order"
 	modelsTrade "candypro/api/internal/models/trade"
 	modelsUser "candypro/api/internal/models/user"
 	"candypro/api/internal/utils"
@@ -18,14 +20,14 @@ import (
 // @Router /admin/orders [get]
 func (h *Handler) AdminGetOrders(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	page, limit := utils.ParsePagination(c, 20, 100)
 	orders, err := h.services.Order.GetOrders(c.Request.Context(), page, limit)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to fetch orders")
+		utils.ErrorResp(c, http.StatusInternalServerError, "order_fetch_failed")
 		return
 	}
 
@@ -40,14 +42,14 @@ func (h *Handler) AdminGetOrders(c *gin.Context) {
 // @Router /admin/orders/{id} [get]
 func (h *Handler) AdminGetOrder(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	id := c.Param("id")
 	order, err := h.services.Order.GetOrder(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Order not found")
+		utils.ErrorResp(c, http.StatusNotFound, "order_not_found")
 		return
 	}
 
@@ -63,22 +65,21 @@ func (h *Handler) AdminGetOrder(c *gin.Context) {
 // @Router /admin/orders/{id}/status [put]
 func (h *Handler) AdminUpdateOrderStatus(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	id := c.Param("id")
 	var req struct {
-		Status        string `json:"status"`
-		PaymentStatus string `json:"paymentStatus"`
+		Status string `json:"status"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	order, err := h.services.Order.GetOrder(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Order not found")
+		utils.ErrorResp(c, http.StatusNotFound, "order_not_found")
 		return
 	}
 
@@ -86,13 +87,10 @@ func (h *Handler) AdminUpdateOrderStatus(c *gin.Context) {
 	if req.Status != "" {
 		order.Status = req.Status
 	}
-	if req.PaymentStatus != "" {
-		order.PaymentStatus = req.PaymentStatus
-	}
 	targetStatus := strings.ToLower(strings.TrimSpace(order.Status))
 	if previousStatus != targetStatus {
-		if err := validateStatusTransition(previousStatus, targetStatus); err != nil {
-			utils.ErrorResponse(c, http.StatusUnprocessableEntity, "invalid_status_transition", err.Error())
+		if err := modelsOrder.ValidateOrderStatusTransition(previousStatus, targetStatus); err != nil {
+			utils.ErrorResp(c, http.StatusUnprocessableEntity, "invalid_status_transition")
 			return
 		}
 	}
@@ -103,14 +101,12 @@ func (h *Handler) AdminUpdateOrderStatus(c *gin.Context) {
 		// Credit limit check before confirmation
 		if requiresPaidBeforeExecution(targetStatus) && !isPaidInFull(order.PaymentStatus) {
 			if requiresPrepaymentByTerms(company.PaymentTerms) {
-				utils.ErrorResponse(c, http.StatusUnprocessableEntity, "payment_policy_violation",
-					"Full prepayment is required for this customer's payment terms ("+company.PaymentTerms+")")
+				utils.ErrorResp(c, http.StatusUnprocessableEntity, "payment_policy_violation")
 				return
 			}
 			// For NET terms, check credit limit
 			if company.CreditLimit > 0 && order.TotalAmount > company.CreditLimit {
-				utils.ErrorResponse(c, http.StatusUnprocessableEntity, "credit_limit_exceeded",
-					"Order amount exceeds the customer's credit limit")
+				utils.ErrorResp(c, http.StatusUnprocessableEntity, "credit_limit_exceeded")
 				return
 			}
 		}
@@ -119,15 +115,14 @@ func (h *Handler) AdminUpdateOrderStatus(c *gin.Context) {
 		if h.requiresFullPrepaymentCountry(order.ShippingAddress.Country) &&
 			requiresPaidBeforeExecution(targetStatus) &&
 			!isPaidInFull(order.PaymentStatus) {
-			utils.ErrorResponse(c, http.StatusUnprocessableEntity, "payment_policy_violation",
-				"Full prepayment is required before moving orders to confirmed/production/shipping stages")
+			utils.ErrorResp(c, http.StatusUnprocessableEntity, "payment_policy_violation")
 			return
 		}
 	}
 
 	if previousStatus != "cancelled" && targetStatus == "cancelled" && order.StockReserved {
 		if err := h.services.Order.ReleaseOrderStock(c.Request.Context(), order); err != nil {
-			utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to release reserved stock for cancelled order")
+			utils.ErrorResp(c, http.StatusInternalServerError, "order_stock_release_failed")
 			return
 		}
 	}
@@ -145,14 +140,36 @@ func (h *Handler) AdminUpdateOrderStatus(c *gin.Context) {
 	}
 
 	if err := h.services.Order.UpdateOrderForAdmin(c.Request.Context(), order, previousStatus, targetStatus); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to update order")
+		utils.ErrorResp(c, http.StatusInternalServerError, "order_update_failed")
 		return
 	}
 
 	// Send status change email notification
-	if previousStatus != targetStatus && order.User != nil {
-		h.services.Order.SendOrderStatusEmail(order, order.User.Email,
-			order.User.FirstName+" "+order.User.LastName, targetStatus)
+	if previousStatus != targetStatus {
+			userEmail := ""
+			userName := ""
+			if order.User != nil {
+				userEmail = order.User.Email
+				userName = order.User.FirstName + " " + order.User.LastName
+			} else if h.services.User != nil {
+				if u, err := h.services.User.GetByID(c.Request.Context(), order.UserID); err == nil && u != nil {
+					userEmail = u.Email
+					userName = u.FirstName + " " + u.LastName
+				}
+			}
+		h.services.Order.SendOrderStatusEmail(order, userEmail,
+			userName, targetStatus)
+
+		// Send in-app notification
+		if h.services.Notification != nil {
+			_ = h.services.Notification.Create(c.Request.Context(), &modelsCommon.Notification{
+				UserID:    order.UserID,
+				Type:      "order",
+				Reference: order.ID,
+				Title:     "Order " + strings.ToUpper(targetStatus[:1]) + targetStatus[1:],
+				Message:   "Your order #" + order.OrderNumber + " has been " + targetStatus + ".",
+			})
+		}
 	}
 
 	c.JSON(http.StatusOK, order)
@@ -181,14 +198,14 @@ func (h *Handler) resolveUserCompany(c *gin.Context, userID string) *modelsUser.
 // POST /admin/orders/:id/create-trade
 func (h *Handler) AdminCreateTradeFromOrder(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	orderID := c.Param("id")
 	order, err := h.services.Order.GetOrder(c.Request.Context(), orderID)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Order not found")
+		utils.ErrorResp(c, http.StatusNotFound, "order_not_found")
 		return
 	}
 
@@ -210,6 +227,15 @@ func (h *Handler) AdminCreateTradeFromOrder(c *gin.Context) {
 		currency = "USD"
 	}
 
+	// Check if a trade already exists for this order
+	if h.services != nil && h.services.Trade != nil {
+		has, err := h.services.Trade.HasTransactionForOrder(c.Request.Context(), orderID)
+		if err == nil && has {
+			utils.ErrorResp(c, http.StatusConflict, "duplicate_trade")
+			return
+		}
+	}
+
 	trade := &modelsTrade.TradeTransaction{
 		UserID:      order.UserID,
 		OrderID:     &order.ID,
@@ -221,7 +247,11 @@ func (h *Handler) AdminCreateTradeFromOrder(c *gin.Context) {
 	}
 
 	if err := h.services.Trade.CreateTransaction(c.Request.Context(), trade); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to create trade transaction")
+		if utils.IsDuplicateKeyError(err) {
+			utils.ErrorResp(c, http.StatusConflict, "duplicate_trade")
+			return
+		}
+		utils.ErrorResp(c, http.StatusInternalServerError, "trade_create_failed")
 		return
 	}
 

@@ -159,6 +159,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&modelsProduct.ProcessControl{},
 		&modelsCommon.ActivityLog{},
 		&modelsCommon.SystemSetting{},
+		&modelsCommon.Translation{},
 		&modelsTrade.ComplianceRequirement{},
 		&modelsOrder.StockTransaction{},
 		&modelsOrder.EventOutbox{},
@@ -226,7 +227,18 @@ func GetDB() *gorm.DB {
 	return db
 }
 
-// SeedDatabase seeds the database with initial data
+// SeedEssential seeds only essential system data (roles + superadmin) required for login.
+// This always runs on startup regardless of AUTO_SEED_DATA.
+func SeedEssential(db *gorm.DB) error {
+	if err := seedSuperadmin(db); err != nil {
+		return err
+	}
+	log.Println("Essential system data seeded")
+	return nil
+}
+
+// SeedDatabase seeds the database with initial business data (products, categories, blog posts, etc.).
+// Controlled by AUTO_SEED_DATA env var. Use cmd/seed for manual seeding.
 func SeedDatabase(db *gorm.DB) error {
 	// Check if we already have data
 	var count int64

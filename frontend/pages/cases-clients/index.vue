@@ -24,7 +24,7 @@
             :class="{ 'filter-tab--active': !activeIndustry }"
             @click="activeIndustry = ''"
           >
-            All Industries
+            {{ t('cases.all_industries') }}
           </button>
           <button
             v-for="industry in industries"
@@ -43,7 +43,7 @@
     <section class="cases section">
       <div class="container">
         <div v-if="filteredCases.length === 0" class="cases__empty">
-          <p>No case studies found for this industry.</p>
+          <p>{{ t('cases.no_results') }}</p>
         </div>
 
         <div v-else class="cases__grid">
@@ -56,7 +56,7 @@
             <div class="case-card__image">
               <img :src="item.thumbnail" :alt="item.title" />
               <div class="case-card__overlay">
-                <span class="case-card__view">View Case Study</span>
+                <span class="case-card__view">{{ t('cases.view_case') }}</span>
               </div>
             </div>
             <div class="case-card__content">
@@ -77,8 +77,8 @@
     <section class="cta section bg-alt">
       <div class="container">
         <div class="cta__inner">
-          <h2>Want Similar Results?</h2>
-          <p>Let's discuss how we can help your brand succeed</p>
+          <h2>{{ t('cases_detail.cta_title') }}</h2>
+          <p>{{ t('cases_detail.cta_subtitle') }}</p>
           <div class="cta__actions">
             <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-highlight">
               <WhatsAppIcon size="20" />
@@ -176,7 +176,7 @@ useSeo({
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .filter-tab:hover {
@@ -204,7 +204,7 @@ useSeo({
   box-shadow: var(--shadow-md);
   text-decoration: none;
   color: inherit;
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .case-card:hover {

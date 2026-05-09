@@ -1,5 +1,5 @@
 <template>
-  <nav class="breadcrumb" aria-label="Breadcrumb">
+  <nav class="breadcrumb" :aria-label="$t('common.a11y.breadcrumb')">
     <ol class="breadcrumb__list" itemscope itemtype="https://schema.org/BreadcrumbList">
       <!-- Home -->
       <li

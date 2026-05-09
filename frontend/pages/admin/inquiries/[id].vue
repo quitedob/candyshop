@@ -22,7 +22,7 @@
           <div>
             <h3 class="text-lg leading-6 font-medium text-gray-900">Inquiry #{{ inquiry.id.substring(0, 8) }}</h3>
             <p class="mt-1 max-w-2xl text-sm text-gray-500">
-              {{ t('admin.inquiryDetail.submitted_on') }} {{ inquiry.createdAt ? new Date(inquiry.createdAt).toLocaleString() : cell(null) }}
+              {{ t('admin.inquiryDetail.submitted_on') }} {{ formatDate(inquiry.createdAt, { dateStyle: 'medium', timeStyle: 'short' }) }}
             </p>
           </div>
           <div class="flex items-center gap-3">
@@ -75,7 +75,7 @@
             </div>
             <div v-if="inquiry.quotedAmount" class="sm:col-span-2">
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.inquiryDetail.quoted_amount') }}</dt>
-              <dd class="mt-1 text-sm font-medium text-gray-900">{{ cur(inquiry.currency) }} {{ (inquiry.quotedAmount || 0).toLocaleString() }}</dd>
+              <dd class="mt-1 text-sm font-medium text-gray-900">{{ cur(inquiry.currency) }} {{ formatNumber(inquiry.quotedAmount || 0) }}</dd>
             </div>
             <div class="sm:col-span-2" v-if="inquiry.interestedProducts && inquiry.interestedProducts.length">
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.inquiryDetail.interested_products') }}</dt>
@@ -145,17 +145,17 @@
           <form @submit.prevent="submitQuote" class="space-y-4">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.inquiryDetail.quoted_amount') }}</label>
-                <input v-model.number="quoteForm.quotedAmount" type="number" min="0" step="0.01" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                <label for="inquiry-quotedAmount" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiryDetail.quoted_amount') }}</label>
+                <input id="inquiry-quotedAmount" v-model.number="quoteForm.quotedAmount" name="quotedAmount" type="number" min="0" step="0.01" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.inquiryDetail.valid_until') }}</label>
-                <input v-model="quoteForm.validUntil" type="datetime-local" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                <label for="inquiry-validUntil" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiryDetail.valid_until') }}</label>
+                <input id="inquiry-validUntil" v-model="quoteForm.validUntil" name="validUntil" type="datetime-local" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.inquiryDetail.notes') }}</label>
-              <textarea v-model="quoteForm.customerNotes" rows="3" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea>
+              <label for="inquiry-notes" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiryDetail.notes') }}</label>
+              <textarea id="inquiry-notes" v-model="quoteForm.customerNotes" name="customerNotes" rows="3" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea>
             </div>
             <div v-if="quoteMessage" class="text-sm" :class="quoteError ? 'text-red-600' : 'text-green-600'">
               {{ quoteMessage }}
@@ -179,24 +179,24 @@
           <form @submit.prevent="convertToOrder" class="space-y-4">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.inquiryDetail.shipping_street') }}</label>
-                <input v-model="convertForm.street" type="text" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                <label for="inquiry-street" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiryDetail.shipping_street') }}</label>
+                <input id="inquiry-street" v-model="convertForm.street" name="street" type="text" autocomplete="street-address" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.inquiryDetail.shipping_city') }}</label>
-                <input v-model="convertForm.city" type="text" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                <label for="inquiry-city" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiryDetail.shipping_city') }}</label>
+                <input id="inquiry-city" v-model="convertForm.city" name="city" type="text" autocomplete="address-level2" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.inquiryDetail.shipping_state') }}</label>
-                <input v-model="convertForm.state" type="text" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                <label for="inquiry-state" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiryDetail.shipping_state') }}</label>
+                <input id="inquiry-state" v-model="convertForm.state" name="state" type="text" autocomplete="address-level1" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.inquiryDetail.shipping_zip') }}</label>
-                <input v-model="convertForm.zipCode" type="text" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                <label for="inquiry-zipCode" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiryDetail.shipping_zip') }}</label>
+                <input id="inquiry-zipCode" v-model="convertForm.zipCode" name="zipCode" type="text" autocomplete="postal-code" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.inquiryDetail.shipping_country') }}</label>
-                <input v-model="convertForm.country" type="text" :placeholder="inquiry.targetCountry || ''" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                <label for="inquiry-country" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiryDetail.shipping_country') }}</label>
+                <input id="inquiry-country" v-model="convertForm.country" name="country" type="text" autocomplete="country-name" :placeholder="inquiry.targetCountry || ''" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
               </div>
             </div>
             <div v-if="convertMessage" class="text-sm" :class="convertError ? 'text-red-600' : 'text-green-600'">
@@ -226,7 +226,7 @@
                 <div class="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-gray-400"></div>
                 <div class="ml-3">
                   <p class="text-sm text-gray-900">{{ entry.status }} {{ entry.note ? `- ${entry.note}` : '' }}</p>
-                  <p class="text-xs text-gray-500">{{ entry.timestamp ? new Date(entry.timestamp).toLocaleString() : '-' }}</p>
+                  <p class="text-xs text-gray-500">{{ formatDate(entry.timestamp, { dateStyle: 'medium', timeStyle: 'short' }) }}</p>
                 </div>
               </div>
             </li>
@@ -249,7 +249,7 @@ const route = useRoute()
 const { token } = useAuth()
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { currencyOrDefault: cur, cell, enumLabel } = useDisplay()
+const { currencyOrDefault: cur, cell, enumLabel, formatNumber, formatDate } = useDisplay()
 const config = useRuntimeConfig()
 const baseURL = config.public.apiBase || '/api/v1'
 

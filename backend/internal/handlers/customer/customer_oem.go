@@ -12,7 +12,7 @@ import (
 
 func (h *Handler) CustomerGetOEMProjects(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	userID, _ := c.Get("userID")
@@ -23,7 +23,7 @@ func (h *Handler) CustomerGetOEMProjects(c *gin.Context) {
 	page, limit := utils.ParsePagination(c, 20, 100)
 	projects, total, err := h.services.OEM.GetUserProjects(c.Request.Context(), userIDStr, page, limit)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to fetch OEM projects")
+		utils.ErrorResp(c, http.StatusInternalServerError, "oem_fetch_failed")
 		return
 	}
 	totalPages := int(total) / limit
@@ -47,7 +47,7 @@ type customerCreateOEMProjectRequest struct {
 
 func (h *Handler) CustomerCreateOEMProject(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	userID, _ := c.Get("userID")
@@ -56,7 +56,7 @@ func (h *Handler) CustomerCreateOEMProject(c *gin.Context) {
 		userIDStr = id
 	}
 	var req customerCreateOEMProjectRequest
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 	project := &modelsProduct.OEMProject{
@@ -72,7 +72,7 @@ func (h *Handler) CustomerCreateOEMProject(c *gin.Context) {
 		UpdatedAt:    time.Now(),
 	}
 	if err := h.services.OEM.CreateProject(c.Request.Context(), project); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to create OEM project")
+		utils.ErrorResp(c, http.StatusInternalServerError, "oem_project_create_failed")
 		return
 	}
 	c.JSON(http.StatusCreated, project)
@@ -80,13 +80,13 @@ func (h *Handler) CustomerCreateOEMProject(c *gin.Context) {
 
 func (h *Handler) CustomerGetOEMProject(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	id := c.Param("id")
 	project, err := h.services.OEM.GetProject(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "OEM project not found")
+		utils.ErrorResp(c, http.StatusNotFound, "oem_project_not_found")
 		return
 	}
 	userID, _ := c.Get("userID")
@@ -95,7 +95,7 @@ func (h *Handler) CustomerGetOEMProject(c *gin.Context) {
 		userIDStr = uid
 	}
 	if project.UserID != userIDStr {
-		utils.ErrorResponse(c, http.StatusForbidden, "forbidden", "Access denied")
+		utils.ErrorResp(c, http.StatusForbidden, "forbidden")
 		return
 	}
 	c.JSON(http.StatusOK, project)

@@ -45,6 +45,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
+const { formatNumber, formatDate: fmtDate, currencyOrDefault: cur } = useDisplay()
 const localePath = useLocalePath()
 
 const quotes = ref<any[]>([])
@@ -61,12 +62,12 @@ const fetchQuotes = async () => {
   } finally { pending.value = false }
 }
 
-const formatCurrency = (amount: number) => `USD ${Number(amount || 0).toLocaleString()}`
+const formatCurrency = (amount: number) => `${cur()} ${formatNumber(amount || 0)}`
 const formatDate = (value: string | null | undefined) => {
   if (!value) return t('customer.common.na')
   const dt = new Date(value)
   if (Number.isNaN(dt.getTime())) return t('customer.common.na')
-  return dt.toLocaleDateString()
+  return fmtDate(value)
 }
 
 onMounted(fetchQuotes)

@@ -194,7 +194,7 @@ export const useApi = () => {
   const config = useRuntimeConfig()
   const baseURL = config.public.apiBase || '/api/v1'
   const publicBaseURL = `${baseURL}/public`
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
 
   /**
    * Generic fetch wrapper with error handling
@@ -207,6 +207,7 @@ export const useApi = () => {
       const token = useCookie('auth_token')
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
+        'Accept-Language': locale.value,
         ...(options?.headers as Record<string, string> ?? {})
       }
 
@@ -594,6 +595,16 @@ export const useApi = () => {
   const createInvoice = (data: any) => POST<any>('/admin/invoices', data)
   const updateInvoice = (id: string, data: any) => PUT<any>(`/admin/invoices/${id}`, data)
 
+  // Admin - Translations
+  const getTranslations = (params?: Record<string, any>) => GET<PaginatedResponse<any>>('/admin/translations', params)
+  const getTranslation = (id: string) => GET<any>(`/admin/translations/${id}`)
+  const createTranslation = (data: any) => POST<any>('/admin/translations', data)
+  const updateTranslation = (id: string, data: any) => PUT<any>(`/admin/translations/${id}`, data)
+  const deleteTranslation = (id: string) => DELETE<any>(`/admin/translations/${id}`)
+  const getTranslationGroups = () => GET<any[]>('/admin/translations/groups')
+  const importTranslations = (data: any) => POST<any>('/admin/translations/import', data)
+  const exportTranslations = () => GET<any[]>('/admin/translations/export')
+
   return {
     // Products
     getCategories,
@@ -707,6 +718,16 @@ export const useApi = () => {
     getInvoices,
     createInvoice,
     updateInvoice,
+
+    // Admin - Translations
+    getTranslations,
+    getTranslation,
+    createTranslation,
+    updateTranslation,
+    deleteTranslation,
+    getTranslationGroups,
+    importTranslations,
+    exportTranslations,
 
     // Generic HTTP helpers
     get: GET,

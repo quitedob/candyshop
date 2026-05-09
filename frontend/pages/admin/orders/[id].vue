@@ -20,9 +20,9 @@
       <div class="bg-white shadow overflow-hidden sm:rounded-lg">
         <div class="px-4 py-5 sm:px-6 flex justify-between items-center bg-gray-50 border-b border-gray-200">
           <div>
-            <h3 class="text-lg leading-6 font-medium text-gray-900">Order #{{ order.orderNumber || order.id.substring(0, 8) }}</h3>
+            <h3 class="text-lg leading-6 font-medium text-gray-900">{{ t('admin.order_prefix') }}{{ order.orderNumber || order.id.substring(0, 8) }}</h3>
             <p class="mt-1 max-w-2xl text-sm text-gray-500">
-              {{ t('admin.orders.placed_on') }} {{ order.createdAt ? new Date(order.createdAt).toLocaleString() : cell(null) }}
+              {{ t('admin.orders.placed_on') }} {{ formatDate(order.createdAt) }}
             </p>
           </div>
           <div class="flex items-center gap-3">
@@ -53,19 +53,19 @@
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.orders.subtotal') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ (order.subtotal || 0).toLocaleString() }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ formatNumber(order.subtotal || 0) }}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.orders.tax') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ (order.taxAmount || 0).toLocaleString() }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ formatNumber(order.taxAmount || 0) }}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.orders.shipping') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ (order.shippingAmount || 0).toLocaleString() }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ formatNumber(order.shippingAmount || 0) }}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.orders.total') }}</dt>
-              <dd class="mt-1 text-sm font-medium text-gray-900">{{ (order.totalAmount || 0).toLocaleString() }}</dd>
+              <dd class="mt-1 text-sm font-medium text-gray-900">{{ formatNumber(order.totalAmount || 0) }}</dd>
             </div>
             <div v-if="order.trackingNumber">
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.orders.tracking_number') }}</dt>
@@ -107,8 +107,8 @@
               <tr v-else v-for="(item, idx) in order.items" :key="idx">
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ item.productName || item.productId }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.quantity }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ cur(order.currency) }} {{ (item.unitPrice || 0).toLocaleString() }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ cur(order.currency) }} {{ ((item.quantity || 0) * (item.unitPrice || 0)).toLocaleString() }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ cur(order.currency) }} {{ formatNumber(item.unitPrice || 0) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ cur(order.currency) }} {{ formatNumber((item.quantity || 0) * (item.unitPrice || 0)) }}</td>
               </tr>
             </tbody>
           </table>
@@ -143,19 +143,19 @@
         <div class="px-4 py-5 sm:p-6">
           <form @submit.prevent="updateStatus" class="flex flex-wrap items-end gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.orders.status') }}</label>
-              <select v-model="statusInput" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-                <option value="pending">pending</option>
-                <option value="confirmed">confirmed</option>
-                <option value="production">production</option>
-                <option value="shipped">shipped</option>
-                <option value="delivered">delivered</option>
-                <option value="cancelled">cancelled</option>
+              <label for="order-status" class="block text-sm font-medium text-gray-700">{{ t('admin.orders.status') }}</label>
+              <select id="order-status" name="status" v-model="statusInput" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <option value="pending">{{ enumLabel('order_status', 'pending') }}</option>
+                <option value="confirmed">{{ enumLabel('order_status', 'confirmed') }}</option>
+                <option value="production">{{ enumLabel('order_status', 'production') }}</option>
+                <option value="shipped">{{ enumLabel('order_status', 'shipped') }}</option>
+                <option value="delivered">{{ enumLabel('order_status', 'delivered') }}</option>
+                <option value="cancelled">{{ enumLabel('order_status', 'cancelled') }}</option>
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.orders.tracking_number') }}</label>
-              <input v-model="trackingInput" type="text" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="order-trackingNumber" class="block text-sm font-medium text-gray-700">{{ t('admin.orders.tracking_number') }}</label>
+              <input id="order-trackingNumber" v-model="trackingInput" name="trackingNumber" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <button type="submit" :disabled="updatingStatus" class="inline-flex justify-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-700 disabled:opacity-50">
               {{ updatingStatus ? t('admin.orders.updating') : t('admin.orders.update') }}
@@ -187,7 +187,7 @@
             <table v-else class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
                 <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ t('admin.col_id') }}</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ t('admin.orders.amount') }}</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ t('admin.orders.method') }}</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ t('admin.orders.status') }}</th>
@@ -198,14 +198,14 @@
               <tbody class="bg-white divide-y divide-gray-200">
                 <tr v-for="payment in payments" :key="payment.id">
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ payment.id.substring(0, 8) }}</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ cur(order.currency) }} {{ (payment.amount || 0).toLocaleString() }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ cur(order.currency) }} {{ formatNumber(payment.amount || 0) }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ cell(payment.method) }}</td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span :class="[paymentStatusBadge(payment.status), 'inline-flex rounded-full px-2 text-xs font-semibold leading-5']">
                       {{ enumLabel('payment_status', payment.status) }}
                     </span>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ payment.createdAt ? new Date(payment.createdAt).toLocaleString() : cell(null) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(payment.createdAt) }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button v-if="payment.status === 'pending'" type="button" class="text-green-600 hover:text-green-900 mr-3" @click="confirmPayment(payment.id)">
                       {{ t('admin.orders.confirm') }}
@@ -236,7 +236,7 @@
                 <div class="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-gray-400"></div>
                 <div class="ml-3">
                   <p class="text-sm text-gray-900">{{ entry.status }} {{ entry.note ? `- ${entry.note}` : '' }}</p>
-                  <p class="text-xs text-gray-500">{{ entry.timestamp ? new Date(entry.timestamp).toLocaleString() : '-' }}</p>
+                  <p class="text-xs text-gray-500">{{ formatDate(entry.timestamp) }}</p>
                 </div>
               </div>
             </li>
@@ -254,9 +254,9 @@ definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
 const route = useRoute()
 const api = useApi()
-const { t } = useI18n()
+const { t, te } = useI18n()
 const localePath = useLocalePath()
-const { currencyOrDefault: cur, cell, enumLabel } = useDisplay()
+const { currencyOrDefault: cur, cell, enumLabel, formatNumber, formatDate } = useDisplay()
 
 const order = ref<any>(null)
 const pending = ref(true)
@@ -274,13 +274,10 @@ const tradeMessage = ref('')
 const tradeError = ref(false)
 const createdTradeId = ref<number | null>(null)
 
-const paymentPolicyWarnings: Record<string, string> = {
-  confirmed: 'Order confirmed. Inform customer and proceed to production.',
-  production: 'Order is in production. Ensure materials are available.',
-  shipped: 'Order shipped. Update tracking information.',
-  delivered: 'Order delivered. Request feedback from customer.',
-  cancelled: 'Order cancelled. Process refund if payment was made.'
-}
+const paymentPolicyWarning = computed(() => {
+  const key = `admin.payment_policy.${statusInput.value}`
+  return te(key) ? t(key) : ''
+})
 
 const fetchOrder = async () => {
   pending.value = true; error.value = ''
@@ -375,8 +372,6 @@ const formatAddress = (address: any) => {
   if (!address) return '-'
   return [address.street, address.city, address.state, address.zipCode, address.country].filter(Boolean).join(', ')
 }
-
-const paymentPolicyWarning = computed(() => paymentPolicyWarnings[statusInput.value] || '')
 
 onMounted(() => { fetchOrder(); fetchPayments() })
 </script>

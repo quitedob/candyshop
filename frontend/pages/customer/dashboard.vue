@@ -135,12 +135,12 @@
                     <div class="sm:flex">
                       <p class="flex items-center text-sm text-gray-500">
                         <Icon name="heroicons:currency-dollar" class="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                        {{ order.totalAmount?.toLocaleString() }}
+                        {{ formatNumber(order.totalAmount) }}
                       </p>
                     </div>
                     <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
                       <Icon name="heroicons:calendar" class="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                      <p>{{ t('customer.dashboard.placed_on') }} <time :datetime="order.createdAt">{{ new Date(order.createdAt).toLocaleDateString() }}</time></p>
+                      <p>{{ t('customer.dashboard.placed_on') }} <time :datetime="order.createdAt">{{ formatDate(order.createdAt) }}</time></p>
                     </div>
                   </div>
                 </div>
@@ -162,6 +162,7 @@ import { ref, onMounted } from 'vue'
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const { t } = useI18n()
+const { formatNumber, formatDate } = useDisplay()
 const localePath = useLocalePath()
 const { user, isPending } = useAuth()
 const api = useApi()

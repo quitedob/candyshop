@@ -38,7 +38,7 @@
 
           <!-- Thumbnail Gallery -->
           <div v-if="allImages.length > 1" class="grid grid-cols-6 gap-2">
-            <button v-for="(img, idx) in allImages" :key="idx" @click="selectedImage = img" class="aspect-square rounded-lg overflow-hidden border-2 transition-all" :class="selectedImage === img ? 'border-orange-500' : 'border-transparent hover:border-gray-200'">
+            <button v-for="(img, idx) in allImages" :key="idx" @click="selectedImage = img" class="aspect-square rounded-lg overflow-hidden border-2 transition-colors" :class="selectedImage === img ? 'border-orange-500' : 'border-transparent hover:border-gray-200'">
               <img :src="img" class="w-full h-full object-cover" />
             </button>
           </div>
@@ -56,7 +56,7 @@
               <div>
                 <p class="text-sm text-gray-500">{{ t('customer.products.unit_price') }}</p>
                 <div class="flex items-center gap-2">
-                  <p class="text-3xl font-bold text-orange-600">{{ cur(product.currency) }} {{ displayPrice.toLocaleString() }}</p>
+                  <p class="text-3xl font-bold text-orange-600">{{ cur(product.currency) }} {{ formatNumber(displayPrice) }}</p>
                   <span v-if="contractPrice !== null" class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">{{ t('customer.products.contract_price') }}</span>
                   <span v-else-if="loadingPrice" class="text-xs text-gray-400">{{ t('customer.products.loading_price') }}</span>
                 </div>
@@ -114,7 +114,7 @@
             <!-- Total -->
             <div class="flex items-center justify-between pt-4 border-t border-gray-100">
               <span class="text-gray-600">{{ t('customer.products.estimated_total') }}</span>
-              <span class="text-2xl font-bold text-gray-900">{{ cur(product.currency) }} {{ (displayPrice * quantity).toLocaleString() }}</span>
+              <span class="text-2xl font-bold text-gray-900">{{ cur(product.currency) }} {{ formatNumber(displayPrice * quantity) }}</span>
             </div>
           </div>
 
@@ -135,7 +135,7 @@
 
           <!-- Actions: Inquire + Place Order -->
           <div class="space-y-3">
-            <button @click="submitOrderRequest" :disabled="submitting" class="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-600 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-amber-700 transition-all shadow-lg shadow-orange-200 disabled:opacity-50 flex items-center justify-center gap-2">
+            <button @click="submitOrderRequest" :disabled="submitting" class="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-600 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-amber-700 shadow-lg shadow-orange-200 disabled:opacity-50 flex items-center justify-center gap-2">
               <Icon v-if="submitting" name="heroicons:arrow-path" class="h-5 w-5 animate-spin" />
               <Icon v-else name="heroicons:paper-airplane" class="h-5 w-5" />
               {{ submitting ? t('customer.products.submitting') : t('customer.products.submit_request') }}
@@ -244,7 +244,7 @@ definePageMeta({
 
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { currencyOrDefault: cur } = useDisplay()
+const { currencyOrDefault: cur, formatNumber } = useDisplay()
 const api = useApi()
 const route = useRoute()
 
@@ -367,6 +367,6 @@ onMounted(fetchProduct)
 </script>
 
 <style scoped>
-.slide-up-enter-active, .slide-up-leave-active { transition: all 0.3s ease; }
+.slide-up-enter-active, .slide-up-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
 .slide-up-enter-from, .slide-up-leave-to { opacity: 0; transform: translateY(10px); }
 </style>

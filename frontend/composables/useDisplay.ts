@@ -4,7 +4,7 @@ import { useI18n } from '#i18n'
  * 统一展示：默认货币、空单元格、枚举状态（common.enum.*），无硬编码英文兜底
  */
 export function useDisplay() {
-  const { t, te } = useI18n()
+  const { t, te, locale } = useI18n()
 
   const currencyOrDefault = (code?: string | null) =>
     code != null && String(code).trim() !== '' ? String(code).trim() : t('common.defaults.currency')
@@ -32,5 +32,17 @@ export function useDisplay() {
     return te(unk) ? t(unk) : String(raw ?? '')
   }
 
-  return { currencyOrDefault, incotermsOrDefault, cell, enumLabel }
+  const formatNumber = (num: number | null | undefined, opts?: Intl.NumberFormatOptions) => {
+    if (num == null || Number.isNaN(num)) return cell(null)
+    return new Intl.NumberFormat(locale.value, { maximumFractionDigits: 0, ...opts }).format(num)
+  }
+
+  const formatDate = (d: string | null | undefined, opts?: Intl.DateTimeFormatOptions) => {
+    if (!d) return cell(null)
+    const date = new Date(d)
+    if (Number.isNaN(date.getTime())) return cell(null)
+    return new Intl.DateTimeFormat(locale.value, opts ?? { dateStyle: 'medium' }).format(date)
+  }
+
+  return { currencyOrDefault, incotermsOrDefault, cell, enumLabel, formatNumber, formatDate }
 }

@@ -43,7 +43,7 @@ const (
 // TradeTransaction represents an entire end-to-end B2B trade transaction flow
 type TradeTransaction struct {
 	ID          uint    `gorm:"primaryKey" json:"id"`
-	OrderID     *string `gorm:"type:varchar(100);index" json:"orderId,omitempty"` // Link to confirmed order
+	OrderID     *string `gorm:"type:varchar(100);uniqueIndex" json:"orderId,omitempty"` // Link to confirmed order (one trade per order)
 	InquiryID   *string `json:"inquiryId"` // Link to early-stage inquiry
 	UserID      string  `gorm:"not null;index" json:"userId"`
 	Reference   string  `gorm:"type:varchar(100);uniqueIndex" json:"reference"` // E.g., TRD-2026-001

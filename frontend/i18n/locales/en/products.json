@@ -2,6 +2,7 @@
   "product": {
     "price_from": "From",
     "price_per_unit": "/pc",
+    "moq": "MOQ",
     "categories_title": "Browse Categories",
     "categories": {
       "gummy_candy": "Gummy Candy",
@@ -36,7 +37,25 @@
     "specifications": "Specifications",
     "packaging": "Packaging",
     "flavors": "Flavors",
+    "flavor_options": {
+      "fruit_mix": "Fruit Mix",
+      "citrus": "Citrus",
+      "berry": "Berry",
+      "custom": "Custom"
+    },
     "shapes": "Shapes",
+    "shape_options": {
+      "bear": "Bear",
+      "fruit": "Fruit",
+      "letter": "Letters",
+      "custom": "Custom"
+    },
+    "colors": "Colors",
+    "color_options": {
+      "natural": "Natural",
+      "vibrant": "Vibrant",
+      "custom": "Custom"
+    },
     "certifications": "Certifications",
     "shelf_life": "Shelf Life",
     "storage": "Storage",

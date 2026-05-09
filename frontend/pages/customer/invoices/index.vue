@@ -24,7 +24,7 @@
           <tr v-for="inv in invoices" :key="inv.id">
             <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ inv.invoiceNumber || inv.id }}</td>
             <td class="px-6 py-4 text-sm text-gray-500">{{ inv.invoiceType || inv.type }}</td>
-            <td class="px-6 py-4 text-sm text-gray-900">{{ inv.currency }} {{ (inv.totalAmount || 0).toLocaleString() }}</td>
+            <td class="px-6 py-4 text-sm text-gray-900">{{ inv.currency }} {{ formatNumber(inv.totalAmount || 0) }}</td>
             <td class="px-6 py-4">
               <span :class="statusClass(inv.status)" class="px-2 py-1 text-xs font-medium rounded-full">{{ inv.status }}</span>
             </td>
@@ -45,6 +45,7 @@
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const { t } = useI18n()
+const { formatNumber, formatDate } = useDisplay()
 const localePath = useLocalePath()
 const api = useApi()
 const invoices = ref<any[]>([])
@@ -62,7 +63,6 @@ const fetchInvoices = async () => {
   }
 }
 
-const formatDate = (d: string) => d ? new Date(d).toLocaleDateString() : '-'
 
 const statusClass = (status: string) => {
   const map: Record<string, string> = {

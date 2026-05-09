@@ -20,6 +20,7 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 	group.GET("/cart", h.UserPortal.CustomerGetCart)
 	group.GET("/orders", h.UserPortal.CustomerGetOrders)
 	group.GET("/orders/:id", h.UserPortal.CustomerGetOrder)
+	group.GET("/orders/:id/payments", h.UserPortal.CustomerGetOrderPayments)
 	group.GET("/orders/:id/progress", h.UserPortal.CustomerGetOrderProgress)
 	group.GET("/quotes", h.UserPortal.CustomerGetQuotes)
 	group.GET("/notifications", h.UserPortal.CustomerGetNotifications)

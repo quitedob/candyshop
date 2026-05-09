@@ -2,11 +2,6 @@ package public
 
 import (
 	"candypro/api/internal/utils"
-
-	modelsProduct "candypro/api/internal/models/product"
-)
-
-import (
 	"net/http"
 	"strconv"
 
@@ -26,7 +21,7 @@ import (
 // @Router /posts [get]
 func (h *Handler) GetPosts(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -35,10 +30,7 @@ func (h *Handler) GetPosts(c *gin.Context) {
 
 	response, err := h.services.Content.GetPosts(c.Request.Context(), page, limit, category)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to fetch posts",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "posts_fetch_failed")
 		return
 	}
 
@@ -51,11 +43,11 @@ func (h *Handler) GetPosts(c *gin.Context) {
 // @Produce json
 // @Param slug path string true "Post slug"
 // @Success 200 {object} modelsProduct.BlogPost
-// @Failure 404 {object} modelsProduct.ErrorResponse
+// @Failure 404 {object} modelsCommon.ErrorResponse
 // @Router /posts/{slug} [get]
 func (h *Handler) GetPost(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -63,10 +55,7 @@ func (h *Handler) GetPost(c *gin.Context) {
 
 	post, err := h.services.Content.GetPostBySlug(c.Request.Context(), slug)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Post not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "post_not_found")
 		return
 	}
 
@@ -83,7 +72,7 @@ func (h *Handler) GetPost(c *gin.Context) {
 // @Router /posts/{slug}/related [get]
 func (h *Handler) GetRelatedPosts(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -95,10 +84,7 @@ func (h *Handler) GetRelatedPosts(c *gin.Context) {
 
 	posts, err := h.services.Content.GetRelatedPosts(c.Request.Context(), slug, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to fetch related posts",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "related_posts_fetch_failed")
 		return
 	}
 
@@ -116,7 +102,7 @@ func (h *Handler) GetRelatedPosts(c *gin.Context) {
 // @Router /cases [get]
 func (h *Handler) GetCases(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -125,10 +111,7 @@ func (h *Handler) GetCases(c *gin.Context) {
 
 	response, err := h.services.Content.GetCases(c.Request.Context(), page, limit, industry)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to fetch case studies",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "cases_fetch_failed")
 		return
 	}
 
@@ -141,11 +124,11 @@ func (h *Handler) GetCases(c *gin.Context) {
 // @Produce json
 // @Param slug path string true "Case study slug"
 // @Success 200 {object} modelsProduct.CaseStudy
-// @Failure 404 {object} modelsProduct.ErrorResponse
+// @Failure 404 {object} modelsCommon.ErrorResponse
 // @Router /cases/{slug} [get]
 func (h *Handler) GetCase(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -153,10 +136,7 @@ func (h *Handler) GetCase(c *gin.Context) {
 
 	caseStudy, err := h.services.Content.GetCaseBySlug(c.Request.Context(), slug)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Case study not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "case_not_found")
 		return
 	}
 

@@ -22,14 +22,13 @@ func OrderFinancialLineageHash(o *modelsOrder.Order) string {
 		itemsJSON = []byte("[]")
 	}
 	h := sha256.New()
-	fmt.Fprintf(h, "%s|%s|%f|%f|%f|%s|%s",
+	fmt.Fprintf(h, "%s|%s|%f|%f|%f|%s",
 		strings.TrimSpace(o.ID),
 		strings.TrimSpace(o.Currency),
 		o.Subtotal,
 		o.TaxAmount,
 		o.ShippingAmount,
 		string(itemsJSON),
-		strings.TrimSpace(o.Status),
 	)
 	return hex.EncodeToString(h.Sum(nil))
 }

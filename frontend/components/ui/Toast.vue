@@ -1,14 +1,14 @@
 <template>
   <Transition name="toast">
-    <div v-if="visible" class="toast" :class="`toast-${type}`">
-      <div class="toast-icon">
+    <div v-if="visible" class="toast" :class="`toast-${type}`" role="alert">
+      <div class="toast-icon" aria-hidden="true">
         <Icon :name="iconName" />
       </div>
       <div class="toast-content">
         <p class="toast-message">{{ message }}</p>
       </div>
-      <button @click="close" class="toast-close">
-        <Icon name="mdi:close" />
+      <button type="button" @click="close" class="toast-close" :aria-label="$t('common.close')">
+        <Icon name="mdi:close" aria-hidden="true" />
       </button>
     </div>
   </Transition>
@@ -50,18 +50,19 @@ onMounted(() => {
   top: 1rem;
   right: 1rem;
   padding: 1rem 1.5rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lg);
   z-index: 9999;
+  color: var(--color-text-on-primary);
 }
 
-.toast-success { background: #10b981; color: white; }
-.toast-error { background: #ef4444; color: white; }
-.toast-warning { background: #f59e0b; color: white; }
-.toast-info { background: #3b82f6; color: white; }
+.toast-success { background: var(--color-success); }
+.toast-error { background: var(--color-error); }
+.toast-warning { background: var(--color-warning); }
+.toast-info { background: var(--color-info); }
 
 .toast-icon {
   font-size: 1.25rem;
@@ -79,7 +80,12 @@ onMounted(() => {
   cursor: pointer;
   padding: 0;
   opacity: 0.7;
-  transition: opacity 0.2s;
+  transition: opacity var(--transition-fast);
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .toast-close:hover {
@@ -88,7 +94,7 @@ onMounted(() => {
 
 .toast-enter-active,
 .toast-leave-active {
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .toast-enter-from,

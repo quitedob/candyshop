@@ -56,7 +56,7 @@
                     :placeholder="t('customer.products.ai_budget_placeholder')"
                     class="w-1/3 px-3 py-2 rounded-xl bg-white/20 placeholder-blue-200 text-white border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 text-sm" />
                   <input v-model="aiForm.currency" type="text" maxlength="3"
-                    placeholder="USD"
+                    :placeholder="cur()"
                     class="w-1/3 px-3 py-2 rounded-xl bg-white/20 placeholder-blue-200 text-white border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 text-sm uppercase" />
                 </div>
               </div>
@@ -229,7 +229,7 @@
 
             <!-- Product Grid -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              <div v-for="product in products" :key="product.id" class="group bg-white rounded-2xl shadow-sm border border-orange-100 overflow-hidden hover:shadow-xl hover:border-blue-200 transition-all duration-300">
+              <div v-for="product in products" :key="product.id" class="group bg-white rounded-2xl shadow-sm border border-orange-100 overflow-hidden hover:shadow-xl hover:border-blue-200 transition-shadow duration-300">
                 <!-- Product Image -->
                 <div class="relative h-48 bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden">
                   <img v-if="product.thumbnail" :src="product.thumbnail" :alt="product.name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -290,7 +290,7 @@
                     <div>
                       <p class="text-xs text-gray-500">{{ t('customer.products.unit_price') }}</p>
                       <p class="text-lg font-bold text-orange-600">
-                        {{ cur(product.currency) }} {{ (product.unitPrice || 0).toLocaleString() }}
+                        {{ cur(product.currency) }} {{ formatNumber(product.unitPrice || 0) }}
                       </p>
                     </div>
                     <div class="flex gap-2">
@@ -345,7 +345,7 @@ definePageMeta({
 
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { currencyOrDefault: cur } = useDisplay()
+const { currencyOrDefault: cur, formatNumber } = useDisplay()
 const api = useApi()
 
 const products = ref<any[]>([])
@@ -525,9 +525,9 @@ onMounted(() => {
 .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-.slide-up-enter-active, .slide-up-leave-active { transition: all 0.3s ease; }
+.slide-up-enter-active, .slide-up-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
 .slide-up-enter-from, .slide-up-leave-to { opacity: 0; transform: translateY(20px); }
 
-.slide-down-enter-active, .slide-down-leave-active { transition: all 0.3s ease; }
+.slide-down-enter-active, .slide-down-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
 .slide-down-enter-from, .slide-down-leave-to { opacity: 0; transform: translateY(-8px); }
 </style>

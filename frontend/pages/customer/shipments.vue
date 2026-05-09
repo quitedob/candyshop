@@ -56,6 +56,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
+const { formatDate } = useDisplay()
 const localePath = useLocalePath()
 const trades = ref<any[]>([])
 const shipmentMap = ref<Record<string, any[]>>({})
@@ -85,7 +86,6 @@ const load = async () => {
   }
 }
 
-const formatDate = (d: string) => d ? new Date(d).toLocaleDateString() : '-'
 
 onMounted(load)
 </script>

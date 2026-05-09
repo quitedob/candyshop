@@ -2,6 +2,8 @@
   "cases": {
     "title": "Success Stories",
     "subtitle": "Trusted by Global Brands",
+    "all_industries": "All Industries",
+    "no_results": "No case studies found for this industry.",
     "view_case": "View Case Study",
     "client": "Client",
     "project": "Project",

@@ -70,20 +70,20 @@
             <h4 class="text-md font-medium text-gray-900 mb-4 border-b pb-2">{{ t('admin.user_detail.edit_profile') }}</h4>
             <form @submit.prevent="updateProfile" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.user_detail.first_name') }}</label>
-                <input v-model="profileInput.firstName" type="text" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500" />
+                <label for="user-firstName" class="block text-sm font-medium text-gray-700">{{ t('admin.user_detail.first_name') }}</label>
+                <input id="user-firstName" v-model="profileInput.firstName" name="firstName" type="text" autocomplete="given-name" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.user_detail.last_name') }}</label>
-                <input v-model="profileInput.lastName" type="text" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500" />
+                <label for="user-lastName" class="block text-sm font-medium text-gray-700">{{ t('admin.user_detail.last_name') }}</label>
+                <input id="user-lastName" v-model="profileInput.lastName" name="lastName" type="text" autocomplete="family-name" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.user_detail.company') }}</label>
-                <input v-model="profileInput.company" type="text" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500" />
+                <label for="user-company" class="block text-sm font-medium text-gray-700">{{ t('admin.user_detail.company') }}</label>
+                <input id="user-company" v-model="profileInput.company" name="company" type="text" autocomplete="organization" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.user_detail.phone') }}</label>
-                <input v-model="profileInput.phone" type="text" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500" />
+                <label for="user-phone" class="block text-sm font-medium text-gray-700">{{ t('admin.user_detail.phone') }}</label>
+                <input id="user-phone" v-model="profileInput.phone" name="phone" type="text" autocomplete="tel" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500" />
               </div>
               <div class="sm:col-span-2">
                 <button type="submit" :disabled="savingProfile" class="inline-flex justify-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-700 disabled:opacity-50">
@@ -97,8 +97,8 @@
             <h4 class="text-md font-medium text-gray-900 mb-4 border-b pb-2">{{ t('admin.user_detail.role_management') }}</h4>
             <form @submit.prevent="updateRole" class="flex flex-wrap items-end gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.user_detail.role') }}</label>
-                <select v-model="roleInput" class="mt-1 block rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500">
+                <label for="user-role" class="block text-sm font-medium text-gray-700">{{ t('admin.user_detail.role') }}</label>
+                <select id="user-role" name="role" v-model="roleInput" class="mt-1 block rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-orange-500">
                   <option value="customer">{{ t('admin.user_detail.role_option_customer') }}</option>
                   <option value="admin">{{ t('admin.user_detail.role_option_admin') }}</option>
                   <option value="superadmin">{{ t('admin.user_detail.role_option_superadmin') }}</option>

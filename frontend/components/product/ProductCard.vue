@@ -58,17 +58,17 @@
 
         <!-- Price -->
         <p v-if="product.unitPrice" class="product-card__price">
-          {{ $t('product.price_from') }} ${{ product.unitPrice.toLocaleString() }}{{ $t('product.price_per_unit') }}
+          {{ $t('product.price_from') }} {{ cur() }}{{ formatNumber(product.unitPrice) }}{{ $t('product.price_per_unit') }}
         </p>
 
         <!-- Meta -->
         <div class="product-card__meta">
           <span v-if="product.moq" class="product-card__meta-item">
-            <Icon name="lucide:box" size="14" />
-            MOQ: {{ product.moq }}
+            <Icon name="lucide:box" size="14" aria-hidden="true" />
+            {{ $t('product.moq') }}: {{ product.moq }}
           </span>
           <span v-if="product.leadTime" class="product-card__meta-item">
-            <Icon name="lucide:clock" size="14" />
+            <Icon name="lucide:clock" size="14" aria-hidden="true" />
             {{ product.leadTime }}
           </span>
         </div>
@@ -77,7 +77,7 @@
           class="product-card__inquiry-btn"
           @click.prevent.stop="openInquiry"
         >
-          <Icon name="lucide:message-circle" size="16" />
+          <Icon name="lucide:message-circle" size="16" aria-hidden="true" />
           {{ $t('product.inquire_now') }}
         </button>
       </div>
@@ -88,6 +88,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useI18n, useLocalePath } from '#i18n'
+import { useDisplay } from '~/composables/useDisplay'
 
 interface Product {
   id: string
@@ -118,6 +119,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const localePath = useLocalePath()
+const { currencyOrDefault: cur, formatNumber } = useDisplay()
 
 const FALLBACK = '/images/categories/gummy-candy.jpg'
 const imgSrc = ref(props.product.thumbnail || FALLBACK)
@@ -149,11 +151,11 @@ const requestSample = () => {
 
 <style scoped>
 .product-card {
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-md);
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .product-card:hover {
@@ -227,7 +229,7 @@ const requestSample = () => {
   gap: var(--spacing-xs);
   opacity: 0;
   transform: translateX(10px);
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
   z-index: 2;
 }
 
@@ -242,16 +244,16 @@ const requestSample = () => {
   justify-content: center;
   width: 36px;
   height: 36px;
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-full);
   color: var(--color-primary);
   box-shadow: var(--shadow-md);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .product-card__action:hover {
   background-color: var(--color-highlight);
-  color: white;
+  color: var(--color-text-on-primary);
   transform: scale(1.1);
 }
 
@@ -298,7 +300,7 @@ const requestSample = () => {
   font-weight: 600;
   font-size: var(--text-sm);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .product-card__inquiry-btn:hover {

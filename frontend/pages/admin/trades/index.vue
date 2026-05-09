@@ -9,9 +9,9 @@
 
     <div class="mt-6 flex flex-wrap items-center gap-4">
       <div class="flex-1 min-w-[200px]">
-        <input v-model="searchInput" type="text" :placeholder="t('admin.trades.search_placeholder')" class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        <input id="trades-search" v-model="searchInput" name="search" type="text" autocomplete="off" :placeholder="t('admin.trades.search_placeholder')" class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
       </div>
-      <select v-model="statusFilter" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
+      <select id="trades-statusFilter" name="statusFilter" v-model="statusFilter" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
         <option value="">{{ t('admin.trades.all_statuses') }}</option>
         <option value="draft">{{ t('admin.trades.draft') }}</option>
         <option value="pending">{{ t('admin.trades.pending') }}</option>
@@ -20,7 +20,7 @@
         <option value="completed">{{ t('admin.trades.completed') }}</option>
         <option value="cancelled">{{ t('admin.trades.cancelled') }}</option>
       </select>
-      <select v-model="typeFilter" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
+      <select id="trades-typeFilter" name="typeFilter" v-model="typeFilter" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
         <option value="">{{ t('admin.trades.all_types') }}</option>
         <option value="import">{{ t('admin.trades.import') }}</option>
         <option value="export">{{ t('admin.trades.export') }}</option>
@@ -62,13 +62,13 @@
               <template v-else>{{ cell(trade.userId) }}</template>
             </td>
             <td class="px-3 py-4 text-sm text-gray-500">{{ cell(trade.tradeType) }}</td>
-            <td class="px-3 py-4 text-sm text-gray-500">{{ cur(trade.currency) }} {{ (trade.totalAmount || 0).toLocaleString() }}</td>
+            <td class="px-3 py-4 text-sm text-gray-500">{{ cur(trade.currency) }} {{ formatNumber(trade.totalAmount || 0) }}</td>
             <td class="px-3 py-4 text-sm">
               <span :class="[statusBadgeClass(trade.status), 'inline-flex rounded-full px-2 text-xs font-semibold leading-5']">
                 {{ enumLabel('trade_status', trade.status) }}
               </span>
             </td>
-            <td class="px-3 py-4 text-sm text-gray-500">{{ trade.createdAt ? new Date(trade.createdAt).toLocaleDateString() : cell(null) }}</td>
+            <td class="px-3 py-4 text-sm text-gray-500">{{ formatDate(trade.createdAt) }}</td>
             <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
               <NuxtLink :to="localePath(`/admin/trades/${trade.id}`)" class="text-orange-600 hover:text-orange-900" @click.stop>{{ t('admin.trades.view') }}</NuxtLink>
             </td>
@@ -103,7 +103,7 @@ definePageMeta({
 
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { currencyOrDefault: cur, cell, enumLabel } = useDisplay()
+const { currencyOrDefault: cur, cell, enumLabel, formatNumber, formatDate } = useDisplay()
 const api = useApi()
 const router = useRouter()
 

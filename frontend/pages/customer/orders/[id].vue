@@ -16,7 +16,7 @@
       <div class="px-6 py-5 flex justify-between items-center bg-bg-alt border-b border-border">
         <div>
           <h3 class="text-lg leading-6 font-semibold text-primary">{{ t('customer.orders.detail_title', { id: order.orderNumber || order.id.substring(0, 8) }) }}</h3>
-          <p class="mt-1 max-w-2xl text-sm text-light">{{ t('customer.orders.placed_on') }} {{ new Date(order.createdAt).toLocaleDateString() }}</p>
+          <p class="mt-1 max-w-2xl text-sm text-light">{{ t('customer.orders.placed_on') }} {{ formatDate(order.createdAt) }}</p>
         </div>
         <span :class="[statusBadge(order.status), 'badge']">{{ enumLabel('order_status', order.status) }}</span>
       </div>
@@ -57,7 +57,7 @@
           </div>
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-light">{{ t('customer.orders.total_amount') }}</dt>
-            <dd class="mt-1 text-sm font-bold text-highlight">{{ cur(order.currency) }} {{ order.totalAmount != null ? order.totalAmount.toLocaleString() : t('common.display.zero') }}</dd>
+            <dd class="mt-1 text-sm font-bold text-highlight">{{ cur(order.currency) }} {{ order.totalAmount != null ? formatNumber(order.totalAmount) : t('common.display.zero') }}</dd>
           </div>
           <div class="sm:col-span-1 border-t border-border pt-4">
             <dt class="text-sm font-medium text-light">{{ t('customer.orders.shipping_address') }}</dt>
@@ -106,8 +106,8 @@
               <tr v-for="(item, idx) in order.items" :key="`${item.productId}-${idx}`">
                 <td class="px-4 py-3 text-sm text-primary font-mono">{{ item.productId }}</td>
                 <td class="px-4 py-3 text-sm text-primary">{{ item.quantity }}</td>
-                <td class="px-4 py-3 text-sm text-primary">{{ cur(order.currency) }} {{ Number(item.unitPrice || 0).toLocaleString() }}</td>
-                <td class="px-4 py-3 text-sm text-primary font-semibold">{{ cur(order.currency) }} {{ Number((item.quantity || 0) * (item.unitPrice || 0)).toLocaleString() }}</td>
+                <td class="px-4 py-3 text-sm text-primary">{{ cur(order.currency) }} {{ formatNumber(item.unitPrice || 0) }}</td>
+                <td class="px-4 py-3 text-sm text-primary font-semibold">{{ cur(order.currency) }} {{ formatNumber((item.quantity || 0) * (item.unitPrice || 0)) }}</td>
                 <td class="px-4 py-3 text-sm text-light">{{ item.specifications || t('customer.orders.spec_na') }}</td>
               </tr>
             </tbody>
@@ -168,7 +168,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 const route = useRoute()
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { currencyOrDefault: cur, enumLabel } = useDisplay()
+const { currencyOrDefault: cur, enumLabel, formatNumber, formatDate } = useDisplay()
 const api = useApi()
 const id = route.params.id as string
 const order = ref<any>(null)
@@ -220,7 +220,6 @@ const cancelOrder = async () => {
   }
 }
 
-const formatDate = (value: string | null | undefined) => { if (!value) return t('customer.orders.date_na'); const date = new Date(value); if (Number.isNaN(date.getTime())) return t('customer.orders.date_na'); return date.toLocaleString() }
 const formatAddress = (address: any) => { if (!address || typeof address !== 'object') return t('customer.orders.date_na'); const fields = [address.street, address.city, address.state, address.zipCode, address.country].filter((v) => typeof v === 'string' && v.trim() !== ''); if (fields.length === 0) return t('customer.orders.date_na'); return fields.join(', ') }
 const statusBadge = (status: string) => {
   if (status === 'pending_confirmation') return 'badge-warning'
@@ -272,7 +271,7 @@ const uploadPaymentProof = async () => {
   background: var(--color-bg);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .form-input:focus {
@@ -289,7 +288,7 @@ const uploadPaymentProof = async () => {
   background: var(--color-bg);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .file-input::file-selector-button {
@@ -302,7 +301,7 @@ const uploadPaymentProof = async () => {
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .file-input::file-selector-button:hover {

@@ -1,13 +1,11 @@
 package admin
 
 import (
-	"candypro/api/internal/utils"
-	"time"
-
 	modelsProduct "candypro/api/internal/models/product"
-
+	"candypro/api/internal/utils"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,16 +27,13 @@ type adminCertificationRequest struct {
 // @Router /admin/certifications [get]
 func (h *Handler) AdminGetCertifications(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	certifications, err := h.services.Factory.GetCertifications(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to fetch certifications",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "certification_fetch_failed")
 		return
 	}
 
@@ -53,17 +48,14 @@ func (h *Handler) AdminGetCertifications(c *gin.Context) {
 // @Router /admin/certifications/{id} [get]
 func (h *Handler) AdminGetCertification(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	id := c.Param("id")
 	certification, err := h.services.Factory.GetCertificationByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Certification not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "certification_not_found")
 		return
 	}
 
@@ -78,25 +70,18 @@ func (h *Handler) AdminGetCertification(c *gin.Context) {
 // @Router /admin/certifications [post]
 func (h *Handler) AdminCreateCertification(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	var req modelsProduct.Certification
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: err.Error(),
-		})
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	req.Name = strings.TrimSpace(req.Name)
 	if req.Name == "" {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: "name is required",
-		})
+		utils.InvalidResp(c, "certification_name_required")
 		return
 	}
 
@@ -109,10 +94,7 @@ func (h *Handler) AdminCreateCertification(c *gin.Context) {
 	req.UpdatedAt = now
 
 	if err := h.services.Factory.CreateCertification(c.Request.Context(), &req); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to create certification",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "certification_create_failed")
 		return
 	}
 
@@ -131,26 +113,19 @@ func (h *Handler) AdminCreateCertification(c *gin.Context) {
 // @Router /admin/certifications/{id} [put]
 func (h *Handler) AdminUpdateCertification(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	id := c.Param("id")
 	certification, err := h.services.Factory.GetCertificationByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Certification not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "certification_not_found")
 		return
 	}
 
 	var req adminCertificationRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: err.Error(),
-		})
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -179,10 +154,7 @@ func (h *Handler) AdminUpdateCertification(c *gin.Context) {
 	certification.UpdatedAt = time.Now()
 
 	if err := h.services.Factory.UpdateCertification(c.Request.Context(), certification); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to update certification",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "certification_update_failed")
 		return
 	}
 
@@ -200,25 +172,19 @@ func (h *Handler) AdminUpdateCertification(c *gin.Context) {
 // @Router /admin/certifications/{id} [delete]
 func (h *Handler) AdminDeleteCertification(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	id := c.Param("id")
 
 	if _, err := h.services.Factory.GetCertificationByID(c.Request.Context(), id); err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Certification not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "certification_not_found")
 		return
 	}
 
 	if err := h.services.Factory.DeleteCertification(c.Request.Context(), id); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to delete certification",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "certification_delete_failed")
 		return
 	}
 

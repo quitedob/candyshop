@@ -62,7 +62,7 @@
             </div>
             <div v-if="company.kybVerifiedAt">
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.companies.verified_at') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ new Date(company.kybVerifiedAt).toLocaleString() }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ formatDate(company.kybVerifiedAt, { dateStyle: 'medium', timeStyle: 'short' }) }}</dd>
             </div>
             <div v-if="company.kybReviewedBy">
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.companies.reviewed_by') }}</dt>
@@ -85,7 +85,7 @@
           <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-3">
             <div>
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.companies.credit_limit') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ company.creditLimit ? `${cur(company.currency)} ${company.creditLimit.toLocaleString()}` : cell(null) }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ company.creditLimit ? `${cur(company.currency)} ${formatNumber(company.creditLimit)}` : cell(null) }}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.companies.payment_terms') }}</dt>
@@ -138,8 +138,8 @@
           <form @submit.prevent="updateStatus" class="space-y-4">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.companies.kyb_status') }}</label>
-                <select v-model="statusInput" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <label for="company-kybStatus" class="block text-sm font-medium text-gray-700">{{ t('admin.companies.kyb_status') }}</label>
+                <select id="company-kybStatus" name="kybStatus" v-model="statusInput" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
                   <option value="pending">{{ t('admin.companies.pending') }}</option>
                   <option value="verified">{{ t('admin.companies.verified') }}</option>
                   <option value="rejected">{{ t('admin.companies.rejected') }}</option>
@@ -147,8 +147,8 @@
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.companies.kyb_notes') }}</label>
-              <textarea v-model="notesInput" rows="3" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea>
+              <label for="company-notes" class="block text-sm font-medium text-gray-700">{{ t('admin.companies.kyb_notes') }}</label>
+              <textarea id="company-notes" v-model="notesInput" name="notes" rows="3" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea>
             </div>
             <div v-if="statusMessage" class="text-sm" :class="statusError ? 'text-red-600' : 'text-green-600'">
               {{ statusMessage }}
@@ -177,7 +177,7 @@ const route = useRoute()
 const { token } = useAuth()
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { currencyOrDefault: cur, cell, enumLabel } = useDisplay()
+const { currencyOrDefault: cur, cell, enumLabel, formatNumber, formatDate } = useDisplay()
 const config = useRuntimeConfig()
 const baseURL = config.public.apiBase || '/api/v1'
 

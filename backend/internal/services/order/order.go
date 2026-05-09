@@ -226,6 +226,12 @@ func (s *OrderService) SendOrderStatusEmail(order *modelsOrder.Order, userEmail,
 	}
 
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("Panic recovered in order status email goroutine for order %s: %v", order.ID, r)
+			}
+		}()
+
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
 

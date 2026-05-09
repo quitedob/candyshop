@@ -22,40 +22,31 @@ type adminConvertInquiryRequest struct {
 // AdminConvertInquiryToOrder converts a quoted/won inquiry into a draft order.
 func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	inquiryID := c.Param("id")
 	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Inquiry not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
 
 	// Only quoted or won inquiries can be converted
 	if inquiry.Status != "quoted" && inquiry.Status != "won" && inquiry.Status != "negotiating" {
-		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-			Error:   "invalid_status",
-			Message: "Only inquiries with status 'quoted', 'won', or 'negotiating' can be converted to orders",
-		})
+		utils.ErrorResp(c, http.StatusUnprocessableEntity, "inquiry_status_invalid")
 		return
 	}
 
 	// Must have a user assigned
 	if inquiry.UserID == nil || strings.TrimSpace(*inquiry.UserID) == "" {
-		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-			Error:   "missing_user",
-			Message: "Inquiry must have an assigned user before converting to order",
-		})
+		utils.ErrorResp(c, http.StatusUnprocessableEntity, "inquiry_missing_user")
 		return
 	}
 
 	var req adminConvertInquiryRequest
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -70,10 +61,7 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 		destCountry = strings.TrimSpace(inquiry.TargetCountry)
 	}
 	if destCountry == "" {
-		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-			Error:   "missing_country",
-			Message: "Destination country is required for order conversion (provide shippingAddress.country or set inquiry targetCountry)",
-		})
+		utils.ErrorResp(c, http.StatusUnprocessableEntity, "inquiry_missing_country")
 		return
 	}
 
@@ -94,17 +82,11 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 		// Validate product exists and is active
 		product, prodErr := h.services.Product.GetProductByID(c.Request.Context(), pid)
 		if prodErr != nil {
-			c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-				Error:   "product_not_found",
-				Message: fmt.Sprintf("Product %s in inquiry no longer exists", pid),
-			})
+			utils.ErrorResp(c, http.StatusUnprocessableEntity, "product_not_found")
 			return
 		}
 		if status := strings.ToLower(strings.TrimSpace(product.Status)); status != "" && status != "active" {
-			c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-				Error:   "product_unavailable",
-				Message: fmt.Sprintf("Product %s is no longer available for ordering", pid),
-			})
+			utils.ErrorResp(c, http.StatusUnprocessableEntity, "product_unavailable")
 			return
 		}
 
@@ -119,10 +101,7 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 			unitPrice = product.BasePrice
 		}
 		if unitPrice <= 0 {
-			c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-				Error:   "no_price",
-				Message: fmt.Sprintf("No price available for product %s. Set a base price or contract price before converting.", pid),
-			})
+			utils.ErrorResp(c, http.StatusUnprocessableEntity, "no_price")
 			return
 		}
 
@@ -139,24 +118,17 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 	}
 
 	if len(items) == 0 {
-		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-			Error:   "no_items",
-			Message: "Inquiry has no valid products to convert",
-		})
+		utils.ErrorResp(c, http.StatusUnprocessableEntity, "inquiry_no_items")
 		return
 	}
 
 	// Validate destination-country compliance
 	compliance := h.services.Product.ValidateComplianceWithMarketProfiles(c.Request.Context(), destCountry, selectedProducts)
 	if len(compliance.Violations) > 0 {
-		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-			Error:   "compliance_violation",
-			Message: "Order violates destination-country compliance requirements",
-			Details: gin.H{
-				"country":    compliance.Country,
-				"violations": compliance.Violations,
-				"warnings":   compliance.Warnings,
-			},
+		utils.ErrorRespDetail(c, http.StatusUnprocessableEntity, "compliance_violation", gin.H{
+			"country":    compliance.Country,
+			"violations": compliance.Violations,
+			"warnings":   compliance.Warnings,
 		})
 		return
 	}
@@ -169,13 +141,9 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 	sellable, _ := h.services.Product.EffectiveSellableByProducts(c.Request.Context(), ids, modelsProduct.ChannelWebstore)
 	inventory := h.services.Order.ValidateInventoryWithSellable(items, productByID, sellable)
 	if len(inventory.Violations) > 0 {
-		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-			Error:   "inventory_violation",
-			Message: "Insufficient stock or inventory policy violation for one or more products",
-			Details: gin.H{
-				"violations": inventory.Violations,
-				"warnings":   inventory.Warnings,
-			},
+		utils.ErrorRespDetail(c, http.StatusUnprocessableEntity, "inventory_violation", gin.H{
+			"violations": inventory.Violations,
+			"warnings":   inventory.Warnings,
 		})
 		return
 	}
@@ -218,16 +186,10 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 
 	if err := h.services.Order.CreateOrderWithStockReservation(c.Request.Context(), order); err != nil {
 		if errors.Is(err, modelsOrder.ErrInsufficientStock) {
-			c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-				Error:   "inventory_violation",
-				Message: "Insufficient stock for one or more products in the inquiry",
-			})
+			utils.ErrorResp(c, http.StatusUnprocessableEntity, "inventory_violation")
 			return
 		}
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to create order from inquiry",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "order_create_failed")
 		return
 	}
 

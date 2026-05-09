@@ -1,6 +1,7 @@
 {
   "skip_to_content": "跳转到主要内容",
-  "loading": "加载中...",
+  "loading": "加载中…",
+  "close": "关闭",
   "whatsapp": {
     "us": "WhatsApp咨询",
     "message": "您好，我对您的OEM糖果服务很感兴趣。能提供更多信息吗？",
@@ -19,7 +20,8 @@
     "prev": "上一页",
     "next": "下一页",
     "page": "第 {current} 页 / 共 {total} 页",
-    "showing": "显示第 {from} 到 {to} 项 / 共 {total} 项产品"
+    "showing": "显示第 {from} 到 {to} 项 / 共 {total} 项产品",
+    "nav_label": "分页导航"
   },
   "errors": {
     "404": {
@@ -154,6 +156,11 @@
     },
     "inquiry_status": {
       "pending": "待处理",
+      "contacted": "已联系",
+      "quoted": "已报价",
+      "negotiating": "协商中",
+      "won": "已成交",
+      "lost": "已丢失",
       "open": "进行中",
       "closed": "已关闭",
       "converted": "已转化",
@@ -188,14 +195,89 @@
     },
     "carrier": {
       "standard": "标准",
+      "dhl": "DHL",
+      "fedex": "FedEx",
+      "ups": "UPS",
+      "usps": "USPS",
+      "ems": "EMS",
+      "sea": "海运",
+      "air": "空运",
+      "sea_freight": "海运",
+      "air_freight": "空运",
       "unknown": "未知"
     },
     "tracking_provider": {
       "standard": "标准",
       "unknown": "未知"
+    },
+    "invoice_type": {
+      "invoice": "发票",
+      "proforma": "形式发票",
+      "credit_note": "贷项通知单",
+      "unknown": "未知"
+    },
+    "content_type": {
+      "post": "文章",
+      "case": "案例",
+      "unknown": "未知"
     }
   },
+  "rte": {
+    "placeholder": "在此撰写内容…",
+    "link_url": "链接地址",
+    "link_placeholder": "https://example.com",
+    "set": "设置",
+    "remove": "移除",
+    "uploading_image": "正在上传图片…",
+    "text_formatting": "文本格式",
+    "bold": "加粗",
+    "italic": "斜体",
+    "underline": "下划线",
+    "strikethrough": "删除线",
+    "heading1": "标题 1",
+    "heading2": "标题 2",
+    "heading3": "标题 3",
+    "paragraph": "段落",
+    "bullet_list": "无序列表",
+    "ordered_list": "有序列表",
+    "blockquote": "引用",
+    "align_left": "左对齐",
+    "align_center": "居中",
+    "align_right": "右对齐",
+    "insert_link": "插入链接",
+    "insert_image": "插入图片",
+    "upload_image": "上传图片",
+    "undo": "撤销",
+    "redo": "重做"
+  },
+  "a11y": {
+    "breadcrumb": "面包屑导航",
+    "previous_image": "上一张图片",
+    "next_image": "下一张图片",
+    "zoom_image": "放大图片",
+    "close_lightbox": "关闭灯箱",
+    "go_to_homepage": "返回首页",
+    "main_navigation": "主导航",
+    "language": "语言",
+    "contact_whatsapp": "通过 WhatsApp 联系我们",
+    "toggle_menu": "切换菜单",
+    "mobile_navigation": "移动端导航",
+    "close_menu": "关闭菜单",
+    "scroll_to_top": "回到顶部",
+    "close": "关闭",
+    "facebook": "Facebook",
+    "linkedin": "LinkedIn",
+    "instagram": "Instagram",
+    "youtube": "YouTube",
+    "twitter": "Twitter"
+  },
   "offline_message": "请检查您的网络连接并重试。",
+  "languages": {
+    "en": "English",
+    "zh": "中文",
+    "en_short": "EN",
+    "zh_short": "中"
+  },
   "common": {
     "previous": "上一页",
     "next": "下一页",

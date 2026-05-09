@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -98,8 +99,11 @@ func (s *InvoiceService) CreateInvoiceFromOrder(ctx context.Context, orderID str
 		return nil, err
 	}
 	if s.adj != nil && strings.TrimSpace(actorUserID) != "" {
-		afterJ, _ := invoiceSnapshotJSON(inv)
-		_ = s.adj.Create(ctx, &modelsOrder.DocumentAdjustment{
+		afterJ, err := invoiceSnapshotJSON(inv)
+		if err != nil {
+			log.Printf("Warning: failed to marshal invoice snapshot for adjustment audit (invoice %s): %v", inv.ID, err)
+		}
+		if err := s.adj.Create(ctx, &modelsOrder.DocumentAdjustment{
 			DocType:        modelsOrder.DocAdjustmentDocTypeInvoice,
 			DocumentID:     inv.ID,
 			RelatedOrderID: oid,
@@ -107,7 +111,9 @@ func (s *InvoiceService) CreateInvoiceFromOrder(ctx context.Context, orderID str
 			Action:         modelsOrder.DocAdjustmentActionDerivedFromOrder,
 			Reason:         "Invoice created from order totals and line items",
 			AfterSnapshot:  afterJ,
-		})
+		}); err != nil {
+			log.Printf("Warning: failed to record invoice adjustment audit (invoice %s): %v", inv.ID, err)
+		}
 	}
 	return inv, nil
 }

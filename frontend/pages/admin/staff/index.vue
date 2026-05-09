@@ -121,6 +121,7 @@ definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
+const { formatDate } = useDisplay()
 
 const staff = ref<any[]>([])
 const pagination = ref<any>(null)
@@ -190,12 +191,12 @@ const actionBadgeClass = (action: string) => {
 }
 
 const formatRole = (role: string) => {
-  if (!role) return 'Unknown'
+  if (!role) return t('common.enum.order_status.unknown')
   return role.charAt(0).toUpperCase() + role.slice(1)
 }
 
 const formatStatus = (status: string) => {
-  if (!status) return 'Unknown'
+  if (!status) return t('common.enum.order_status.unknown')
   return status.charAt(0).toUpperCase() + status.slice(1)
 }
 
@@ -213,7 +214,7 @@ const formatRelativeTime = (dateStr: string) => {
   if (diffMin < 60) return t('admin.staff.minutes_ago', { count: diffMin })
   if (diffHour < 24) return t('admin.staff.hours_ago', { count: diffHour })
   if (diffDay < 7) return t('admin.staff.days_ago', { count: diffDay })
-  return date.toLocaleDateString()
+  return formatDate(dateStr)
 }
 
 const prevPage = () => { if (page.value > 1) { page.value -= 1; fetchStaff() } }

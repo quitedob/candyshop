@@ -9,9 +9,9 @@
 
     <div class="mt-6 flex flex-wrap items-center gap-4">
       <div class="flex-1 min-w-[200px]">
-        <input v-model="searchInput" type="text" :placeholder="t('admin.oemProjects.search_placeholder')" class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        <input id="oem-search" v-model="searchInput" name="search" type="text" autocomplete="off" :placeholder="t('admin.oemProjects.search_placeholder')" class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
       </div>
-      <select v-model="statusFilter" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
+      <select id="oem-statusFilter" name="statusFilter" v-model="statusFilter" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
         <option value="">{{ t('admin.oemProjects.all_statuses') }}</option>
         <option value="inquiry">{{ t('admin.oemProjects.inquiry') }}</option>
         <option value="sampling">{{ t('admin.oemProjects.sampling') }}</option>
@@ -68,7 +68,7 @@
               </div>
             </td>
             <td class="px-3 py-4 text-sm text-gray-500">{{ project.assignedTo || '-' }}</td>
-            <td class="px-3 py-4 text-sm text-gray-500">{{ project.createdAt ? new Date(project.createdAt).toLocaleDateString() : '-' }}</td>
+            <td class="px-3 py-4 text-sm text-gray-500">{{ formatDate(project.createdAt) }}</td>
             <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
               <NuxtLink :to="localePath(`/admin/oem-projects/${project.id}`)" class="text-orange-600 hover:text-orange-900" @click.stop>{{ t('admin.oemProjects.view') }}</NuxtLink>
             </td>
@@ -100,6 +100,7 @@ definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
+const { formatDate } = useDisplay()
 const localePath = useLocalePath()
 const router = useRouter()
 
@@ -113,10 +114,10 @@ const searchInput = ref('')
 const statusFilter = ref('')
 
 const steps = [
-  { key: 'inquiry', label: 'Inquiry' }, { key: 'sampling', label: 'Sampling' },
-  { key: 'formulation', label: 'Formulation' }, { key: 'quotation', label: 'Quotation' },
-  { key: 'contract', label: 'Contract' }, { key: 'production', label: 'Production' },
-  { key: 'delivery', label: 'Delivery' }, { key: 'completed', label: 'Completed' }
+  { key: 'inquiry', label: t('admin.oemProjects.inquiry') }, { key: 'sampling', label: t('admin.oemProjects.sampling') },
+  { key: 'formulation', label: t('admin.oemProjects.formulation') }, { key: 'quotation', label: t('admin.oemProjects.quotation') },
+  { key: 'contract', label: t('admin.oemProjects.contract') }, { key: 'production', label: t('admin.oemProjects.production') },
+  { key: 'delivery', label: t('admin.oemProjects.delivery') }, { key: 'completed', label: t('admin.oemProjects.completed') }
 ]
 
 let searchTimeout: ReturnType<typeof setTimeout>

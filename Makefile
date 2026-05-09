@@ -29,8 +29,11 @@ help:
 	@echo "  docker-build  Rebuild Docker images"
 	@echo ""
 	@echo "Database:"
-	@echo "  migrate       Run database migrations"
-	@echo "  seed          Seed database with sample data"
+	@echo "  migrate       Run database migrations (auto on startup)"
+	@echo "  seed          Seed all data (business + demo)"
+	@echo "  seed-business Seed business data only"
+	@echo "  seed-demo     Seed demo workspace only"
+	@echo "  seed-essential Seed essential system data"
 	@echo "  reset-db      Reset database (drop and recreate)"
 	@echo ""
 	@echo "Code Quality:"
@@ -91,12 +94,24 @@ docker-restart:
 
 # Database targets
 migrate:
-	@echo "Running database migrations..."
-	cd backend && go run cmd/api/main.go -migrate
+	@echo "Running database migrations... (migrations run automatically on startup)"
+	cd backend && go run cmd/api/main.go
 
 seed:
-	@echo "Seeding database..."
-	cd backend && go run cmd/api/main.go -seed
+	@echo "Seeding all data (business + demo)..."
+	cd backend && go run cmd/seed/main.go -all
+
+seed-business:
+	@echo "Seeding business data only..."
+	cd backend && go run cmd/seed/main.go -business
+
+seed-demo:
+	@echo "Seeding demo workspace only..."
+	cd backend && go run cmd/seed/main.go -demo
+
+seed-essential:
+	@echo "Seeding essential system data only..."
+	cd backend && go run cmd/seed/main.go -essential
 
 reset-db:
 	@echo "Resetting database..."

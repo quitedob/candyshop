@@ -2,11 +2,6 @@ package public
 
 import (
 	"candypro/api/internal/utils"
-
-	modelsProduct "candypro/api/internal/models/product"
-)
-
-import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -22,16 +17,13 @@ import (
 // @Router /factory [get]
 func (h *Handler) GetFactoryInfo(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	info, err := h.services.Factory.GetInfo(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to fetch factory info",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "factory_info_fetch_failed")
 		return
 	}
 
@@ -46,16 +38,13 @@ func (h *Handler) GetFactoryInfo(c *gin.Context) {
 // @Router /certifications [get]
 func (h *Handler) GetCertifications(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	certifications, err := h.services.Factory.GetCertifications(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to fetch certifications",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "certification_fetch_failed")
 		return
 	}
 
@@ -68,11 +57,11 @@ func (h *Handler) GetCertifications(c *gin.Context) {
 // @Produce json
 // @Param id path string true "Certification ID"
 // @Success 200 {object} modelsProduct.Certification
-// @Failure 404 {object} modelsProduct.ErrorResponse
+// @Failure 404 {object} modelsCommon.ErrorResponse
 // @Router /certifications/{id} [get]
 func (h *Handler) GetCertification(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -80,10 +69,7 @@ func (h *Handler) GetCertification(c *gin.Context) {
 
 	certification, err := h.services.Factory.GetCertificationByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Certification not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "certification_not_found")
 		return
 	}
 
@@ -98,16 +84,13 @@ func (h *Handler) GetCertification(c *gin.Context) {
 // @Router /factory/quality-controls [get]
 func (h *Handler) GetProcessControls(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	controls, err := h.services.Factory.GetProcessControls(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to fetch process controls",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "process_controls_fetch_failed")
 		return
 	}
 
@@ -122,16 +105,13 @@ func (h *Handler) GetProcessControls(c *gin.Context) {
 // @Router /factory/timeline [get]
 func (h *Handler) GetQualityTimeline(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	info, err := h.services.Factory.GetInfo(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to fetch quality timeline",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "timeline_fetch_failed")
 		return
 	}
 

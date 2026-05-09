@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	modelsProduct "candypro/api/internal/models/product"
+	modelsCommon "candypro/api/internal/models/common"
 	modelsUser "candypro/api/internal/models/user"
 	"candypro/api/internal/roles"
 	"candypro/api/internal/utils"
@@ -28,8 +28,8 @@ import (
 // @Success 201 {object} map[string]interface{}
 // @Router /auth/register [post]
 func (h *Handler) Register(c *gin.Context) {
-	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+	if h.services == nil {
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -41,29 +41,23 @@ func (h *Handler) Register(c *gin.Context) {
 		CompanyName string `json:"companyName"`
 	}
 
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	// H9: Enforce password strength beyond min=8
 	if msg := utils.ValidatePasswordStrength(req.Password); msg != "" {
-		utils.InvalidRequestResponse(c, msg)
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	exists, err := h.services.User.EmailExists(c.Request.Context(), req.Email)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Registration failed",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "registration_failed")
 		return
 	}
 	if exists {
-		c.JSON(http.StatusConflict, modelsProduct.ErrorResponse{
-			Error:   "email_exists",
-			Message: "Email is already registered",
-		})
+		utils.ErrorResp(c, http.StatusConflict, "email_exists")
 		return
 	}
 
@@ -77,10 +71,7 @@ func (h *Handler) Register(c *gin.Context) {
 	}
 
 	if err := h.services.Auth.Register(c.Request.Context(), user); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Registration failed",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "registration_failed")
 		return
 	}
 
@@ -91,10 +82,7 @@ func (h *Handler) Register(c *gin.Context) {
 		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 	}, h.cfg.JWT.Secret)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Registration succeeded, but verification token generation failed",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "registration_token_failed")
 		return
 	}
 
@@ -129,8 +117,8 @@ func (h *Handler) Register(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /auth/login [post]
 func (h *Handler) Login(c *gin.Context) {
-	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+	if h.services == nil {
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -139,7 +127,7 @@ func (h *Handler) Login(c *gin.Context) {
 		Password string `json:"password" binding:"required"`
 	}
 
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -147,10 +135,7 @@ func (h *Handler) Login(c *gin.Context) {
 	if h.loginTracker != nil {
 		if locked, retryAfter := h.loginTracker.IsLocked(req.Email); locked {
 			c.Header("Retry-After", strconv.Itoa(retryAfter))
-			c.JSON(http.StatusTooManyRequests, modelsProduct.ErrorResponse{
-				Error:   "account_locked",
-				Message: "Too many failed login attempts. Please try again later.",
-			})
+			utils.ErrorResp(c, http.StatusTooManyRequests, "login_rate_limited")
 			return
 		}
 	}
@@ -161,17 +146,14 @@ func (h *Handler) Login(c *gin.Context) {
 		if h.loginTracker != nil {
 			h.loginTracker.RecordFailure(req.Email)
 		}
-		c.JSON(http.StatusUnauthorized, modelsProduct.ErrorResponse{
-			Error:   "unauthorized",
-			Message: "Invalid email or password",
-		})
+		utils.ErrorResp(c, http.StatusUnauthorized, "invalid_credentials")
 		return
 	}
 
 	if user.Status == "suspended" || user.Status == "deleted" {
-		c.JSON(http.StatusForbidden, modelsProduct.ErrorResponse{
-			Error:   "forbidden",
-			Message: "Account is " + user.Status,
+		c.JSON(http.StatusForbidden, modelsCommon.ErrorResponse{
+			Error:   "account_status",
+			Message: utils.TWithVars(c, "errors.account_status", map[string]string{"status": user.Status}),
 		})
 		return
 	}
@@ -183,19 +165,13 @@ func (h *Handler) Login(c *gin.Context) {
 
 	accessToken, err := h.services.JWT.GenerateAccessToken(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to generate token",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "token_generation_failed")
 		return
 	}
 
 	refreshToken, err := h.services.JWT.GenerateRefreshToken(c.Request.Context(), user, c.ClientIP(), c.Request.UserAgent())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to generate refresh token",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "refresh_token_failed")
 		return
 	}
 
@@ -237,8 +213,8 @@ func (h *Handler) Login(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /auth/refresh [post]
 func (h *Handler) RefreshToken(c *gin.Context) {
-	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+	if h.services == nil {
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -246,13 +222,13 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 		RefreshToken string `json:"refresh_token" binding:"required"`
 	}
 
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	userID, err := h.services.Auth.ValidateRefreshToken(c.Request.Context(), req.RefreshToken)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, modelsProduct.ErrorResponse{
+		c.JSON(http.StatusUnauthorized, modelsCommon.ErrorResponse{
 			Error:   "unauthorized",
 			Message: err.Error(),
 		})
@@ -261,18 +237,15 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to retrieve user",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "user_retrieve_failed")
 		return
 	}
 
 	// R4-08: Reject refresh for suspended/deleted users
 	if user.Status == "suspended" || user.Status == "deleted" {
-		c.JSON(http.StatusForbidden, modelsProduct.ErrorResponse{
-			Error:   "forbidden",
-			Message: "Account is " + user.Status,
+		c.JSON(http.StatusForbidden, modelsCommon.ErrorResponse{
+			Error:   "account_status",
+			Message: utils.TWithVars(c, "errors.account_status", map[string]string{"status": user.Status}),
 		})
 		return
 	}
@@ -283,10 +256,7 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 
 	accessToken, err := h.services.JWT.GenerateAccessToken(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to generate access token",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "access_token_failed")
 		return
 	}
 
@@ -317,8 +287,8 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 // @Produce json
 // @Router /auth/logout [post]
 func (h *Handler) Logout(c *gin.Context) {
-	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+	if h.services == nil {
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -344,7 +314,7 @@ func (h *Handler) Logout(c *gin.Context) {
 // @Router /auth/forgot-password [post]
 func (h *Handler) ForgotPassword(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -353,17 +323,14 @@ func (h *Handler) ForgotPassword(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: "Invalid email",
-		})
+		utils.ErrorResp(c, http.StatusBadRequest, "invalid_email")
 		return
 	}
 
 	user, err := h.services.User.GetByEmail(c.Request.Context(), req.Email)
 	if err != nil {
 		// Do not reveal if email exists or not
-		c.JSON(http.StatusOK, gin.H{"message": "If that email exists, a reset link has been sent."})
+		c.JSON(http.StatusOK, gin.H{"message": utils.T(c, "errors.forgot_password_email_sent")})
 		return
 	}
 
@@ -377,15 +344,12 @@ func (h *Handler) ForgotPassword(c *gin.Context) {
 	user.ResetTokenExpiresAt = &expires
 
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Error processing request",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "request_processing_error")
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "If that email exists, a reset link has been sent.",
+		"message": utils.T(c, "errors.forgot_password_email_sent"),
 	})
 }
 
@@ -397,7 +361,7 @@ func (h *Handler) ForgotPassword(c *gin.Context) {
 // @Router /auth/reset-password [post]
 func (h *Handler) ResetPassword(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -406,13 +370,13 @@ func (h *Handler) ResetPassword(c *gin.Context) {
 		NewPassword string `json:"newPassword" binding:"required,min=8"`
 	}
 
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	// H9: Enforce password strength on reset
 	if msg := utils.ValidatePasswordStrength(req.NewPassword); msg != "" {
-		utils.InvalidRequestResponse(c, msg)
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 
@@ -420,27 +384,18 @@ func (h *Handler) ResetPassword(c *gin.Context) {
 	tokenHash := utils.HashResetToken(req.Token)
 	user, err := h.services.User.GetByResetToken(c.Request.Context(), tokenHash)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_token",
-			Message: "Invalid or expired reset token",
-		})
+		utils.ErrorResp(c, http.StatusBadRequest, "reset_token_invalid")
 		return
 	}
 
 	if user.ResetTokenExpiresAt == nil || user.ResetTokenExpiresAt.Before(time.Now()) {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "expired_token",
-			Message: "Reset token has expired",
-		})
+		utils.ErrorResp(c, http.StatusBadRequest, "reset_token_expired")
 		return
 	}
 
 	hash, err := utils.HashPassword(req.NewPassword)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to hash password",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "password_hash_failed")
 		return
 	}
 
@@ -449,10 +404,7 @@ func (h *Handler) ResetPassword(c *gin.Context) {
 	user.ResetTokenExpiresAt = nil
 
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to update password",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "password_update_failed")
 		return
 	}
 
@@ -478,7 +430,7 @@ func authContextUserID(c *gin.Context) (string, bool) {
 // @Router /auth/verify-email [post]
 func (h *Handler) VerifyEmail(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -488,44 +440,29 @@ func (h *Handler) VerifyEmail(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: "token is required",
-		})
+		utils.ErrorResp(c, http.StatusBadRequest, "token_required")
 		return
 	}
 
 	claims, err := utils.ValidateJWT(req.Token, h.cfg.JWT.Secret)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_token",
-			Message: "Invalid verification token",
-		})
+		utils.ErrorResp(c, http.StatusBadRequest, "verification_token_invalid")
 		return
 	}
 	purpose, ok := claims["purpose"].(string)
 	if !ok || purpose != "verify_email" {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_token",
-			Message: "Token purpose mismatch",
-		})
+		utils.ErrorResp(c, http.StatusBadRequest, "token_purpose_mismatch")
 		return
 	}
 	userID, ok := claims["sub"].(string)
 	if !ok || strings.TrimSpace(userID) == "" {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_token",
-			Message: "Invalid verification token subject",
-		})
+		utils.ErrorResp(c, http.StatusBadRequest, "verification_subject_invalid")
 		return
 	}
 
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "invalid_token",
-			Message: "User not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 
@@ -534,15 +471,12 @@ func (h *Handler) VerifyEmail(c *gin.Context) {
 	user.EmailVerifiedAt = &now
 	user.Status = "active"
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to verify email",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "verification_failed")
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Email verified successfully",
+		"message": utils.T(c, "errors.verification_success_redirect"),
 	})
 }
 
@@ -553,25 +487,19 @@ func (h *Handler) VerifyEmail(c *gin.Context) {
 // @Router /auth/me [get]
 func (h *Handler) Me(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := authContextUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, modelsProduct.ErrorResponse{
-			Error:   "unauthorized",
-			Message: "User not identified",
-		})
+		utils.ErrorResp(c, http.StatusUnauthorized, "invalid_user_identity")
 		return
 	}
 
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "User not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 
@@ -601,16 +529,13 @@ func (h *Handler) Me(c *gin.Context) {
 // @Router /auth/profile [put]
 func (h *Handler) UpdateProfile(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := authContextUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, modelsProduct.ErrorResponse{
-			Error:   "unauthorized",
-			Message: "User not identified",
-		})
+		utils.ErrorResp(c, http.StatusUnauthorized, "invalid_user_identity")
 		return
 	}
 
@@ -620,16 +545,13 @@ func (h *Handler) UpdateProfile(c *gin.Context) {
 		Company   string `json:"company"`
 		Phone     string `json:"phone"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "User not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 
@@ -639,10 +561,7 @@ func (h *Handler) UpdateProfile(c *gin.Context) {
 	user.Phone = req.Phone
 
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to update profile",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "user_update_failed")
 		return
 	}
 
@@ -659,16 +578,13 @@ func (h *Handler) UpdateProfile(c *gin.Context) {
 // @Router /auth/change-password [put]
 func (h *Handler) ChangePassword(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := authContextUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, modelsProduct.ErrorResponse{
-			Error:   "unauthorized",
-			Message: "User not identified",
-		})
+		utils.ErrorResp(c, http.StatusUnauthorized, "invalid_user_identity")
 		return
 	}
 
@@ -676,39 +592,30 @@ func (h *Handler) ChangePassword(c *gin.Context) {
 		CurrentPassword string `json:"currentPassword" binding:"required"`
 		NewPassword     string `json:"newPassword" binding:"required,min=8"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	// H9: Enforce password strength on new password
 	if msg := utils.ValidatePasswordStrength(req.NewPassword); msg != "" {
-		utils.InvalidRequestResponse(c, msg)
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "User not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 
 	if !utils.CheckPasswordHash(req.CurrentPassword, user.PasswordHash) {
-		c.JSON(http.StatusUnauthorized, modelsProduct.ErrorResponse{
-			Error:   "invalid_credentials",
-			Message: "Current password is incorrect",
-		})
+		utils.ErrorResp(c, http.StatusUnauthorized, "invalid_credentials")
 		return
 	}
 
 	hash, err := utils.HashPassword(req.NewPassword)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to hash password",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "password_hash_failed")
 		return
 	}
 
@@ -716,10 +623,7 @@ func (h *Handler) ChangePassword(c *gin.Context) {
 	user.PasswordHash = hash
 	user.PasswordChangedAt = &now
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to update password",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "password_update_failed")
 		return
 	}
 
@@ -742,7 +646,7 @@ func (h *Handler) ResendVerificationEmail(c *gin.Context) {
 
 	userID, ok := authContextUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, modelsProduct.ErrorResponse{
+		c.JSON(http.StatusUnauthorized, modelsCommon.ErrorResponse{
 			Error:   "unauthorized",
 			Message: "User not identified",
 		})
@@ -751,7 +655,7 @@ func (h *Handler) ResendVerificationEmail(c *gin.Context) {
 
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
+		c.JSON(http.StatusNotFound, modelsCommon.ErrorResponse{
 			Error:   "not_found",
 			Message: "User not found",
 		})
@@ -759,7 +663,7 @@ func (h *Handler) ResendVerificationEmail(c *gin.Context) {
 	}
 
 	if user.EmailVerified {
-		c.JSON(http.StatusConflict, modelsProduct.ErrorResponse{
+		c.JSON(http.StatusConflict, modelsCommon.ErrorResponse{
 			Error:   "already_verified",
 			Message: "Email is already verified",
 		})
@@ -773,7 +677,7 @@ func (h *Handler) ResendVerificationEmail(c *gin.Context) {
 		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 	}, h.cfg.JWT.Secret)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
+		c.JSON(http.StatusInternalServerError, modelsCommon.ErrorResponse{
 			Error:   "internal_error",
 			Message: "Failed to generate verification token",
 		})

@@ -6,7 +6,7 @@
         v-if="currentIndex > 0"
         class="product-gallery__nav product-gallery__nav--prev"
         @click="previousImage"
-        aria-label="Previous image"
+        :aria-label="t('common.a11y.previous_image')"
       >
         <Icon name="lucide:chevron-left" size="24" />
       </button>
@@ -24,7 +24,7 @@
         v-if="currentIndex < images.length - 1"
         class="product-gallery__nav product-gallery__nav--next"
         @click="nextImage"
-        aria-label="Next image"
+        :aria-label="t('common.a11y.next_image')"
       >
         <Icon name="lucide:chevron-right" size="24" />
       </button>
@@ -34,7 +34,7 @@
         v-if="allowZoom"
         class="product-gallery__zoom"
         @click="openLightbox"
-        aria-label="Zoom image"
+        :aria-label="t('common.a11y.zoom_image')"
       >
         <Icon name="lucide:zoom-in" size="18" />
       </button>
@@ -66,7 +66,7 @@
         <button
           class="product-gallery__lightbox-close"
           @click="closeLightbox"
-          aria-label="Close lightbox"
+          :aria-label="t('common.a11y.close_lightbox')"
         >
           <Icon name="lucide:x" size="24" />
         </button>
@@ -75,7 +75,7 @@
           v-if="currentIndex > 0"
           class="product-gallery__lightbox-nav product-gallery__lightbox-nav--prev"
           @click="previousImage"
-          aria-label="Previous image"
+          :aria-label="t('common.a11y.previous_image')"
         >
           <Icon name="lucide:chevron-left" size="32" />
         </button>
@@ -92,7 +92,7 @@
           v-if="currentIndex < images.length - 1"
           class="product-gallery__lightbox-nav product-gallery__lightbox-nav--next"
           @click="nextImage"
-          aria-label="Next image"
+          :aria-label="t('common.a11y.next_image')"
         >
           <Icon name="lucide:chevron-right" size="32" />
         </button>
@@ -108,6 +108,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+const { t } = useI18n()
 
 interface Props {
   images: string[]
@@ -257,7 +258,7 @@ const resumeAutoplay = () => {
   border-radius: var(--radius-full);
   box-shadow: var(--shadow-md);
   color: var(--color-primary);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
   z-index: 2;
 }
 
@@ -287,7 +288,7 @@ const resumeAutoplay = () => {
   border-radius: var(--radius-full);
   box-shadow: var(--shadow-md);
   color: var(--color-primary);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
   z-index: 2;
 }
 
@@ -317,7 +318,7 @@ const resumeAutoplay = () => {
   border: 2px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .product-gallery__thumbnail:hover {
@@ -365,7 +366,7 @@ const resumeAutoplay = () => {
   background-color: white;
   border-radius: var(--radius-full);
   color: var(--color-text);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
   z-index: 10;
 }
 
@@ -386,7 +387,7 @@ const resumeAutoplay = () => {
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-full);
   color: white;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
   z-index: 5;
 }
 

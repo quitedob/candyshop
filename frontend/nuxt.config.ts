@@ -26,10 +26,15 @@ export default defineNuxtConfig({
     head: {
       // R4-20: lang is set dynamically by i18n — don't hardcode 'en'
       // htmlAttrs.lang is managed by @nuxtjs/i18n automatically
+      htmlAttrs: {
+        style: 'color-scheme: light dark;'
+      },
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-        { name: 'format-detection', content: 'telephone=no' }
+        { name: 'format-detection', content: 'telephone=no' },
+        { name: 'theme-color', content: '#ffffff', media: '(prefers-color-scheme: light)' },
+        { name: 'theme-color', content: '#1c1917', media: '(prefers-color-scheme: dark)' }
       ],
       link: [
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },

@@ -1,6 +1,7 @@
 {
   "skip_to_content": "Skip to main content",
-  "loading": "Loading...",
+  "loading": "Loading…",
+  "close": "Close",
   "whatsapp": {
     "us": "WhatsApp Us",
     "message": "Hi, I'm interested in your OEM candy services. Can you provide more information?",
@@ -19,7 +20,8 @@
     "prev": "Previous",
     "next": "Next",
     "page": "Page {current} of {total}",
-    "showing": "Showing {from} to {to} of {total} products"
+    "showing": "Showing {from} to {to} of {total} products",
+    "nav_label": "Pagination"
   },
   "errors": {
     "404": {
@@ -154,6 +156,11 @@
     },
     "inquiry_status": {
       "pending": "Pending",
+      "contacted": "Contacted",
+      "quoted": "Quoted",
+      "negotiating": "Negotiating",
+      "won": "Won",
+      "lost": "Lost",
       "open": "Open",
       "closed": "Closed",
       "converted": "Converted",
@@ -188,14 +195,89 @@
     },
     "carrier": {
       "standard": "Standard",
+      "dhl": "DHL",
+      "fedex": "FedEx",
+      "ups": "UPS",
+      "usps": "USPS",
+      "ems": "EMS",
+      "sea": "Sea Freight",
+      "air": "Air Freight",
+      "sea_freight": "Sea Freight",
+      "air_freight": "Air Freight",
       "unknown": "Unknown"
     },
     "tracking_provider": {
       "standard": "Standard",
       "unknown": "Unknown"
+    },
+    "invoice_type": {
+      "invoice": "Invoice",
+      "proforma": "Proforma",
+      "credit_note": "Credit Note",
+      "unknown": "Unknown"
+    },
+    "content_type": {
+      "post": "Post",
+      "case": "Case",
+      "unknown": "Unknown"
     }
   },
+  "rte": {
+    "placeholder": "Write something…",
+    "link_url": "Link URL",
+    "link_placeholder": "https://example.com",
+    "set": "Set",
+    "remove": "Remove",
+    "uploading_image": "Uploading image…",
+    "text_formatting": "Text formatting",
+    "bold": "Bold",
+    "italic": "Italic",
+    "underline": "Underline",
+    "strikethrough": "Strikethrough",
+    "heading1": "Heading 1",
+    "heading2": "Heading 2",
+    "heading3": "Heading 3",
+    "paragraph": "Paragraph",
+    "bullet_list": "Bullet List",
+    "ordered_list": "Ordered List",
+    "blockquote": "Blockquote",
+    "align_left": "Align Left",
+    "align_center": "Align Center",
+    "align_right": "Align Right",
+    "insert_link": "Insert Link",
+    "insert_image": "Insert Image",
+    "upload_image": "Upload image",
+    "undo": "Undo",
+    "redo": "Redo"
+  },
+  "a11y": {
+    "breadcrumb": "Breadcrumb",
+    "previous_image": "Previous image",
+    "next_image": "Next image",
+    "zoom_image": "Zoom image",
+    "close_lightbox": "Close lightbox",
+    "go_to_homepage": "Go to homepage",
+    "main_navigation": "Main navigation",
+    "language": "Language",
+    "contact_whatsapp": "Contact us on WhatsApp",
+    "toggle_menu": "Toggle menu",
+    "mobile_navigation": "Mobile navigation",
+    "close_menu": "Close menu",
+    "scroll_to_top": "Scroll to top",
+    "close": "Close",
+    "facebook": "Facebook",
+    "linkedin": "LinkedIn",
+    "instagram": "Instagram",
+    "youtube": "YouTube",
+    "twitter": "Twitter"
+  },
   "offline_message": "Please check your internet connection and try again.",
+  "languages": {
+    "en": "English",
+    "zh": "中文",
+    "en_short": "EN",
+    "zh_short": "中"
+  },
   "common": {
     "previous": "Previous",
     "next": "Next",

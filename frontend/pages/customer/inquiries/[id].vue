@@ -20,7 +20,7 @@
         <div>
           <h3 class="text-lg leading-6 font-medium text-gray-900">Inquiry #{{ inquiry.id.substring(0, 8) }}</h3>
           <p class="mt-1 max-w-2xl text-sm text-gray-500">
-            {{ t('customer.inquiries.submitted_on') }} {{ new Date(inquiry.createdAt).toLocaleDateString() }}
+            {{ t('customer.inquiries.submitted_on') }} {{ formatDate(inquiry.createdAt) }}
           </p>
         </div>
         <span :class="[statusClass(inquiry.status), 'inline-flex rounded-full px-3 py-1 text-sm font-semibold leading-5']">
@@ -96,6 +96,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 const route = useRoute()
 const api = useApi()
 const { t } = useI18n()
+const { formatDate } = useDisplay()
 const localePath = useLocalePath()
 
 const inquiry = ref<any>(null)

@@ -37,8 +37,11 @@ const decodeJwtPayload = (token: string): JwtPayload | null => {
   }
 }
 
+const lazyT = () => {
+  try { return useI18n().t } catch { return (key: string) => key }
+}
+
 export const useAuth = () => {
-  const { t } = useI18n()
   const localePath = useLocalePath()
   const token = useCookie<string | null>('auth_token', {
     maxAge: 60 * 60 * 24 * 7,
@@ -191,7 +194,7 @@ export const useAuth = () => {
       initialized.value = true
       return response
     } catch (error: any) {
-      throw new Error(error.data?.message || t('auth.errors.login_failed'))
+      throw new Error(error.data?.message || lazyT()('auth.errors.login_failed'))
     }
   }
 
@@ -202,7 +205,7 @@ export const useAuth = () => {
         body: userData
       })
     } catch (error: any) {
-      throw new Error(error.data?.message || t('auth.errors.register_failed'))
+      throw new Error(error.data?.message || lazyT()('auth.errors.register_failed'))
     }
   }
 

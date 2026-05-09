@@ -40,6 +40,23 @@ type Product struct {
 	ViewCount      int                `json:"viewCount" gorm:"default:0"`
 	CreatedAt      time.Time          `json:"createdAt"`
 	UpdatedAt      time.Time          `json:"updatedAt"`
+	DeletedAt      gorm.DeletedAt      `json:"-" gorm:"index"`
+}
+
+// Product status constants
+const (
+	ProductStatusDraft    = "draft"
+	ProductStatusActive   = "active"
+	ProductStatusInactive = "inactive"
+)
+
+// IsValidProductStatus checks if a status value is valid.
+func IsValidProductStatus(s string) bool {
+	switch s {
+	case ProductStatusDraft, ProductStatusActive, ProductStatusInactive:
+		return true
+	}
+	return false
 }
 
 // ProductEmbedding stores semantic-search vectors separately so baseline product migration works on plain Postgres.

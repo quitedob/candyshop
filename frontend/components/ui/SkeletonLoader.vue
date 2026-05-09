@@ -3,6 +3,7 @@
     class="skeleton"
     :class="[`skeleton-${type}`, { 'animate': animate }]"
     :style="{ width: width || undefined, height: height || undefined }"
+    aria-hidden="true"
   ></div>
 </template>
 
@@ -17,9 +18,9 @@ defineProps<{
 
 <style scoped>
 .skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--color-bg-alt) 25%, var(--color-bg-dark) 50%, var(--color-bg-alt) 75%);
   background-size: 200% 100%;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .skeleton.animate {
@@ -44,13 +45,13 @@ defineProps<{
 .skeleton-image {
   height: 200px;
   width: 100%;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .skeleton-card {
   height: 300px;
   width: 100%;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .skeleton-circle {

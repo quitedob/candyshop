@@ -2,11 +2,6 @@ package public
 
 import (
 	"candypro/api/internal/utils"
-
-	modelsProduct "candypro/api/internal/models/product"
-)
-
-import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -22,16 +17,13 @@ import (
 // @Router /oem/flows [get]
 func (h *Handler) GetOEMFlows(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	flows, err := h.services.OEM.GetFlows(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to fetch OEM flows",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "oem_flows_fetch_failed")
 		return
 	}
 
@@ -44,11 +36,11 @@ func (h *Handler) GetOEMFlows(c *gin.Context) {
 // @Produce json
 // @Param id path string true "OEM Flow ID"
 // @Success 200 {object} modelsProduct.OEMFlow
-// @Failure 404 {object} modelsProduct.ErrorResponse
+// @Failure 404 {object} modelsCommon.ErrorResponse
 // @Router /oem/flows/{id} [get]
 func (h *Handler) GetOEMFlow(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -56,10 +48,7 @@ func (h *Handler) GetOEMFlow(c *gin.Context) {
 
 	flow, err := h.services.OEM.GetFlowByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "OEM flow not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "oem_flow_not_found")
 		return
 	}
 
@@ -74,16 +63,13 @@ func (h *Handler) GetOEMFlow(c *gin.Context) {
 // @Router /oem/solutions [get]
 func (h *Handler) GetOEMSolutions(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	solutions, err := h.services.OEM.GetSolutions(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to fetch OEM solutions",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "oem_solutions_fetch_failed")
 		return
 	}
 
@@ -96,11 +82,11 @@ func (h *Handler) GetOEMSolutions(c *gin.Context) {
 // @Produce json
 // @Param slug path string true "OEM Solution slug"
 // @Success 200 {object} modelsProduct.OEMSolution
-// @Failure 404 {object} modelsProduct.ErrorResponse
+// @Failure 404 {object} modelsCommon.ErrorResponse
 // @Router /oem/solutions/{slug} [get]
 func (h *Handler) GetOEMSolution(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -108,10 +94,7 @@ func (h *Handler) GetOEMSolution(c *gin.Context) {
 
 	solution, err := h.services.OEM.GetSolutionBySlug(c.Request.Context(), slug)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "OEM solution not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "oem_solution_not_found")
 		return
 	}
 

@@ -35,7 +35,7 @@
           </tr>
           <tr v-else v-for="inquiry in inquiries" :key="inquiry.id">
             <td>
-              {{ inquiry.createdAt ? new Date(inquiry.createdAt).toLocaleDateString() : '-' }}
+              {{ formatDate(inquiry.createdAt) }}
             </td>
             <td>
               <div class="font-medium">{{ inquiry.companyName }}</div>
@@ -73,92 +73,92 @@
 
     <div v-if="showModal" class="modal-overlay" role="dialog" aria-modal="true">
       <div class="modal-container">
-        <div class="modal-backdrop" @click="closeModal"></div>
+        <button type="button" class="modal-backdrop w-full border-0 cursor-pointer" @click="closeModal" :aria-label="t('common.close')"></button>
         <div class="modal-content">
           <h3 class="modal-title">{{ editingId ? t('admin.inquiries.edit_inquiry') : t('admin.inquiries.create_inquiry') }}</h3>
 
           <form class="form-grid" @submit.prevent="saveInquiry">
             <div class="form-group">
-              <label class="form-label">{{ t('admin.inquiries.user_id') }}</label>
-              <input v-model="form.userId" class="form-input" />
+              <label for="inquiry-userId" class="form-label">{{ t('admin.inquiries.user_id') }}</label>
+              <input id="inquiry-userId" v-model="form.userId" name="userId" autocomplete="off" class="form-input" />
             </div>
             <div class="form-group">
-              <label class="form-label">{{ t('admin.inquiries.company_name') }}</label>
-              <input v-model="form.companyName" required class="form-input" />
+              <label for="inquiry-companyName" class="form-label">{{ t('admin.inquiries.company_name') }}</label>
+              <input id="inquiry-companyName" v-model="form.companyName" name="companyName" autocomplete="organization" required class="form-input" />
             </div>
             <div class="form-group">
-              <label class="form-label">{{ t('admin.inquiries.contact_person') }}</label>
-              <input v-model="form.contactPerson" required class="form-input" />
+              <label for="inquiry-contactPerson" class="form-label">{{ t('admin.inquiries.contact_person') }}</label>
+              <input id="inquiry-contactPerson" v-model="form.contactPerson" name="contactPerson" autocomplete="name" required class="form-input" />
             </div>
             <div class="form-group">
-              <label class="form-label">{{ t('admin.inquiries.email') }}</label>
-              <input v-model="form.email" type="email" required class="form-input" />
+              <label for="inquiry-email" class="form-label">{{ t('admin.inquiries.email') }}</label>
+              <input id="inquiry-email" v-model="form.email" name="email" type="email" autocomplete="email" required class="form-input" />
             </div>
             <div class="form-group">
-              <label class="form-label">{{ t('admin.inquiries.whatsapp') }}</label>
-              <input v-model="form.whatsApp" class="form-input" />
+              <label for="inquiry-whatsApp" class="form-label">{{ t('admin.inquiries.whatsapp') }}</label>
+              <input id="inquiry-whatsApp" v-model="form.whatsApp" name="whatsApp" autocomplete="tel" class="form-input" />
             </div>
             <div class="form-group">
-              <label class="form-label">{{ t('admin.inquiries.target_country') }}</label>
-              <input v-model="form.targetCountry" class="form-input" />
+              <label for="inquiry-targetCountry" class="form-label">{{ t('admin.inquiries.target_country') }}</label>
+              <input id="inquiry-targetCountry" v-model="form.targetCountry" name="targetCountry" autocomplete="country-name" class="form-input" />
             </div>
             <div class="form-group">
-              <label class="form-label">{{ t('admin.inquiries.estimated_quantity') }}</label>
-              <input v-model="form.estimatedQuantity" class="form-input" />
+              <label for="inquiry-estimatedQuantity" class="form-label">{{ t('admin.inquiries.estimated_quantity') }}</label>
+              <input id="inquiry-estimatedQuantity" v-model="form.estimatedQuantity" name="estimatedQuantity" autocomplete="off" class="form-input" />
             </div>
             <div class="form-group">
-              <label class="form-label">{{ t('admin.inquiries.expected_delivery') }}</label>
-              <input v-model="form.expectedDelivery" class="form-input" />
+              <label for="inquiry-expectedDelivery" class="form-label">{{ t('admin.inquiries.expected_delivery') }}</label>
+              <input id="inquiry-expectedDelivery" v-model="form.expectedDelivery" name="expectedDelivery" autocomplete="off" class="form-input" />
             </div>
             <div class="form-group">
-              <label class="form-label">{{ t('admin.inquiries.status') }}</label>
-              <select v-model="form.status" class="form-input">
-                <option value="pending">pending</option>
-                <option value="contacted">contacted</option>
-                <option value="quoted">quoted</option>
-                <option value="negotiating">negotiating</option>
-                <option value="won">won</option>
-                <option value="lost">lost</option>
-                <option value="closed">closed</option>
+              <label for="inquiry-status" class="form-label">{{ t('admin.inquiries.status') }}</label>
+              <select id="inquiry-status" v-model="form.status" name="status" class="form-input">
+                <option value="pending">{{ enumLabel('inquiry_status', 'pending') }}</option>
+                <option value="contacted">{{ enumLabel('inquiry_status', 'contacted') }}</option>
+                <option value="quoted">{{ enumLabel('inquiry_status', 'quoted') }}</option>
+                <option value="negotiating">{{ enumLabel('inquiry_status', 'negotiating') }}</option>
+                <option value="won">{{ enumLabel('inquiry_status', 'won') }}</option>
+                <option value="lost">{{ enumLabel('inquiry_status', 'lost') }}</option>
+                <option value="closed">{{ enumLabel('inquiry_status', 'closed') }}</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">{{ t('admin.inquiries.priority') }}</label>
-              <select v-model="form.priority" class="form-input">
-                <option value="low">low</option>
-                <option value="normal">normal</option>
-                <option value="high">high</option>
-                <option value="urgent">urgent</option>
+              <label for="inquiry-priority" class="form-label">{{ t('admin.inquiries.priority') }}</label>
+              <select id="inquiry-priority" v-model="form.priority" name="priority" class="form-input">
+                <option value="low">{{ enumLabel('inquiry_priority', 'low') }}</option>
+                <option value="normal">{{ enumLabel('inquiry_priority', 'normal') }}</option>
+                <option value="high">{{ enumLabel('inquiry_priority', 'high') }}</option>
+                <option value="urgent">{{ enumLabel('inquiry_priority', 'urgent') }}</option>
               </select>
             </div>
             <div class="form-group col-span-2">
-              <label class="form-label">{{ t('admin.inquiries.interested_products') }}</label>
-              <input v-model="form.interestedProductsInput" class="form-input" />
+              <label for="inquiry-interestedProductsInput" class="form-label">{{ t('admin.inquiries.interested_products') }}</label>
+              <input id="inquiry-interestedProductsInput" v-model="form.interestedProductsInput" name="interestedProductsInput" autocomplete="off" class="form-input" />
             </div>
             <div class="form-group col-span-2">
               <label class="inline-flex items-center gap-2">
-                <input v-model="form.oemNeeded" type="checkbox" class="form-checkbox" />
+                <input id="inquiry-oemNeeded" v-model="form.oemNeeded" name="oemNeeded" type="checkbox" class="form-checkbox" />
                 <span class="text-sm">{{ t('admin.inquiries.oem_needed') }}</span>
               </label>
             </div>
             <div class="form-group col-span-2">
-              <label class="form-label">{{ t('admin.inquiries.message') }}</label>
-              <textarea v-model="form.message" rows="3" class="form-textarea"></textarea>
+              <label for="inquiry-message" class="form-label">{{ t('admin.inquiries.message') }}</label>
+              <textarea id="inquiry-message" v-model="form.message" name="message" rows="3" class="form-textarea"></textarea>
             </div>
             <div class="form-group col-span-2">
-              <label class="form-label">{{ t('admin.inquiries.customer_notes') }}</label>
-              <textarea v-model="form.customerNotes" rows="3" class="form-textarea"></textarea>
+              <label for="inquiry-customerNotes" class="form-label">{{ t('admin.inquiries.customer_notes') }}</label>
+              <textarea id="inquiry-customerNotes" v-model="form.customerNotes" name="customerNotes" rows="3" class="form-textarea"></textarea>
             </div>
 
             <div v-if="editingId" class="col-span-2 form-section">
               <h4 class="form-section-title">{{ t('admin.inquiries.assignment') }}</h4>
               <div class="grid grid-cols-3 gap-3">
-                <input v-model="assignment.assignedTo" :placeholder="t('admin.inquiries.assignee_placeholder')" class="form-input" />
-                <select v-model="assignment.priority" class="form-input">
-                  <option value="low">low</option>
-                  <option value="normal">normal</option>
-                  <option value="high">high</option>
-                  <option value="urgent">urgent</option>
+                <input id="inquiry-assignedTo" v-model="assignment.assignedTo" name="assignedTo" autocomplete="off" :placeholder="t('admin.inquiries.assignee_placeholder')" class="form-input" />
+                <select id="inquiry-assignmentPriority" v-model="assignment.priority" name="assignmentPriority" class="form-input">
+                  <option value="low">{{ enumLabel('inquiry_priority', 'low') }}</option>
+                  <option value="normal">{{ enumLabel('inquiry_priority', 'normal') }}</option>
+                  <option value="high">{{ enumLabel('inquiry_priority', 'high') }}</option>
+                  <option value="urgent">{{ enumLabel('inquiry_priority', 'urgent') }}</option>
                 </select>
                 <button type="button" class="btn btn-primary" :disabled="assigning" @click="assignInquiry">
                   {{ assigning ? t('admin.inquiries.assigning') : t('admin.inquiries.assign') }}
@@ -183,10 +183,10 @@
             <div v-if="editingId" class="col-span-2 form-section">
               <h4 class="form-section-title">{{ t('admin.inquiries.quote') }}</h4>
               <div class="grid grid-cols-2 gap-3">
-                <input v-model.number="quote.quotedAmount" type="number" min="0" step="0.01" :placeholder="t('admin.inquiries.quoted_amount_placeholder')" class="form-input" />
-                <input v-model="quote.validUntil" type="datetime-local" class="form-input" />
-                <input v-model="quote.products" :placeholder="t('admin.inquiries.products_placeholder')" class="col-span-2 form-input" />
-                <textarea v-model="quote.customerNotes" rows="2" :placeholder="t('admin.inquiries.notes_placeholder')" class="col-span-2 form-textarea"></textarea>
+                <input id="inquiry-quotedAmount" v-model.number="quote.quotedAmount" name="quotedAmount" type="number" min="0" step="0.01" :placeholder="t('admin.inquiries.quoted_amount_placeholder')" class="form-input" />
+                <input id="inquiry-validUntil" v-model="quote.validUntil" name="validUntil" type="datetime-local" class="form-input" />
+                <input id="inquiry-quoteProducts" v-model="quote.products" name="quoteProducts" :placeholder="t('admin.inquiries.products_placeholder')" class="col-span-2 form-input" />
+                <textarea id="inquiry-quoteCustomerNotes" v-model="quote.customerNotes" name="quoteCustomerNotes" rows="2" :placeholder="t('admin.inquiries.notes_placeholder')" class="col-span-2 form-textarea"></textarea>
                 <button type="button" class="btn btn-highlight col-span-2" :disabled="quoting" @click="submitQuote">
                   {{ quoting ? t('admin.inquiries.submitting') : t('admin.inquiries.submit_quote') }}
                 </button>
@@ -223,6 +223,7 @@ definePageMeta({
 
 const { token } = useAuth()
 const { t } = useI18n()
+const { enumLabel, formatNumber, formatDate } = useDisplay()
 const localePath = useLocalePath()
 const config = useRuntimeConfig()
 const baseURL = config.public.apiBase || '/api/v1'
@@ -688,7 +689,7 @@ onMounted(fetchInquiries)
   background: var(--color-bg);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .form-input:focus {
@@ -705,7 +706,7 @@ onMounted(fetchInquiries)
   background: var(--color-bg);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
   resize: vertical;
 }
 

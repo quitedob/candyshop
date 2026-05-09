@@ -56,7 +56,7 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm text-gray-500">{{ t('admin.inventory.total_value') }}</p>
-            <p class="mt-1 text-2xl font-bold text-emerald-600">${{ stats.totalValue.toLocaleString() }}</p>
+            <p class="mt-1 text-2xl font-bold text-emerald-600">{{ cur(stats.currency) }} {{ formatNumber(stats.totalValue) }}</p>
           </div>
           <div class="h-12 w-12 rounded-lg bg-emerald-50 flex items-center justify-center">
             <Icon name="heroicons:currency-dollar" class="h-6 w-6 text-emerald-600" />
@@ -71,16 +71,16 @@
         <div class="flex-1 min-w-[200px]">
           <div class="relative">
             <Icon name="heroicons:magnifying-glass" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input v-model="searchQuery" type="text" :placeholder="t('admin.inventory.search')" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+            <input id="inventory-search" v-model="searchQuery" name="search" type="text" autocomplete="off" :placeholder="t('admin.inventory.search')" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </div>
         </div>
-        <select v-model="stockFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+        <select id="inventory-stockFilter" v-model="stockFilter" name="stockFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
           <option value="all">{{ t('admin.inventory.filter_all') }}</option>
           <option value="low">{{ t('admin.inventory.filter_low') }}</option>
           <option value="out">{{ t('admin.inventory.filter_out') }}</option>
           <option value="in">{{ t('admin.inventory.filter_in') }}</option>
         </select>
-        <select v-model="categoryFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+        <select id="inventory-categoryFilter" v-model="categoryFilter" name="categoryFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
           <option value="">{{ t('admin.inventory.all_categories') }}</option>
           <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
         </select>
@@ -128,7 +128,7 @@
                 </div>
               </td>
               <td class="px-6 py-4 text-sm text-gray-600">{{ item.category || '-' }}</td>
-              <td class="px-6 py-4 text-sm text-gray-600 font-mono">{{ item.sku || item.id.substring(0, 8).toUpperCase() }}</td>
+              <td class="px-6 py-4 text-sm text-gray-600 font-mono">{{ item.id?.substring(0, 8).toUpperCase() || '-' }}</td>
               <td class="px-6 py-4 text-sm text-right">
                 <div class="flex items-center justify-end gap-2">
                   <span :class="stockStatusClass(item.stockQuantity, item.moq)" class="font-semibold">{{ item.stockQuantity || 0 }}</span>
@@ -138,8 +138,8 @@
                 </div>
               </td>
               <td class="px-6 py-4 text-sm text-right text-gray-600">{{ item.moq || 0 }}</td>
-              <td class="px-6 py-4 text-sm text-right text-gray-600">${{ (item.unitValue || 0).toLocaleString() }}</td>
-              <td class="px-6 py-4 text-sm text-right font-medium text-gray-900">${{ ((item.stockQuantity || 0) * (item.unitValue || 0)).toLocaleString() }}</td>
+              <td class="px-6 py-4 text-sm text-right text-gray-600">{{ cur(item.basePrice) }} {{ formatNumber(item.basePrice || 0) }}</td>
+              <td class="px-6 py-4 text-sm text-right font-medium text-gray-900">{{ cur(item.basePrice) }} {{ formatNumber((item.stockQuantity || 0) * (item.basePrice || 0)) }}</td>
               <td class="px-6 py-4">
                 <span :class="stockBadgeClass(item.stockQuantity, item.moq)" class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold">
                   {{ stockStatusLabel(item.stockQuantity, item.moq) }}
@@ -172,8 +172,8 @@
     <!-- Stock Adjustment Modal -->
     <div v-if="showAdjustmentModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="closeAdjustmentModal"></div>
-        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:max-w-lg sm:align-middle">
+        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closeAdjustmentModal" :aria-label="t('common.close')"></button>
+        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl sm:my-8 sm:max-w-lg sm:align-middle">
           <div class="bg-gradient-to-r from-orange-500 to-amber-600 px-6 py-4">
             <h3 class="text-lg font-semibold text-white">{{ t('admin.inventory.adjust_title') }}</h3>
             <p class="text-sm text-blue-100 mt-0.5">{{ adjustmentProduct?.name }}</p>
@@ -181,34 +181,34 @@
           <div class="p-6 space-y-4">
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.inventory.current_stock') }}</label>
+                <label for="inventory-currentStock" class="block text-sm font-medium text-gray-700">{{ t('admin.inventory.current_stock') }}</label>
                 <p class="mt-1 text-2xl font-bold text-gray-900">{{ adjustmentProduct?.stockQuantity || 0 }}</p>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.inventory.new_stock') }}</label>
-                <input v-model.number="newStock" type="number" min="0" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                <label for="inventory-newStock" class="block text-sm font-medium text-gray-700">{{ t('admin.inventory.new_stock') }}</label>
+                <input id="inventory-newStock" v-model.number="newStock" name="newStock" type="number" min="0" autocomplete="off" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.inventory.adjustment_type') }}</label>
+              <label for="inventory-adjustType" class="block text-sm font-medium text-gray-700">{{ t('admin.inventory.adjustment_type') }}</label>
               <div class="mt-2 flex gap-4">
                 <label class="flex items-center gap-2 cursor-pointer">
-                  <input v-model="adjustmentType" type="radio" value="set" class="text-orange-600 focus:ring-orange-500" />
+                  <input id="inventory-adjustType-set" v-model="adjustmentType" name="adjustmentType" type="radio" value="set" class="text-orange-600 focus:ring-orange-500" />
                   <span class="text-sm text-gray-700">{{ t('admin.inventory.type_set') }}</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
-                  <input v-model="adjustmentType" type="radio" value="add" class="text-orange-600 focus:ring-orange-500" />
+                  <input id="inventory-adjustType-add" v-model="adjustmentType" name="adjustmentType" type="radio" value="add" class="text-orange-600 focus:ring-orange-500" />
                   <span class="text-sm text-gray-700">{{ t('admin.inventory.type_add') }}</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
-                  <input v-model="adjustmentType" type="radio" value="subtract" class="text-orange-600 focus:ring-orange-500" />
+                  <input id="inventory-adjustType-subtract" v-model="adjustmentType" name="adjustmentType" type="radio" value="subtract" class="text-orange-600 focus:ring-orange-500" />
                   <span class="text-sm text-gray-700">{{ t('admin.inventory.type_subtract') }}</span>
                 </label>
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.inventory.reason') }}</label>
-              <select v-model="adjustmentReason" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+              <label for="inventory-reason" class="block text-sm font-medium text-gray-700">{{ t('admin.inventory.reason') }}</label>
+              <select id="inventory-reason" v-model="adjustmentReason" name="adjustmentReason" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
                 <option value="restock">{{ t('admin.inventory.reason_restock') }}</option>
                 <option value="correction">{{ t('admin.inventory.reason_correction') }}</option>
                 <option value="damage">{{ t('admin.inventory.reason_damage') }}</option>
@@ -218,8 +218,8 @@
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.inventory.notes') }}</label>
-              <textarea v-model="adjustmentNotes" rows="2" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
+              <label for="inventory-notes" class="block text-sm font-medium text-gray-700">{{ t('admin.inventory.notes') }}</label>
+              <textarea id="inventory-notes" v-model="adjustmentNotes" name="adjustmentNotes" rows="2" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
             </div>
             <div v-if="adjustmentError" class="text-sm text-red-600">{{ adjustmentError }}</div>
           </div>
@@ -240,7 +240,7 @@
     <div v-if="showHistoryModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showHistoryModal = false"></div>
-        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:max-w-2xl sm:align-middle">
+        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl sm:my-8 sm:max-w-2xl sm:align-middle">
           <div class="bg-gradient-to-r from-gray-700 to-gray-900 px-6 py-4 flex items-center justify-between">
             <div>
               <h3 class="text-lg font-semibold text-white">{{ t('admin.inventory.history_title') }}</h3>
@@ -262,7 +262,7 @@
                 <div class="flex-1">
                   <div class="flex items-center justify-between">
                     <span class="font-medium text-gray-900">{{ entry.reason }}</span>
-                    <span class="text-xs text-gray-500">{{ new Date(entry.createdAt).toLocaleString() }}</span>
+                    <span class="text-xs text-gray-500">{{ formatDate(entry.createdAt, { dateStyle: 'medium', timeStyle: 'short' }) }}</span>
                   </div>
                   <p class="text-sm text-gray-600 mt-0.5">{{ entry.notes }}</p>
                   <div class="text-xs text-gray-400 mt-1">
@@ -285,6 +285,7 @@ definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
+const { currencyOrDefault: cur, formatNumber, formatDate } = useDisplay()
 
 const items = ref<any[]>([])
 const categories = ref<string[]>([])
@@ -312,7 +313,7 @@ const stats = computed(() => {
   const total = items.value.length
   const low = items.value.filter(i => i.stockQuantity > 0 && i.stockQuantity <= (i.moq || 10)).length
   const out = items.value.filter(i => !i.stockQuantity || i.stockQuantity <= 0).length
-  const value = items.value.reduce((sum, i) => sum + ((i.stockQuantity || 0) * (i.unitValue || 0)), 0)
+  const value = items.value.reduce((sum, i) => sum + ((i.stockQuantity || 0) * (i.basePrice || 0)), 0)
   return { totalProducts: total, lowStock: low, outOfStock: out, totalValue: value }
 })
 
@@ -361,7 +362,7 @@ const viewHistory = async (product: any) => {
 }
 
 const exportInventory = () => {
-  const csv = [['Name', 'Category', 'SKU', 'Stock', 'MOQ', 'Unit Value', 'Total Value'].join(','), ...filteredItems.value.map(i => [`"${i.name}"`, `"${i.category || ''}"`, `"${i.sku || i.id}"`, i.stockQuantity || 0, i.moq || 0, i.unitValue || 0, ((i.stockQuantity || 0) * (i.unitValue || 0)).toFixed(2)].join(','))].join('\n')
+  const csv = [['Name', 'Category', 'ID', 'Stock', 'MOQ', 'Unit Value', 'Total Value'].join(','), ...filteredItems.value.map(i => [`"${i.name}"`, `"${i.category || ''}"`, `"${i.id}"`, i.stockQuantity || 0, i.moq || 0, i.basePrice || 0, ((i.stockQuantity || 0) * (i.basePrice || 0)).toFixed(2)].join(','))].join('\n')
   const blob = new Blob([csv], { type: 'text/csv' }); const url = URL.createObjectURL(blob)
   const a = document.createElement('a'); a.href = url; a.download = `inventory-${new Date().toISOString().split('T')[0]}.csv`; a.click()
 }

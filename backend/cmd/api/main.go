@@ -18,6 +18,7 @@ import (
 	"candypro/api/internal/config"
 	"candypro/api/internal/database"
 	"candypro/api/internal/handlers"
+	"candypro/api/internal/i18n"
 
 	"github.com/joho/godotenv"
 	"gorm.io/gorm"
@@ -49,6 +50,10 @@ func main() {
 
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
+	// Load embedded i18n translations
+	if err := i18n.LoadEmbedded(i18n.LocaleFS); err != nil {
+		log.Fatalf("Failed to load i18n translations: %v", err)
+	}
 
 	// Connect to database
 	var db *gorm.DB
@@ -62,17 +67,21 @@ func main() {
 			log.Fatalf("Failed to run migrations: %v", err)
 		}
 
-		// Seed database with initial data
-		if err := database.SeedDatabase(db); err != nil {
-			log.Printf("Warning: Failed to seed database: %v", err)
+		// Always seed essential system data (roles, superadmin)
+		if err := database.SeedEssential(db); err != nil {
+			log.Printf("Warning: Failed to seed essential data: %v", err)
 		}
 
-		// Seed country payment policies (independent of main seed)
-		database.SeedCountryPaymentPolicies(db)
-
-		// 演示 B2B 用户 / 询盘 / 订单（幂等，可用 SEED_DEMO_DATA=false 关闭）
-		if err := database.SeedDemoWorkspace(db); err != nil {
-			log.Printf("Warning: demo workspace seed: %v", err)
+		// Optional: seed sample business data (products, categories, blog posts, etc.)
+		// Controlled by AUTO_SEED_DATA env var (default: false)
+		if getEnvBool("AUTO_SEED_DATA", false) {
+			if err := database.SeedDatabase(db); err != nil {
+				log.Printf("Warning: Failed to seed database: %v", err)
+			}
+			database.SeedCountryPaymentPolicies(db)
+			if err := database.SeedDemoWorkspace(db); err != nil {
+				log.Printf("Warning: demo workspace seed: %v", err)
+			}
 		}
 	}
 

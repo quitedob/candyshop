@@ -1,7 +1,6 @@
 package admin
 
 import (
-	modelsProduct "candypro/api/internal/models/product"
 	modelsUser "candypro/api/internal/models/user"
 	"candypro/api/internal/utils"
 	"net/http"
@@ -14,14 +13,14 @@ import (
 // AdminGetCompanies returns all companies with pagination.
 func (h *Handler) AdminGetCompanies(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	page, limit := utils.ParsePagination(c, 20, 100)
 	result, err := h.services.Company.GetCompanies(c.Request.Context(), page, limit)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to fetch companies")
+		utils.ErrorResp(c, http.StatusInternalServerError, "company_fetch_failed")
 		return
 	}
 
@@ -31,14 +30,14 @@ func (h *Handler) AdminGetCompanies(c *gin.Context) {
 // AdminGetCompany returns a single company by ID.
 func (h *Handler) AdminGetCompany(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	id := c.Param("id")
 	company, err := h.services.Company.GetCompany(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Company not found")
+		utils.ErrorResp(c, http.StatusNotFound, "company_not_found")
 		return
 	}
 
@@ -46,34 +45,34 @@ func (h *Handler) AdminGetCompany(c *gin.Context) {
 }
 
 type adminUpdateCompanyRequest struct {
-	Name            *string                `json:"name"`
-	TaxID           *string                `json:"taxId"`
-	RegistrationNo  *string                `json:"registrationNo"`
-	BusinessLicense *string                `json:"businessLicense"`
+	Name            *string                   `json:"name"`
+	TaxID           *string                   `json:"taxId"`
+	RegistrationNo  *string                   `json:"registrationNo"`
+	BusinessLicense *string                   `json:"businessLicense"`
 	Address         *modelsUser.CompanyAddress `json:"address"`
-	Phone           *string                `json:"phone"`
-	Website         *string                `json:"website"`
-	PriceListID     *string                `json:"priceListId"`
-	CreditLimit     *float64               `json:"creditLimit"`
-	PaymentTerms    *string                `json:"paymentTerms"`
+	Phone           *string                   `json:"phone"`
+	Website         *string                   `json:"website"`
+	PriceListID     *string                   `json:"priceListId"`
+	CreditLimit     *float64                  `json:"creditLimit"`
+	PaymentTerms    *string                   `json:"paymentTerms"`
 }
 
 // AdminUpdateCompany updates a company.
 func (h *Handler) AdminUpdateCompany(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	id := c.Param("id")
 	company, err := h.services.Company.GetCompany(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Company not found")
+		utils.ErrorResp(c, http.StatusNotFound, "company_not_found")
 		return
 	}
 
 	var req adminUpdateCompanyRequest
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -115,7 +114,7 @@ func (h *Handler) AdminUpdateCompany(c *gin.Context) {
 
 	company.UpdatedAt = time.Now()
 	if err := h.services.Company.UpdateCompany(c.Request.Context(), company); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to update company")
+		utils.ErrorResp(c, http.StatusInternalServerError, "company_update_failed")
 		return
 	}
 
@@ -129,36 +128,36 @@ type adminVerifyCompanyRequest struct {
 // AdminVerifyCompany verifies or rejects a company.
 func (h *Handler) AdminVerifyCompany(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	id := c.Param("id")
 
 	var req adminVerifyCompanyRequest
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	status := strings.TrimSpace(req.Status)
 	if status != "verified" && status != "rejected" {
-		utils.InvalidRequestResponse(c, "status must be 'verified' or 'rejected'")
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	// Verify company exists
 	if _, err := h.services.Company.GetCompany(c.Request.Context(), id); err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Company not found")
+		utils.ErrorResp(c, http.StatusNotFound, "company_not_found")
 		return
 	}
 
 	if err := h.services.Company.VerifyCompany(c.Request.Context(), id, status); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to verify company")
+		utils.ErrorResp(c, http.StatusInternalServerError, "company_verify_failed")
 		return
 	}
 
-	c.JSON(http.StatusOK, modelsProduct.ErrorResponse{
-		Error:   "success",
-		Message: "Company status updated to " + status,
+	c.JSON(http.StatusOK, gin.H{
+		"error":   "success",
+		"message": "Company status updated to " + status,
 	})
 }

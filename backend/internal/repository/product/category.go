@@ -27,10 +27,10 @@ func (r *CategoryRepository) FindAll(ctx context.Context) ([]modelsProduct.Categ
 		return nil, err
 	}
 
-	// Count products for each category
+	// Count products for each category (active only)
 	for i := range categories {
 		var count int64
-		r.db.WithContext(ctx).Model(&modelsProduct.Product{}).Where("category_slug = ?", categories[i].Slug).Count(&count)
+		r.db.WithContext(ctx).Model(&modelsProduct.Product{}).Where("category_slug = ? AND status = ?", categories[i].Slug, "active").Count(&count)
 		categories[i].ProductCount = int(count)
 	}
 
@@ -44,9 +44,9 @@ func (r *CategoryRepository) FindBySlug(ctx context.Context, slug string) (*mode
 		return nil, err
 	}
 
-	// Count products
+	// Count products (active only)
 	var count int64
-	r.db.WithContext(ctx).Model(&modelsProduct.Product{}).Where("category_slug = ?", slug).Count(&count)
+	r.db.WithContext(ctx).Model(&modelsProduct.Product{}).Where("category_slug = ? AND status = ?", slug, "active").Count(&count)
 	category.ProductCount = int(count)
 
 	return &category, nil
@@ -61,7 +61,7 @@ func (r *CategoryRepository) FindBySlugWithProducts(ctx context.Context, slug st
 
 	var products []modelsProduct.Product
 	offset := (page - 1) * limit
-	if err := r.db.WithContext(ctx).Where("category_slug = ?", slug).
+	if err := r.db.WithContext(ctx).Where("category_slug = ? AND status = ?", slug, "active").
 		Offset(offset).Limit(limit).Order("created_at DESC").
 		Find(&products).Error; err != nil {
 		return nil, nil, err

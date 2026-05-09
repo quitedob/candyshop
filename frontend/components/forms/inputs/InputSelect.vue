@@ -132,7 +132,7 @@ const handleFocus = () => {
   border-radius: var(--radius-md);
   appearance: none;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .input-select__field:hover:not(:disabled) {

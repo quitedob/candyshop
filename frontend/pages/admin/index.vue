@@ -204,7 +204,7 @@ const revenueByDay = computed(() => stats.value?.revenueByDay || [])
 const sparklineData = computed(() => ({
   labels: revenueByDay.value.map((d: any) => d.day || d.date || ''),
   datasets: [{
-    label: 'Revenue',
+    label: t('admin.dashboard.revenue'),
     data: revenueByDay.value.map((d: any) => d.revenue || d.amount || 0),
     borderColor: '#10B981',
     backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -222,19 +222,19 @@ const sparklineOptions = {
     legend: { display: false },
     tooltip: {
       callbacks: {
-        label: (ctx: any) => `$${(ctx.parsed.y || 0).toLocaleString()}`
+        label: (ctx: any) => `${cur()} ${formatNumber(ctx.parsed.y || 0)}`
       }
     }
   },
   scales: {
     y: {
       beginAtZero: true,
-      ticks: { callback: (v: any) => '$' + v.toLocaleString() }
+      ticks: { callback: (v: any) => cur() + ' ' + formatNumber(v) }
     }
   }
 }
 
-const formatNumber = (num: number) => (num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const { formatNumber, currencyOrDefault: cur } = useDisplay()
 
 const loadData = async () => {
   pending.value = true

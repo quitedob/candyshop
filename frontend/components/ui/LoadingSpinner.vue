@@ -1,6 +1,6 @@
 <template>
-  <div class="loading-overlay" v-if="loading">
-    <div class="spinner"></div>
+  <div class="loading-overlay" v-if="loading" role="status" aria-live="polite">
+    <div class="spinner" aria-hidden="true"></div>
     <p class="loading-text">{{ text }}</p>
   </div>
 </template>
@@ -30,8 +30,8 @@ defineProps<{
 .spinner {
   width: 50px;
   height: 50px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #667eea;
+  border: 4px solid var(--color-bg-dark);
+  border-top: 4px solid var(--color-highlight);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -43,7 +43,7 @@ defineProps<{
 
 .loading-text {
   margin-top: 1rem;
-  color: #666;
-  font-size: 1rem;
+  color: var(--color-text-light);
+  font-size: var(--text-base);
 }
 </style>

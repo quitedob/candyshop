@@ -26,7 +26,7 @@
     <button
       v-show="showScrollTop"
       class="inquiry-floating__top"
-      aria-label="Scroll to top"
+      :aria-label="t('common.a11y.scroll_to_top')"
       @click="scrollToTop"
     >
       <Icon name="lucide:chevron-up" size="20" />
@@ -44,7 +44,7 @@
             <h3>{{ $t('form.title') }}</h3>
             <button
               class="inquiry-modal__close"
-              aria-label="Close"
+              :aria-label="t('common.a11y.close')"
               @click="closeInquiry"
             >
               <Icon name="lucide:x" size="24" />
@@ -84,7 +84,8 @@ const handleScroll = () => {
 
 // Scroll to top
 const scrollToTop = () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  window.scrollTo({ top: 0, behavior: prefersReduced ? 'instant' : 'smooth' })
 }
 
 // Open inquiry modal
@@ -131,7 +132,7 @@ onUnmounted(() => {
   border-radius: var(--radius-full);
   color: white;
   box-shadow: var(--shadow-lg);
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .inquiry-floating__whatsapp:hover {
@@ -155,7 +156,7 @@ onUnmounted(() => {
   border-radius: var(--radius-full);
   color: white;
   box-shadow: var(--shadow-lg);
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .inquiry-floating__inquire:hover {
@@ -179,7 +180,7 @@ onUnmounted(() => {
   border-radius: var(--radius-full);
   color: white;
   box-shadow: var(--shadow-md);
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
   animation: fadeInUp 0.3s ease;
 }
 
@@ -202,7 +203,7 @@ onUnmounted(() => {
   opacity: 0;
   visibility: hidden;
   transform: translateX(10px);
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .inquiry-floating__tooltip::after {
@@ -270,7 +271,7 @@ onUnmounted(() => {
   height: 36px;
   border-radius: var(--radius-full);
   color: var(--color-text-light);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .inquiry-modal__close:hover {

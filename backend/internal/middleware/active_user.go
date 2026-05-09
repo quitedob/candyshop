@@ -5,6 +5,7 @@ import (
 
 	modelsUser "candypro/api/internal/models/user"
 	"candypro/api/internal/roles"
+	"candypro/api/internal/utils"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -16,13 +17,13 @@ func RequireActiveUser(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		rawUserID, exists := c.Get("userID")
 		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required"})
+			utils.ErrorResp(c, http.StatusUnauthorized, "auth_required")
 			c.Abort()
 			return
 		}
 		userID, ok := rawUserID.(string)
 		if !ok || userID == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user identity"})
+			utils.ErrorResp(c, http.StatusUnauthorized, "invalid_user_identity")
 			c.Abort()
 			return
 		}
@@ -43,16 +44,13 @@ func RequireActiveUser(db *gorm.DB) gin.HandlerFunc {
 			Where("id = ?", userID).
 			Select("id, status").
 			First(&user).Error; err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+			utils.ErrorResp(c, http.StatusUnauthorized, "user_not_found")
 			c.Abort()
 			return
 		}
 
 		if user.Status != "active" {
-			c.JSON(http.StatusForbidden, gin.H{
-				"error":   "account_not_active",
-				"message": "Your account is pending approval. Please wait for verification.",
-			})
+			utils.ErrorResp(c, http.StatusForbidden, "account_not_active")
 			c.Abort()
 			return
 		}

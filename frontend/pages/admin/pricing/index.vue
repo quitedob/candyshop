@@ -68,8 +68,8 @@
     <div v-if="activeTab === 'product-pricing'" class="mt-6 space-y-6">
       <div class="flex flex-wrap items-center gap-4">
         <div class="flex-1 min-w-[300px]">
-          <label class="block text-sm font-medium text-gray-700">{{ t('admin.pricing.select_product') }}</label>
-          <select v-model="selectedProductId" @change="fetchProductPrices" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+          <label for="pricing-product" class="block text-sm font-medium text-gray-700">{{ t('admin.pricing.select_product') }}</label>
+          <select id="pricing-product" v-model="selectedProductId" name="productId" @change="fetchProductPrices" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
             <option value="">{{ t('admin.pricing.select_product_placeholder') }}</option>
             <option v-for="product in products" :key="product.id" :value="product.id">{{ product.name }}</option>
           </select>
@@ -102,7 +102,7 @@
             <tr v-else v-for="price in productPrices" :key="price.id">
               <td class="py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{{ price.priceListName || price.priceListId }}</td>
               <td class="px-3 py-4 text-sm text-gray-500">{{ price.minQuantity || 0 }}</td>
-              <td class="px-3 py-4 text-sm text-gray-500">{{ cur(price.currency) }} {{ (price.unitPrice || 0).toLocaleString() }}</td>
+              <td class="px-3 py-4 text-sm text-gray-500">{{ cur(price.currency) }} {{ formatNumber(price.unitPrice || 0) }}</td>
               <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                 <button type="button" class="text-red-600 hover:text-red-900" @click="deletePrice(price.id)">{{ t('admin.pricing.delete') }}</button>
               </td>
@@ -115,18 +115,18 @@
     <!-- Price List Modal -->
     <div v-if="showPriceListModal" class="fixed inset-0 z-10 overflow-y-auto" role="dialog" aria-modal="true">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="closePriceListModal"></div>
+        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closePriceListModal" :aria-label="t('common.close')"></button>
         <span class="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
-        <div class="inline-block w-full transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left align-bottom shadow-xl transition-all sm:my-8 sm:max-w-lg sm:p-6 sm:align-middle">
+        <div class="inline-block w-full transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left align-bottom shadow-xl sm:my-8 sm:max-w-lg sm:p-6 sm:align-middle">
           <h3 class="text-lg font-medium leading-6 text-gray-900">{{ editingPriceListId ? t('admin.pricing.edit_price_list') : t('admin.pricing.create_price_list') }}</h3>
           <form @submit.prevent="savePriceList" class="mt-4 space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.pricing.name') }}</label>
-              <input v-model="priceListForm.name" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="pricelist-name" class="block text-sm font-medium text-gray-700">{{ t('admin.pricing.name') }}</label>
+              <input id="pricelist-name" v-model="priceListForm.name" name="name" autocomplete="off" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.pricing.currency') }}</label>
-              <select v-model="priceListForm.currency" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <label for="pricelist-currency" class="block text-sm font-medium text-gray-700">{{ t('admin.pricing.currency') }}</label>
+              <select id="pricelist-currency" v-model="priceListForm.currency" name="currency" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
                 <option value="USD">USD</option>
                 <option value="EUR">EUR</option>
                 <option value="GBP">GBP</option>
@@ -134,10 +134,10 @@
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.pricing.status') }}</label>
-              <select v-model="priceListForm.status" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-                <option value="active">active</option>
-                <option value="inactive">inactive</option>
+              <label for="pricelist-status" class="block text-sm font-medium text-gray-700">{{ t('admin.pricing.status') }}</label>
+              <select id="pricelist-status" v-model="priceListForm.status" name="status" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <option value="active">{{ enumLabel('product_status', 'active') }}</option>
+                <option value="inactive">{{ enumLabel('product_status', 'inactive') }}</option>
               </select>
             </div>
             <div v-if="priceListError" class="text-sm text-red-600">{{ priceListError }}</div>
@@ -153,25 +153,25 @@
     <!-- Price Rule Modal -->
     <div v-if="showPriceRuleModal" class="fixed inset-0 z-10 overflow-y-auto" role="dialog" aria-modal="true">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="closePriceRuleModal"></div>
+        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closePriceRuleModal" :aria-label="t('common.close')"></button>
         <span class="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
-        <div class="inline-block w-full transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left align-bottom shadow-xl transition-all sm:my-8 sm:max-w-lg sm:p-6 sm:align-middle">
+        <div class="inline-block w-full transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left align-bottom shadow-xl sm:my-8 sm:max-w-lg sm:p-6 sm:align-middle">
           <h3 class="text-lg font-medium leading-6 text-gray-900">{{ t('admin.pricing.add_pricing_rule') }}</h3>
           <form @submit.prevent="savePriceRule" class="mt-4 space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.pricing.price_list') }}</label>
-              <select v-model="priceRuleForm.priceListId" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <label for="pricerule-priceListId" class="block text-sm font-medium text-gray-700">{{ t('admin.pricing.price_list') }}</label>
+              <select id="pricerule-priceListId" v-model="priceRuleForm.priceListId" name="priceListId" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
                 <option value="">{{ t('admin.pricing.select_price_list') }}</option>
                 <option v-for="pl in priceLists" :key="pl.id" :value="pl.id">{{ pl.name }}</option>
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.pricing.min_qty') }}</label>
-              <input v-model.number="priceRuleForm.minQuantity" type="number" min="1" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="pricerule-minQuantity" class="block text-sm font-medium text-gray-700">{{ t('admin.pricing.min_qty') }}</label>
+              <input id="pricerule-minQuantity" v-model.number="priceRuleForm.minQuantity" name="minQuantity" type="number" min="1" autocomplete="off" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.pricing.unit_price') }}</label>
-              <input v-model.number="priceRuleForm.unitPrice" type="number" min="0" step="0.01" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="pricerule-unitPrice" class="block text-sm font-medium text-gray-700">{{ t('admin.pricing.unit_price') }}</label>
+              <input id="pricerule-unitPrice" v-model.number="priceRuleForm.unitPrice" name="unitPrice" type="number" min="0" step="0.01" autocomplete="off" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div v-if="priceRuleError" class="text-sm text-red-600">{{ priceRuleError }}</div>
             <div class="flex justify-end gap-3">
@@ -195,7 +195,7 @@ definePageMeta({
 
 const api = useApi()
 const { t } = useI18n()
-const { currencyOrDefault: cur, enumLabel } = useDisplay()
+const { currencyOrDefault: cur, enumLabel, formatNumber, formatDate } = useDisplay()
 
 const activeTab = ref('price-lists')
 const priceLists = ref<any[]>([])

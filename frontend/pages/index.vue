@@ -671,7 +671,7 @@ useSeo({
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border-light);
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .cat-card:hover {
@@ -762,7 +762,7 @@ useSeo({
   border-radius: var(--radius-xl);
   border: 1px solid var(--color-border-light);
   text-align: center;
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .why-card:hover {
@@ -810,7 +810,7 @@ useSeo({
   background: white;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .cert-badge:hover {
@@ -1024,7 +1024,7 @@ useSeo({
   background: white;
   border-radius: var(--radius-xl);
   border: 1px solid var(--color-border-light);
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .region-card:hover {
@@ -1120,7 +1120,7 @@ useSeo({
 /* FAQ transition */
 .faq-slide-enter-active,
 .faq-slide-leave-active {
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
   overflow: hidden;
 }
 

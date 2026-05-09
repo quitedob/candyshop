@@ -2,11 +2,6 @@ package public
 
 import (
 	"candypro/api/internal/utils"
-
-	modelsProduct "candypro/api/internal/models/product"
-)
-
-import (
 	"net/http"
 	"strconv"
 
@@ -26,7 +21,7 @@ import (
 // @Router /search [get]
 func (h *Handler) Search(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -38,28 +33,19 @@ func (h *Handler) Search(c *gin.Context) {
 	}
 
 	if query == "" {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "bad_request",
-			Message: "Search query is required",
-		})
+		utils.ErrorResp(c, http.StatusBadRequest, "search_query_required")
 		return
 	}
 
 	// SEC-22: Cap search query length (consistent with SSE handler 4000 char limit)
 	if len(query) > 4000 {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "bad_request",
-			Message: "Search query is too long (max 4000 characters)",
-		})
+		utils.ErrorResp(c, http.StatusBadRequest, "search_query_too_long")
 		return
 	}
 
 	response, err := h.services.Search.Search(c.Request.Context(), query, searchType, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Search failed",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "search_failed")
 		return
 	}
 

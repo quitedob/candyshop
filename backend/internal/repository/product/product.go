@@ -98,7 +98,7 @@ func (r *ProductRepository) FindByID(ctx context.Context, id string) (*modelsPro
 // FindFeatured returns featured products
 func (r *ProductRepository) FindFeatured(ctx context.Context, limit int) ([]modelsProduct.Product, error) {
 	var products []modelsProduct.Product
-	if err := r.db.WithContext(ctx).Where("featured = ?", true).Limit(limit).Order("created_at DESC").Find(&products).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("featured = ?", true).Where("status = ?", "active").Limit(limit).Order("created_at DESC").Find(&products).Error; err != nil {
 		return nil, err
 	}
 	return products, nil
@@ -112,7 +112,7 @@ func (r *ProductRepository) FindRelated(ctx context.Context, slug string, limit 
 	}
 
 	var products []modelsProduct.Product
-	if err := r.db.WithContext(ctx).Where("category_slug = ? AND slug != ?", product.CategorySlug, slug).
+	if err := r.db.WithContext(ctx).Where("category_slug = ? AND slug != ? AND status = ?", product.CategorySlug, slug, "active").
 		Limit(limit).Order("created_at DESC").Find(&products).Error; err != nil {
 		return nil, err
 	}

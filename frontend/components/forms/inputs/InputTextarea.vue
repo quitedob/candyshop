@@ -128,7 +128,7 @@ defineExpose({
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   resize: vertical;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .input-textarea__field::placeholder {

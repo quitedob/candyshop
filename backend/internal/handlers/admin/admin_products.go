@@ -49,25 +49,18 @@ type adminProductUpdateRequest struct {
 // @Router /admin/products [post]
 func (h *Handler) AdminCreateProduct(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	var product modelsProduct.Product
-	if err := c.ShouldBindJSON(&product); err != nil {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: err.Error(),
-		})
+	if !utils.BindJSONOrInvalid(c, &product) {
 		return
 	}
 
 	product.Name = strings.TrimSpace(product.Name)
 	if product.Name == "" {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: "name is required",
-		})
+		utils.InvalidResp(c, "product_name_required")
 		return
 	}
 
@@ -81,13 +74,13 @@ func (h *Handler) AdminCreateProduct(c *gin.Context) {
 		product.CategorySlug = normalizeSlug(product.Category)
 	}
 	if strings.TrimSpace(product.Status) == "" {
-		product.Status = "active"
+		product.Status = modelsProduct.ProductStatusActive
+	} else if !modelsProduct.IsValidProductStatus(strings.TrimSpace(product.Status)) {
+		utils.InvalidResp(c, "product_status_invalid")
+		return
 	}
 	if product.StockQuantity < 0 {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: "stockQuantity cannot be negative",
-		})
+		utils.InvalidResp(c, "product_stock_negative")
 		return
 	}
 
@@ -99,16 +92,10 @@ func (h *Handler) AdminCreateProduct(c *gin.Context) {
 
 	if err := h.services.Product.CreateProduct(c.Request.Context(), &product); err != nil {
 		if utils.IsDuplicateKeyError(err) {
-			c.JSON(http.StatusConflict, modelsProduct.ErrorResponse{
-				Error:   "conflict",
-				Message: "product slug or id already exists",
-			})
+			utils.ErrorResp(c, http.StatusConflict, "product_slug_conflict")
 			return
 		}
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to create product",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "product_create_failed")
 		return
 	}
 
@@ -126,58 +113,43 @@ func (h *Handler) AdminCreateProduct(c *gin.Context) {
 // @Router /admin/products/{id} [put]
 func (h *Handler) AdminUpdateProduct(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	id := c.Param("id")
 	product, err := h.services.Product.GetProductByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Product not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "product_not_found")
 		return
 	}
 
 	var req adminProductUpdateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: err.Error(),
-		})
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 	if req.StockQuantity != nil && *req.StockQuantity < 0 {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: "stockQuantity cannot be negative",
-		})
+		utils.InvalidResp(c, "product_stock_negative")
+		return
+	}
+	if req.Status != nil && !modelsProduct.IsValidProductStatus(strings.TrimSpace(*req.Status)) {
+		utils.InvalidResp(c, "product_status_invalid")
 		return
 	}
 
 	applyProductPatch(product, req)
 	product.UpdatedAt = time.Now()
 	if product.Name == "" {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: "name cannot be empty",
-		})
+		utils.InvalidResp(c, "product_name_empty")
 		return
 	}
 
 	if err := h.services.Product.UpdateProduct(c.Request.Context(), product); err != nil {
 		if utils.IsDuplicateKeyError(err) {
-			c.JSON(http.StatusConflict, modelsProduct.ErrorResponse{
-				Error:   "conflict",
-				Message: "product slug already exists",
-			})
+			utils.ErrorResp(c, http.StatusConflict, "product_slug_conflict")
 			return
 		}
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to update product",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "product_update_failed")
 		return
 	}
 
@@ -203,24 +175,18 @@ func (h *Handler) AdminUpdateProduct(c *gin.Context) {
 // @Router /admin/products/{id} [delete]
 func (h *Handler) AdminDeleteProduct(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	id := c.Param("id")
 	if _, err := h.services.Product.GetProductByID(c.Request.Context(), id); err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Product not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "product_not_found")
 		return
 	}
 
 	if err := h.services.Product.DeleteProduct(c.Request.Context(), id); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to delete product",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "product_delete_failed")
 		return
 	}
 

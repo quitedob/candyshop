@@ -125,12 +125,12 @@
             type="button"
             :class="['admin-sidebar__lang-btn', { 'admin-sidebar__lang-btn--active': locale === 'zh' }]"
             @click="switchLocale('zh')"
-          >中文</button>
+          >{{ t('languages.zh') }}</button>
           <button
             type="button"
             :class="['admin-sidebar__lang-btn', { 'admin-sidebar__lang-btn--active': locale === 'en' }]"
             @click="switchLocale('en')"
-          >EN</button>
+          >{{ t('languages.en_short') }}</button>
         </div>
         <div class="admin-sidebar__user" :class="{ 'admin-sidebar__user--collapsed': !showNavLabels }">
           <div class="admin-sidebar__user-avatar">{{ userInitials }}</div>
@@ -143,15 +143,15 @@
           <button
             type="button"
             :class="['admin-sidebar__lang-btn', { 'admin-sidebar__lang-btn--active': locale === 'zh' }]"
-            title="中文"
+            :title="t('languages.zh')"
             @click="switchLocale('zh')"
-          >中</button>
+          >{{ t('languages.zh_short') }}</button>
           <button
             type="button"
             :class="['admin-sidebar__lang-btn', { 'admin-sidebar__lang-btn--active': locale === 'en' }]"
-            title="English"
+            :title="t('languages.en')"
             @click="switchLocale('en')"
-          >EN</button>
+          >{{ t('languages.en_short') }}</button>
         </div>
         <button type="button" class="admin-sidebar__logout" :title="!showNavLabels ? t('admin.logout') : ''" @click="handleLogout">
           <Icon name="heroicons:arrow-right-start-on-rectangle" class="admin-sidebar__logout-icon" />
@@ -216,6 +216,7 @@ const superAdminNav = [
   { key: 'admin.nav.certifications', href: '/admin/certifications', icon: 'heroicons:shield-check' },
   { key: 'admin.nav.auditLog', href: '/admin/audit-log', icon: 'heroicons:clock' },
   { key: 'admin.nav.settings', href: '/admin/settings', icon: 'heroicons:cog-6-tooth' },
+  { key: 'admin.nav.translations', href: '/admin/translations', icon: 'heroicons:language' },
   { key: 'admin.nav.content', href: '/admin/content', icon: 'heroicons:newspaper' },
 ]
 
@@ -396,7 +397,7 @@ onUnmounted(() => {
   cursor: pointer;
   border-radius: var(--radius-md);
   color: rgba(255,255,255,0.6);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .admin-sidebar__toggle:hover {
@@ -478,7 +479,7 @@ onUnmounted(() => {
   color: rgba(255,255,255,0.7);
   font-size: var(--text-sm);
   font-weight: 500;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
   min-height: 44px;
   box-sizing: border-box;
 }
@@ -543,7 +544,7 @@ onUnmounted(() => {
   font-size: var(--text-xs);
   font-weight: 600;
   color: rgba(255,255,255,0.5);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
   text-align: center;
   background: transparent;
 }
@@ -615,7 +616,7 @@ onUnmounted(() => {
   border-radius: var(--radius-md);
   color: rgba(255,255,255,0.5);
   font-size: var(--text-sm);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
   background: transparent;
 }
 

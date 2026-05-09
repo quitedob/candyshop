@@ -48,10 +48,10 @@
               #{{ order.orderNumber || order.id.substring(0,8) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ new Date(order.createdAt).toLocaleDateString() }}
+              {{ formatDate(order.createdAt) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              ${{ order.totalAmount?.toLocaleString() || '0' }}
+              {{ cur(order.currency) }} {{ order.totalAmount ? formatNumber(order.totalAmount) : t('common.display.zero') }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span :class="[statusBadge(order.status), 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium']">
@@ -78,7 +78,7 @@
             </p>
           </div>
           <div>
-            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" :aria-label="t('common.pagination.nav_label')">
               <button @click="prevPage" :disabled="page <= 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
                 <span class="sr-only">{{ t('common.previous') }}</span>
                 <Icon name="heroicons:chevron-left" class="h-5 w-5" />
@@ -104,6 +104,7 @@ definePageMeta({
 })
 
 const { t } = useI18n()
+const { formatNumber, formatDate, currencyOrDefault: cur } = useDisplay()
 const localePath = useLocalePath()
 const api = useApi()
 

@@ -3,23 +3,25 @@
     <div class="error-state__icon">
       <Icon :name="icon" size="48" />
     </div>
-    <h3 class="error-state__title">{{ title }}</h3>
-    <p class="error-state__message">{{ message }}</p>
+    <h3 class="error-state__title">{{ title || t('common.errors.boundary') }}</h3>
+    <p class="error-state__message">{{ message || t('common.errors.api.generic_failed') }}</p>
     <button v-if="actionText" class="btn btn-outline" @click="$emit('action')">
-      {{ actionText }}
+      {{ actionText || t('common.errors.tryAgain') }}
     </button>
   </div>
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
+
 defineProps({
   title: {
     type: String,
-    default: 'Error Loading Data'
+    default: undefined
   },
   message: {
     type: String,
-    default: 'Something went wrong while fetching data. Please check your connection and try again.'
+    default: undefined
   },
   icon: {
     type: String,
@@ -27,7 +29,7 @@ defineProps({
   },
   actionText: {
     type: String,
-    default: 'Try Again'
+    default: undefined
   }
 })
 

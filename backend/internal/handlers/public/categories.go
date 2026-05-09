@@ -2,11 +2,6 @@ package public
 
 import (
 	"candypro/api/internal/utils"
-
-	modelsProduct "candypro/api/internal/models/product"
-)
-
-import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -22,16 +17,13 @@ import (
 // @Router /categories [get]
 func (h *Handler) GetCategories(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	categories, err := h.services.Category.GetCategories(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to fetch categories",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "category_fetch_failed")
 		return
 	}
 
@@ -44,11 +36,11 @@ func (h *Handler) GetCategories(c *gin.Context) {
 // @Produce json
 // @Param slug path string true "Category slug"
 // @Success 200 {object} modelsProduct.Category
-// @Failure 404 {object} modelsProduct.ErrorResponse
+// @Failure 404 {object} modelsCommon.ErrorResponse
 // @Router /categories/{slug} [get]
 func (h *Handler) GetCategory(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -56,10 +48,7 @@ func (h *Handler) GetCategory(c *gin.Context) {
 
 	category, err := h.services.Category.GetCategory(c.Request.Context(), slug)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Category not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "category_not_found")
 		return
 	}
 

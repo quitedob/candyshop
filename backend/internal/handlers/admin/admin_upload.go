@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	modelsProduct "candypro/api/internal/models/product"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -42,16 +40,13 @@ type uploadResponse struct {
 // @Router /admin/upload/image [post]
 func (h *Handler) AdminUploadImage(c *gin.Context) {
 	if h.cfg == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: "No file provided",
-		})
+		utils.InvalidResp(c, "upload_no_file")
 		return
 	}
 	defer file.Close()
@@ -59,19 +54,13 @@ func (h *Handler) AdminUploadImage(c *gin.Context) {
 	// Validate file type
 	contentType := header.Header.Get("Content-Type")
 	if !allowedImageTypes[contentType] {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_file_type",
-			Message: "Only JPEG, PNG, WebP, and GIF images are allowed",
-		})
+		utils.InvalidResp(c, "upload_file_type_invalid")
 		return
 	}
 
 	// Validate file size (max 5MB)
 	if header.Size > 5*1024*1024 {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "file_too_large",
-			Message: "File size must be less than 5MB",
-		})
+		utils.InvalidResp(c, "upload_file_too_large")
 		return
 	}
 
@@ -82,10 +71,7 @@ func (h *Handler) AdminUploadImage(c *gin.Context) {
 		MaxFileSize: h.cfg.Upload.MaxFileSize,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to save file",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "upload_save_failed")
 		return
 	}
 
@@ -107,16 +93,13 @@ func (h *Handler) AdminUploadImage(c *gin.Context) {
 // @Router /admin/upload/document [post]
 func (h *Handler) AdminUploadDocument(c *gin.Context) {
 	if h.cfg == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: "No file provided",
-		})
+		utils.InvalidResp(c, "upload_no_file")
 		return
 	}
 	defer file.Close()
@@ -124,19 +107,13 @@ func (h *Handler) AdminUploadDocument(c *gin.Context) {
 	// Validate file type
 	contentType := header.Header.Get("Content-Type")
 	if !allowedDocTypes[contentType] {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_file_type",
-			Message: "Only PDF documents are allowed",
-		})
+		utils.InvalidResp(c, "upload_file_type_invalid")
 		return
 	}
 
 	// Validate file size (max 10MB)
 	if header.Size > 10*1024*1024 {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "file_too_large",
-			Message: "File size must be less than 10MB",
-		})
+		utils.InvalidResp(c, "upload_file_too_large")
 		return
 	}
 
@@ -147,10 +124,7 @@ func (h *Handler) AdminUploadDocument(c *gin.Context) {
 		MaxFileSize: h.cfg.Upload.MaxFileSize,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to save file",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "upload_save_failed")
 		return
 	}
 
@@ -172,25 +146,19 @@ func (h *Handler) AdminUploadDocument(c *gin.Context) {
 // @Router /admin/upload/multiple [post]
 func (h *Handler) AdminUploadMultiple(c *gin.Context) {
 	if h.cfg == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	form, err := c.MultipartForm()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: "No files provided",
-		})
+		utils.InvalidResp(c, "upload_no_files")
 		return
 	}
 
 	files := form.File["files"]
 	if len(files) == 0 {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: "No files provided",
-		})
+		utils.InvalidResp(c, "upload_no_files")
 		return
 	}
 
@@ -253,7 +221,7 @@ func (h *Handler) AdminUploadMultiple(c *gin.Context) {
 // @Router /admin/upload/:filename [delete]
 func (h *Handler) AdminDeleteFile(c *gin.Context) {
 	if h.cfg == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -262,25 +230,16 @@ func (h *Handler) AdminDeleteFile(c *gin.Context) {
 		filename = c.Query("path")
 	}
 	if filename == "" {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: "File path is required",
-		})
+		utils.InvalidResp(c, "upload_file_path_required")
 		return
 	}
 
 	if err := h.storage.Delete(c.Request.Context(), filename); err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-				Error:   "not_found",
-				Message: "File not found",
-			})
+			utils.ErrorResp(c, http.StatusNotFound, "upload_file_not_found")
 			return
 		}
-		c.JSON(http.StatusForbidden, modelsProduct.ErrorResponse{
-			Error:   "forbidden",
-			Message: err.Error(),
-		})
+		utils.ErrorResp(c, http.StatusForbidden, "forbidden")
 		return
 	}
 

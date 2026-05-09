@@ -13,10 +13,10 @@
         <div class="flex-1 min-w-[200px]">
           <div class="relative">
             <Icon name="heroicons:magnifying-glass" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input v-model="searchQuery" type="text" :placeholder="t('admin.auditLog.search')" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+            <input id="auditlog-search" v-model="searchQuery" name="search" type="text" autocomplete="off" :placeholder="t('admin.auditLog.search')" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </div>
         </div>
-        <select v-model="entityTypeFilter" @change="resetAndFetch" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+        <select id="auditlog-entityType" name="entityTypeFilter" v-model="entityTypeFilter" @change="resetAndFetch" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
           <option value="">{{ t('admin.auditLog.filter_all_types') }}</option>
           <option value="order">{{ t('admin.auditLog.entity_order') }}</option>
           <option value="inquiry">{{ t('admin.auditLog.entity_inquiry') }}</option>
@@ -24,7 +24,7 @@
           <option value="user">{{ t('admin.auditLog.entity_user') }}</option>
           <option value="trade">{{ t('admin.auditLog.entity_trade') }}</option>
         </select>
-        <select v-model="actionFilter" @change="resetAndFetch" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+        <select id="auditlog-action" name="actionFilter" v-model="actionFilter" @change="resetAndFetch" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
           <option value="">{{ t('admin.auditLog.filter_all_actions') }}</option>
           <option value="create">{{ t('admin.auditLog.action_create') }}</option>
           <option value="update">{{ t('admin.auditLog.action_update') }}</option>
@@ -109,6 +109,7 @@ definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
+const { formatDate } = useDisplay()
 
 const logs = ref<any[]>([])
 const pagination = ref<any>(null)
@@ -162,7 +163,7 @@ const actionBadgeClass = (action: string) => {
 }
 
 const formatAction = (action: string) => {
-  if (!action) return 'Unknown'
+  if (!action) return t('common.enum.order_status.unknown')
   return action.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 }
 
@@ -180,7 +181,7 @@ const formatRelativeTime = (dateStr: string) => {
   if (diffMin < 60) return t('admin.auditLog.minutes_ago', { count: diffMin })
   if (diffHour < 24) return t('admin.auditLog.hours_ago', { count: diffHour })
   if (diffDay < 7) return t('admin.auditLog.days_ago', { count: diffDay })
-  return date.toLocaleDateString()
+  return formatDate(dateStr)
 }
 
 const prevPage = () => { if (page.value > 1) { page.value -= 1; fetchLogs() } }

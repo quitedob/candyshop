@@ -22,7 +22,7 @@
           <div>
             <h3 class="text-lg leading-6 font-medium text-gray-900">{{ t('customer.oemProjects.project') }} #{{ project.projectNumber || project.id.substring(0, 8) }}</h3>
             <p class="mt-1 max-w-2xl text-sm text-gray-500">
-              {{ t('customer.oemProjects.created_on') }} {{ project.createdAt ? new Date(project.createdAt).toLocaleString() : '-' }}
+              {{ t('customer.oemProjects.created_on') }} {{ formatDate(project.createdAt, { dateStyle: 'medium', timeStyle: 'short' }) }}
             </p>
           </div>
           <span :class="[statusBadgeClass(project.status), 'inline-flex rounded-full px-3 py-1 text-sm font-semibold leading-5']">
@@ -129,8 +129,8 @@
                     {{ sample.status }}
                   </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ sample.requestedAt ? new Date(sample.requestedAt).toLocaleDateString() : '-' }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ sample.shippedAt ? new Date(sample.shippedAt).toLocaleDateString() : '-' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(sample.requestedAt) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(sample.shippedAt) }}</td>
               </tr>
             </tbody>
           </table>
@@ -158,6 +158,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 const route = useRoute()
 const api = useApi()
 const { t } = useI18n()
+const { formatDate } = useDisplay()
 const localePath = useLocalePath()
 
 const project = ref<any>(null)
@@ -165,10 +166,10 @@ const pending = ref(true)
 const error = ref('')
 
 const steps = [
-  { key: 'inquiry', label: 'Inquiry' }, { key: 'sampling', label: 'Sampling' },
-  { key: 'formulation', label: 'Formulation' }, { key: 'quotation', label: 'Quotation' },
-  { key: 'contract', label: 'Contract' }, { key: 'production', label: 'Production' },
-  { key: 'delivery', label: 'Delivery' }, { key: 'completed', label: 'Completed' }
+  { key: 'inquiry', label: t('customer.oemProjects.inquiry') }, { key: 'sampling', label: t('customer.oemProjects.sampling') },
+  { key: 'formulation', label: t('customer.oemProjects.formulation') }, { key: 'quotation', label: t('customer.oemProjects.quotation') },
+  { key: 'contract', label: t('customer.oemProjects.contract') }, { key: 'production', label: t('customer.oemProjects.production') },
+  { key: 'delivery', label: t('customer.oemProjects.delivery') }, { key: 'completed', label: t('customer.oemProjects.completed') }
 ]
 
 const fetchProject = async () => {

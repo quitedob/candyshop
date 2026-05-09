@@ -90,10 +90,10 @@ const { t } = useI18n()
 
 const activeTab = ref('general')
 const tabs = [
-  { key: 'general', label: 'General' },
-  { key: 'email', label: 'Email' },
-  { key: 'trade', label: 'Trade' },
-  { key: 'notifications', label: 'Notifications' }
+  { key: 'general', label: t('admin.settings.tab_general') },
+  { key: 'email', label: t('admin.settings.tab_email') },
+  { key: 'trade', label: t('admin.settings.tab_trade') },
+  { key: 'notifications', label: t('admin.settings.tab_notifications') }
 ]
 
 interface Setting {

@@ -57,11 +57,14 @@ const handleError = () => clearError({ redirect: '/' })
 <style scoped>
 .error-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  padding: var(--spacing-xl);
+  background: var(--color-bg-alt);
+  overscroll-behavior: contain;
+  box-sizing: border-box;
 }
 
 .error-content {
@@ -70,29 +73,30 @@ const handleError = () => clearError({ redirect: '/' })
 }
 
 .error-code {
-  font-size: 6rem;
+  font-size: var(--text-6xl);
   font-weight: 800;
-  color: #cbd5e1;
+  color: var(--color-border-dark);
   line-height: 1;
-  margin: 0 0 1rem;
+  margin: 0 0 var(--spacing-md);
 }
 
 .error-title {
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
   font-weight: 700;
-  color: #1e293b;
-  margin: 0 0 0.75rem;
+  color: var(--color-primary);
+  margin: 0 0 var(--spacing-sm);
 }
 
 .error-message {
-  color: #64748b;
-  margin: 0 0 2rem;
+  color: var(--color-text-light);
+  margin: 0 0 var(--spacing-xl);
   line-height: 1.6;
+  overflow-wrap: break-word;
 }
 
 .error-actions {
   display: flex;
-  gap: 1rem;
+  gap: var(--spacing-md);
   justify-content: center;
   flex-wrap: wrap;
 }
@@ -103,29 +107,31 @@ const handleError = () => clearError({ redirect: '/' })
   align-items: center;
   justify-content: center;
   padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   font-weight: 600;
   text-decoration: none;
-  transition: opacity 0.2s;
+  transition: opacity var(--transition-fast), background-color var(--transition-base);
+  min-height: 44px;
 }
 
 .btn-home {
-  background: #ea580c;
-  color: white;
+  background: var(--color-highlight);
+  color: var(--color-text-on-primary);
+  border: none;
 }
 
 .btn-home:hover {
-  opacity: 0.92;
+  background: var(--color-highlight-hover);
 }
 
 .btn-retry {
-  background: white;
-  color: #1e293b;
-  border: 1px solid #e2e8f0;
+  background: var(--color-bg);
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
   cursor: pointer;
 }
 
 .btn-retry:hover {
-  background: #f8fafc;
+  background: var(--color-bg-alt);
 }
 </style>

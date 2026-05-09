@@ -47,7 +47,7 @@
 
             <!-- Price -->
             <p v-if="product.unitPrice" class="product-header__price">
-              {{ $t('product.price_from') }} ${{ product.unitPrice.toLocaleString() }}{{ $t('product.price_per_unit') }}
+              {{ $t('product.price_from') }} {{ cur() }}{{ formatNumber(product.unitPrice) }}{{ $t('product.price_per_unit') }}
             </p>
 
             <!-- Quick Specs -->
@@ -240,12 +240,14 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useI18n, useLocalePath } from '#i18n'
+import { useDisplay } from '~/composables/useDisplay'
 
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
 const router = useRouter()
 const { isAuthenticated, isAdmin, isPending } = useAuth()
+const { currencyOrDefault: cur, formatNumber } = useDisplay()
 const api = useApi()
 const { getProduct, getRelatedProducts } = api
 
@@ -338,10 +340,10 @@ const oemOptions = [
     summary: 'Choose from our range or custom develop',
     description: 'We offer over 50 fruit flavors or can create custom blends to match your requirements.',
     choices: [
-      { id: 'fruit', label: 'Fruit Mix', image: '/images/flavors/fruit.jpg' },
-      { id: 'citrus', label: 'Citrus', image: '/images/flavors/citrus.jpg' },
-      { id: 'berry', label: 'Berry', image: '/images/flavors/berry.jpg' },
-      { id: 'custom', label: 'Custom', image: '/images/flavors/custom.jpg' }
+      { id: 'fruit', label: t('product.flavor_options.fruit_mix'), image: '/images/flavors/fruit.jpg' },
+      { id: 'citrus', label: t('product.flavor_options.citrus'), image: '/images/flavors/citrus.jpg' },
+      { id: 'berry', label: t('product.flavor_options.berry'), image: '/images/flavors/berry.jpg' },
+      { id: 'custom', label: t('product.flavor_options.custom'), image: '/images/flavors/custom.jpg' }
     ],
     pricing: { moq: '3,000 pcs', leadTime: '4-6 weeks' }
   },
@@ -351,22 +353,22 @@ const oemOptions = [
     summary: 'Standard shapes or custom molds',
     description: 'From classic bears and fruits to your unique brand shapes.',
     choices: [
-      { id: 'bear', label: 'Bear', image: '/images/shapes/bear.jpg' },
-      { id: 'fruit', label: 'Fruit', image: '/images/shapes/fruit.jpg' },
-      { id: 'letter', label: 'Letters', image: '/images/shapes/letter.jpg' },
-      { id: 'custom', label: 'Custom', image: '/images/shapes/custom.jpg' }
+      { id: 'bear', label: t('product.shape_options.bear'), image: '/images/shapes/bear.jpg' },
+      { id: 'fruit', label: t('product.shape_options.fruit'), image: '/images/shapes/fruit.jpg' },
+      { id: 'letter', label: t('product.shape_options.letter'), image: '/images/shapes/letter.jpg' },
+      { id: 'custom', label: t('product.shape_options.custom'), image: '/images/shapes/custom.jpg' }
     ],
     pricing: { moq: '5,000 pcs', leadTime: '6-8 weeks' }
   },
   {
     icon: 'lucide:palette',
-    title: 'Colors',
+    title: t('product.colors'),
     summary: 'Natural or artificial colors',
     description: 'Available in various color options using natural fruit extracts or food-grade colors.',
     choices: [
-      { id: 'natural', label: 'Natural', image: '/images/colors/natural.jpg' },
-      { id: 'vibrant', label: 'Vibrant', image: '/images/colors/vibrant.jpg' },
-      { id: 'custom', label: 'Custom', image: '/images/colors/custom.jpg' }
+      { id: 'natural', label: t('product.color_options.natural'), image: '/images/colors/natural.jpg' },
+      { id: 'vibrant', label: t('product.color_options.vibrant'), image: '/images/colors/vibrant.jpg' },
+      { id: 'custom', label: t('product.color_options.custom'), image: '/images/colors/custom.jpg' }
     ],
     pricing: { moq: '2,000 pcs', leadTime: '3-4 weeks' }
   }
@@ -574,7 +576,7 @@ useSeo({
   border: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
   white-space: nowrap;
 }
 
@@ -609,7 +611,7 @@ useSeo({
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .packaging-card:hover {

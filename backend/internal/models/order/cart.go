@@ -5,8 +5,8 @@ import "time"
 // CartItem represents a single product line in a user's shopping cart.
 type CartItem struct {
 	ID             uint      `gorm:"primaryKey" json:"id"`
-	UserID         string    `gorm:"type:varchar(255);not null;index" json:"userId"`
-	ProductID      string    `gorm:"type:varchar(255);not null" json:"productId"`
+	UserID         string    `gorm:"type:varchar(255);not null;uniqueIndex:idx_cart_user_product" json:"userId"`
+	ProductID      string    `gorm:"type:varchar(255);not null;uniqueIndex:idx_cart_user_product" json:"productId"`
 	ProductName    string    `gorm:"type:varchar(255)" json:"productName"`
 	Quantity       int       `gorm:"not null;default:1" json:"quantity"`
 	UnitPrice      float64   `json:"unitPrice"`

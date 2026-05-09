@@ -12,11 +12,11 @@ import (
 )
 
 type cartRecommendRequest struct {
-	Prompt        string `json:"prompt" binding:"required"`
-	TargetCountry string `json:"targetCountry"`
-	Quantity      int    `json:"quantity"`
+	Prompt        string  `json:"prompt" binding:"required"`
+	TargetCountry string  `json:"targetCountry"`
+	Quantity      int     `json:"quantity"`
 	Budget        float64 `json:"budget"`
-	Currency      string `json:"currency"`
+	Currency      string  `json:"currency"`
 }
 
 type cartRecommendItem struct {
@@ -40,12 +40,12 @@ func (h *Handler) CustomerAIRecommendForCart(c *gin.Context) {
 		return
 	}
 	if h.services == nil || h.services.Search == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	var req cartRecommendRequest
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -121,10 +121,7 @@ Rules:
 		// Fallback to regular Generate if JSON mode unavailable
 		aiResponse, err = h.aiService.Generate(c.Request.Context(), aiPrompt)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-				Error:   "internal_error",
-				Message: "AI recommendation failed",
-			})
+			utils.ErrorResp(c, http.StatusInternalServerError, "ai_recommendation_failed")
 			return
 		}
 	}

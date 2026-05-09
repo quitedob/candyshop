@@ -36,7 +36,7 @@
           <tr v-else v-for="order in orders" :key="order.id">
             <td class="py-4 pl-4 pr-3 text-sm sm:pl-6">
               <div class="font-medium text-gray-900">{{ order.orderNumber || order.id }}</div>
-              <div class="text-gray-500">{{ order.createdAt ? new Date(order.createdAt).toLocaleString() : cell(null) }}</div>
+              <div class="text-gray-500">{{ formatDate(order.createdAt) }}</div>
             </td>
             <td class="px-3 py-4 text-sm text-gray-500">
               <template v-if="order.user">
@@ -46,7 +46,7 @@
               <template v-else>{{ order.userId }}</template>
             </td>
             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-              {{ cur(order.currency) }} {{ (order.totalAmount || 0).toLocaleString() }}
+              {{ cur(order.currency) }} {{ formatNumber(order.totalAmount || 0) }}
             </td>
             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
               <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5" :class="statusClass(order.status)">
@@ -79,42 +79,42 @@
 
     <div v-if="showModal" class="fixed inset-0 z-10 overflow-y-auto" role="dialog" aria-modal="true">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="closeModal"></div>
+        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closeModal" :aria-label="t('common.close')"></button>
         <span class="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
-        <div class="inline-block w-full transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left align-bottom shadow-xl transition-all sm:my-8 sm:max-w-4xl sm:p-6 sm:align-middle">
+        <div class="inline-block w-full transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left align-bottom shadow-xl sm:my-8 sm:max-w-4xl sm:p-6 sm:align-middle">
           <h3 class="text-lg font-medium leading-6 text-gray-900">{{ editingId ? t('admin.orders.edit_order') : t('admin.orders.create_order') }}</h3>
 
           <form class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2" @submit.prevent="saveOrder">
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.orders.user_id') }}</label>
-              <input v-model="form.userId" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="order-userId" class="block text-sm font-medium text-gray-700">{{ t('admin.orders.user_id') }}</label>
+              <input id="order-userId" v-model="form.userId" name="userId" autocomplete="off" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.orders.inquiry_id') }}</label>
-              <input v-model="form.inquiryId" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="order-inquiryId" class="block text-sm font-medium text-gray-700">{{ t('admin.orders.inquiry_id') }}</label>
+              <input id="order-inquiryId" v-model="form.inquiryId" name="inquiryId" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.orders.order_number') }}</label>
-              <input v-model="form.orderNumber" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="order-orderNumber" class="block text-sm font-medium text-gray-700">{{ t('admin.orders.order_number') }}</label>
+              <input id="order-orderNumber" v-model="form.orderNumber" name="orderNumber" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.orders.currency') }}</label>
-              <input v-model="form.currency" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="order-currency" class="block text-sm font-medium text-gray-700">{{ t('admin.orders.currency') }}</label>
+              <input id="order-currency" v-model="form.currency" name="currency" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.orders.status') }}</label>
-              <select v-model="form.status" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-                <option value="pending">pending</option>
-                <option value="confirmed">confirmed</option>
-                <option value="production">production</option>
-                <option value="shipped">shipped</option>
-                <option value="delivered">delivered</option>
-                <option value="cancelled">cancelled</option>
+              <label for="order-status" class="block text-sm font-medium text-gray-700">{{ t('admin.orders.status') }}</label>
+              <select id="order-status" v-model="form.status" name="status" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <option value="pending">{{ enumLabel('order_status', 'pending') }}</option>
+                <option value="confirmed">{{ enumLabel('order_status', 'confirmed') }}</option>
+                <option value="production">{{ enumLabel('order_status', 'production') }}</option>
+                <option value="shipped">{{ enumLabel('order_status', 'shipped') }}</option>
+                <option value="delivered">{{ enumLabel('order_status', 'delivered') }}</option>
+                <option value="cancelled">{{ enumLabel('order_status', 'cancelled') }}</option>
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.orders.payment_status') }}</label>
-              <select v-model="form.paymentStatus" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <label for="order-paymentStatus" class="block text-sm font-medium text-gray-700">{{ t('admin.orders.payment_status') }}</label>
+              <select id="order-paymentStatus" v-model="form.paymentStatus" name="paymentStatus" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
                 <option value="unpaid">unpaid</option>
                 <option value="partial">partial</option>
                 <option value="paid">paid</option>
@@ -122,52 +122,52 @@
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.orders.subtotal') }}</label>
-              <input v-model.number="form.subtotal" type="number" min="0" step="0.01" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="order-subtotal" class="block text-sm font-medium text-gray-700">{{ t('admin.orders.subtotal') }}</label>
+              <input id="order-subtotal" v-model.number="form.subtotal" name="subtotal" type="number" min="0" step="0.01" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.orders.tax') }}</label>
-              <input v-model.number="form.taxAmount" type="number" min="0" step="0.01" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="order-taxAmount" class="block text-sm font-medium text-gray-700">{{ t('admin.orders.tax') }}</label>
+              <input id="order-taxAmount" v-model.number="form.taxAmount" name="taxAmount" type="number" min="0" step="0.01" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.orders.shipping') }}</label>
-              <input v-model.number="form.shippingAmount" type="number" min="0" step="0.01" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="order-shippingAmount" class="block text-sm font-medium text-gray-700">{{ t('admin.orders.shipping') }}</label>
+              <input id="order-shippingAmount" v-model.number="form.shippingAmount" name="shippingAmount" type="number" min="0" step="0.01" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.orders.total') }}</label>
-              <input v-model.number="form.totalAmount" type="number" min="0" step="0.01" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="order-totalAmount" class="block text-sm font-medium text-gray-700">{{ t('admin.orders.total') }}</label>
+              <input id="order-totalAmount" v-model.number="form.totalAmount" name="totalAmount" type="number" min="0" step="0.01" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div class="sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.orders.tracking_number') }}</label>
-              <input v-model="form.trackingNumber" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="order-trackingNumber" class="block text-sm font-medium text-gray-700">{{ t('admin.orders.tracking_number') }}</label>
+              <input id="order-trackingNumber" v-model="form.trackingNumber" name="trackingNumber" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
 
             <!-- Structured Order Items -->
             <div class="sm:col-span-2">
               <div class="flex items-center justify-between mb-2">
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.orders.items') }}</label>
+                <span class="block text-sm font-medium text-gray-700">{{ t('admin.orders.items') }}</span>
                 <button type="button" @click="addOrderItem" class="text-xs text-orange-600 hover:text-orange-800 font-medium">+ {{ t('admin.orders.add_item') }}</button>
               </div>
               <div class="space-y-2">
                 <div v-for="(item, idx) in form.items" :key="idx" class="grid grid-cols-12 gap-2 items-end rounded border border-gray-200 p-2">
                   <div class="col-span-4">
-                    <label class="block text-xs text-gray-500">{{ t('admin.orders.item_product_id') }}</label>
-                    <input v-model="item.productId" class="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-xs" :placeholder="t('admin.orders.item_product_id')" />
+                    <label :for="`order-item-productId-${idx}`" class="block text-xs text-gray-500">{{ t('admin.orders.item_product_id') }}</label>
+                    <input :id="`order-item-productId-${idx}`" v-model="item.productId" :name="`items[${idx}].productId`" autocomplete="off" class="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-xs" :placeholder="t('admin.orders.item_product_id')" />
                   </div>
                   <div class="col-span-2">
-                    <label class="block text-xs text-gray-500">{{ t('admin.orders.item_qty') }}</label>
-                    <input v-model.number="item.quantity" type="number" min="1" class="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-xs" />
+                    <label :for="`order-item-quantity-${idx}`" class="block text-xs text-gray-500">{{ t('admin.orders.item_qty') }}</label>
+                    <input :id="`order-item-quantity-${idx}`" v-model.number="item.quantity" :name="`items[${idx}].quantity`" type="number" min="1" autocomplete="off" class="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-xs" />
                   </div>
                   <div class="col-span-2">
-                    <label class="block text-xs text-gray-500">{{ t('admin.orders.item_price') }}</label>
-                    <input v-model.number="item.unitPrice" type="number" min="0" step="0.01" class="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-xs" />
+                    <label :for="`order-item-unitPrice-${idx}`" class="block text-xs text-gray-500">{{ t('admin.orders.item_price') }}</label>
+                    <input :id="`order-item-unitPrice-${idx}`" v-model.number="item.unitPrice" :name="`items[${idx}].unitPrice`" type="number" min="0" step="0.01" autocomplete="off" class="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-xs" />
                   </div>
                   <div class="col-span-3">
-                    <label class="block text-xs text-gray-500">{{ t('admin.orders.item_spec') }}</label>
-                    <input v-model="item.specifications" class="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-xs" />
+                    <label :for="`order-item-spec-${idx}`" class="block text-xs text-gray-500">{{ t('admin.orders.item_spec') }}</label>
+                    <input :id="`order-item-spec-${idx}`" v-model="item.specifications" :name="`items[${idx}].specifications`" autocomplete="off" class="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-xs" />
                   </div>
                   <div class="col-span-1 flex justify-end">
-                    <button v-if="form.items.length > 1" type="button" @click="form.items.splice(idx, 1)" class="text-red-500 hover:text-red-700 text-xs">✕</button>
+                    <button v-if="form.items.length > 1" type="button" @click="form.items.splice(idx, 1)" class="text-red-500 hover:text-red-700 text-xs" :aria-label="t('common.close')">✕</button>
                   </div>
                 </div>
               </div>
@@ -175,27 +175,27 @@
 
             <!-- Structured Shipping Address -->
             <div class="sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-2">{{ t('admin.orders.shipping_address') }}</label>
+              <span class="block text-sm font-medium text-gray-700 mb-2">{{ t('admin.orders.shipping_address') }}</span>
               <div class="grid grid-cols-2 gap-2">
                 <div class="col-span-2">
-                  <label class="block text-xs text-gray-500">{{ t('admin.orders.addr_street') }}</label>
-                  <input v-model="form.shippingAddress.street" class="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-sm" />
+                  <label for="order-addr-street" class="block text-xs text-gray-500">{{ t('admin.orders.addr_street') }}</label>
+                  <input id="order-addr-street" v-model="form.shippingAddress.street" name="shippingAddress.street" autocomplete="street-address" class="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-sm" />
                 </div>
                 <div>
-                  <label class="block text-xs text-gray-500">{{ t('admin.orders.addr_city') }}</label>
-                  <input v-model="form.shippingAddress.city" class="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-sm" />
+                  <label for="order-addr-city" class="block text-xs text-gray-500">{{ t('admin.orders.addr_city') }}</label>
+                  <input id="order-addr-city" v-model="form.shippingAddress.city" name="shippingAddress.city" autocomplete="address-level2" class="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-sm" />
                 </div>
                 <div>
-                  <label class="block text-xs text-gray-500">{{ t('admin.orders.addr_state') }}</label>
-                  <input v-model="form.shippingAddress.state" class="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-sm" />
+                  <label for="order-addr-state" class="block text-xs text-gray-500">{{ t('admin.orders.addr_state') }}</label>
+                  <input id="order-addr-state" v-model="form.shippingAddress.state" name="shippingAddress.state" autocomplete="address-level1" class="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-sm" />
                 </div>
                 <div>
-                  <label class="block text-xs text-gray-500">{{ t('admin.orders.addr_zip') }}</label>
-                  <input v-model="form.shippingAddress.zipCode" class="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-sm" />
+                  <label for="order-addr-zip" class="block text-xs text-gray-500">{{ t('admin.orders.addr_zip') }}</label>
+                  <input id="order-addr-zip" v-model="form.shippingAddress.zipCode" name="shippingAddress.zipCode" autocomplete="postal-code" class="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-sm" />
                 </div>
                 <div>
-                  <label class="block text-xs text-gray-500">{{ t('admin.orders.addr_country') }}</label>
-                  <input v-model="form.shippingAddress.country" class="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-sm" />
+                  <label for="order-addr-country" class="block text-xs text-gray-500">{{ t('admin.orders.addr_country') }}</label>
+                  <input id="order-addr-country" v-model="form.shippingAddress.country" name="shippingAddress.country" autocomplete="country-name" class="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-sm" />
                 </div>
               </div>
             </div>
@@ -230,7 +230,7 @@ definePageMeta({
 
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { currencyOrDefault: cur, cell, enumLabel } = useDisplay()
+const { currencyOrDefault: cur, cell, enumLabel, formatNumber, formatDate } = useDisplay()
 const api = useApi()
 
 const orders = ref<any[]>([])
@@ -567,7 +567,7 @@ onMounted(fetchOrders)
   background: var(--color-bg);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .form-input:focus {
@@ -584,7 +584,7 @@ onMounted(fetchOrders)
   background: var(--color-bg);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
   resize: vertical;
 }
 

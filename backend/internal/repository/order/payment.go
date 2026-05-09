@@ -3,6 +3,7 @@ package order
 import (
 	modelsOrder "candypro/api/internal/models/order"
 	"context"
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -39,6 +40,36 @@ func (r *PaymentRepository) FindByID(ctx context.Context, id string) (*modelsOrd
 // Create creates a new payment record.
 func (r *PaymentRepository) Create(ctx context.Context, payment *modelsOrder.Payment) error {
 	return r.db.WithContext(ctx).Create(payment).Error
+}
+
+// CreateWithBalanceCheck atomically checks remaining balance and creates a payment within a transaction.
+// Prevents TOCTOU race where concurrent requests both pass balance validation.
+func (r *PaymentRepository) CreateWithBalanceCheck(ctx context.Context, orderTotalAmount float64, payment *modelsOrder.Payment) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var payments []modelsOrder.Payment
+		if err := tx.Where("order_id = ?", payment.OrderID).Find(&payments).Error; err != nil {
+			return err
+		}
+		confirmedTotal := 0.0
+		pendingTotal := 0.0
+		for _, p := range payments {
+			if p.Status == "confirmed" {
+				confirmedTotal += p.Amount
+			}
+			if p.Status == "pending" {
+				pendingTotal += p.Amount
+			}
+		}
+		allocated := confirmedTotal + pendingTotal
+		remaining := orderTotalAmount - allocated
+		if remaining < 0 {
+			remaining = 0
+		}
+		if payment.Amount > remaining && remaining > 0 {
+			return fmt.Errorf("payment amount %.2f exceeds remaining balance %.2f", payment.Amount, remaining)
+		}
+		return tx.Create(payment).Error
+	})
 }
 
 // Update updates a payment record.
@@ -85,15 +116,25 @@ func (r *PaymentRepository) MarkPaymentRefunded(ctx context.Context, id string) 
 	return nil
 }
 
-// UpdateStatus updates payment status（保留通用更新；退款请优先 MarkPaymentRefunded）
-func (r *PaymentRepository) UpdateStatus(ctx context.Context, id, status string) error {
+// UpdateStatus updates payment status with state transition validation.
+func (r *PaymentRepository) UpdateStatus(ctx context.Context, id, currentStatus, newStatus string) error {
+	if err := modelsOrder.ValidatePaymentStatusTransition(currentStatus, newStatus); err != nil {
+		return err
+	}
 	now := time.Now()
-	return r.db.WithContext(ctx).Model(&modelsOrder.Payment{}).
-		Where("id = ?", id).
+	res := r.db.WithContext(ctx).Model(&modelsOrder.Payment{}).
+		Where("id = ? AND status = ?", id, currentStatus).
 		Updates(map[string]interface{}{
-			"status":     status,
+			"status":     newStatus,
 			"updated_at": now,
-		}).Error
+		})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrPaymentStateMismatch
+	}
+	return nil
 }
 
 // CountByStatus returns count of payments with given status.

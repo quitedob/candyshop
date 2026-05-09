@@ -62,39 +62,39 @@
     <!-- Create/Edit Modal -->
     <div v-if="showModal" class="fixed inset-0 z-10 overflow-y-auto" role="dialog" aria-modal="true">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="closeModal"></div>
+        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closeModal" :aria-label="t('common.close')"></button>
         <span class="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
-        <div class="inline-block w-full transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left align-bottom shadow-xl transition-all sm:my-8 sm:max-w-3xl sm:p-6 sm:align-middle">
+        <div class="inline-block w-full transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left align-bottom shadow-xl sm:my-8 sm:max-w-3xl sm:p-6 sm:align-middle">
           <h3 class="text-lg font-medium leading-6 text-gray-900">{{ editingId ? t('admin.certifications.edit_certification') : t('admin.certifications.create_certification') }}</h3>
 
           <form class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2" @submit.prevent="saveCertification">
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.certifications.name') }}</label>
-              <input v-model="form.name" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="cert-name" class="block text-sm font-medium text-gray-700">{{ t('admin.certifications.name') }}</label>
+              <input id="cert-name" v-model="form.name" name="name" autocomplete="off" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.certifications.abbreviation') }}</label>
-              <input v-model="form.abbreviation" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="cert-abbreviation" class="block text-sm font-medium text-gray-700">{{ t('admin.certifications.abbreviation') }}</label>
+              <input id="cert-abbreviation" v-model="form.abbreviation" name="abbreviation" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div class="sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.certifications.description_label') }}</label>
-              <textarea v-model="form.description" rows="3" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea>
+              <label for="cert-description" class="block text-sm font-medium text-gray-700">{{ t('admin.certifications.description_label') }}</label>
+              <textarea id="cert-description" v-model="form.description" name="description" rows="3" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.certifications.issuer') }}</label>
-              <input v-model="form.issuer" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="cert-issuer" class="block text-sm font-medium text-gray-700">{{ t('admin.certifications.issuer') }}</label>
+              <input id="cert-issuer" v-model="form.issuer" name="issuer" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.certifications.valid_until') }}</label>
-              <input v-model="form.validUntil" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="cert-validUntil" class="block text-sm font-medium text-gray-700">{{ t('admin.certifications.valid_until') }}</label>
+              <input id="cert-validUntil" v-model="form.validUntil" name="validUntil" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div class="sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.certifications.certificate_url') }}</label>
-              <input v-model="form.certificateUrl" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="cert-certificateUrl" class="block text-sm font-medium text-gray-700">{{ t('admin.certifications.certificate_url') }}</label>
+              <input id="cert-certificateUrl" v-model="form.certificateUrl" name="certificateUrl" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div class="sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.certifications.badge_url') }}</label>
-              <input v-model="form.badgeUrl" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="cert-badgeUrl" class="block text-sm font-medium text-gray-700">{{ t('admin.certifications.badge_url') }}</label>
+              <input id="cert-badgeUrl" v-model="form.badgeUrl" name="badgeUrl" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
 
             <div v-if="formError" class="sm:col-span-2 text-sm text-red-600">{{ formError }}</div>

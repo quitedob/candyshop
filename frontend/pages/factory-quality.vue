@@ -878,7 +878,7 @@ useSeo({
   border-radius: var(--radius-lg);
   text-decoration: none;
   color: inherit;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .download-item:hover {

@@ -29,7 +29,7 @@
               <div class="article__dates">
                 <span class="article__published">
                   <Icon name="lucide:calendar" size="14" />
-                  {{ formatDate(post.publishedAt) }}
+                  {{ fmtDate(post.publishedAt) }}
                 </span>
                 <span class="article__read-time">
                   <Icon name="lucide:clock" size="14" />
@@ -162,7 +162,6 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { marked } from 'marked'
 import { useI18n, useLocalePath } from '#i18n'
 
 const { t } = useI18n()
@@ -189,7 +188,9 @@ const { data: relatedData } = await useAsyncData(
 const renderedContent = computed(() => {
   const raw = post.value?.content || ''
   if (!raw) return ''
-  try { return marked.parse(raw) } catch { return raw }
+  // Content is stored as HTML (from rich text editor).
+  // For legacy Markdown content, detect and render as-is (browsers handle plain text).
+  return raw
 })
 
 const post = computed(() => {
@@ -233,10 +234,8 @@ const getCategoryName = (categoryId: string) => {
   return mapping[categoryId] || categoryId
 }
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-}
+const { formatDate } = useDisplay()
+const fmtDate = (dateString: string) => formatDate(dateString, { month: 'long', day: 'numeric', year: 'numeric' })
 
 const fullUrl = computed(() => `${config.public.siteUrl}/blog/${slug.value}`)
 
@@ -466,7 +465,7 @@ useSeo({
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .share__button:hover {

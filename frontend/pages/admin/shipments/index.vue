@@ -37,19 +37,23 @@
       <div class="flex flex-wrap items-center gap-4">
         <div class="flex-1 min-w-[200px]">
           <div class="relative">
+            <label for="shipment-search" class="sr-only">{{ t('admin.shipments.search') }}</label>
             <Icon name="heroicons:magnifying-glass" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input v-model="searchQuery" type="text" :placeholder="t('admin.shipments.search')" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+            <input id="shipment-search" v-model="searchQuery" name="search" type="text" :placeholder="t('admin.shipments.search')" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </div>
         </div>
-        <select v-model="statusFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+        <label for="shipment-filter-status" class="sr-only">{{ t('admin.shipments.filter_status') }}</label>
+        <select id="shipment-filter-status" v-model="statusFilter" name="statusFilter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
           <option value="all">{{ t('admin.shipments.filter_all') }}</option>
           <option value="pending">{{ t('admin.shipments.status_pending') }}</option>
           <option value="in_transit">{{ t('admin.shipments.status_in_transit') }}</option>
           <option value="delivered">{{ t('admin.shipments.status_delivered') }}</option>
           <option value="exception">{{ t('admin.shipments.status_exception') }}</option>
         </select>
-        <input v-model="dateFrom" type="date" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
-        <input v-model="dateTo" type="date" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        <label for="shipment-dateFrom" class="sr-only">{{ t('admin.shipments.date_from') }}</label>
+        <input id="shipment-dateFrom" v-model="dateFrom" name="dateFrom" type="date" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        <label for="shipment-dateTo" class="sr-only">{{ t('admin.shipments.date_to') }}</label>
+        <input id="shipment-dateTo" v-model="dateTo" name="dateTo" type="date" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
       </div>
     </div>
 
@@ -96,8 +100,8 @@
                 <div class="text-xs text-gray-400">{{ shipment.destination?.recipientName }}</div>
               </td>
               <td class="px-6 py-4 text-sm text-gray-600">
-                <div>{{ shipment.estimatedDelivery ? new Date(shipment.estimatedDelivery).toLocaleDateString() : '-' }}</div>
-                <div v-if="shipment.actualDelivery" class="text-xs text-emerald-600">Delivered: {{ new Date(shipment.actualDelivery).toLocaleDateString() }}</div>
+                <div>{{ formatDate(shipment.estimatedDelivery) }}</div>
+                <div v-if="shipment.actualDelivery" class="text-xs text-emerald-600">{{ t('admin.shipments.delivered_label') }}: {{ formatDate(shipment.actualDelivery) }}</div>
               </td>
               <td class="px-6 py-4">
                 <span :class="statusBadgeClass(shipment.status)" class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold">
@@ -132,16 +136,16 @@
     <!-- Create/Edit Modal -->
     <div v-if="showModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="closeModal"></div>
-        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:max-w-2xl sm:align-middle">
+        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closeModal" :aria-label="t('common.close')"></button>
+        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl sm:my-8 sm:max-w-2xl sm:align-middle">
           <div class="bg-gradient-to-r from-orange-500 to-amber-600 px-6 py-4">
             <h3 class="text-lg font-semibold text-white">{{ editingId ? t('admin.shipments.edit_shipment') : t('admin.shipments.create_shipment') }}</h3>
           </div>
           <form @submit.prevent="saveShipment" class="p-6 space-y-4">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.order') }}</label>
-                <select v-model="form.orderId" required class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                <label for="shipment-orderId" class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.order') }}</label>
+                <select id="shipment-orderId" v-model="form.orderId" name="orderId" required class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
                   <option value="">{{ t('admin.shipments.select_order') }}</option>
                   <option v-for="order in orders" :key="order.id" :value="order.id">
                     #{{ order.orderNumber || order.id.substring(0, 8) }} - {{ order.user?.firstName }} {{ order.user?.lastName }}
@@ -149,43 +153,43 @@
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.carrier') }}</label>
-                <select v-model="form.carrier" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
-                  <option value="">Standard</option>
-                  <option value="dhl">DHL</option>
-                  <option value="fedex">FedEx</option>
-                  <option value="ups">UPS</option>
-                  <option value="usps">USPS</option>
-                  <option value="ems">EMS</option>
-                  <option value="sea">Sea Freight</option>
-                  <option value="air">Air Freight</option>
+                <label for="shipment-carrier" class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.carrier') }}</label>
+                <select id="shipment-carrier" v-model="form.carrier" name="carrier" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <option value="">{{ enumLabel('carrier', 'standard', 'standard') }}</option>
+                  <option value="dhl">{{ enumLabel('carrier', 'dhl') }}</option>
+                  <option value="fedex">{{ enumLabel('carrier', 'fedex') }}</option>
+                  <option value="ups">{{ enumLabel('carrier', 'ups') }}</option>
+                  <option value="usps">{{ enumLabel('carrier', 'usps') }}</option>
+                  <option value="ems">{{ enumLabel('carrier', 'ems') }}</option>
+                  <option value="sea">{{ enumLabel('carrier', 'sea') }}</option>
+                  <option value="air">{{ enumLabel('carrier', 'air') }}</option>
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.tracking_number') }}</label>
-                <input v-model="form.trackingNumber" type="text" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                <label for="shipment-trackingNumber" class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.tracking_number') }}</label>
+                <input id="shipment-trackingNumber" v-model="form.trackingNumber" name="trackingNumber" type="text" autocomplete="off" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.status') }}</label>
-                <select v-model="form.status" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
-                  <option value="pending">Pending</option>
-                  <option value="in_transit">In Transit</option>
-                  <option value="delivered">Delivered</option>
-                  <option value="exception">Exception</option>
+                <label for="shipment-status" class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.status') }}</label>
+                <select id="shipment-status" v-model="form.status" name="status" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <option value="pending">{{ enumLabel('shipment_status', 'pending') }}</option>
+                  <option value="in_transit">{{ enumLabel('shipment_status', 'in_transit') }}</option>
+                  <option value="delivered">{{ enumLabel('shipment_status', 'delivered') }}</option>
+                  <option value="exception">{{ enumLabel('shipment_status', 'exception') }}</option>
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.estimated_delivery') }}</label>
-                <input v-model="form.estimatedDelivery" type="date" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                <label for="shipment-estimatedDelivery" class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.estimated_delivery') }}</label>
+                <input id="shipment-estimatedDelivery" v-model="form.estimatedDelivery" name="estimatedDelivery" type="date" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.actual_delivery') }}</label>
-                <input v-model="form.actualDelivery" type="date" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                <label for="shipment-actualDelivery" class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.actual_delivery') }}</label>
+                <input id="shipment-actualDelivery" v-model="form.actualDelivery" name="actualDelivery" type="date" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.notes') }}</label>
-              <textarea v-model="form.notes" rows="2" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
+              <label for="shipment-notes" class="block text-sm font-medium text-gray-700">{{ t('admin.shipments.notes') }}</label>
+              <textarea id="shipment-notes" v-model="form.notes" name="notes" rows="2" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
             </div>
             <div v-if="formError" class="text-sm text-red-600">{{ formError }}</div>
             <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
@@ -205,8 +209,8 @@
     <!-- Details Modal -->
     <div v-if="showDetailsModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showDetailsModal = false"></div>
-        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:max-w-3xl sm:align-middle">
+        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="showDetailsModal = false" :aria-label="t('common.close')"></button>
+        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl sm:my-8 sm:max-w-3xl sm:align-middle">
           <div class="bg-gradient-to-r from-gray-700 to-gray-900 px-6 py-4 flex items-center justify-between">
             <div>
               <h3 class="text-lg font-semibold text-white">{{ t('admin.shipments.shipment_details') }}</h3>
@@ -228,7 +232,7 @@
                     <div>
                       <p class="font-medium text-gray-900">{{ event.status }}</p>
                       <p class="text-sm text-gray-500">{{ event.location }}</p>
-                      <p class="text-xs text-gray-400 mt-1">{{ new Date(event.timestamp).toLocaleString() }}</p>
+                      <p class="text-xs text-gray-400 mt-1">{{ formatDate(event.timestamp, { dateStyle: 'medium', timeStyle: 'short' }) }}</p>
                     </div>
                   </div>
                 </div>
@@ -248,6 +252,7 @@ definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
+const { enumLabel, formatNumber, formatDate } = useDisplay()
 const localePath = useLocalePath()
 
 const shipments = ref<any[]>([])
@@ -373,7 +378,7 @@ const statusBadgeClass = (status: string) => {
   return 'bg-gray-100 text-gray-800'
 }
 
-const formatStatus = (status: string) => status?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown'
+const formatStatus = (status: string) => status ? enumLabel('shipment_status', status) : t('common.enum.order_status.unknown')
 const prevPage = () => { if (page.value > 1) { page.value -= 1; fetchShipments() } }
 const nextPage = () => { if (pagination.value && page.value < pagination.value.totalPages) { page.value += 1; fetchShipments() } }
 

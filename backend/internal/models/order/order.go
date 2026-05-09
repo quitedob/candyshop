@@ -4,8 +4,57 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 )
+
+// Order Statuses
+const (
+	OrderStatusPending            = "pending"
+	OrderStatusPendingConfirm     = "pending_confirmation"
+	OrderStatusConfirmed          = "confirmed"
+	OrderStatusProduction         = "production"
+	OrderStatusShipped            = "shipped"
+	OrderStatusDelivered          = "delivered"
+	OrderStatusCancelled          = "cancelled"
+)
+
+// Payment Statuses
+const (
+	PaymentStatusUnpaid   = "unpaid"
+	PaymentStatusPartial  = "partial"
+	PaymentStatusPaid     = "paid"
+	PaymentStatusRefunded = "refunded"
+)
+
+// ValidOrderStatusTransitions defines the allowed order status flow.
+var ValidOrderStatusTransitions = map[string]map[string]bool{
+	OrderStatusPending:            {OrderStatusConfirmed: true, OrderStatusCancelled: true},
+	OrderStatusPendingConfirm:     {OrderStatusPending: true, OrderStatusConfirmed: true, OrderStatusCancelled: true},
+	OrderStatusConfirmed:          {OrderStatusProduction: true, OrderStatusCancelled: true},
+	OrderStatusProduction:         {OrderStatusShipped: true, OrderStatusCancelled: true},
+	OrderStatusShipped:            {OrderStatusDelivered: true},
+	OrderStatusDelivered:          {},
+	OrderStatusCancelled:          {},
+}
+
+// ValidateOrderStatusTransition checks whether moving from current to target is allowed.
+func ValidateOrderStatusTransition(current, target string) error {
+	cur := strings.ToLower(strings.TrimSpace(current))
+	tgt := strings.ToLower(strings.TrimSpace(target))
+	if cur == tgt {
+		return nil
+	}
+	allowed, known := ValidOrderStatusTransitions[cur]
+	if !known {
+		return fmt.Errorf("unknown current order status '%s'", current)
+	}
+	if !allowed[tgt] {
+		return fmt.Errorf("cannot transition order from '%s' to '%s'", current, target)
+	}
+	return nil
+}
 
 // OrderItem represents a single product in an order
 type OrderItem struct {
@@ -100,8 +149,8 @@ type Order struct {
 	User                       *OrderUserSnapshot    `json:"user,omitempty" gorm:"foreignKey:UserID;references:ID"`
 	InquiryID                  *string               `json:"inquiryId" gorm:"index"`
 	Inquiry                    *OrderInquirySnapshot `json:"inquiry,omitempty" gorm:"foreignKey:InquiryID;references:ID"`
-	Status                     string                `json:"status" gorm:"default:'pending'"`       // pending, confirmed, production, shipped, delivered, cancelled
-	PaymentStatus              string                `json:"paymentStatus" gorm:"default:'unpaid'"` // unpaid, partial, paid, refunded
+	Status                     string                `json:"status" gorm:"default:'pending'"`
+	PaymentStatus              string                `json:"paymentStatus" gorm:"default:'unpaid'"`
 	Items                      OrderItemArray        `json:"items" gorm:"type:jsonb;not null"`
 	StockReserved              bool                  `json:"stockReserved" gorm:"default:false"`
 	ComplianceOfficialEvidence bool                  `json:"complianceOfficialEvidence" gorm:"default:false"`

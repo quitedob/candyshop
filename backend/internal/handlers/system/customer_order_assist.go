@@ -50,36 +50,33 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 		return
 	}
 	if h.services == nil || h.services.Order == nil || h.services.Search == nil || h.services.Product == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, _ := authContext(c)
 	if userID == "" {
-		c.JSON(http.StatusUnauthorized, modelsProduct.ErrorResponse{
-			Error:   "unauthorized",
-			Message: "User not identified",
-		})
+		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	var req customerOrderAssistRequest
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	if req.TaxAmount < 0 || req.ShippingAmount < 0 {
-		utils.InvalidRequestResponse(c, "taxAmount and shippingAmount cannot be negative")
+		utils.InvalidResp(c, "tax_shipping_negative")
 		return
 	}
 	if msg := validateAssistShippingAddress(req.ShippingAddress); msg != "" {
-		utils.InvalidRequestResponse(c, msg)
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	targetCountry := strings.TrimSpace(req.TargetCountry)
 	if targetCountry == "" {
-		utils.InvalidRequestResponse(c, "targetCountry is required")
+		utils.InvalidResp(c, "target_country_required")
 		return
 	}
 
@@ -91,10 +88,7 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 	searchQuery := strings.TrimSpace(strings.Join(filterNonEmpty(queryParts), " "))
 	searchRes, err := h.services.Search.Search(c.Request.Context(), searchQuery, "products", 8)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to search products for AI order assistant",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "ai_product_search_failed")
 		return
 	}
 	if len(searchRes.Products) == 0 {
@@ -121,10 +115,7 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 
 	candidateJSON, err := json.Marshal(buildCandidatePayload(searchRes.Products))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to prepare AI candidate payload",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "ai_prepare_payload_failed")
 		return
 	}
 
@@ -134,10 +125,7 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 		// Fallback to regular Generate
 		aiResponse, err = h.aiService.Generate(c.Request.Context(), aiPrompt)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-				Error:   "internal_error",
-				Message: "Failed to generate AI order draft",
-			})
+			utils.ErrorResp(c, http.StatusInternalServerError, "ai_draft_generate_failed")
 			return
 		}
 	}
@@ -149,23 +137,16 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 
 	items, selectedProducts, selectedProductModels, selectionWarnings := buildAssistOrderItems(draft.RecommendedProducts, searchRes.Products, req.Quantity)
 	if len(items) == 0 {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: "No valid order items could be generated",
-		})
+		utils.ErrorResp(c, http.StatusBadRequest, "no_valid_order_items")
 		return
 	}
 
 	complianceValidation := h.services.Product.ValidateComplianceWithMarketProfiles(c.Request.Context(), targetCountry, selectedProductModels)
 	if len(complianceValidation.Violations) > 0 {
-		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-			Error:   "compliance_violation",
-			Message: "AI draft blocked by destination-country compliance requirements",
-			Details: gin.H{
-				"country":    complianceValidation.Country,
-				"violations": complianceValidation.Violations,
-				"warnings":   complianceValidation.Warnings,
-			},
+		utils.ErrorRespDetail(c, http.StatusUnprocessableEntity, "order_draft_blocked_compliance", gin.H{
+			"country":    complianceValidation.Country,
+			"violations": complianceValidation.Violations,
+			"warnings":   complianceValidation.Warnings,
 		})
 		return
 	}
@@ -182,13 +163,9 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 	sellableOMS, _ := h.services.Product.EffectiveSellableByProducts(c.Request.Context(), omsIDs, modelsProduct.ChannelWebstore)
 	inventoryValidation := h.services.Order.ValidateInventoryWithSellable(items, productByID, sellableOMS)
 	if len(inventoryValidation.Violations) > 0 {
-		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-			Error:   "inventory_violation",
-			Message: "AI draft blocked by inventory constraints",
-			Details: gin.H{
-				"violations": inventoryValidation.Violations,
-				"warnings":   inventoryValidation.Warnings,
-			},
+		utils.ErrorRespDetail(c, http.StatusUnprocessableEntity, "order_draft_blocked_inventory", gin.H{
+			"violations": inventoryValidation.Violations,
+			"warnings":   inventoryValidation.Warnings,
 		})
 		return
 	}
@@ -261,10 +238,7 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 	}
 
 	if err := h.services.Order.CreateOrder(c.Request.Context(), order); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to create AI draft order",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "ai_draft_create_failed")
 		return
 	}
 
@@ -315,17 +289,11 @@ func (h *Handler) validateAssistInquiry(c *gin.Context, rawInquiryID *string, us
 	inquiryID := strings.TrimSpace(*rawInquiryID)
 	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Inquiry not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return nil, err
 	}
 	if inquiry.UserID == nil || *inquiry.UserID != userID {
-		c.JSON(http.StatusForbidden, modelsProduct.ErrorResponse{
-			Error:   "forbidden",
-			Message: "You do not have access to this inquiry",
-		})
+		utils.ErrorResp(c, http.StatusForbidden, "inquiry_no_access")
 		return nil, fmt.Errorf("inquiry does not belong to current user")
 	}
 	return &inquiryID, nil

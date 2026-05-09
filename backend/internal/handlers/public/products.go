@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"strconv"
 
-	modelsProduct "candypro/api/internal/models/product"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,7 +21,7 @@ import (
 // @Router /products [get]
 func (h *Handler) GetProducts(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -53,10 +51,7 @@ func (h *Handler) GetProducts(c *gin.Context) {
 	if halal || oemOnly || featuredOnly || search != "" || sort != "" || minMOQ > 0 || maxMOQ > 0 {
 		response, err := h.services.Product.GetProductsFiltered(c.Request.Context(), page, limit, halal, oemOnly, featuredOnly, search, sort, minMOQ, maxMOQ)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-				Error:   "internal_error",
-				Message: "Failed to fetch products",
-			})
+			utils.ErrorResp(c, http.StatusInternalServerError, "product_fetch_failed")
 			return
 		}
 		c.JSON(http.StatusOK, response)
@@ -65,10 +60,7 @@ func (h *Handler) GetProducts(c *gin.Context) {
 
 	response, err := h.services.Product.GetProducts(c.Request.Context(), page, limit, category)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to fetch products",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "product_fetch_failed")
 		return
 	}
 
@@ -81,11 +73,11 @@ func (h *Handler) GetProducts(c *gin.Context) {
 // @Produce json
 // @Param slug path string true "Product slug"
 // @Success 200 {object} modelsProduct.Product
-// @Failure 404 {object} modelsProduct.ErrorResponse
+// @Failure 404 {object} modelsCommon.ErrorResponse
 // @Router /products/{slug} [get]
 func (h *Handler) GetProduct(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -93,11 +85,13 @@ func (h *Handler) GetProduct(c *gin.Context) {
 
 	product, err := h.services.Product.GetProduct(c.Request.Context(), slug)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Product not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "product_not_found")
 		return
+	}
+
+	// Increment view count (best-effort, non-blocking)
+	if h.services != nil && h.services.Product != nil {
+		_ = h.services.Product.IncrementViewCount(c.Request.Context(), product.ID)
 	}
 
 	c.JSON(http.StatusOK, product)
@@ -112,7 +106,7 @@ func (h *Handler) GetProduct(c *gin.Context) {
 // @Router /products/featured [get]
 func (h *Handler) GetFeaturedProducts(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -123,10 +117,7 @@ func (h *Handler) GetFeaturedProducts(c *gin.Context) {
 
 	products, err := h.services.Product.GetFeaturedProducts(c.Request.Context(), limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to fetch featured products",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "featured_fetch_failed")
 		return
 	}
 
@@ -143,7 +134,7 @@ func (h *Handler) GetFeaturedProducts(c *gin.Context) {
 // @Router /products/{slug}/related [get]
 func (h *Handler) GetRelatedProducts(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -155,10 +146,7 @@ func (h *Handler) GetRelatedProducts(c *gin.Context) {
 
 	products, err := h.services.Product.GetRelatedProducts(c.Request.Context(), slug, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to fetch related products",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "related_fetch_failed")
 		return
 	}
 
@@ -168,26 +156,20 @@ func (h *Handler) GetRelatedProducts(c *gin.Context) {
 // GetProductVariants returns active SKU variants for a product.
 func (h *Handler) GetProductVariants(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	productID := c.Param("slug") // reuse slug param — accepts slug or ID
 	product, err := h.services.Product.GetProduct(c.Request.Context(), productID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Product not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "product_not_found")
 		return
 	}
 
 	variants, err := h.services.Product.GetProductVariants(c.Request.Context(), product.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to fetch variants",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "variant_fetch_failed")
 		return
 	}
 

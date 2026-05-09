@@ -2,11 +2,11 @@ package admin
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"math"
 	modelsCommon "candypro/api/internal/models/common"
 	modelsOrder "candypro/api/internal/models/order"
-	modelsProduct "candypro/api/internal/models/product"
 	"candypro/api/internal/utils"
 	"net/http"
 	"os"
@@ -19,14 +19,14 @@ import (
 // AdminGetOrderPayments returns all payments for an order.
 func (h *Handler) AdminGetOrderPayments(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	orderID := c.Param("id")
 	payments, err := h.services.Payment.GetPaymentsByOrder(c.Request.Context(), orderID)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to fetch payments")
+		utils.ErrorResp(c, http.StatusInternalServerError, "payment_fetch_failed")
 		return
 	}
 
@@ -35,40 +35,40 @@ func (h *Handler) AdminGetOrderPayments(c *gin.Context) {
 
 type adminCreatePaymentRequest struct {
 	Amount    float64 `json:"amount" binding:"required"`
-	Currency  string `json:"currency"`
-	Method    string `json:"method" binding:"required"`
-	Reference string `json:"reference"`
-	ProofURL  string `json:"proofUrl"`
-	Notes     string `json:"notes"`
+	Currency  string  `json:"currency"`
+	Method    string  `json:"method" binding:"required"`
+	Reference string  `json:"reference"`
+	ProofURL  string  `json:"proofUrl"`
+	Notes     string  `json:"notes"`
 }
 
 // AdminCreatePayment creates a payment record for an order.
 func (h *Handler) AdminCreatePayment(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	orderID := c.Param("id")
 	ord, err := h.services.Order.GetOrder(c.Request.Context(), orderID)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Order not found")
+		utils.ErrorResp(c, http.StatusNotFound, "order_not_found")
 		return
 	}
 
 	var req adminCreatePaymentRequest
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	if math.IsNaN(req.Amount) || math.IsInf(req.Amount, 0) || req.Amount < 0 {
-		utils.InvalidRequestResponse(c, "amount must be a non-negative finite number")
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	currencyNorm, curErr := utils.NormalizeISOCurrency(req.Currency)
 	if curErr != nil {
-		utils.InvalidRequestResponse(c, curErr.Error())
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 	currency := currencyNorm
@@ -80,7 +80,7 @@ func (h *Handler) AdminCreatePayment(c *gin.Context) {
 		orderCur = "USD"
 	}
 	if currency != orderCur {
-		utils.InvalidRequestResponse(c, "payment currency must match the order currency")
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 
@@ -98,8 +98,13 @@ func (h *Handler) AdminCreatePayment(c *gin.Context) {
 		UpdatedAt: time.Now(),
 	}
 
-	if err := h.services.Payment.CreatePayment(c.Request.Context(), payment); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to create payment")
+	// Atomic balance check + create within a transaction
+	if err := h.services.Payment.CreatePaymentWithBalanceCheck(c.Request.Context(), ord.TotalAmount, payment); err != nil {
+		if strings.Contains(err.Error(), "exceeds remaining balance") {
+			utils.InvalidResp(c, "invalid_request")
+			return
+		}
+		utils.ErrorResp(c, http.StatusInternalServerError, "payment_create_failed")
 		return
 	}
 
@@ -109,23 +114,23 @@ func (h *Handler) AdminCreatePayment(c *gin.Context) {
 // AdminConfirmPayment confirms a payment.
 func (h *Handler) AdminConfirmPayment(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	orderID := strings.TrimSpace(c.Param("id"))
 	paymentID := strings.TrimSpace(c.Param("paymentId"))
 	if orderID == "" || paymentID == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, "invalid_request", "Order id and payment id are required")
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 	pay, err := h.services.Payment.GetPayment(c.Request.Context(), paymentID)
 	if err != nil || pay == nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Payment not found")
+		utils.ErrorResp(c, http.StatusNotFound, "payment_not_found")
 		return
 	}
 	if pay.OrderID != orderID {
-		utils.ErrorResponse(c, http.StatusBadRequest, "invalid_request", "Payment does not belong to this order")
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 
@@ -136,43 +141,55 @@ func (h *Handler) AdminConfirmPayment(c *gin.Context) {
 	}
 
 	if err := h.services.Payment.ConfirmPayment(c.Request.Context(), paymentID, adminIDStr); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "payment_error", err.Error())
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	h.logPaymentActivity(c, "payment_confirm", orderID, paymentID, adminIDStr, pay.Amount)
 
-	c.JSON(http.StatusOK, modelsProduct.ErrorResponse{
-		Error:   "success",
-		Message: "Payment confirmed successfully",
+	if h.services.Notification != nil {
+		if ord, err := h.services.Order.GetOrder(c.Request.Context(), orderID); err == nil {
+			_ = h.services.Notification.Create(c.Request.Context(), &modelsCommon.Notification{
+				UserID:    ord.UserID,
+				Type:      "order",
+				Reference: orderID,
+				Title:     "Payment Confirmed",
+				Message:   fmt.Sprintf("Your payment of %.2f for order #%s has been confirmed.", pay.Amount, ord.OrderNumber),
+			})
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"error":   "success",
+		"message": "Payment confirmed successfully",
 	})
 }
 
 // AdminRefundPayment refunds a payment.
 func (h *Handler) AdminRefundPayment(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	orderID := strings.TrimSpace(c.Param("id"))
 	paymentID := strings.TrimSpace(c.Param("paymentId"))
 	if orderID == "" || paymentID == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, "invalid_request", "Order id and payment id are required")
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 	pay, err := h.services.Payment.GetPayment(c.Request.Context(), paymentID)
 	if err != nil || pay == nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Payment not found")
+		utils.ErrorResp(c, http.StatusNotFound, "payment_not_found")
 		return
 	}
 	if pay.OrderID != orderID {
-		utils.ErrorResponse(c, http.StatusBadRequest, "invalid_request", "Payment does not belong to this order")
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	if err := h.services.Payment.RefundPayment(c.Request.Context(), paymentID); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "payment_error", err.Error())
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 
@@ -183,9 +200,21 @@ func (h *Handler) AdminRefundPayment(c *gin.Context) {
 	}
 	h.logPaymentActivity(c, "payment_refund", orderID, paymentID, adminIDStr, pay.Amount)
 
-	c.JSON(http.StatusOK, modelsProduct.ErrorResponse{
-		Error:   "success",
-		Message: "Payment refunded successfully",
+	if h.services.Notification != nil {
+		if ord, err := h.services.Order.GetOrder(c.Request.Context(), orderID); err == nil {
+			_ = h.services.Notification.Create(c.Request.Context(), &modelsCommon.Notification{
+				UserID:    ord.UserID,
+				Type:      "order",
+				Reference: orderID,
+				Title:     "Payment Refunded",
+				Message:   fmt.Sprintf("Your payment of %.2f for order #%s has been refunded.", pay.Amount, ord.OrderNumber),
+			})
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"error":   "success",
+		"message": "Payment refunded successfully",
 	})
 }
 
@@ -219,32 +248,32 @@ func (h *Handler) logPaymentActivity(c *gin.Context, action, orderID, paymentID,
 // AdminDownloadPaymentProofFile 管理员下载订单付款凭证文件。
 func (h *Handler) AdminDownloadPaymentProofFile(c *gin.Context) {
 	if h.services == nil || h.cfg == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	orderID := strings.TrimSpace(c.Param("id"))
 	paymentID := strings.TrimSpace(c.Param("paymentId"))
 	if orderID == "" || paymentID == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, "invalid_request", "Order id and payment id are required")
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 	if _, err := h.services.Order.GetOrder(c.Request.Context(), orderID); err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Order not found")
+		utils.ErrorResp(c, http.StatusNotFound, "order_not_found")
 		return
 	}
 	pay, err := h.services.Payment.GetPayment(c.Request.Context(), paymentID)
 	if err != nil || pay == nil || pay.OrderID != orderID {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Payment not found")
+		utils.ErrorResp(c, http.StatusNotFound, "payment_not_found")
 		return
 	}
 	if strings.TrimSpace(pay.ProofURL) == "" {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "No proof file for this payment")
+		utils.ErrorResp(c, http.StatusNotFound, "proof_file_not_found")
 		return
 	}
 	if h.cfg.Upload.StorageDriver == "s3" {
 		presigned, err := h.storage.GetPresignedURL(c.Request.Context(), pay.ProofURL, 15*time.Minute)
 		if err != nil {
-			utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to generate download link")
+			utils.ErrorResp(c, http.StatusInternalServerError, "payment_download_link_failed")
 			return
 		}
 		c.Redirect(http.StatusTemporaryRedirect, presigned)
@@ -252,11 +281,11 @@ func (h *Handler) AdminDownloadPaymentProofFile(c *gin.Context) {
 	}
 	local, err := utils.LocalPathFromUploadURL(h.cfg.Upload.UploadPath, pay.ProofURL)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "invalid_request", "Invalid proof path")
+		utils.InvalidResp(c, "payment_invalid_proof_path")
 		return
 	}
 	if _, statErr := os.Stat(local); statErr != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Proof file not found on server")
+		utils.ErrorResp(c, http.StatusNotFound, "file_not_found")
 		return
 	}
 	c.File(local)

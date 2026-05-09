@@ -98,19 +98,19 @@
 
             <!-- Social Links -->
             <div class="footer__social">
-              <a href="https://facebook.com/candypro" target="_blank" rel="noopener noreferrer" aria-label="Facebook" class="footer__social-link footer__social-link--facebook">
+              <a href="https://facebook.com/candypro" target="_blank" rel="noopener noreferrer" :aria-label="t('common.a11y.facebook')" class="footer__social-link footer__social-link--facebook">
                 <Icon name="lucide:facebook" size="18" />
               </a>
-              <a href="https://linkedin.com/company/candypro" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" class="footer__social-link footer__social-link--linkedin">
+              <a href="https://linkedin.com/company/candypro" target="_blank" rel="noopener noreferrer" :aria-label="t('common.a11y.linkedin')" class="footer__social-link footer__social-link--linkedin">
                 <Icon name="lucide:linkedin" size="18" />
               </a>
-              <a href="https://instagram.com/candypro" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="footer__social-link footer__social-link--instagram">
+              <a href="https://instagram.com/candypro" target="_blank" rel="noopener noreferrer" :aria-label="t('common.a11y.instagram')" class="footer__social-link footer__social-link--instagram">
                 <Icon name="lucide:instagram" size="18" />
               </a>
-              <a href="https://youtube.com/@candypro" target="_blank" rel="noopener noreferrer" aria-label="YouTube" class="footer__social-link footer__social-link--youtube">
+              <a href="https://youtube.com/@candypro" target="_blank" rel="noopener noreferrer" :aria-label="t('common.a11y.youtube')" class="footer__social-link footer__social-link--youtube">
                 <Icon name="lucide:youtube" size="18" />
               </a>
-              <a href="https://twitter.com/candypro" target="_blank" rel="noopener noreferrer" aria-label="Twitter" class="footer__social-link footer__social-link--twitter">
+              <a href="https://twitter.com/candypro" target="_blank" rel="noopener noreferrer" :aria-label="t('common.a11y.twitter')" class="footer__social-link footer__social-link--twitter">
                 <Icon name="lucide:twitter" size="18" />
               </a>
             </div>
@@ -137,7 +137,7 @@
               :class="['footer__lang-btn', { 'footer__lang-btn--active': loc.code === currentLocale }]"
               @click="switchLocale(loc.code)"
             >
-              {{ loc.code === 'en' ? 'EN' : '中文' }}
+              {{ loc.code === 'en' ? $t('languages.en_short') : $t('languages.zh') }}
             </button>
           </div>
         </div>
@@ -236,7 +236,7 @@ const switchLocale = async (newLocale: string) => {
   border-radius: var(--radius-md);
   font-weight: 600;
   font-size: var(--text-sm);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
   white-space: nowrap;
 }
 
@@ -382,7 +382,7 @@ const switchLocale = async (newLocale: string) => {
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-full);
   color: white;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .footer__social-link:hover {
@@ -458,7 +458,7 @@ const switchLocale = async (newLocale: string) => {
   font-weight: 600;
   color: rgba(255, 255, 255, 0.6);
   border-radius: var(--radius-full);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .footer__lang-btn:hover {

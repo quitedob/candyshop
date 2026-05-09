@@ -110,7 +110,7 @@
           </div>
           <div class="rounded-md border border-gray-200 bg-gray-50 p-3">
             <p class="text-xs uppercase tracking-wide text-gray-500">{{ t('customer.orders_new.estimated_total') }}</p>
-            <p class="mt-1 text-sm font-semibold text-gray-900">{{ cur(draftOrder.currency) }} {{ Number(draftOrder.totalAmount || 0).toLocaleString() }}</p>
+            <p class="mt-1 text-sm font-semibold text-gray-900">{{ cur(draftOrder.currency) }} {{ formatNumber(draftOrder.totalAmount || 0) }}</p>
           </div>
         </div>
 
@@ -293,7 +293,7 @@ type ManualItem = { productId: string; quantity: number; unitPrice: number; spec
 
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { currencyOrDefault: cur, cell, enumLabel } = useDisplay()
+const { currencyOrDefault: cur, cell, enumLabel, formatNumber } = useDisplay()
 const api = useApi()
 
 const shippingAddress = reactive({ street: '', city: '', state: '', zipCode: '', country: '' })

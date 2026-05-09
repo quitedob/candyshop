@@ -13,10 +13,11 @@ type paymentRepository interface {
 	FindByOrderID(ctx context.Context, orderID string) ([]modelsOrder.Payment, error)
 	FindByID(ctx context.Context, id string) (*modelsOrder.Payment, error)
 	Create(ctx context.Context, payment *modelsOrder.Payment) error
+	CreateWithBalanceCheck(ctx context.Context, orderTotalAmount float64, payment *modelsOrder.Payment) error
 	Update(ctx context.Context, payment *modelsOrder.Payment) error
 	ConfirmPayment(ctx context.Context, id, confirmedBy string) error
 	MarkPaymentRefunded(ctx context.Context, id string) error
-	UpdateStatus(ctx context.Context, id, status string) error
+	UpdateStatus(ctx context.Context, id, currentStatus, newStatus string) error
 	CountByStatus(ctx context.Context, status string) (int64, error)
 	StatusBreakdown(ctx context.Context) (map[string]int64, error)
 }
@@ -50,7 +51,15 @@ func (s *PaymentService) CreatePayment(ctx context.Context, payment *modelsOrder
 	return s.repo.Create(ctx, payment)
 }
 
-// ConfirmPayment confirms a payment and updates the order's payment status.
+// CreatePaymentWithBalanceCheck creates a payment with atomic balance enforcement.
+func (s *PaymentService) CreatePaymentWithBalanceCheck(ctx context.Context, orderTotalAmount float64, payment *modelsOrder.Payment) error {
+	if payment.Status == "" {
+		payment.Status = "pending"
+	}
+	return s.repo.CreateWithBalanceCheck(ctx, orderTotalAmount, payment)
+}
+
+// ConfirmPayment confirms a payment and updates the order's payment status atomically.
 func (s *PaymentService) ConfirmPayment(ctx context.Context, paymentID, confirmedBy string) error {
 	payment, err := s.repo.FindByID(ctx, paymentID)
 	if err != nil {
@@ -67,7 +76,6 @@ func (s *PaymentService) ConfirmPayment(ctx context.Context, paymentID, confirme
 		return err
 	}
 
-	// Update order payment status
 	return s.updateOrderPaymentStatus(ctx, payment.OrderID)
 }
 

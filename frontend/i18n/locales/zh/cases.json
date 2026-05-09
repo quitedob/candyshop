@@ -2,6 +2,8 @@
   "cases": {
     "title": "成功案例",
     "subtitle": "值得信赖的全球品牌伙伴",
+    "all_industries": "全部行业",
+    "no_results": "未找到该行业的案例。",
     "view_case": "查看案例",
     "client": "客户",
     "project": "项目",

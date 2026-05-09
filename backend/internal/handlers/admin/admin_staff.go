@@ -12,14 +12,14 @@ import (
 // GetStaffList returns paginated admin/superadmin users.
 func (h *Handler) GetStaffList(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	page, limit := utils.ParsePagination(c, 20, 100)
 
 	users, total, err := h.services.User.GetUsers(c.Request.Context(), page, limit)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to fetch staff list")
+		utils.ErrorResp(c, http.StatusInternalServerError, "staff_fetch_failed")
 		return
 	}
 	totalPages := int(total) / limit
@@ -40,19 +40,19 @@ func (h *Handler) GetStaffList(c *gin.Context) {
 // GetStaffActivity returns activity logs for a specific user.
 func (h *Handler) GetStaffActivity(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	userID := c.Param("id")
 	if strings.TrimSpace(userID) == "" {
-		utils.InvalidRequestResponse(c, "Missing user ID")
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 	page, limit := utils.ParsePagination(c, 20, 100)
 
 	logs, total, err := h.services.ActivityLog.FindByUser(c.Request.Context(), userID, page, limit)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to fetch staff activity")
+		utils.ErrorResp(c, http.StatusInternalServerError, "staff_fetch_failed")
 		return
 	}
 	totalPages := int(total) / limit
@@ -73,14 +73,14 @@ func (h *Handler) GetStaffActivity(c *gin.Context) {
 // GetAuditLog returns paginated activity log entries with optional filters.
 func (h *Handler) GetAuditLog(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	page, limit := utils.ParsePagination(c, 20, 100)
 
 	logs, total, err := h.services.ActivityLog.FindAll(c.Request.Context(), page, limit)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to fetch audit log")
+		utils.ErrorResp(c, http.StatusInternalServerError, "audit_log_fetch_failed")
 		return
 	}
 	totalPages := int(total) / limit

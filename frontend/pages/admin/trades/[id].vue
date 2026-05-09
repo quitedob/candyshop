@@ -35,7 +35,7 @@
             </div>
             <div>
               <dt class="text-gray-500">{{ t('admin.trades.total_amount') }}</dt>
-              <dd class="mt-1 font-medium text-gray-900">{{ cur(trade.currency) }} {{ (trade.totalAmount || 0).toLocaleString() }}</dd>
+              <dd class="mt-1 font-medium text-gray-900">{{ cur(trade.currency) }} {{ formatNumber(trade.totalAmount || 0) }}</dd>
             </div>
             <div v-if="trade.orderId">
               <dt class="text-gray-500">{{ t('admin.trades.order_id') }}</dt>
@@ -60,15 +60,15 @@
         </div>
         <div class="px-4 py-4 flex items-end gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('admin.trades.status') }}</label>
-            <select v-model="statusInput" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
-              <option value="draft">draft</option>
-              <option value="pending">pending</option>
-              <option value="confirmed">confirmed</option>
-              <option value="paid">paid</option>
-              <option value="shipped">shipped</option>
-              <option value="completed">completed</option>
-              <option value="cancelled">cancelled</option>
+            <label for="trade-status" class="block text-sm font-medium text-gray-700 mb-1">{{ t('admin.trades.status') }}</label>
+            <select id="trade-status" name="status" v-model="statusInput" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <option value="draft">{{ enumLabel('trade_status', 'draft') }}</option>
+              <option value="pending">{{ enumLabel('trade_status', 'pending') }}</option>
+              <option value="confirmed">{{ enumLabel('trade_status', 'confirmed') }}</option>
+              <option value="paid">{{ enumLabel('trade_status', 'paid') }}</option>
+              <option value="shipped">{{ enumLabel('trade_status', 'shipped') }}</option>
+              <option value="completed">{{ enumLabel('trade_status', 'completed') }}</option>
+              <option value="cancelled">{{ enumLabel('trade_status', 'cancelled') }}</option>
             </select>
           </div>
           <button @click="updateStatus" :disabled="updatingStatus"
@@ -123,8 +123,8 @@
             <div v-if="!rdoc.data" class="text-gray-400 text-xs mb-3">{{ t('admin.trades.not_created') }}</div>
             <div v-else class="text-xs text-gray-600 space-y-1 mb-3">
               <div><span class="font-medium">{{ rdoc.numberLabel }}:</span> {{ rdoc.data[rdoc.numberField] }}</div>
-              <div v-if="rdoc.data.totalAmount"><span class="font-medium">Amount:</span> {{ rdoc.data.currency }} {{ rdoc.data.totalAmount?.toLocaleString() }}</div>
-              <div v-if="rdoc.data.incoterms"><span class="font-medium">Incoterms:</span> {{ rdoc.data.incoterms }}</div>
+              <div v-if="rdoc.data.totalAmount"><span class="font-medium">{{ dl('amount') }}:</span> {{ cur(rdoc.data.currency) }} {{ formatNumber(rdoc.data.totalAmount) }}</div>
+              <div v-if="rdoc.data.incoterms"><span class="font-medium">{{ dl('incoterms') }}:</span> {{ rdoc.data.incoterms }}</div>
             </div>
             <button @click="openRichDocModal(rdoc)" class="text-xs text-orange-600 hover:text-orange-800 font-medium">
               {{ rdoc.data ? t('admin.trades.edit') : t('admin.trades.create') }}
@@ -177,7 +177,7 @@ const route = useRoute()
 const api = useApi()
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { currencyOrDefault: cur, cell, enumLabel } = useDisplay()
+const { currencyOrDefault: cur, cell, enumLabel, formatNumber, formatDate } = useDisplay()
 
 const trade = ref<any>(null)
 const documents = ref<any[]>([])
@@ -201,124 +201,125 @@ const richDocForm = reactive<Record<string, any>>({})
 const savingRichDoc = ref(false)
 const richDocError = ref('')
 
+const dl = (k: string) => t(`admin.docLabels.${k}`)
 const richDocCards = computed(() => [
   {
-    key: 'pi', label: 'Proforma Invoice', data: piData.value,
-    numberLabel: 'PI No.', numberField: 'piNumber',
+    key: 'pi', label: dl('proforma_invoice'), data: piData.value,
+    numberLabel: dl('pi_no'), numberField: 'piNumber',
     endpoint: 'proforma-invoice',
     fields: [
-      { key: 'buyerName', label: 'Buyer Name' },
-      { key: 'sellerName', label: 'Seller Name' },
-      { key: 'incoterms', label: 'Incoterms' },
-      { key: 'termsOfPayment', label: 'Payment Terms' },
-      { key: 'totalAmount', label: 'Total Amount', type: 'number' },
-      { key: 'currency', label: 'Currency' },
-      { key: 'bankDetails', label: 'Bank Details' },
-      { key: 'notes', label: 'Notes' },
-      { key: 'status', label: 'Status' },
+      { key: 'buyerName', label: dl('buyer_name') },
+      { key: 'sellerName', label: dl('seller_name') },
+      { key: 'incoterms', label: dl('incoterms') },
+      { key: 'termsOfPayment', label: dl('payment_terms') },
+      { key: 'totalAmount', label: dl('total_amount'), type: 'number' },
+      { key: 'currency', label: dl('currency') },
+      { key: 'bankDetails', label: dl('bank_details') },
+      { key: 'notes', label: dl('notes') },
+      { key: 'status', label: dl('status') },
     ]
   },
   {
-    key: 'ci', label: 'Commercial Invoice', data: ciData.value,
-    numberLabel: 'CI No.', numberField: 'ciNumber',
+    key: 'ci', label: dl('commercial_invoice'), data: ciData.value,
+    numberLabel: dl('ci_no'), numberField: 'ciNumber',
     endpoint: 'commercial-invoice',
     fields: [
-      { key: 'buyerName', label: 'Buyer Name' },
-      { key: 'sellerName', label: 'Seller Name' },
-      { key: 'incoterms', label: 'Incoterms' },
-      { key: 'termsOfPayment', label: 'Payment Terms' },
-      { key: 'totalAmount', label: 'Total Amount', type: 'number' },
-      { key: 'currency', label: 'Currency' },
-      { key: 'piNumber', label: 'PI Reference' },
-      { key: 'bankDetails', label: 'Bank Details' },
-      { key: 'status', label: 'Status' },
+      { key: 'buyerName', label: dl('buyer_name') },
+      { key: 'sellerName', label: dl('seller_name') },
+      { key: 'incoterms', label: dl('incoterms') },
+      { key: 'termsOfPayment', label: dl('payment_terms') },
+      { key: 'totalAmount', label: dl('total_amount'), type: 'number' },
+      { key: 'currency', label: dl('currency') },
+      { key: 'piNumber', label: dl('pi_reference') },
+      { key: 'bankDetails', label: dl('bank_details') },
+      { key: 'status', label: dl('status') },
     ]
   },
   {
-    key: 'bl', label: 'Bill of Lading', data: blData.value,
-    numberLabel: 'B/L No.', numberField: 'blNumber',
+    key: 'bl', label: dl('bill_of_lading'), data: blData.value,
+    numberLabel: dl('bl_no'), numberField: 'blNumber',
     endpoint: 'bill-of-lading',
     fields: [
-      { key: 'shipper', label: 'Shipper' },
-      { key: 'consignee', label: 'Consignee' },
-      { key: 'notifyParty', label: 'Notify Party' },
-      { key: 'carrierName', label: 'Carrier' },
-      { key: 'vesselVoyage', label: 'Vessel/Voyage' },
-      { key: 'portOfLoading', label: 'Port of Loading' },
-      { key: 'portOfDischarge', label: 'Port of Discharge' },
-      { key: 'freightTerms', label: 'Freight Terms' },
-      { key: 'goodsDescription', label: 'Goods Description' },
-      { key: 'grossWeight', label: 'Gross Weight (kg)', type: 'number' },
-      { key: 'measurement', label: 'Measurement (CBM)', type: 'number' },
-      { key: 'numberOfPackages', label: 'No. of Packages', type: 'number' },
-      { key: 'status', label: 'Status' },
+      { key: 'shipper', label: dl('shipper') },
+      { key: 'consignee', label: dl('consignee') },
+      { key: 'notifyParty', label: dl('notify_party') },
+      { key: 'carrierName', label: dl('carrier') },
+      { key: 'vesselVoyage', label: dl('vessel_voyage') },
+      { key: 'portOfLoading', label: dl('port_of_loading') },
+      { key: 'portOfDischarge', label: dl('port_of_discharge') },
+      { key: 'freightTerms', label: dl('freight_terms') },
+      { key: 'goodsDescription', label: dl('goods_description') },
+      { key: 'grossWeight', label: dl('gross_weight'), type: 'number' },
+      { key: 'measurement', label: dl('measurement'), type: 'number' },
+      { key: 'numberOfPackages', label: dl('no_of_packages'), type: 'number' },
+      { key: 'status', label: dl('status') },
     ]
   },
   {
-    key: 'sc', label: 'Sales Contract', data: scData.value,
-    numberLabel: 'Contract No.', numberField: 'contractNo',
+    key: 'sc', label: dl('sales_contract'), data: scData.value,
+    numberLabel: dl('contract_no'), numberField: 'contractNo',
     endpoint: 'sales-contract',
     fields: [
-      { key: 'contractNo', label: 'Contract No.' },
-      { key: 'buyerName', label: 'Buyer Name' },
-      { key: 'sellerName', label: 'Seller Name' },
-      { key: 'incoterms', label: 'Incoterms' },
-      { key: 'paymentTerms', label: 'Payment Terms' },
-      { key: 'totalAmount', label: 'Total Amount', type: 'number' },
-      { key: 'currency', label: 'Currency' },
-      { key: 'deliveryDate', label: 'Delivery Date', type: 'date' },
-      { key: 'specialTerms', label: 'Special Terms' },
-      { key: 'status', label: 'Status' },
+      { key: 'contractNo', label: dl('contract_no') },
+      { key: 'buyerName', label: dl('buyer_name') },
+      { key: 'sellerName', label: dl('seller_name') },
+      { key: 'incoterms', label: dl('incoterms') },
+      { key: 'paymentTerms', label: dl('payment_terms') },
+      { key: 'totalAmount', label: dl('total_amount'), type: 'number' },
+      { key: 'currency', label: dl('currency') },
+      { key: 'deliveryDate', label: dl('delivery_date'), type: 'date' },
+      { key: 'specialTerms', label: dl('special_terms') },
+      { key: 'status', label: dl('status') },
     ]
   },
   {
-    key: 'pl', label: 'Packing List', data: plData.value,
-    numberLabel: 'PL No.', numberField: 'plNumber',
+    key: 'pl', label: dl('packing_list'), data: plData.value,
+    numberLabel: dl('pl_no'), numberField: 'plNumber',
     endpoint: 'packing-list',
     fields: [
-      { key: 'plNumber', label: 'PL No.' },
-      { key: 'exporterName', label: 'Exporter Name' },
-      { key: 'importerName', label: 'Importer Name' },
-      { key: 'totalPackages', label: 'Total Packages', type: 'number' },
-      { key: 'totalGrossWeight', label: 'Total Gross Weight (kg)', type: 'number' },
-      { key: 'totalNetWeight', label: 'Total Net Weight (kg)', type: 'number' },
-      { key: 'totalVolume', label: 'Total Volume (CBM)', type: 'number' },
-      { key: 'shippingMark', label: 'Shipping Mark' },
-      { key: 'notes', label: 'Notes' },
+      { key: 'plNumber', label: dl('pl_no') },
+      { key: 'exporterName', label: dl('exporter_name') },
+      { key: 'importerName', label: dl('importer_name') },
+      { key: 'totalPackages', label: dl('total_packages'), type: 'number' },
+      { key: 'totalGrossWeight', label: dl('total_gross_weight'), type: 'number' },
+      { key: 'totalNetWeight', label: dl('total_net_weight'), type: 'number' },
+      { key: 'totalVolume', label: dl('total_volume'), type: 'number' },
+      { key: 'shippingMark', label: dl('shipping_mark') },
+      { key: 'notes', label: dl('notes') },
     ]
   },
   {
-    key: 'coo', label: 'Certificate of Origin', data: cooData.value,
-    numberLabel: 'Cert No.', numberField: 'certificateNo',
+    key: 'coo', label: dl('cert_of_origin'), data: cooData.value,
+    numberLabel: dl('cert_no'), numberField: 'certificateNo',
     endpoint: 'certificate-of-origin',
     fields: [
-      { key: 'certificateNo', label: 'Certificate No.' },
-      { key: 'exporterName', label: 'Exporter Name' },
-      { key: 'importerName', label: 'Importer Name' },
-      { key: 'countryOfOrigin', label: 'Country of Origin' },
-      { key: 'destinationCountry', label: 'Destination Country' },
-      { key: 'hsCode', label: 'HS Code' },
-      { key: 'ftaType', label: 'FTA Type (e.g. RCEP, FORM E)' },
-      { key: 'goodsDescription', label: 'Goods Description' },
-      { key: 'grossWeight', label: 'Gross Weight (kg)', type: 'number' },
-      { key: 'issuingAuthority', label: 'Issuing Authority' },
+      { key: 'certificateNo', label: dl('cert_no') },
+      { key: 'exporterName', label: dl('exporter_name') },
+      { key: 'importerName', label: dl('importer_name') },
+      { key: 'countryOfOrigin', label: dl('country_of_origin') },
+      { key: 'destinationCountry', label: dl('destination_country') },
+      { key: 'hsCode', label: dl('hs_code') },
+      { key: 'ftaType', label: dl('fta_type') },
+      { key: 'goodsDescription', label: dl('goods_description') },
+      { key: 'grossWeight', label: dl('gross_weight'), type: 'number' },
+      { key: 'issuingAuthority', label: dl('issuing_authority') },
     ]
   },
   {
-    key: 'hc', label: 'Health Certificate', data: hcData.value,
-    numberLabel: 'Cert No.', numberField: 'certificateNo',
+    key: 'hc', label: dl('health_cert'), data: hcData.value,
+    numberLabel: dl('cert_no'), numberField: 'certificateNo',
     endpoint: 'health-certificate',
     fields: [
-      { key: 'certificateNo', label: 'Certificate No.' },
-      { key: 'exporterName', label: 'Exporter Name' },
-      { key: 'importerName', label: 'Importer Name' },
-      { key: 'productName', label: 'Product Name' },
-      { key: 'batchNumber', label: 'Batch Number' },
-      { key: 'productionDate', label: 'Production Date', type: 'date' },
-      { key: 'expiryDate', label: 'Expiry Date', type: 'date' },
-      { key: 'issuingAuthority', label: 'Issuing Authority' },
-      { key: 'inspectionResult', label: 'Inspection Result' },
-      { key: 'notes', label: 'Notes' },
+      { key: 'certificateNo', label: dl('cert_no') },
+      { key: 'exporterName', label: dl('exporter_name') },
+      { key: 'importerName', label: dl('importer_name') },
+      { key: 'productName', label: dl('product_name') },
+      { key: 'batchNumber', label: dl('batch_number') },
+      { key: 'productionDate', label: dl('production_date'), type: 'date' },
+      { key: 'expiryDate', label: dl('expiry_date'), type: 'date' },
+      { key: 'issuingAuthority', label: dl('issuing_authority') },
+      { key: 'inspectionResult', label: dl('inspection_result') },
+      { key: 'notes', label: dl('notes') },
     ]
   },
 ])
@@ -421,7 +422,6 @@ const saveRichDoc = async () => {
   }
 }
 
-const formatDate = (d: string) => d ? new Date(d).toLocaleString() : '-'
 
 const statusBadgeClass = (status: string) => {
   const map: Record<string, string> = {

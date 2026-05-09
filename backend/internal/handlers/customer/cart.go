@@ -1,6 +1,7 @@
 package customer
 
 import (
+	modelsCommon "candypro/api/internal/models/common"
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
 	"candypro/api/internal/kyb"
@@ -26,17 +27,17 @@ func buildProductByIDMap(products []modelsProduct.Product) map[string]modelsProd
 // CustomerGetCart returns all cart items for the authenticated customer.
 func (h *Handler) CustomerGetCart(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	userID, ok := contextUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, modelsProduct.ErrorResponse{Error: "unauthorized", Message: "User not identified"})
+		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 	items, err := h.services.Cart.GetCart(c.Request.Context(), userID)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to fetch cart")
+		utils.ErrorResp(c, http.StatusInternalServerError, "cart_fetch_failed")
 		return
 	}
 	count, _ := h.services.Cart.ItemCount(c.Request.Context(), userID)
@@ -46,12 +47,12 @@ func (h *Handler) CustomerGetCart(c *gin.Context) {
 // CustomerAddToCart adds a product to the cart.
 func (h *Handler) CustomerAddToCart(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	userID, ok := contextUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, modelsProduct.ErrorResponse{Error: "unauthorized", Message: "User not identified"})
+		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
@@ -62,16 +63,20 @@ func (h *Handler) CustomerAddToCart(c *gin.Context) {
 		UnitPrice          float64 `json:"unitPrice"`
 		Currency           string  `json:"currency"`
 		Specifications     string  `json:"specifications"`
-		DestinationCountry string  `json:"destinationCountry"` // 可选：用于套目的国成本栈展示价
+		DestinationCountry string  `json:"destinationCountry"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	// N-02: Validate product exists and use server-side price
 	product, err := h.services.Product.GetProductByID(c.Request.Context(), req.ProductID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{Error: "not_found", Message: "Product not found"})
+		utils.ErrorResp(c, http.StatusNotFound, "product_not_found")
+		return
+	}
+	if product.Status != modelsProduct.ProductStatusActive {
+		utils.ErrorResp(c, http.StatusUnprocessableEntity, "product_unavailable")
 		return
 	}
 
@@ -96,13 +101,9 @@ func (h *Handler) CustomerAddToCart(c *gin.Context) {
 		unitPrice = product.BasePrice
 	}
 	if unitPrice <= 0 {
-		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
-			Error:   "no_price",
-			Message: fmt.Sprintf("No price available for product %s. Please contact support.", req.ProductID),
-		})
+		utils.ErrorResp(c, http.StatusUnprocessableEntity, "no_price")
 		return
 	}
-	// 若提供目的国，则在基础/合同价上叠加 ProductMarketCostStack
 	if strings.TrimSpace(req.DestinationCountry) != "" {
 		unitPrice = h.services.Product.ResolveCheckoutUnitPrice(c.Request.Context(), product, unitPrice, req.DestinationCountry)
 	}
@@ -134,7 +135,7 @@ func (h *Handler) CustomerAddToCart(c *gin.Context) {
 
 	created, err := h.services.Cart.AddItem(c.Request.Context(), userID, item)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to add to cart")
+		utils.ErrorResp(c, http.StatusInternalServerError, "cart_add_failed")
 		return
 	}
 	c.JSON(http.StatusCreated, created)
@@ -143,26 +144,26 @@ func (h *Handler) CustomerAddToCart(c *gin.Context) {
 // CustomerUpdateCartItem updates the quantity of a cart item.
 func (h *Handler) CustomerUpdateCartItem(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	userID, ok := contextUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, modelsProduct.ErrorResponse{Error: "unauthorized", Message: "User not identified"})
+		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	itemIDStr := c.Param("itemId")
 	itemID, err := strconv.ParseUint(itemIDStr, 10, 64)
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid item ID")
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	var req struct {
 		Quantity int `json:"quantity" binding:"required,min=1"`
 	}
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -174,7 +175,7 @@ func (h *Handler) CustomerUpdateCartItem(c *gin.Context) {
 
 	updated, err := h.services.Cart.UpdateItem(c.Request.Context(), userID, uint(itemID), req.Quantity)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "invalid_request", err.Error())
+		utils.ErrorResp(c, http.StatusBadRequest, "cart_update_failed")
 		return
 	}
 	c.JSON(http.StatusOK, updated)
@@ -183,24 +184,24 @@ func (h *Handler) CustomerUpdateCartItem(c *gin.Context) {
 // CustomerRemoveCartItem removes a single item from the cart.
 func (h *Handler) CustomerRemoveCartItem(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	userID, ok := contextUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, modelsProduct.ErrorResponse{Error: "unauthorized", Message: "User not identified"})
+		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	itemIDStr := c.Param("itemId")
 	itemID, err := strconv.ParseUint(itemIDStr, 10, 64)
 	if err != nil {
-		utils.InvalidRequestResponse(c, "Invalid item ID")
+		utils.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	if err := h.services.Cart.RemoveItem(c.Request.Context(), userID, uint(itemID)); err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Cart item not found")
+		utils.ErrorResp(c, http.StatusNotFound, "cart_item_not_found")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Item removed from cart"})
@@ -209,16 +210,16 @@ func (h *Handler) CustomerRemoveCartItem(c *gin.Context) {
 // CustomerClearCart removes all items from the cart.
 func (h *Handler) CustomerClearCart(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	userID, ok := contextUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, modelsProduct.ErrorResponse{Error: "unauthorized", Message: "User not identified"})
+		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 	if err := h.services.Cart.ClearCart(c.Request.Context(), userID); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to clear cart")
+		utils.ErrorResp(c, http.StatusInternalServerError, "cart_clear_failed")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Cart cleared"})
@@ -227,18 +228,18 @@ func (h *Handler) CustomerClearCart(c *gin.Context) {
 // CustomerCheckoutCart converts the cart into a pending order.
 func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 	userID, ok := contextUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, modelsProduct.ErrorResponse{Error: "unauthorized", Message: "User not identified"})
+		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	items, err := h.services.Cart.GetCart(c.Request.Context(), userID)
 	if err != nil || len(items) == 0 {
-		utils.ErrorResponse(c, http.StatusBadRequest, "cart_empty", "Cart is empty")
+		utils.ErrorResp(c, http.StatusBadRequest, "cart_empty")
 		return
 	}
 
@@ -273,14 +274,11 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 	for _, item := range items {
 		product, productErr := h.services.Product.GetProductByID(c.Request.Context(), item.ProductID)
 		if productErr != nil {
-			utils.ErrorResponse(c, http.StatusUnprocessableEntity, "product_not_found",
-				fmt.Sprintf("Product %s in cart no longer exists", item.ProductID))
+			utils.ErrorResp(c, http.StatusUnprocessableEntity, "product_not_found")
 			return
 		}
-		// H2: Check product status — reject inactive/draft products
 		if status := strings.ToLower(strings.TrimSpace(product.Status)); status != "" && status != "active" {
-			utils.ErrorResponse(c, http.StatusUnprocessableEntity, "product_unavailable",
-				fmt.Sprintf("Product %s is no longer available for ordering", item.ProductID))
+			utils.ErrorResp(c, http.StatusUnprocessableEntity, "product_unavailable")
 			return
 		}
 
@@ -295,8 +293,7 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 			unitPrice = product.BasePrice
 		}
 		if unitPrice <= 0 {
-			utils.ErrorResponse(c, http.StatusUnprocessableEntity, "no_price",
-				fmt.Sprintf("No price available for product %s. Please contact support.", item.ProductID))
+			utils.ErrorResp(c, http.StatusUnprocessableEntity, "no_price")
 			return
 		}
 		unitPrice = h.services.Product.ResolveCheckoutUnitPrice(c.Request.Context(), product, unitPrice, req.ShippingAddress.Country)
@@ -320,16 +317,15 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 
 	// H1: Require shipping country for compliance validation
 	if strings.TrimSpace(req.ShippingAddress.Country) == "" {
-		utils.InvalidRequestResponse(c, "shippingAddress.country is required for compliance validation")
+		utils.InvalidResp(c, "target_country_required")
 		return
 	}
 
-	// Validate country compliance (same as CustomerCreateOrder，含市场画像)
 	compliance := h.services.Product.ValidateComplianceWithMarketProfiles(c.Request.Context(), req.ShippingAddress.Country, selectedProducts)
 	if len(compliance.Violations) > 0 {
-		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
+		c.JSON(http.StatusUnprocessableEntity, modelsCommon.ErrorResponse{
 			Error:   "compliance_violation",
-			Message: "Cart contains products that violate destination-country compliance requirements",
+			Message: utils.T(c, "errors.compliance_violation"),
 			Details: gin.H{
 				"country":    compliance.Country,
 				"violations": compliance.Violations,
@@ -339,7 +335,6 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 		return
 	}
 
-	// Validate inventory（含 OMS 自建站渠道可售量封顶）
 	ids := make([]string, 0, len(productByID))
 	for id := range productByID {
 		ids = append(ids, id)
@@ -347,9 +342,9 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 	sellable, _ := h.services.Product.EffectiveSellableByProducts(c.Request.Context(), ids, modelsProduct.ChannelWebstore)
 	inventory := h.services.Order.ValidateInventoryWithSellable(orderItems, productByID, sellable)
 	if len(inventory.Violations) > 0 {
-		c.JSON(http.StatusUnprocessableEntity, modelsProduct.ErrorResponse{
+		c.JSON(http.StatusUnprocessableEntity, modelsCommon.ErrorResponse{
 			Error:   "inventory_violation",
-			Message: "Cart contains items that exceed inventory policy constraints",
+			Message: utils.T(c, "errors.inventory_violation"),
 			Details: gin.H{
 				"violations": inventory.Violations,
 				"warnings":   inventory.Warnings,
@@ -377,14 +372,12 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 	}
 
 	if err := h.services.Order.CreateOrderWithStockReservation(c.Request.Context(), order); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal_error", "Failed to create order from cart")
+		utils.ErrorResp(c, http.StatusInternalServerError, "order_create_failed")
 		return
 	}
 
 	// N-10: Log cart clear errors but don't fail the checkout — order is already created
 	if clearErr := h.services.Cart.ClearCart(c.Request.Context(), userID); clearErr != nil {
-		// Order succeeded; log the error for ops visibility but return success to client
-		// The cart will appear stale until the next session or manual clear
 		c.Header("X-Cart-Clear-Warning", "cart_clear_failed")
 	}
 

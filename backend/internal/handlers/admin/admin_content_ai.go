@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	modelsProduct "candypro/api/internal/models/product"
+	"candypro/api/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,10 +17,7 @@ import (
 // @Router /admin/content/ai-generate [post]
 func (h *Handler) AdminAIGenerateContent(c *gin.Context) {
 	if h.aiService == nil || !h.aiService.IsEnabled() {
-		c.JSON(http.StatusServiceUnavailable, modelsProduct.ErrorResponse{
-			Error:   "service_unavailable",
-			Message: "AI service is not configured",
-		})
+		utils.ErrorResp(c, http.StatusServiceUnavailable, "ai_not_configured")
 		return
 	}
 
@@ -29,11 +26,7 @@ func (h *Handler) AdminAIGenerateContent(c *gin.Context) {
 		Type     string `json:"type"`     // "post" or "case", default "post"
 		Language string `json:"language"` // "en" or "zh", default "en"
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "invalid_request",
-			Message: "topic is required",
-		})
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -79,10 +72,7 @@ Tags: tag1, tag2, tag3`, req.Topic, langInstruction)
 
 	result, err := h.aiService.Generate(c.Request.Context(), prompt)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "ai_error",
-			Message: "Failed to generate content: " + err.Error(),
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "ai_error")
 		return
 	}
 

@@ -22,7 +22,7 @@
           <div>
             <h3 class="text-lg leading-6 font-medium text-gray-900">{{ t('admin.oemProjects.project') }} #{{ project.projectNumber || project.id.substring(0, 8) }}</h3>
             <p class="mt-1 max-w-2xl text-sm text-gray-500">
-              {{ t('admin.oemProjects.created_on') }} {{ project.createdAt ? new Date(project.createdAt).toLocaleString() : '-' }}
+              {{ t('admin.oemProjects.created_on') }} {{ formatDate(project.createdAt, { dateStyle: 'medium', timeStyle: 'short' }) }}
             </p>
           </div>
           <span :class="[statusBadgeClass(project.status), 'inline-flex rounded-full px-3 py-1 text-sm font-semibold leading-5']">
@@ -143,8 +143,8 @@
                     {{ sample.status }}
                   </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ sample.requestedAt ? new Date(sample.requestedAt).toLocaleDateString() : '-' }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ sample.shippedAt ? new Date(sample.shippedAt).toLocaleDateString() : '-' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(sample.requestedAt) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(sample.shippedAt) }}</td>
               </tr>
             </tbody>
           </table>
@@ -159,14 +159,14 @@
         <div class="px-4 py-5 sm:p-6">
           <form @submit.prevent="updateStatus" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.oemProjects.status') }}</label>
-              <select v-model="statusInput" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <label for="oem-status" class="block text-sm font-medium text-gray-700">{{ t('admin.oemProjects.status') }}</label>
+              <select id="oem-status" name="status" v-model="statusInput" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
                 <option v-for="step in steps" :key="step.key" :value="step.key">{{ step.label }}</option>
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.oemProjects.notes') }}</label>
-              <textarea v-model="notesInput" rows="3" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea>
+              <label for="oem-notes" class="block text-sm font-medium text-gray-700">{{ t('admin.oemProjects.notes') }}</label>
+              <textarea id="oem-notes" v-model="notesInput" name="notes" rows="3" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea>
             </div>
             <div v-if="statusMessage" class="text-sm" :class="statusError ? 'text-red-600' : 'text-green-600'">
               {{ statusMessage }}
@@ -194,6 +194,7 @@ definePageMeta({
 const route = useRoute()
 const { token } = useAuth()
 const { t } = useI18n()
+const { formatDate } = useDisplay()
 const localePath = useLocalePath()
 const config = useRuntimeConfig()
 const baseURL = config.public.apiBase || '/api/v1'
@@ -208,14 +209,14 @@ const statusMessage = ref('')
 const statusError = ref(false)
 
 const steps = [
-  { key: 'inquiry', label: 'Inquiry' },
-  { key: 'sampling', label: 'Sampling' },
-  { key: 'formulation', label: 'Formulation' },
-  { key: 'quotation', label: 'Quotation' },
-  { key: 'contract', label: 'Contract' },
-  { key: 'production', label: 'Production' },
-  { key: 'delivery', label: 'Delivery' },
-  { key: 'completed', label: 'Completed' }
+  { key: 'inquiry', label: t('admin.oemProjects.inquiry') },
+  { key: 'sampling', label: t('admin.oemProjects.sampling') },
+  { key: 'formulation', label: t('admin.oemProjects.formulation') },
+  { key: 'quotation', label: t('admin.oemProjects.quotation') },
+  { key: 'contract', label: t('admin.oemProjects.contract') },
+  { key: 'production', label: t('admin.oemProjects.production') },
+  { key: 'delivery', label: t('admin.oemProjects.delivery') },
+  { key: 'completed', label: t('admin.oemProjects.completed') }
 ]
 
 const fetchProject = async () => {

@@ -140,7 +140,7 @@ defineExpose({
   background-color: white;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .input-text__field::placeholder {
@@ -178,7 +178,7 @@ defineExpose({
   color: var(--color-text-light);
   background-color: var(--color-bg-alt);
   border-radius: var(--radius-sm);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .input-text__clear:hover {

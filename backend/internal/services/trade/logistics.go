@@ -5,6 +5,7 @@ import (
 	modelsTrade "candypro/api/internal/models/trade"
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"gorm.io/gorm"
@@ -84,11 +85,13 @@ func (s *LogisticsService) DispatchShipment(ctx context.Context, shipmentID uint
 	now := time.Now()
 
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Deduct stock for each order item
-		for _, item := range order.Items {
-			_, stockErr := logisticsDeductStockForProductLine(tx, item.ProductID, item.Quantity, modelsOrder.StockReasonDispatched, order.ID, operatorID, now)
-			if stockErr != nil {
-				return fmt.Errorf("stock deduction failed for product %s: %w", item.ProductID, stockErr)
+		// Deduct stock for each order item only if not already reserved at order creation
+		if !order.StockReserved {
+			for _, item := range order.Items {
+				_, stockErr := logisticsDeductStockForProductLine(tx, item.ProductID, item.Quantity, modelsOrder.StockReasonDispatched, order.ID, operatorID, now)
+				if stockErr != nil {
+					return fmt.Errorf("stock deduction failed for product %s: %w", item.ProductID, stockErr)
+				}
 			}
 		}
 
@@ -276,5 +279,7 @@ func (s *LogisticsService) checkAndAdvanceOrderStatus(ctx context.Context, trans
 	case "delivered":
 		order.DeliveredAt = &now
 	}
-	_ = s.orderRepo.Update(ctx, order)
+	if err := s.orderRepo.Update(ctx, order); err != nil {
+			log.Printf("Warning: failed to update order %s status after shipment event: %v", order.ID, err)
+		}
 }

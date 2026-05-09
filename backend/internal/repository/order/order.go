@@ -7,6 +7,7 @@ import (
 
 import (
 	"context"
+	"log"
 	"sort"
 	"time"
 
@@ -262,24 +263,24 @@ func (r *OrderRepository) ConfirmAndReserveStock(ctx context.Context, id string,
 }
 
 // ReleaseExpiredPendingConfirmationOrders releases stock (if reserved) for expired pending_confirmation drafts and marks them cancelled.
+// Each order is processed in its own transaction to prevent one failure from rolling back the entire batch.
 func (r *OrderRepository) ReleaseExpiredPendingConfirmationOrders(ctx context.Context, olderThan time.Time, limit int) (int, error) {
-	released := 0
-	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var orders []modelsOrder.Order
-		query := tx.
-			Clauses(clause.Locking{Strength: "UPDATE", Options: "SKIP LOCKED"}).
-			Where("status = ? AND created_at <= ?", "pending_confirmation", olderThan).
-			Order("created_at ASC")
-		if limit > 0 {
-			query = query.Limit(limit)
-		}
-		if err := query.Find(&orders).Error; err != nil {
-			return err
-		}
+	var orders []modelsOrder.Order
+	query := r.db.WithContext(ctx).
+		Clauses(clause.Locking{Strength: "UPDATE", Options: "SKIP LOCKED"}).
+		Where("status = ? AND created_at <= ?", "pending_confirmation", olderThan).
+		Order("created_at ASC")
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	if err := query.Find(&orders).Error; err != nil {
+		return 0, err
+	}
 
-		now := time.Now()
-		for _, order := range orders {
-			// Only release stock if it was actually reserved (legacy orders)
+	released := 0
+	now := time.Now()
+	for _, order := range orders {
+		err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 			if order.StockReserved {
 				stockDeltas := buildStockDeltasFromItems(order.Items)
 				beforeStock := readStockLevels(tx, stockDeltas)
@@ -313,10 +314,14 @@ func (r *OrderRepository) ReleaseExpiredPendingConfirmationOrders(ctx context.Co
 			if res.RowsAffected > 0 {
 				released++
 			}
+			return nil
+		})
+		if err != nil {
+			// Log the error but continue processing remaining orders
+			log.Printf("Warning: failed to release expired draft order %s: %v", order.ID, err)
 		}
-		return nil
-	})
-	return released, err
+	}
+	return released, nil
 }
 
 func buildStockDeltasFromItems(items []modelsOrder.OrderItem) map[string]int {

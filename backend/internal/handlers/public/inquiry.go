@@ -1,11 +1,6 @@
 package public
 
 import (
-	modelsProduct "candypro/api/internal/models/product"
-)
-
-import (
-	"fmt"
 	"mime/multipart"
 	"net/http"
 	"regexp"
@@ -16,6 +11,8 @@ import (
 	"candypro/api/internal/utils"
 
 	"github.com/gin-gonic/gin"
+
+	modelsProduct "candypro/api/internal/models/product"
 )
 
 // ===== Inquiry =====
@@ -42,16 +39,13 @@ import (
 // @Router /inquiry [post]
 func (h *Handler) SubmitInquiry(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	// Parse multipart form
 	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "bad_request",
-			Message: "Failed to parse form data",
-		})
+		utils.ErrorResp(c, http.StatusBadRequest, "form_parse_failed")
 		return
 	}
 
@@ -64,10 +58,7 @@ func (h *Handler) SubmitInquiry(c *gin.Context) {
 
 	// Validate required fields
 	if companyName == "" || contactPerson == "" || email == "" {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "bad_request",
-			Message: "Missing required fields: companyName, contactPerson, and email are required",
-		})
+		utils.ErrorResp(c, http.StatusBadRequest, "inquiry_fields_required")
 		return
 	}
 
@@ -75,10 +66,7 @@ func (h *Handler) SubmitInquiry(c *gin.Context) {
 	emailRegex := `^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`
 	matched, _ := regexp.MatchString(emailRegex, email)
 	if !matched {
-		c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-			Error:   "bad_request",
-			Message: "Invalid email format",
-		})
+		utils.ErrorResp(c, http.StatusBadRequest, "invalid_email_format")
 		return
 	}
 
@@ -91,27 +79,25 @@ func (h *Handler) SubmitInquiry(c *gin.Context) {
 	if fileHeaders, ok := form.File["files"]; ok {
 		for _, fileHeader := range fileHeaders {
 			if fileHeader.Size > h.cfg.Upload.MaxFileSize {
-				c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-					Error:   "bad_request",
-					Message: fmt.Sprintf("File %s exceeds maximum size of %d bytes", fileHeader.Filename, h.cfg.Upload.MaxFileSize),
+				utils.ErrorRespDetail(c, http.StatusBadRequest, "file_size_exceeded", gin.H{
+					"filename": fileHeader.Filename,
+					"maxBytes": h.cfg.Upload.MaxFileSize,
 				})
 				return
 			}
 
 			contentType := fileHeader.Header.Get("Content-Type")
 			if !isAllowedType(contentType, h.cfg.Upload.AllowedTypes) {
-				c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-					Error:   "bad_request",
-					Message: fmt.Sprintf("File type %s is not allowed", contentType),
+				utils.ErrorRespDetail(c, http.StatusBadRequest, "file_type_not_allowed", gin.H{
+					"contentType": contentType,
 				})
 				return
 			}
 
 			f, fErr := fileHeader.Open()
 			if fErr != nil {
-				c.JSON(http.StatusBadRequest, modelsProduct.ErrorResponse{
-					Error:   "bad_request",
-					Message: fmt.Sprintf("Failed to open file %s", fileHeader.Filename),
+				utils.ErrorRespDetail(c, http.StatusBadRequest, "file_open_failed", gin.H{
+					"filename": fileHeader.Filename,
 				})
 				return
 			}
@@ -121,9 +107,8 @@ func (h *Handler) SubmitInquiry(c *gin.Context) {
 			})
 			f.Close()
 			if uploadErr != nil {
-				c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-					Error:   "internal_error",
-					Message: fmt.Sprintf("Failed to save file %s", fileHeader.Filename),
+				utils.ErrorRespDetail(c, http.StatusInternalServerError, "file_save_failed", gin.H{
+					"filename": fileHeader.Filename,
 				})
 				return
 			}
@@ -155,10 +140,7 @@ func (h *Handler) SubmitInquiry(c *gin.Context) {
 
 	// Submit inquiry (saves to database and sends email)
 	if err := h.services.Inquiry.SubmitInquiry(c.Request.Context(), inquiry); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to submit inquiry",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "inquiry_create_failed")
 		return
 	}
 

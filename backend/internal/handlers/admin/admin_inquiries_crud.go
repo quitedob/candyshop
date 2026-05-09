@@ -53,12 +53,12 @@ type adminUpdateInquiryRequest struct {
 // AdminCreateInquiry creates a new inquiry.
 func (h *Handler) AdminCreateInquiry(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	var req adminCreateInquiryRequest
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -66,10 +66,7 @@ func (h *Handler) AdminCreateInquiry(c *gin.Context) {
 	if req.UserID != nil && strings.TrimSpace(*req.UserID) != "" {
 		trimmed := strings.TrimSpace(*req.UserID)
 		if _, err := h.services.User.GetByID(c.Request.Context(), trimmed); err != nil {
-			c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-				Error:   "not_found",
-				Message: "User not found",
-			})
+			utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
 			return
 		}
 		userID = &trimmed
@@ -106,10 +103,7 @@ func (h *Handler) AdminCreateInquiry(c *gin.Context) {
 	}
 
 	if err := h.services.Inquiry.CreateInquiry(c.Request.Context(), inquiry); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to create inquiry",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "inquiry_create_failed")
 		return
 	}
 
@@ -119,22 +113,19 @@ func (h *Handler) AdminCreateInquiry(c *gin.Context) {
 // AdminUpdateInquiry updates inquiry fields.
 func (h *Handler) AdminUpdateInquiry(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	inquiryID := c.Param("id")
 	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Inquiry not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
 
 	var req adminUpdateInquiryRequest
-	if !utils.BindJSONOrInvalidRequest(c, &req) {
+	if !utils.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -144,10 +135,7 @@ func (h *Handler) AdminUpdateInquiry(c *gin.Context) {
 		} else {
 			uid := strings.TrimSpace(*req.UserID)
 			if _, userErr := h.services.User.GetByID(c.Request.Context(), uid); userErr != nil {
-				c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-					Error:   "not_found",
-					Message: "User not found",
-				})
+				utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
 				return
 			}
 			inquiry.UserID = &uid
@@ -210,10 +198,7 @@ func (h *Handler) AdminUpdateInquiry(c *gin.Context) {
 
 	inquiry.UpdatedAt = time.Now()
 	if err := h.services.Inquiry.UpdateInquiry(c.Request.Context(), inquiry); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to update inquiry",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "inquiry_update_failed")
 		return
 	}
 
@@ -223,24 +208,18 @@ func (h *Handler) AdminUpdateInquiry(c *gin.Context) {
 // AdminDeleteInquiry deletes an inquiry.
 func (h *Handler) AdminDeleteInquiry(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	inquiryID := c.Param("id")
 	if _, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID); err != nil {
-		c.JSON(http.StatusNotFound, modelsProduct.ErrorResponse{
-			Error:   "not_found",
-			Message: "Inquiry not found",
-		})
+		utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
 
 	if err := h.services.Inquiry.DeleteInquiry(c.Request.Context(), inquiryID); err != nil {
-		c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-			Error:   "internal_error",
-			Message: "Failed to delete inquiry",
-		})
+		utils.ErrorResp(c, http.StatusInternalServerError, "inquiry_delete_failed")
 		return
 	}
 

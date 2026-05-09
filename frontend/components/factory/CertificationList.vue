@@ -115,7 +115,7 @@ const openVerify = (cert: Certification) => {
   background-color: white;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .cert-item:hover {
@@ -211,7 +211,7 @@ const openVerify = (cert: Certification) => {
   cursor: pointer;
   text-decoration: none;
   color: var(--color-text);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
   white-space: nowrap;
 }
 

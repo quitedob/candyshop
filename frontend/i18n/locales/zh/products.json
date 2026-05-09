@@ -2,6 +2,7 @@
   "product": {
     "price_from": "起",
     "price_per_unit": "/件",
+    "moq": "起订量",
     "categories_title": "浏览分类",
     "categories": {
       "gummy_candy": "软糖",
@@ -36,7 +37,25 @@
     "specifications": "规格参数",
     "packaging": "包装",
     "flavors": "口味",
+    "flavor_options": {
+      "fruit_mix": "混合水果",
+      "citrus": "柑橘",
+      "berry": "浆果",
+      "custom": "定制"
+    },
     "shapes": "形状",
+    "shape_options": {
+      "bear": "小熊",
+      "fruit": "水果",
+      "letter": "字母",
+      "custom": "定制"
+    },
+    "colors": "颜色",
+    "color_options": {
+      "natural": "自然色",
+      "vibrant": "鲜艳色",
+      "custom": "定制"
+    },
     "certifications": "认证",
     "shelf_life": "保质期",
     "storage": "储存条件",

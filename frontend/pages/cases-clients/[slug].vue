@@ -495,7 +495,7 @@ useSeo({
   box-shadow: var(--shadow-md);
   text-decoration: none;
   color: inherit;
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .related-card:hover {

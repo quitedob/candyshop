@@ -3,8 +3,10 @@ package order
 import (
 	modelsOrder "candypro/api/internal/models/order"
 	"context"
+	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // CartRepository handles cart item persistence.
@@ -59,41 +61,28 @@ func (r *CartRepository) Delete(ctx context.Context, id uint) error {
 	return r.db.WithContext(ctx).Delete(&modelsOrder.CartItem{}, id).Error
 }
 
-// UpsertItem atomically increments quantity if item exists, or creates it.
-// Uses FirstOrCreate + atomic UPDATE to prevent TOCTOU race conditions.
+// UpsertItem atomically inserts or updates a cart item.
+// Uses INSERT ... ON CONFLICT DO UPDATE to prevent all TOCTOU race conditions,
+// backed by a unique constraint on (user_id, product_id).
 func (r *CartRepository) UpsertItem(ctx context.Context, item *modelsOrder.CartItem) (*modelsOrder.CartItem, error) {
-	existing := &modelsOrder.CartItem{}
-	result := r.db.WithContext(ctx).
-		Where("user_id = ? AND product_id = ?", item.UserID, item.ProductID).
-		FirstOrCreate(existing, modelsOrder.CartItem{
-			UserID:         item.UserID,
-			ProductID:      item.ProductID,
-			ProductName:    item.ProductName,
-			Quantity:       item.Quantity,
-			UnitPrice:      item.UnitPrice,
-			Currency:       item.Currency,
-			Specifications: item.Specifications,
-		})
-	if result.Error != nil {
-		return nil, result.Error
+	item.UpdatedAt = time.Now()
+	err := r.db.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns: []clause.Column{{Name: "user_id"}, {Name: "product_id"}},
+			DoUpdates: clause.Assignments(map[string]interface{}{
+				"quantity":       gorm.Expr("cart_items.quantity + ?", item.Quantity),
+				"unit_price":     gorm.Expr("excluded.unit_price"),
+				"product_name":   gorm.Expr("excluded.product_name"),
+				"currency":       gorm.Expr("excluded.currency"),
+				"specifications": gorm.Expr("excluded.specifications"),
+				"updated_at":     gorm.Expr("excluded.updated_at"),
+			}),
+		}).
+		Create(item).Error
+	if err != nil {
+		return nil, err
 	}
-	// Record already existed — increment quantity atomically
-	if result.RowsAffected == 0 {
-		updates := map[string]interface{}{
-			"quantity": gorm.Expr("quantity + ?", item.Quantity),
-		}
-		if item.UnitPrice > 0 {
-			updates["unit_price"] = item.UnitPrice
-		}
-		if err := r.db.WithContext(ctx).Model(existing).Updates(updates).Error; err != nil {
-			return nil, err
-		}
-		// Reload to get updated values
-		if err := r.db.WithContext(ctx).First(existing, existing.ID).Error; err != nil {
-			return nil, err
-		}
-	}
-	return existing, nil
+	return item, nil
 }
 
 // ClearByUserID removes all cart items for a user.

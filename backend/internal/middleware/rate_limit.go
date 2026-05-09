@@ -1,10 +1,6 @@
 package middleware
 
 import (
-	modelsProduct "candypro/api/internal/models/product"
-)
-
-import (
 	"crypto/rand"
 	"encoding/hex"
 	"log"
@@ -15,6 +11,7 @@ import (
 	"time"
 
 	"candypro/api/internal/config"
+	"candypro/api/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -124,10 +121,7 @@ func RateLimit(cfg *config.SecurityConfig) (gin.HandlerFunc, *RateLimiter) {
 		c.Header("X-RateLimit-Remaining", strconv.Itoa(remaining))
 
 		if !allowed {
-			c.JSON(http.StatusTooManyRequests, modelsProduct.ErrorResponse{
-				Error:   "rate_limit_exceeded",
-				Message: "Too many requests. Please try again later.",
-			})
+			utils.ErrorResp(c, http.StatusTooManyRequests, "rate_limit_exceeded")
 			c.Abort()
 			return
 		}
@@ -144,10 +138,7 @@ func PublicAIRateLimit(limiter *RateLimiter, limitPerMinute int) gin.HandlerFunc
 		c.Header("X-Public-AI-RateLimit-Limit", strconv.Itoa(limitPerMinute))
 		c.Header("X-Public-AI-RateLimit-Remaining", strconv.Itoa(remaining))
 		if !allowed {
-			c.JSON(http.StatusTooManyRequests, modelsProduct.ErrorResponse{
-				Error:   "rate_limit_exceeded",
-				Message: "Too many AI requests from this IP. Please try again later.",
-			})
+			utils.ErrorResp(c, http.StatusTooManyRequests, "rate_limit_ai_exceeded")
 			c.Abort()
 			return
 		}
@@ -163,10 +154,7 @@ func PublicInquiryRateLimit(limiter *RateLimiter, limitPerMinute int) gin.Handle
 		c.Header("X-Public-Inquiry-RateLimit-Limit", strconv.Itoa(limitPerMinute))
 		c.Header("X-Public-Inquiry-RateLimit-Remaining", strconv.Itoa(remaining))
 		if !allowed {
-			c.JSON(http.StatusTooManyRequests, modelsProduct.ErrorResponse{
-				Error:   "rate_limit_exceeded",
-				Message: "Too many inquiry submissions from this IP. Please try again later.",
-			})
+			utils.ErrorResp(c, http.StatusTooManyRequests, "rate_limit_inquiry_exceeded")
 			c.Abort()
 			return
 		}
@@ -178,10 +166,7 @@ func PublicInquiryRateLimit(limiter *RateLimiter, limitPerMinute int) gin.Handle
 func DisablePublicAIRoutes(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if cfg != nil && cfg.AI.PublicRoutesDisabled {
-			c.JSON(http.StatusServiceUnavailable, modelsProduct.ErrorResponse{
-				Error:   "service_unavailable",
-				Message: "Public AI routes are disabled by configuration",
-			})
+			utils.ErrorResp(c, http.StatusServiceUnavailable, "service_unavailable")
 			c.Abort()
 			return
 		}
@@ -240,10 +225,7 @@ func Recovery() gin.HandlerFunc {
 				buf := make([]byte, 4096)
 				n := runtime.Stack(buf, false)
 				log.Printf("PANIC recovered: %v\n%s", err, buf[:n])
-				c.JSON(http.StatusInternalServerError, modelsProduct.ErrorResponse{
-					Error:   "internal_error",
-					Message: "An unexpected error occurred",
-				})
+				utils.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 				c.Abort()
 			}
 		}()

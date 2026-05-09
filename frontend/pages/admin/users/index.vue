@@ -90,7 +90,7 @@
                 </p>
               </div>
               <div>
-                <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" :aria-label="t('common.pagination.nav_label')">
                   <button @click="prevPage" :disabled="page <= 1" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
                     <span class="sr-only">{{ t('common.previous') }}</span>
                     <Icon name="heroicons:chevron-left" class="h-5 w-5" />
@@ -109,46 +109,46 @@
 
     <div v-if="showCreateModal" class="fixed inset-0 z-10 overflow-y-auto" role="dialog" aria-modal="true">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="closeCreateModal"></div>
+        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closeCreateModal" :aria-label="t('common.close')"></button>
         <span class="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
-        <div class="inline-block w-full transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left align-bottom shadow-xl transition-all sm:my-8 sm:max-w-2xl sm:p-6 sm:align-middle">
+        <div class="inline-block w-full transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left align-bottom shadow-xl sm:my-8 sm:max-w-2xl sm:p-6 sm:align-middle">
           <h3 class="text-lg font-medium leading-6 text-gray-900">{{ t('admin.users.create_user') }}</h3>
           <form class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2" @submit.prevent="createUser">
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.users.first_name') }}</label>
-              <input v-model="createForm.firstName" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="user-firstName" class="block text-sm font-medium text-gray-700">{{ t('admin.users.first_name') }}</label>
+              <input id="user-firstName" v-model="createForm.firstName" name="firstName" autocomplete="given-name" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.users.last_name') }}</label>
-              <input v-model="createForm.lastName" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="user-lastName" class="block text-sm font-medium text-gray-700">{{ t('admin.users.last_name') }}</label>
+              <input id="user-lastName" v-model="createForm.lastName" name="lastName" autocomplete="family-name" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div class="sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.users.email') }}</label>
-              <input v-model="createForm.email" type="email" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="user-email" class="block text-sm font-medium text-gray-700">{{ t('admin.users.email') }}</label>
+              <input id="user-email" v-model="createForm.email" name="email" type="email" autocomplete="email" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div class="sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.users.password') }}</label>
-              <input v-model="createForm.password" type="password" required minlength="8" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="user-password" class="block text-sm font-medium text-gray-700">{{ t('admin.users.password') }}</label>
+              <input id="user-password" v-model="createForm.password" name="password" type="password" autocomplete="new-password" required minlength="8" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.users.company') }}</label>
-              <input v-model="createForm.company" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="user-company" class="block text-sm font-medium text-gray-700">{{ t('admin.users.company') }}</label>
+              <input id="user-company" v-model="createForm.company" name="company" autocomplete="organization" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.users.phone') }}</label>
-              <input v-model="createForm.phone" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="user-phone" class="block text-sm font-medium text-gray-700">{{ t('admin.users.phone') }}</label>
+              <input id="user-phone" v-model="createForm.phone" name="phone" autocomplete="tel" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.users.role') }}</label>
-              <select v-model="createForm.roleName" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <label for="user-role" class="block text-sm font-medium text-gray-700">{{ t('admin.users.role') }}</label>
+              <select id="user-role" v-model="createForm.roleName" name="roleName" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
                 <option value="customer">{{ t('admin.users.role_customer') }}</option>
                 <option value="admin">{{ t('admin.users.role_admin') }}</option>
                 <option value="superadmin">{{ t('admin.users.role_superadmin') }}</option>
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.users.status') }}</label>
-              <select v-model="createForm.status" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <label for="user-status" class="block text-sm font-medium text-gray-700">{{ t('admin.users.status') }}</label>
+              <select id="user-status" v-model="createForm.status" name="status" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
                 <option value="active">{{ t('admin.users.status_active') }}</option>
                 <option value="inactive">{{ t('admin.users.status_inactive') }}</option>
                 <option value="suspended">{{ t('admin.users.status_suspended') }}</option>

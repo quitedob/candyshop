@@ -250,5 +250,16 @@ func deductFEFOFromBatches(tx *gorm.DB, productID string, qty int, reason, refID
 	if res.RowsAffected == 0 {
 		return nil, fmt.Errorf("insufficient aggregate stock_quantity for product %s", productID)
 	}
+
+	// Also update warehouse_stock for consistency (mirror legacy path behavior)
+	nWh, whErr := countWarehouseStockRows(tx, productID)
+	if whErr == nil && nWh > 0 {
+		if wid, wErr := resolveDefaultWarehouseID(tx); wErr == nil {
+			_ = tx.Model(&modelsProduct.WarehouseStock{}).
+				Where("warehouse_id = ? AND product_id = ? AND quantity >= ?", wid, productID, qty).
+				Update("quantity", gorm.Expr("quantity - ?", qty))
+		}
+	}
+
 	return records, nil
 }

@@ -174,7 +174,7 @@ useSeo({
   font-weight: 500;
   color: var(--color-text);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .faq-tab:hover {
@@ -200,7 +200,7 @@ useSeo({
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .faq-item--open {
@@ -251,7 +251,7 @@ useSeo({
 /* Collapse transition */
 .collapse-enter-active,
 .collapse-leave-active {
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
   overflow: hidden;
 }
 

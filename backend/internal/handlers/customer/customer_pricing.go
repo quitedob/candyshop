@@ -11,30 +11,30 @@ import (
 // CustomerGetMyPriceList returns the price list assigned to the current user's company.
 func (h *Handler) CustomerGetMyPriceList(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResponse(c, http.StatusUnauthorized, "unauthorized", "User not identified")
+		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "User not found")
+		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 
 	if user.CompanyID == nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "No company profile found")
+		utils.ErrorResp(c, http.StatusNotFound, "no_company_profile")
 		return
 	}
 
 	company, err := h.services.Company.GetCompany(c.Request.Context(), *user.CompanyID)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Company not found")
+		utils.ErrorResp(c, http.StatusNotFound, "company_not_found")
 		return
 	}
 
@@ -45,7 +45,7 @@ func (h *Handler) CustomerGetMyPriceList(c *gin.Context) {
 
 	priceList, err := h.services.Price.GetPriceList(c.Request.Context(), *company.PriceListID)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "Price list not found")
+		utils.ErrorResp(c, http.StatusNotFound, "price_list_not_found")
 		return
 	}
 
@@ -55,13 +55,13 @@ func (h *Handler) CustomerGetMyPriceList(c *gin.Context) {
 // CustomerGetProductPrice returns the applicable price for a product given the user's price list.
 func (h *Handler) CustomerGetProductPrice(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		utils.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResponse(c, http.StatusUnauthorized, "unauthorized", "User not identified")
+		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
@@ -74,7 +74,7 @@ func (h *Handler) CustomerGetProductPrice(c *gin.Context) {
 
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "not_found", "User not found")
+		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 

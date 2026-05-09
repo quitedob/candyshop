@@ -84,83 +84,83 @@
 
     <div v-if="showModal" class="fixed inset-0 z-10 overflow-y-auto" role="dialog" aria-modal="true">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="closeModal"></div>
+        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closeModal" :aria-label="t('common.close')"></button>
         <span class="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
-        <div class="inline-block w-full transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left align-bottom shadow-xl transition-all sm:my-8 sm:max-w-3xl sm:p-6 sm:align-middle">
+        <div class="inline-block w-full transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left align-bottom shadow-xl sm:my-8 sm:max-w-3xl sm:p-6 sm:align-middle">
           <h3 class="text-lg font-medium leading-6 text-gray-900">{{ editingId ? t('admin.products.edit_product') : t('admin.products.create_product') }}</h3>
 
           <form class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2" @submit.prevent="saveProduct">
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.name') }}</label>
-              <input v-model="form.name" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="product-name" class="block text-sm font-medium text-gray-700">{{ t('admin.products.name') }}</label>
+              <input id="product-name" v-model="form.name" name="name" autocomplete="off" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.slug') }}</label>
-              <input v-model="form.slug" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="product-slug" class="block text-sm font-medium text-gray-700">{{ t('admin.products.slug') }}</label>
+              <input id="product-slug" v-model="form.slug" name="slug" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.category') }}</label>
-              <input v-model="form.category" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="product-category" class="block text-sm font-medium text-gray-700">{{ t('admin.products.category') }}</label>
+              <input id="product-category" v-model="form.category" name="category" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.category_slug') }}</label>
-              <input v-model="form.categorySlug" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="product-categorySlug" class="block text-sm font-medium text-gray-700">{{ t('admin.products.category_slug') }}</label>
+              <input id="product-categorySlug" v-model="form.categorySlug" name="categorySlug" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.moq') }}</label>
-              <input v-model.number="form.moq" type="number" min="0" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="product-moq" class="block text-sm font-medium text-gray-700">{{ t('admin.products.moq') }}</label>
+              <input id="product-moq" v-model.number="form.moq" name="moq" type="number" min="0" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.lead_time') }}</label>
-              <input v-model="form.leadTime" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="product-leadTime" class="block text-sm font-medium text-gray-700">{{ t('admin.products.lead_time') }}</label>
+              <input id="product-leadTime" v-model="form.leadTime" name="leadTime" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.stock_quantity') }}</label>
-              <input v-model.number="form.stockQuantity" type="number" min="0" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="product-stockQuantity" class="block text-sm font-medium text-gray-700">{{ t('admin.products.stock_quantity') }}</label>
+              <input id="product-stockQuantity" v-model.number="form.stockQuantity" name="stockQuantity" type="number" min="0" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.status') }}</label>
-              <select v-model="form.status" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-                <option value="active">active</option>
-                <option value="draft">draft</option>
-                <option value="inactive">inactive</option>
+              <label for="product-status" class="block text-sm font-medium text-gray-700">{{ t('admin.products.status') }}</label>
+              <select id="product-status" v-model="form.status" name="status" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <option value="active">{{ enumLabel('product_status', 'active') }}</option>
+                <option value="draft">{{ enumLabel('product_status', 'draft') }}</option>
+                <option value="inactive">{{ enumLabel('product_status', 'inactive') }}</option>
               </select>
             </div>
             <div class="flex items-center gap-4 pt-7">
               <label class="inline-flex items-center">
-                <input v-model="form.oemAvailable" type="checkbox" class="rounded border-gray-300" />
+                <input id="product-oemAvailable" v-model="form.oemAvailable" name="oemAvailable" type="checkbox" class="rounded border-gray-300" />
                 <span class="ml-2 text-sm text-gray-700">{{ t('admin.products.oem') }}</span>
               </label>
               <label class="inline-flex items-center">
-                <input v-model="form.halalCertified" type="checkbox" class="rounded border-gray-300" />
+                <input id="product-halalCertified" v-model="form.halalCertified" name="halalCertified" type="checkbox" class="rounded border-gray-300" />
                 <span class="ml-2 text-sm text-gray-700">{{ t('admin.products.halal') }}</span>
               </label>
               <label class="inline-flex items-center">
-                <input v-model="form.featured" type="checkbox" class="rounded border-gray-300" />
+                <input id="product-featured" v-model="form.featured" name="featured" type="checkbox" class="rounded border-gray-300" />
                 <span class="ml-2 text-sm text-gray-700">{{ t('admin.products.featured') }}</span>
               </label>
             </div>
             <div class="sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.summary') }}</label>
-              <textarea v-model="form.summary" rows="2" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea>
+              <label for="product-summary" class="block text-sm font-medium text-gray-700">{{ t('admin.products.summary') }}</label>
+              <textarea id="product-summary" v-model="form.summary" name="summary" rows="2" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea>
             </div>
             <div class="sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.description_label') }}</label>
-              <textarea v-model="form.description" rows="3" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea>
+              <label for="product-description" class="block text-sm font-medium text-gray-700">{{ t('admin.products.description_label') }}</label>
+              <textarea id="product-description" v-model="form.description" name="description" rows="3" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea>
             </div>
             <div class="sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.thumbnail') }}</label>
+              <label for="product-thumbnail" class="block text-sm font-medium text-gray-700">{{ t('admin.products.thumbnail') }}</label>
               <div class="mt-1 flex items-center gap-2">
-                <input v-model="form.thumbnail" class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                <input id="product-thumbnail" v-model="form.thumbnail" name="thumbnail" autocomplete="off" class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
                 <button type="button" class="rounded-md bg-orange-50 px-3 py-2 text-xs font-medium text-orange-600 hover:bg-orange-500" @click="triggerUpload('thumbnail')">
                   {{ t('admin.products.upload_image') }}
                 </button>
               </div>
             </div>
             <div class="sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.images') }}</label>
+              <label for="product-images" class="block text-sm font-medium text-gray-700">{{ t('admin.products.images') }}</label>
               <div class="mt-1 flex items-center gap-2">
-                <input v-model="form.imagesInput" class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                <input id="product-images" v-model="form.imagesInput" name="images" autocomplete="off" class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
                 <button type="button" class="rounded-md bg-orange-50 px-3 py-2 text-xs font-medium text-orange-600 hover:text-orange-500" @click="triggerUpload('images')">
                   {{ t('admin.products.upload_images') }}
                 </button>
@@ -172,32 +172,32 @@
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.flavors') }}</label>
-              <input v-model="form.flavorsInput" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="product-flavors" class="block text-sm font-medium text-gray-700">{{ t('admin.products.flavors') }}</label>
+              <input id="product-flavors" v-model="form.flavorsInput" name="flavors" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.shapes') }}</label>
-              <input v-model="form.shapesInput" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="product-shapes" class="block text-sm font-medium text-gray-700">{{ t('admin.products.shapes') }}</label>
+              <input id="product-shapes" v-model="form.shapesInput" name="shapes" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div class="sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.certifications') }}</label>
-              <input v-model="form.certificationsInput" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="product-certifications" class="block text-sm font-medium text-gray-700">{{ t('admin.products.certifications') }}</label>
+              <input id="product-certifications" v-model="form.certificationsInput" name="certifications" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.ingredients') }}</label>
-              <textarea v-model="form.ingredients" rows="2" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea>
+              <label for="product-ingredients" class="block text-sm font-medium text-gray-700">{{ t('admin.products.ingredients') }}</label>
+              <textarea id="product-ingredients" v-model="form.ingredients" name="ingredients" rows="2" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.allergens') }}</label>
-              <textarea v-model="form.allergens" rows="2" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea>
+              <label for="product-allergens" class="block text-sm font-medium text-gray-700">{{ t('admin.products.allergens') }}</label>
+              <textarea id="product-allergens" v-model="form.allergens" name="allergens" rows="2" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.shelf_life') }}</label>
-              <input v-model="form.shelfLife" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="product-shelfLife" class="block text-sm font-medium text-gray-700">{{ t('admin.products.shelf_life') }}</label>
+              <input id="product-shelfLife" v-model="form.shelfLife" name="shelfLife" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('admin.products.storage') }}</label>
-              <input v-model="form.storage" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <label for="product-storage" class="block text-sm font-medium text-gray-700">{{ t('admin.products.storage') }}</label>
+              <input id="product-storage" v-model="form.storage" name="storage" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
 
             <div v-if="formError" class="sm:col-span-2 text-sm text-red-600">{{ formError }}</div>
@@ -230,6 +230,7 @@ definePageMeta({
 
 const api = useApi()
 const { t } = useI18n()
+const { enumLabel } = useDisplay()
 
 const products = ref<any[]>([])
 const pagination = ref<any>(null)
@@ -539,7 +540,7 @@ onMounted(fetchProducts)
   background: var(--color-bg);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .form-input:focus {
@@ -556,7 +557,7 @@ onMounted(fetchProducts)
   background: var(--color-bg);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
   resize: vertical;
 }
 

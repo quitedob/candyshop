@@ -9,9 +9,9 @@
 
     <div class="mt-6 flex flex-wrap items-center gap-4">
       <div class="flex-1 min-w-[200px]">
-        <input v-model="searchInput" type="text" :placeholder="t('admin.companies.search_placeholder')" class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        <input id="companies-search" v-model="searchInput" name="search" type="text" autocomplete="off" :placeholder="t('admin.companies.search_placeholder')" class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
       </div>
-      <select v-model="statusFilter" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
+      <select id="companies-statusFilter" name="statusFilter" v-model="statusFilter" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
         <option value="">{{ t('admin.companies.all_statuses') }}</option>
         <option value="pending">{{ t('admin.companies.pending') }}</option>
         <option value="verified">{{ t('admin.companies.verified') }}</option>
@@ -53,10 +53,10 @@
                 {{ enumLabel('company_status', company.status) }}
               </span>
             </td>
-            <td class="px-3 py-4 text-sm text-gray-500">{{ company.creditLimit ? `${cur(company.currency)} ${company.creditLimit.toLocaleString()}` : cell(null) }}</td>
+            <td class="px-3 py-4 text-sm text-gray-500">{{ company.creditLimit ? `${cur(company.currency)} ${formatNumber(company.creditLimit)}` : cell(null) }}</td>
             <td class="px-3 py-4 text-sm text-gray-500">{{ cell(company.paymentTerms) }}</td>
             <td class="px-3 py-4 text-sm text-gray-500">{{ cell(company.priceListName) }}</td>
-            <td class="px-3 py-4 text-sm text-gray-500">{{ company.verifiedAt ? new Date(company.verifiedAt).toLocaleDateString() : cell(null) }}</td>
+            <td class="px-3 py-4 text-sm text-gray-500">{{ formatDate(company.verifiedAt) }}</td>
             <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
               <NuxtLink :to="localePath(`/admin/companies/${company.id}`)" class="text-orange-600 hover:text-orange-900 mr-3">{{ t('admin.companies.view') }}</NuxtLink>
               <button v-if="company.status === 'pending'" type="button" class="text-green-600 hover:text-green-900 mr-3" @click="verifyCompany(company.id, 'verified')">{{ t('admin.companies.verify') }}</button>
@@ -94,7 +94,7 @@ definePageMeta({
 const { token } = useAuth()
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { currencyOrDefault: cur, cell, enumLabel } = useDisplay()
+const { currencyOrDefault: cur, cell, enumLabel, formatNumber, formatDate } = useDisplay()
 const config = useRuntimeConfig()
 const baseURL = config.public.apiBase || '/api/v1'
 

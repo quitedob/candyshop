@@ -7,7 +7,7 @@
 
     <div class="container section">
       <h1 class="text-4xl font-bold mb-4">{{ t('legal.privacy_title') }}</h1>
-      <p class="text-gray-500 mb-8">{{ t('legal.last_updated', { date: new Date().toLocaleDateString() }) }}</p>
+      <p class="text-gray-500 mb-8">{{ t('legal.last_updated', { date: formatDate(new Date().toISOString()) }) }}</p>
 
       <div class="legal-content prose max-w-none">
         <h2>{{ t('legal.privacy.intro_title') }}</h2>
@@ -36,6 +36,7 @@
 import { useI18n } from '#i18n'
 
 const { t } = useI18n()
+const { formatDate } = useDisplay()
 
 useSeo({
   title: `Privacy Policy | ${t('seo.default_title')}`
