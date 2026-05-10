@@ -1,7 +1,8 @@
 package admin
 
 import (
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/pagination"
+	"candypro/api/internal/pkg/response"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,20 +15,20 @@ import (
 // @Router /admin/users [get]
 func (h *Handler) AdminGetUsers(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
-	page, limit := utils.ParsePagination(c, 20, 100)
+	page, limit := pagination.ParsePagination(c, 20, 100)
 	users, total, err := h.services.User.GetUsers(c.Request.Context(), page, limit)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "user_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "user_fetch_failed")
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":       users,
-		"pagination": utils.BuildPagination(total, page, limit),
+		"pagination": pagination.BuildPagination(total, page, limit),
 	})
 }
 
@@ -39,14 +40,14 @@ func (h *Handler) AdminGetUsers(c *gin.Context) {
 // @Router /admin/users/{id} [get]
 func (h *Handler) AdminGetUser(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	id := c.Param("id")
 	user, err := h.services.User.GetByID(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 
@@ -62,7 +63,7 @@ func (h *Handler) AdminGetUser(c *gin.Context) {
 // @Router /admin/users/{id}/status [put]
 func (h *Handler) AdminUpdateUserStatus(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -70,19 +71,19 @@ func (h *Handler) AdminUpdateUserStatus(c *gin.Context) {
 	var req struct {
 		Status string `json:"status" binding:"required"`
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	user, err := h.services.User.GetByID(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 
 	user.Status = req.Status
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "user_status_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "user_status_update_failed")
 		return
 	}
 
@@ -98,7 +99,7 @@ func (h *Handler) AdminUpdateUserStatus(c *gin.Context) {
 // @Router /admin/users/{id} [put]
 func (h *Handler) AdminUpdateUser(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -110,13 +111,13 @@ func (h *Handler) AdminUpdateUser(c *gin.Context) {
 		Phone     string `json:"phone"`
 		RoleID    string `json:"roleId"`
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	user, err := h.services.User.GetByID(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 
@@ -137,7 +138,7 @@ func (h *Handler) AdminUpdateUser(c *gin.Context) {
 	}
 
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "user_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "user_update_failed")
 		return
 	}
 

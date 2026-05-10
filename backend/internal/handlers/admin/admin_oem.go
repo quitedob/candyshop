@@ -2,7 +2,8 @@ package admin
 
 import (
 	modelsProduct "candypro/api/internal/models/product"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/pagination"
+	"candypro/api/internal/pkg/response"
 	"net/http"
 	"strings"
 	"time"
@@ -12,13 +13,13 @@ import (
 
 func (h *Handler) AdminGetOEMProjects(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
-	page, limit := utils.ParsePagination(c, 20, 100)
+	page, limit := pagination.ParsePagination(c, 20, 100)
 	projects, total, err := h.services.Project.GetProjects(c.Request.Context(), page, limit)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "oem_project_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "oem_project_fetch_failed")
 		return
 	}
 	totalPages := int(total) / limit
@@ -35,13 +36,13 @@ func (h *Handler) AdminGetOEMProjects(c *gin.Context) {
 
 func (h *Handler) AdminGetOEMProject(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	id := c.Param("id")
 	project, err := h.services.Project.GetProject(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "oem_project_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "oem_project_not_found")
 		return
 	}
 	c.JSON(http.StatusOK, project)
@@ -58,17 +59,17 @@ type adminUpdateOEMProjectRequest struct {
 
 func (h *Handler) AdminUpdateOEMProject(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	id := c.Param("id")
 	project, err := h.services.Project.GetProject(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "oem_project_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "oem_project_not_found")
 		return
 	}
 	var req adminUpdateOEMProjectRequest
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 	if req.ProductName != nil {
@@ -96,7 +97,7 @@ func (h *Handler) AdminUpdateOEMProject(c *gin.Context) {
 	}
 	project.UpdatedAt = time.Now()
 	if err := h.services.Project.UpdateProject(c.Request.Context(), project); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "oem_project_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "oem_project_update_failed")
 		return
 	}
 	c.JSON(http.StatusOK, project)
@@ -104,18 +105,18 @@ func (h *Handler) AdminUpdateOEMProject(c *gin.Context) {
 
 func (h *Handler) AdminUpdateOEMStatus(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	id := c.Param("id")
 	var req struct {
 		Status string `json:"status" binding:"required"`
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 	if err := h.services.Project.UpdateProjectStatus(c.Request.Context(), id, strings.TrimSpace(req.Status)); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "oem_status_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "oem_status_update_failed")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"error": "success", "message": "OEM project status updated"})

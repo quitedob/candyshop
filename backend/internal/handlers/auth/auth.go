@@ -9,10 +9,14 @@ import (
 	"strings"
 	"time"
 
+	modelsAuth "candypro/api/internal/models/auth"
 	modelsCommon "candypro/api/internal/models/common"
 	modelsUser "candypro/api/internal/models/user"
-	"candypro/api/internal/roles"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/crypto"
+	"candypro/api/internal/pkg/i18n"
+	"candypro/api/internal/pkg/jwtutil"
+	"candypro/api/internal/pkg/password"
+	"candypro/api/internal/pkg/response"
 	emailsvc "candypro/api/internal/services/content"
 
 	"github.com/gin-gonic/gin"
@@ -29,7 +33,7 @@ import (
 // @Router /auth/register [post]
 func (h *Handler) Register(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -41,23 +45,23 @@ func (h *Handler) Register(c *gin.Context) {
 		CompanyName string `json:"companyName"`
 	}
 
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	// H9: Enforce password strength beyond min=8
-	if msg := utils.ValidatePasswordStrength(req.Password); msg != "" {
-		utils.InvalidResp(c, "invalid_request")
+	if msg := password.ValidatePasswordStrength(req.Password); msg != "" {
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	exists, err := h.services.User.EmailExists(c.Request.Context(), req.Email)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "registration_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "registration_failed")
 		return
 	}
 	if exists {
-		utils.ErrorResp(c, http.StatusConflict, "email_exists")
+		response.ErrorResp(c, http.StatusConflict, "email_exists")
 		return
 	}
 
@@ -71,18 +75,18 @@ func (h *Handler) Register(c *gin.Context) {
 	}
 
 	if err := h.services.Auth.Register(c.Request.Context(), user); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "registration_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "registration_failed")
 		return
 	}
 
-	verifyToken, err := utils.GenerateJWT(jwt.MapClaims{
+	verifyToken, err := jwtutil.GenerateJWT(jwt.MapClaims{
 		"sub":     user.ID,
 		"purpose": "verify_email",
 		"iat":     time.Now().Unix(),
 		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 	}, h.cfg.JWT.Secret)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "registration_token_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "registration_token_failed")
 		return
 	}
 
@@ -118,7 +122,7 @@ func (h *Handler) Register(c *gin.Context) {
 // @Router /auth/login [post]
 func (h *Handler) Login(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -127,7 +131,7 @@ func (h *Handler) Login(c *gin.Context) {
 		Password string `json:"password" binding:"required"`
 	}
 
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -135,7 +139,7 @@ func (h *Handler) Login(c *gin.Context) {
 	if h.loginTracker != nil {
 		if locked, retryAfter := h.loginTracker.IsLocked(req.Email); locked {
 			c.Header("Retry-After", strconv.Itoa(retryAfter))
-			utils.ErrorResp(c, http.StatusTooManyRequests, "login_rate_limited")
+			response.ErrorResp(c, http.StatusTooManyRequests, "login_rate_limited")
 			return
 		}
 	}
@@ -146,32 +150,32 @@ func (h *Handler) Login(c *gin.Context) {
 		if h.loginTracker != nil {
 			h.loginTracker.RecordFailure(req.Email)
 		}
-		utils.ErrorResp(c, http.StatusUnauthorized, "invalid_credentials")
+		response.ErrorResp(c, http.StatusUnauthorized, "invalid_credentials")
 		return
 	}
 
 	if user.Status == "suspended" || user.Status == "deleted" {
 		c.JSON(http.StatusForbidden, modelsCommon.ErrorResponse{
 			Error:   "account_status",
-			Message: utils.TWithVars(c, "errors.account_status", map[string]string{"status": user.Status}),
+			Message: i18n.TWithVars(c, "errors.account_status", map[string]string{"status": user.Status}),
 		})
 		return
 	}
 
 	// For safety: initialize user Role if nil
 	if user.Role == nil {
-		user.Role = &modelsUser.RoleSnapshot{Name: roles.User} // Fallback role if missing
+		user.Role = &modelsUser.RoleSnapshot{Name: modelsAuth.User} // Fallback role if missing
 	}
 
 	accessToken, err := h.services.JWT.GenerateAccessToken(user)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "token_generation_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "token_generation_failed")
 		return
 	}
 
 	refreshToken, err := h.services.JWT.GenerateRefreshToken(c.Request.Context(), user, c.ClientIP(), c.Request.UserAgent())
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "refresh_token_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "refresh_token_failed")
 		return
 	}
 
@@ -214,7 +218,7 @@ func (h *Handler) Login(c *gin.Context) {
 // @Router /auth/refresh [post]
 func (h *Handler) RefreshToken(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -222,7 +226,7 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 		RefreshToken string `json:"refresh_token" binding:"required"`
 	}
 
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -237,7 +241,7 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "user_retrieve_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "user_retrieve_failed")
 		return
 	}
 
@@ -245,18 +249,18 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 	if user.Status == "suspended" || user.Status == "deleted" {
 		c.JSON(http.StatusForbidden, modelsCommon.ErrorResponse{
 			Error:   "account_status",
-			Message: utils.TWithVars(c, "errors.account_status", map[string]string{"status": user.Status}),
+			Message: i18n.TWithVars(c, "errors.account_status", map[string]string{"status": user.Status}),
 		})
 		return
 	}
 
 	if user.Role == nil {
-		user.Role = &modelsUser.RoleSnapshot{Name: roles.User}
+		user.Role = &modelsUser.RoleSnapshot{Name: modelsAuth.User}
 	}
 
 	accessToken, err := h.services.JWT.GenerateAccessToken(user)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "access_token_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "access_token_failed")
 		return
 	}
 
@@ -288,7 +292,7 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 // @Router /auth/logout [post]
 func (h *Handler) Logout(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -314,7 +318,7 @@ func (h *Handler) Logout(c *gin.Context) {
 // @Router /auth/forgot-password [post]
 func (h *Handler) ForgotPassword(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -323,33 +327,33 @@ func (h *Handler) ForgotPassword(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.ErrorResp(c, http.StatusBadRequest, "invalid_email")
+		response.ErrorResp(c, http.StatusBadRequest, "invalid_email")
 		return
 	}
 
 	user, err := h.services.User.GetByEmail(c.Request.Context(), req.Email)
 	if err != nil {
 		// Do not reveal if email exists or not
-		c.JSON(http.StatusOK, gin.H{"message": utils.T(c, "errors.forgot_password_email_sent")})
+		c.JSON(http.StatusOK, gin.H{"message": i18n.T(c, "errors.forgot_password_email_sent")})
 		return
 	}
 
 	// SEC-14: Use 256-bit token (32 chars) instead of 64-bit GenerateID for security tokens
-	token := utils.GenerateRandomString(32)
+	token := crypto.GenerateRandomString(32)
 	expires := time.Now().Add(1 * time.Hour)
 
 	// C6: Store hashed token — never store plaintext reset tokens
-	tokenHash := utils.HashResetToken(token)
+	tokenHash := crypto.HashResetToken(token)
 	user.ResetToken = &tokenHash
 	user.ResetTokenExpiresAt = &expires
 
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "request_processing_error")
+		response.ErrorResp(c, http.StatusInternalServerError, "request_processing_error")
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": utils.T(c, "errors.forgot_password_email_sent"),
+		"message": i18n.T(c, "errors.forgot_password_email_sent"),
 	})
 }
 
@@ -361,7 +365,7 @@ func (h *Handler) ForgotPassword(c *gin.Context) {
 // @Router /auth/reset-password [post]
 func (h *Handler) ResetPassword(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -370,32 +374,32 @@ func (h *Handler) ResetPassword(c *gin.Context) {
 		NewPassword string `json:"newPassword" binding:"required,min=8"`
 	}
 
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	// H9: Enforce password strength on reset
-	if msg := utils.ValidatePasswordStrength(req.NewPassword); msg != "" {
-		utils.InvalidResp(c, "invalid_request")
+	if msg := password.ValidatePasswordStrength(req.NewPassword); msg != "" {
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	// C6: Hash the token before querying — tokens are stored hashed
-	tokenHash := utils.HashResetToken(req.Token)
+	tokenHash := crypto.HashResetToken(req.Token)
 	user, err := h.services.User.GetByResetToken(c.Request.Context(), tokenHash)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusBadRequest, "reset_token_invalid")
+		response.ErrorResp(c, http.StatusBadRequest, "reset_token_invalid")
 		return
 	}
 
 	if user.ResetTokenExpiresAt == nil || user.ResetTokenExpiresAt.Before(time.Now()) {
-		utils.ErrorResp(c, http.StatusBadRequest, "reset_token_expired")
+		response.ErrorResp(c, http.StatusBadRequest, "reset_token_expired")
 		return
 	}
 
-	hash, err := utils.HashPassword(req.NewPassword)
+	hash, err := password.HashPassword(req.NewPassword)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "password_hash_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "password_hash_failed")
 		return
 	}
 
@@ -404,7 +408,7 @@ func (h *Handler) ResetPassword(c *gin.Context) {
 	user.ResetTokenExpiresAt = nil
 
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "password_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "password_update_failed")
 		return
 	}
 
@@ -430,7 +434,7 @@ func authContextUserID(c *gin.Context) (string, bool) {
 // @Router /auth/verify-email [post]
 func (h *Handler) VerifyEmail(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -440,29 +444,29 @@ func (h *Handler) VerifyEmail(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.ErrorResp(c, http.StatusBadRequest, "token_required")
+		response.ErrorResp(c, http.StatusBadRequest, "token_required")
 		return
 	}
 
-	claims, err := utils.ValidateJWT(req.Token, h.cfg.JWT.Secret)
+	claims, err := jwtutil.ValidateJWT(req.Token, h.cfg.JWT.Secret)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusBadRequest, "verification_token_invalid")
+		response.ErrorResp(c, http.StatusBadRequest, "verification_token_invalid")
 		return
 	}
 	purpose, ok := claims["purpose"].(string)
 	if !ok || purpose != "verify_email" {
-		utils.ErrorResp(c, http.StatusBadRequest, "token_purpose_mismatch")
+		response.ErrorResp(c, http.StatusBadRequest, "token_purpose_mismatch")
 		return
 	}
 	userID, ok := claims["sub"].(string)
 	if !ok || strings.TrimSpace(userID) == "" {
-		utils.ErrorResp(c, http.StatusBadRequest, "verification_subject_invalid")
+		response.ErrorResp(c, http.StatusBadRequest, "verification_subject_invalid")
 		return
 	}
 
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 
@@ -471,12 +475,12 @@ func (h *Handler) VerifyEmail(c *gin.Context) {
 	user.EmailVerifiedAt = &now
 	user.Status = "active"
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "verification_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "verification_failed")
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": utils.T(c, "errors.verification_success_redirect"),
+		"message": i18n.T(c, "errors.verification_success_redirect"),
 	})
 }
 
@@ -487,23 +491,23 @@ func (h *Handler) VerifyEmail(c *gin.Context) {
 // @Router /auth/me [get]
 func (h *Handler) Me(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := authContextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "invalid_user_identity")
+		response.ErrorResp(c, http.StatusUnauthorized, "invalid_user_identity")
 		return
 	}
 
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 
-	role := roles.User
+	role := modelsAuth.User
 	if user.Role != nil && user.Role.Name != "" {
 		role = user.Role.Name
 	}
@@ -529,13 +533,13 @@ func (h *Handler) Me(c *gin.Context) {
 // @Router /auth/profile [put]
 func (h *Handler) UpdateProfile(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := authContextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "invalid_user_identity")
+		response.ErrorResp(c, http.StatusUnauthorized, "invalid_user_identity")
 		return
 	}
 
@@ -545,13 +549,13 @@ func (h *Handler) UpdateProfile(c *gin.Context) {
 		Company   string `json:"company"`
 		Phone     string `json:"phone"`
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 
@@ -561,7 +565,7 @@ func (h *Handler) UpdateProfile(c *gin.Context) {
 	user.Phone = req.Phone
 
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "user_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "user_update_failed")
 		return
 	}
 
@@ -578,13 +582,13 @@ func (h *Handler) UpdateProfile(c *gin.Context) {
 // @Router /auth/change-password [put]
 func (h *Handler) ChangePassword(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := authContextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "invalid_user_identity")
+		response.ErrorResp(c, http.StatusUnauthorized, "invalid_user_identity")
 		return
 	}
 
@@ -592,30 +596,30 @@ func (h *Handler) ChangePassword(c *gin.Context) {
 		CurrentPassword string `json:"currentPassword" binding:"required"`
 		NewPassword     string `json:"newPassword" binding:"required,min=8"`
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	// H9: Enforce password strength on new password
-	if msg := utils.ValidatePasswordStrength(req.NewPassword); msg != "" {
-		utils.InvalidResp(c, "invalid_request")
+	if msg := password.ValidatePasswordStrength(req.NewPassword); msg != "" {
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 
-	if !utils.CheckPasswordHash(req.CurrentPassword, user.PasswordHash) {
-		utils.ErrorResp(c, http.StatusUnauthorized, "invalid_credentials")
+	if !password.CheckPasswordHash(req.CurrentPassword, user.PasswordHash) {
+		response.ErrorResp(c, http.StatusUnauthorized, "invalid_credentials")
 		return
 	}
 
-	hash, err := utils.HashPassword(req.NewPassword)
+	hash, err := password.HashPassword(req.NewPassword)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "password_hash_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "password_hash_failed")
 		return
 	}
 
@@ -623,7 +627,7 @@ func (h *Handler) ChangePassword(c *gin.Context) {
 	user.PasswordHash = hash
 	user.PasswordChangedAt = &now
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "password_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "password_update_failed")
 		return
 	}
 
@@ -640,7 +644,7 @@ func (h *Handler) ChangePassword(c *gin.Context) {
 // ResendVerificationEmail resends the email verification link to the authenticated user.
 func (h *Handler) ResendVerificationEmail(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResponse(c)
+		response.ServiceUnavailableResponse(c)
 		return
 	}
 
@@ -670,7 +674,7 @@ func (h *Handler) ResendVerificationEmail(c *gin.Context) {
 		return
 	}
 
-	verifyToken, err := utils.GenerateJWT(jwt.MapClaims{
+	verifyToken, err := jwtutil.GenerateJWT(jwt.MapClaims{
 		"sub":     user.ID,
 		"purpose": "verify_email",
 		"iat":     time.Now().Unix(),

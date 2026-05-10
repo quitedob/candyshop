@@ -3,6 +3,8 @@ export default defineI18nConfig(() => ({
   globalInjection: true,
   locale: 'zh',
   fallbackLocale: 'en',
+  missingWarn: false,
+  fallbackWarn: false,
   availableLocales: ['en', 'zh'],
   modifiers: {
     kebabCase: (str) => typeof str === 'string' ? str.split(' ').join('-').toLowerCase() : str

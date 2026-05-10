@@ -4,6 +4,7 @@ import (
 	"time"
 
 	common "candypro/api/internal/models/common"
+
 	"github.com/pgvector/pgvector-go"
 	"gorm.io/gorm"
 )
@@ -40,7 +41,7 @@ type Product struct {
 	ViewCount      int                `json:"viewCount" gorm:"default:0"`
 	CreatedAt      time.Time          `json:"createdAt"`
 	UpdatedAt      time.Time          `json:"updatedAt"`
-	DeletedAt      gorm.DeletedAt      `json:"-" gorm:"index"`
+	DeletedAt      gorm.DeletedAt     `json:"-" gorm:"index"`
 }
 
 // Product status constants
@@ -61,11 +62,11 @@ func IsValidProductStatus(s string) bool {
 
 // ProductEmbedding stores semantic-search vectors separately so baseline product migration works on plain Postgres.
 type ProductEmbedding struct {
-	ProductID  string            `json:"productId" gorm:"primaryKey;type:varchar(255)"`
-	Embedding  *pgvector.Vector  `json:"-" gorm:"type:vector(1536)"`
-	CreatedAt  time.Time         `json:"createdAt"`
-	UpdatedAt  time.Time         `json:"updatedAt"`
-	Product    Product           `json:"-" gorm:"foreignKey:ProductID;references:ID;constraint:OnDelete:CASCADE"`
+	ProductID string           `json:"productId" gorm:"primaryKey;type:varchar(255)"`
+	Embedding *pgvector.Vector `json:"-" gorm:"type:vector(1536)"`
+	CreatedAt time.Time        `json:"createdAt"`
+	UpdatedAt time.Time        `json:"updatedAt"`
+	Product   Product          `json:"-" gorm:"foreignKey:ProductID;references:ID;constraint:OnDelete:CASCADE"`
 }
 
 func (ProductEmbedding) TableName() string {
@@ -114,9 +115,9 @@ type Inquiry struct {
 	// Incoterms 询盘阶段议定的贸易术语（如 CIF New York），映射至 Trade.Terms
 	Incoterms string `json:"incoterms" gorm:"type:varchar(50)"`
 	// NegotiatedPaymentTerms 议定付款方式（如 30% T/T 预付），写入 Trade.CommercialNotes
-	NegotiatedPaymentTerms string `json:"negotiatedPaymentTerms" gorm:"type:varchar(255)"`
-	CreatedAt              time.Time          `json:"createdAt"`
-	UpdatedAt              time.Time          `json:"updatedAt"`
+	NegotiatedPaymentTerms string    `json:"negotiatedPaymentTerms" gorm:"type:varchar(255)"`
+	CreatedAt              time.Time `json:"createdAt"`
+	UpdatedAt              time.Time `json:"updatedAt"`
 }
 
 // Use shared common model types to avoid cross-package duplication and reduce cycle risk.
@@ -286,16 +287,16 @@ type SearchResponse struct {
 
 // ProductVariant represents a specific SKU variant of a product (e.g., flavor + shape + weight).
 type ProductVariant struct {
-	ID            string  `json:"id" gorm:"primaryKey"`
-	ProductID     string  `json:"productId" gorm:"not null;index"`
-	SKU           string  `json:"sku" gorm:"uniqueIndex;not null"`
-	Flavor        string  `json:"flavor" gorm:"type:varchar(100)"`
-	Shape         string  `json:"shape" gorm:"type:varchar(100)"`
-	Weight        string  `json:"weight" gorm:"type:varchar(50)"` // e.g. "500g", "1kg"
-	Packaging     string  `json:"packaging" gorm:"type:varchar(100)"`
-	StockQuantity int     `json:"stockQuantity" gorm:"default:0"`
-	PriceModifier float64 `json:"priceModifier" gorm:"default:0"` // +/- adjustment from base price
-	IsActive      bool    `json:"isActive" gorm:"default:true"`
+	ID            string    `json:"id" gorm:"primaryKey"`
+	ProductID     string    `json:"productId" gorm:"not null;index"`
+	SKU           string    `json:"sku" gorm:"uniqueIndex;not null"`
+	Flavor        string    `json:"flavor" gorm:"type:varchar(100)"`
+	Shape         string    `json:"shape" gorm:"type:varchar(100)"`
+	Weight        string    `json:"weight" gorm:"type:varchar(50)"` // e.g. "500g", "1kg"
+	Packaging     string    `json:"packaging" gorm:"type:varchar(100)"`
+	StockQuantity int       `json:"stockQuantity" gorm:"default:0"`
+	PriceModifier float64   `json:"priceModifier" gorm:"default:0"` // +/- adjustment from base price
+	IsActive      bool      `json:"isActive" gorm:"default:true"`
 	CreatedAt     time.Time `json:"createdAt"`
 	UpdatedAt     time.Time `json:"updatedAt"`
 }

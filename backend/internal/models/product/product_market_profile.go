@@ -12,7 +12,7 @@ type ProductMarketProfile struct {
 	ProductID                 string         `gorm:"type:varchar(100);not null;index:idx_prod_market,unique" json:"productId"`
 	MarketCode                string         `gorm:"type:varchar(20);not null;index:idx_prod_market,unique" json:"marketCode"` // EU, US, GCC, SA
 	DestinationCountries      datatypes.JSON `gorm:"type:jsonb" json:"destinationCountries,omitempty"`                         // ["DE","FR"]
-	BlockedIngredientPatterns datatypes.JSON `gorm:"type:jsonb" json:"blockedIngredientPatterns,omitempty"`                     // 小写子串列表
+	BlockedIngredientPatterns datatypes.JSON `gorm:"type:jsonb" json:"blockedIngredientPatterns,omitempty"`                    // 小写子串列表
 	RequiredCertKeywords      datatypes.JSON `gorm:"type:jsonb" json:"requiredCertKeywords,omitempty"`
 	LabelTemplateID           string         `gorm:"type:varchar(100)" json:"labelTemplateId,omitempty"`
 	Notes                     string         `gorm:"type:text" json:"notes,omitempty"`

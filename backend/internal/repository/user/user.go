@@ -2,11 +2,7 @@ package user
 
 import (
 	modelsUser "candypro/api/internal/models/user"
-)
-
-import (
 	"context"
-
 	"time"
 
 	"gorm.io/gorm"

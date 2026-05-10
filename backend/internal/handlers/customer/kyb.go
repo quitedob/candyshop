@@ -2,8 +2,8 @@ package customer
 
 import (
 	modelsOrder "candypro/api/internal/models/order"
-	"candypro/api/internal/kyb"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/kyb"
+	"candypro/api/internal/pkg/response"
 	"net/http"
 	"strings"
 
@@ -55,12 +55,12 @@ func projectedCartUSDAfterQtyChange(items []modelsOrder.CartItem, itemID uint, n
 // ensureActiveOrKYBBypassForAmount allows active users; pending users are subject to KYB bypass limits.
 func (h *Handler) ensureActiveOrKYBBypassForAmount(c *gin.Context, userID string, orderTotalUSD float64, lineProductIDs ...string) bool {
 	if h.services == nil || h.services.User == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return false
 	}
 	u, err := h.services.User.GetByID(c.Request.Context(), strings.TrimSpace(userID))
 	if err != nil || u == nil {
-		utils.ErrorResp(c, http.StatusUnauthorized, "user_not_found")
+		response.ErrorResp(c, http.StatusUnauthorized, "user_not_found")
 		return false
 	}
 	if strings.EqualFold(strings.TrimSpace(u.Status), "active") {
@@ -73,7 +73,7 @@ func (h *Handler) ensureActiveOrKYBBypassForAmount(c *gin.Context, userID string
 		tier.SampleProductIDs = h.cfg.KYB.SampleProductIDs
 	}
 	if !kyb.PendingOrderAllowed(tier, orderTotalUSD, lineProductIDs) {
-		utils.ErrorResp(c, http.StatusForbidden, "kyb_order_limit_exceeded")
+		response.ErrorResp(c, http.StatusForbidden, "kyb_order_limit_exceeded")
 		return false
 	}
 	return true

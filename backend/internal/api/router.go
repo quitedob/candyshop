@@ -15,7 +15,7 @@ import (
 	"candypro/api/internal/config"
 	"candypro/api/internal/handlers"
 	"candypro/api/internal/middleware"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/response"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -26,9 +26,9 @@ import (
 
 // RouterWithShutdown contains the router and rate limiter for proper shutdown
 type RouterWithShutdown struct {
-	Router              *gin.Engine
-	Limiter             *middleware.RateLimiter
-	AIPublicLimiter     *middleware.RateLimiter
+	Router               *gin.Engine
+	Limiter              *middleware.RateLimiter
+	AIPublicLimiter      *middleware.RateLimiter
 	InquiryPublicLimiter *middleware.RateLimiter
 }
 
@@ -139,7 +139,7 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 
 	// 404 handler
 	router.NoRoute(func(c *gin.Context) {
-		utils.ErrorResp(c, http.StatusNotFound, "not_found")
+		response.ErrorResp(c, http.StatusNotFound, "not_found")
 	})
 
 	return &RouterWithShutdown{

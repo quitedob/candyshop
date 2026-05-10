@@ -2,7 +2,8 @@ package admin
 
 import (
 	modelsOrder "candypro/api/internal/models/order"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/pagination"
+	"candypro/api/internal/pkg/response"
 	"log"
 	"net/http"
 	"strings"
@@ -14,13 +15,13 @@ import (
 // AdminGetInventory returns paginated product inventory for admin.
 func (h *Handler) AdminGetInventory(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
-	page, limit := utils.ParsePagination(c, 20, 100)
+	page, limit := pagination.ParsePagination(c, 20, 100)
 	result, err := h.services.Product.GetProductsFiltered(c.Request.Context(), page, limit, false, false, false, "", "", 0, 0)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "inventory_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "inventory_fetch_failed")
 		return
 	}
 	c.JSON(http.StatusOK, result)
@@ -29,7 +30,7 @@ func (h *Handler) AdminGetInventory(c *gin.Context) {
 // AdminUpdateInventory adjusts stock quantity for a product.
 func (h *Handler) AdminUpdateInventory(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	productID := c.Param("productId")
@@ -38,13 +39,13 @@ func (h *Handler) AdminUpdateInventory(c *gin.Context) {
 		Reason        string `json:"reason"`
 		Notes         string `json:"notes"`
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	product, err := h.services.Product.GetProductByID(c.Request.Context(), productID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "product_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "product_not_found")
 		return
 	}
 
@@ -53,7 +54,7 @@ func (h *Handler) AdminUpdateInventory(c *gin.Context) {
 	product.UpdatedAt = time.Now()
 
 	if err := h.services.Product.UpdateProduct(c.Request.Context(), product); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "inventory_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "inventory_update_failed")
 		return
 	}
 
@@ -83,7 +84,7 @@ func (h *Handler) AdminUpdateInventory(c *gin.Context) {
 // AdminGetInventoryHistory returns stock transaction history for a product.
 func (h *Handler) AdminGetInventoryHistory(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	productID := c.Param("productId")
@@ -91,10 +92,10 @@ func (h *Handler) AdminGetInventoryHistory(c *gin.Context) {
 		c.JSON(http.StatusOK, []any{})
 		return
 	}
-	page, limit := utils.ParsePagination(c, 1, 50)
+	page, limit := pagination.ParsePagination(c, 1, 50)
 	txs, _, err := h.services.StockTransaction.FindByProductID(c.Request.Context(), productID, page, limit)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "stock_history_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "stock_history_fetch_failed")
 		return
 	}
 

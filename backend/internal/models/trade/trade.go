@@ -44,7 +44,7 @@ const (
 type TradeTransaction struct {
 	ID          uint    `gorm:"primaryKey" json:"id"`
 	OrderID     *string `gorm:"type:varchar(100);uniqueIndex" json:"orderId,omitempty"` // Link to confirmed order (one trade per order)
-	InquiryID   *string `json:"inquiryId"` // Link to early-stage inquiry
+	InquiryID   *string `json:"inquiryId"`                                              // Link to early-stage inquiry
 	UserID      string  `gorm:"not null;index" json:"userId"`
 	Reference   string  `gorm:"type:varchar(100);uniqueIndex" json:"reference"` // E.g., TRD-2026-001
 	Status      string  `gorm:"type:varchar(50);default:'DRAFT'" json:"status"`
@@ -65,7 +65,7 @@ type TradeTransaction struct {
 type TradeDocument struct {
 	ID            uint   `gorm:"primaryKey" json:"id"`
 	TransactionID uint   `gorm:"not null" json:"transactionId"`
-	Type          string `gorm:"type:varchar(50);not null" json:"type"`                    // e.g. DOC_TYPE_PROFORMA_INVOICE
+	Type          string `gorm:"type:varchar(50);not null" json:"type"`                   // e.g. DOC_TYPE_PROFORMA_INVOICE
 	DocNumber     string `gorm:"type:varchar(100);not null;uniqueIndex" json:"docNumber"` // E.g., PI-2026-001
 	Status        string `gorm:"type:varchar(50);default:'DRAFT'" json:"status"`
 

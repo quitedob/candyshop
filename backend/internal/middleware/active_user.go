@@ -3,9 +3,9 @@ package middleware
 import (
 	"net/http"
 
+	modelsAuth "candypro/api/internal/models/auth"
 	modelsUser "candypro/api/internal/models/user"
-	"candypro/api/internal/roles"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/response"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -17,13 +17,13 @@ func RequireActiveUser(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		rawUserID, exists := c.Get("userID")
 		if !exists {
-			utils.ErrorResp(c, http.StatusUnauthorized, "auth_required")
+			response.ErrorResp(c, http.StatusUnauthorized, "auth_required")
 			c.Abort()
 			return
 		}
 		userID, ok := rawUserID.(string)
 		if !ok || userID == "" {
-			utils.ErrorResp(c, http.StatusUnauthorized, "invalid_user_identity")
+			response.ErrorResp(c, http.StatusUnauthorized, "invalid_user_identity")
 			c.Abort()
 			return
 		}
@@ -31,7 +31,7 @@ func RequireActiveUser(db *gorm.DB) gin.HandlerFunc {
 		// Admin and superadmin bypass the active check
 		role, _ := c.Get("userRole")
 		if roleStr, ok := role.(string); ok {
-			for _, adminRole := range roles.AdminPortal() {
+			for _, adminRole := range modelsAuth.AdminPortal() {
 				if roleStr == adminRole {
 					c.Next()
 					return
@@ -44,13 +44,13 @@ func RequireActiveUser(db *gorm.DB) gin.HandlerFunc {
 			Where("id = ?", userID).
 			Select("id, status").
 			First(&user).Error; err != nil {
-			utils.ErrorResp(c, http.StatusUnauthorized, "user_not_found")
+			response.ErrorResp(c, http.StatusUnauthorized, "user_not_found")
 			c.Abort()
 			return
 		}
 
 		if user.Status != "active" {
-			utils.ErrorResp(c, http.StatusForbidden, "account_not_active")
+			response.ErrorResp(c, http.StatusForbidden, "account_not_active")
 			c.Abort()
 			return
 		}

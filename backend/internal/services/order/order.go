@@ -1,9 +1,9 @@
 package order
 
 import (
+	"candypro/api/internal/config"
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
-	"candypro/api/internal/config"
 	emailsvc "candypro/api/internal/services/content"
 	"context"
 	"fmt"

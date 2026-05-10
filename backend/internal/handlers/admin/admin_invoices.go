@@ -6,8 +6,9 @@ import (
 
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
+	"candypro/api/internal/pkg/pagination"
+	"candypro/api/internal/pkg/response"
 	orderSvc "candypro/api/internal/services/order"
-	"candypro/api/internal/utils"
 	"net/http"
 	"strings"
 	"time"
@@ -18,15 +19,15 @@ import (
 // AdminGetInvoices returns paginated invoices.
 func (h *Handler) AdminGetInvoices(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
-	page, limit := utils.ParsePagination(c, 20, 100)
+	page, limit := pagination.ParsePagination(c, 20, 100)
 	status := strings.TrimSpace(c.Query("status"))
 
 	invoices, total, err := h.services.Invoice.ListInvoices(c.Request.Context(), page, limit, status)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "invoice_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "invoice_fetch_failed")
 		return
 	}
 	totalPages := int(total) / limit
@@ -47,43 +48,43 @@ func (h *Handler) AdminGetInvoices(c *gin.Context) {
 // AdminGetInvoice returns a single invoice by ID.
 func (h *Handler) AdminGetInvoice(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	id := c.Param("id")
 	invoice, err := h.services.Invoice.GetInvoice(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "invoice_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "invoice_not_found")
 		return
 	}
 	c.JSON(http.StatusOK, invoice)
 }
 
 type adminCreateInvoiceRequest struct {
-	OrderID   string   `json:"orderId"`
-	TradeID   *uint    `json:"tradeId"`
-	Type      string   `json:"type"`
-	Amount    float64  `json:"amount" binding:"required"`
-	TaxAmount float64  `json:"taxAmount"`
-	Currency  string   `json:"currency"`
-	DueDate   *string  `json:"dueDate"`
-	Notes     string   `json:"notes"`
-	Items     string   `json:"items"` // JSON string for line items
+	OrderID   string  `json:"orderId"`
+	TradeID   *uint   `json:"tradeId"`
+	Type      string  `json:"type"`
+	Amount    float64 `json:"amount" binding:"required"`
+	TaxAmount float64 `json:"taxAmount"`
+	Currency  string  `json:"currency"`
+	DueDate   *string `json:"dueDate"`
+	Notes     string  `json:"notes"`
+	Items     string  `json:"items"` // JSON string for line items
 }
 
 // AdminCreateInvoice creates a new invoice.
 func (h *Handler) AdminCreateInvoice(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	var req adminCreateInvoiceRequest
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	if req.Amount < 0 || req.TaxAmount < 0 {
-		utils.InvalidResp(c, "invoice_amount_negative")
+		response.InvalidResp(c, "invoice_amount_negative")
 		return
 	}
 
@@ -100,14 +101,14 @@ func (h *Handler) AdminCreateInvoice(c *gin.Context) {
 	if req.DueDate != nil {
 		parsed, parseErr := parseOptionalNullableTime(*req.DueDate, "dueDate")
 		if parseErr != nil {
-			utils.InvalidResp(c, "invalid_request")
+			response.InvalidResp(c, "invalid_request")
 			return
 		}
 		invoice.DueDate = parsed
 	}
 
 	if err := h.services.Invoice.CreateInvoice(c.Request.Context(), invoice); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "invoice_create_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "invoice_create_failed")
 		return
 	}
 	c.JSON(http.StatusCreated, invoice)
@@ -116,13 +117,13 @@ func (h *Handler) AdminCreateInvoice(c *gin.Context) {
 // AdminUpdateInvoice updates an existing invoice.
 func (h *Handler) AdminUpdateInvoice(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	id := c.Param("id")
 	invoice, err := h.services.Invoice.GetInvoice(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "invoice_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "invoice_not_found")
 		return
 	}
 
@@ -135,7 +136,7 @@ func (h *Handler) AdminUpdateInvoice(c *gin.Context) {
 		DueDate          *string  `json:"dueDate"`
 		AdjustmentReason string   `json:"adjustmentReason"`
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -145,14 +146,14 @@ func (h *Handler) AdminUpdateInvoice(c *gin.Context) {
 	// Update amount: allow any non-negative value including 0
 	if req.Amount != nil {
 		if *req.Amount < 0 {
-			utils.InvalidResp(c, "invoice_amount_negative")
+			response.InvalidResp(c, "invoice_amount_negative")
 			return
 		}
 		after.Amount = *req.Amount
 	}
 	if req.TaxAmount != nil {
 		if *req.TaxAmount < 0 {
-			utils.InvalidResp(c, "invoice_amount_negative")
+			response.InvalidResp(c, "invoice_amount_negative")
 			return
 		}
 		after.TaxAmount = *req.TaxAmount
@@ -171,7 +172,7 @@ func (h *Handler) AdminUpdateInvoice(c *gin.Context) {
 	if req.DueDate != nil {
 		parsed, parseErr := parseOptionalNullableTime(*req.DueDate, "dueDate")
 		if parseErr != nil {
-			utils.InvalidResp(c, "invalid_request")
+			response.InvalidResp(c, "invalid_request")
 			return
 		}
 		after.DueDate = parsed
@@ -185,10 +186,10 @@ func (h *Handler) AdminUpdateInvoice(c *gin.Context) {
 	}
 	if err := h.services.Invoice.ValidateAndPersistInvoiceUpdate(c.Request.Context(), &before, &after, actor, strings.TrimSpace(req.AdjustmentReason)); err != nil {
 		if errors.Is(err, orderSvc.ErrAdjustmentReasonRequired) {
-			utils.ErrorResp(c, http.StatusUnprocessableEntity, "adjustment_reason_required")
+			response.ErrorResp(c, http.StatusUnprocessableEntity, "adjustment_reason_required")
 			return
 		}
-		utils.ErrorResp(c, http.StatusInternalServerError, "invoice_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "invoice_update_failed")
 		return
 	}
 	c.JSON(http.StatusOK, &after)
@@ -197,13 +198,13 @@ func (h *Handler) AdminUpdateInvoice(c *gin.Context) {
 // AdminSendInvoice marks an invoice as sent.
 func (h *Handler) AdminSendInvoice(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	id := c.Param("id")
 	invoice, err := h.services.Invoice.SendInvoice(c.Request.Context(), id)
 	if err != nil {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 	c.JSON(http.StatusOK, invoice)
@@ -212,12 +213,12 @@ func (h *Handler) AdminSendInvoice(c *gin.Context) {
 // AdminDeleteInvoice removes a draft invoice.
 func (h *Handler) AdminDeleteInvoice(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	id := c.Param("id")
 	if err := h.services.Invoice.DeleteInvoice(c.Request.Context(), id); err != nil {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Invoice deleted", "id": id})
@@ -226,12 +227,12 @@ func (h *Handler) AdminDeleteInvoice(c *gin.Context) {
 // AdminGetInvoiceStats returns invoice counts by status.
 func (h *Handler) AdminGetInvoiceStats(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	stats, err := h.services.Invoice.GetStats(c.Request.Context())
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "invoice_stats_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "invoice_stats_fetch_failed")
 		return
 	}
 	c.JSON(http.StatusOK, stats)

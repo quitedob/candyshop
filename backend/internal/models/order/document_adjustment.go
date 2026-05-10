@@ -16,10 +16,10 @@ const (
 
 // 调整动作枚举
 const (
-	DocAdjustmentActionDerivedFromOrder      = "derived_from_order"
-	DocAdjustmentActionManualInvoiceEdit     = "manual_invoice_edit"
-	DocAdjustmentActionOrderFinancialChange  = "order_financial_change"
-	DocAdjustmentActionTradeSyncedFromOrder  = "trade_synced_from_order"
+	DocAdjustmentActionDerivedFromOrder     = "derived_from_order"
+	DocAdjustmentActionManualInvoiceEdit    = "manual_invoice_edit"
+	DocAdjustmentActionOrderFinancialChange = "order_financial_change"
+	DocAdjustmentActionTradeSyncedFromOrder = "trade_synced_from_order"
 )
 
 // DocumentAdjustment 记录财务/行项目偏离「订单单一事实来源」时的审计（需人工填写原因）

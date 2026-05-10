@@ -1,7 +1,7 @@
 package admin
 
 import (
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/response"
 	"net/http"
 	"strings"
 
@@ -11,7 +11,7 @@ import (
 // GetSettings returns system settings, optionally filtered by category.
 func (h *Handler) GetSettings(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	category := strings.TrimSpace(c.Query("category"))
@@ -26,7 +26,7 @@ func (h *Handler) GetSettings(c *gin.Context) {
 	}
 
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "settings_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "settings_fetch_failed")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": result})
@@ -35,7 +35,7 @@ func (h *Handler) GetSettings(c *gin.Context) {
 // UpdateSetting upserts a single system setting.
 func (h *Handler) UpdateSetting(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	var req struct {
@@ -43,7 +43,7 @@ func (h *Handler) UpdateSetting(c *gin.Context) {
 		Value    string `json:"value" binding:"required"`
 		Category string `json:"category"`
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -54,7 +54,7 @@ func (h *Handler) UpdateSetting(c *gin.Context) {
 	}
 
 	if err := h.services.SystemSetting.Upsert(c.Request.Context(), setting.Key, setting.Value, setting.Category); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "settings_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "settings_update_failed")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Setting updated", "key": setting.Key})

@@ -1,7 +1,9 @@
 package customer
 
 import (
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/pagination"
+	"candypro/api/internal/pkg/password"
+	"candypro/api/internal/pkg/response"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,20 +16,20 @@ import (
 // @Router /customer/orders [get]
 func (h *Handler) CustomerGetOrders(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
-	page, limit := utils.ParsePagination(c, 10, 50)
+	page, limit := pagination.ParsePagination(c, 10, 50)
 	orders, err := h.services.Order.GetUserOrders(c.Request.Context(), userID, page, limit)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "internal_error")
+		response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 		return
 	}
 
@@ -42,25 +44,25 @@ func (h *Handler) CustomerGetOrders(c *gin.Context) {
 // @Router /customer/orders/{id} [get]
 func (h *Handler) CustomerGetOrder(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	id := c.Param("id")
 	order, err := h.services.Order.GetOrder(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "order_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "order_not_found")
 		return
 	}
 
 	if order.UserID != userID {
-		utils.ErrorResp(c, http.StatusForbidden, "forbidden")
+		response.ErrorResp(c, http.StatusForbidden, "forbidden")
 		return
 	}
 
@@ -74,26 +76,26 @@ func (h *Handler) CustomerGetOrder(c *gin.Context) {
 // @Router /customer/inquiries [get]
 func (h *Handler) CustomerGetInquiries(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
-	page, limit := utils.ParsePagination(c, 10, 50)
+	page, limit := pagination.ParsePagination(c, 10, 50)
 	inquiries, total, err := h.services.Inquiry.GetUserInquiries(c.Request.Context(), userID, page, limit)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "internal_error")
+		response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":       inquiries,
-		"pagination": utils.BuildPagination(total, page, limit),
+		"pagination": pagination.BuildPagination(total, page, limit),
 	})
 }
 
@@ -105,25 +107,25 @@ func (h *Handler) CustomerGetInquiries(c *gin.Context) {
 // @Router /customer/inquiries/{id} [get]
 func (h *Handler) CustomerGetInquiry(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	id := c.Param("id")
 	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
 
 	if inquiry.UserID == nil || *inquiry.UserID != userID {
-		utils.ErrorResp(c, http.StatusForbidden, "inquiry_no_access")
+		response.ErrorResp(c, http.StatusForbidden, "inquiry_no_access")
 		return
 	}
 
@@ -138,13 +140,13 @@ func (h *Handler) CustomerGetInquiry(c *gin.Context) {
 // @Router /customer/profile [put]
 func (h *Handler) CustomerUpdateProfile(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
@@ -154,13 +156,13 @@ func (h *Handler) CustomerUpdateProfile(c *gin.Context) {
 		Company   string `json:"company"`
 		Phone     string `json:"phone"`
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 
@@ -170,7 +172,7 @@ func (h *Handler) CustomerUpdateProfile(c *gin.Context) {
 	user.Phone = req.Phone
 
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "user_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "user_update_failed")
 		return
 	}
 
@@ -195,13 +197,13 @@ func (h *Handler) CustomerUpdateProfile(c *gin.Context) {
 // @Router /customer/change-password [post]
 func (h *Handler) CustomerChangePassword(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
@@ -209,30 +211,30 @@ func (h *Handler) CustomerChangePassword(c *gin.Context) {
 		CurrentPassword string `json:"currentPassword" binding:"required"`
 		NewPassword     string `json:"newPassword" binding:"required,min=8"`
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 
-	if !utils.CheckPasswordHash(req.CurrentPassword, user.PasswordHash) {
-		utils.ErrorResp(c, http.StatusUnauthorized, "invalid_credentials")
+	if !password.CheckPasswordHash(req.CurrentPassword, user.PasswordHash) {
+		response.ErrorResp(c, http.StatusUnauthorized, "invalid_credentials")
 		return
 	}
 
-	hash, err := utils.HashPassword(req.NewPassword)
+	hash, err := password.HashPassword(req.NewPassword)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "password_hash_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "password_hash_failed")
 		return
 	}
 
 	user.PasswordHash = hash
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "password_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "password_update_failed")
 		return
 	}
 

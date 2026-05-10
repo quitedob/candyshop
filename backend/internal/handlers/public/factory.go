@@ -1,7 +1,7 @@
 package public
 
 import (
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/response"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -17,13 +17,13 @@ import (
 // @Router /factory [get]
 func (h *Handler) GetFactoryInfo(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	info, err := h.services.Factory.GetInfo(c.Request.Context())
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "factory_info_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "factory_info_fetch_failed")
 		return
 	}
 
@@ -38,13 +38,13 @@ func (h *Handler) GetFactoryInfo(c *gin.Context) {
 // @Router /certifications [get]
 func (h *Handler) GetCertifications(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	certifications, err := h.services.Factory.GetCertifications(c.Request.Context())
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "certification_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "certification_fetch_failed")
 		return
 	}
 
@@ -61,7 +61,7 @@ func (h *Handler) GetCertifications(c *gin.Context) {
 // @Router /certifications/{id} [get]
 func (h *Handler) GetCertification(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -69,7 +69,7 @@ func (h *Handler) GetCertification(c *gin.Context) {
 
 	certification, err := h.services.Factory.GetCertificationByID(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "certification_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "certification_not_found")
 		return
 	}
 
@@ -84,13 +84,13 @@ func (h *Handler) GetCertification(c *gin.Context) {
 // @Router /factory/quality-controls [get]
 func (h *Handler) GetProcessControls(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	controls, err := h.services.Factory.GetProcessControls(c.Request.Context())
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "process_controls_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "process_controls_fetch_failed")
 		return
 	}
 
@@ -105,13 +105,13 @@ func (h *Handler) GetProcessControls(c *gin.Context) {
 // @Router /factory/timeline [get]
 func (h *Handler) GetQualityTimeline(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	info, err := h.services.Factory.GetInfo(c.Request.Context())
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "timeline_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "timeline_fetch_failed")
 		return
 	}
 

@@ -2,8 +2,8 @@ package order
 
 import (
 	modelsOrder "candypro/api/internal/models/order"
+	"candypro/api/internal/pkg/money"
 	orderrepo "candypro/api/internal/repository/order"
-	"candypro/api/internal/utils"
 	"context"
 	"errors"
 	"fmt"
@@ -125,7 +125,7 @@ func (s *PaymentService) updateOrderPaymentStatus(ctx context.Context, orderID s
 	newStatus := "unpaid"
 	if hasRefunded && confirmedTotal == 0 {
 		newStatus = "refunded"
-	} else if utils.MoneyCoversTotal(confirmedTotal, order.TotalAmount) {
+	} else if money.MoneyCoversTotal(confirmedTotal, order.TotalAmount) {
 		newStatus = "paid"
 	} else if confirmedTotal > 0 {
 		newStatus = "partial"

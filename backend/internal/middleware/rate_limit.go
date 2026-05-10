@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"candypro/api/internal/config"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -121,7 +121,7 @@ func RateLimit(cfg *config.SecurityConfig) (gin.HandlerFunc, *RateLimiter) {
 		c.Header("X-RateLimit-Remaining", strconv.Itoa(remaining))
 
 		if !allowed {
-			utils.ErrorResp(c, http.StatusTooManyRequests, "rate_limit_exceeded")
+			response.ErrorResp(c, http.StatusTooManyRequests, "rate_limit_exceeded")
 			c.Abort()
 			return
 		}
@@ -138,7 +138,7 @@ func PublicAIRateLimit(limiter *RateLimiter, limitPerMinute int) gin.HandlerFunc
 		c.Header("X-Public-AI-RateLimit-Limit", strconv.Itoa(limitPerMinute))
 		c.Header("X-Public-AI-RateLimit-Remaining", strconv.Itoa(remaining))
 		if !allowed {
-			utils.ErrorResp(c, http.StatusTooManyRequests, "rate_limit_ai_exceeded")
+			response.ErrorResp(c, http.StatusTooManyRequests, "rate_limit_ai_exceeded")
 			c.Abort()
 			return
 		}
@@ -154,7 +154,7 @@ func PublicInquiryRateLimit(limiter *RateLimiter, limitPerMinute int) gin.Handle
 		c.Header("X-Public-Inquiry-RateLimit-Limit", strconv.Itoa(limitPerMinute))
 		c.Header("X-Public-Inquiry-RateLimit-Remaining", strconv.Itoa(remaining))
 		if !allowed {
-			utils.ErrorResp(c, http.StatusTooManyRequests, "rate_limit_inquiry_exceeded")
+			response.ErrorResp(c, http.StatusTooManyRequests, "rate_limit_inquiry_exceeded")
 			c.Abort()
 			return
 		}
@@ -166,7 +166,7 @@ func PublicInquiryRateLimit(limiter *RateLimiter, limitPerMinute int) gin.Handle
 func DisablePublicAIRoutes(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if cfg != nil && cfg.AI.PublicRoutesDisabled {
-			utils.ErrorResp(c, http.StatusServiceUnavailable, "service_unavailable")
+			response.ErrorResp(c, http.StatusServiceUnavailable, "service_unavailable")
 			c.Abort()
 			return
 		}
@@ -225,7 +225,7 @@ func Recovery() gin.HandlerFunc {
 				buf := make([]byte, 4096)
 				n := runtime.Stack(buf, false)
 				log.Printf("PANIC recovered: %v\n%s", err, buf[:n])
-				utils.ErrorResp(c, http.StatusInternalServerError, "internal_error")
+				response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 				c.Abort()
 			}
 		}()

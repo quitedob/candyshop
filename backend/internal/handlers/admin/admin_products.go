@@ -3,16 +3,14 @@ package admin
 import (
 	modelsCommon "candypro/api/internal/models/common"
 	modelsProduct "candypro/api/internal/models/product"
-)
-
-import (
+	"candypro/api/internal/pkg/crypto"
+	"candypro/api/internal/pkg/dberror"
+	"candypro/api/internal/pkg/response"
 	"net/http"
 	"regexp"
 	"strings"
 	"time"
 	"unicode"
-
-	"candypro/api/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -49,23 +47,23 @@ type adminProductUpdateRequest struct {
 // @Router /admin/products [post]
 func (h *Handler) AdminCreateProduct(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	var product modelsProduct.Product
-	if !utils.BindJSONOrInvalid(c, &product) {
+	if !response.BindJSONOrInvalid(c, &product) {
 		return
 	}
 
 	product.Name = strings.TrimSpace(product.Name)
 	if product.Name == "" {
-		utils.InvalidResp(c, "product_name_required")
+		response.InvalidResp(c, "product_name_required")
 		return
 	}
 
 	if strings.TrimSpace(product.ID) == "" {
-		product.ID = utils.GenerateID()
+		product.ID = crypto.GenerateID()
 	}
 	if strings.TrimSpace(product.Slug) == "" {
 		product.Slug = buildProductSlug(product.Name)
@@ -76,11 +74,11 @@ func (h *Handler) AdminCreateProduct(c *gin.Context) {
 	if strings.TrimSpace(product.Status) == "" {
 		product.Status = modelsProduct.ProductStatusActive
 	} else if !modelsProduct.IsValidProductStatus(strings.TrimSpace(product.Status)) {
-		utils.InvalidResp(c, "product_status_invalid")
+		response.InvalidResp(c, "product_status_invalid")
 		return
 	}
 	if product.StockQuantity < 0 {
-		utils.InvalidResp(c, "product_stock_negative")
+		response.InvalidResp(c, "product_stock_negative")
 		return
 	}
 
@@ -91,11 +89,11 @@ func (h *Handler) AdminCreateProduct(c *gin.Context) {
 	product.UpdatedAt = now
 
 	if err := h.services.Product.CreateProduct(c.Request.Context(), &product); err != nil {
-		if utils.IsDuplicateKeyError(err) {
-			utils.ErrorResp(c, http.StatusConflict, "product_slug_conflict")
+		if dberror.IsDuplicateKeyError(err) {
+			response.ErrorResp(c, http.StatusConflict, "product_slug_conflict")
 			return
 		}
-		utils.ErrorResp(c, http.StatusInternalServerError, "product_create_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "product_create_failed")
 		return
 	}
 
@@ -113,43 +111,43 @@ func (h *Handler) AdminCreateProduct(c *gin.Context) {
 // @Router /admin/products/{id} [put]
 func (h *Handler) AdminUpdateProduct(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	id := c.Param("id")
 	product, err := h.services.Product.GetProductByID(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "product_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "product_not_found")
 		return
 	}
 
 	var req adminProductUpdateRequest
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 	if req.StockQuantity != nil && *req.StockQuantity < 0 {
-		utils.InvalidResp(c, "product_stock_negative")
+		response.InvalidResp(c, "product_stock_negative")
 		return
 	}
 	if req.Status != nil && !modelsProduct.IsValidProductStatus(strings.TrimSpace(*req.Status)) {
-		utils.InvalidResp(c, "product_status_invalid")
+		response.InvalidResp(c, "product_status_invalid")
 		return
 	}
 
 	applyProductPatch(product, req)
 	product.UpdatedAt = time.Now()
 	if product.Name == "" {
-		utils.InvalidResp(c, "product_name_empty")
+		response.InvalidResp(c, "product_name_empty")
 		return
 	}
 
 	if err := h.services.Product.UpdateProduct(c.Request.Context(), product); err != nil {
-		if utils.IsDuplicateKeyError(err) {
-			utils.ErrorResp(c, http.StatusConflict, "product_slug_conflict")
+		if dberror.IsDuplicateKeyError(err) {
+			response.ErrorResp(c, http.StatusConflict, "product_slug_conflict")
 			return
 		}
-		utils.ErrorResp(c, http.StatusInternalServerError, "product_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "product_update_failed")
 		return
 	}
 
@@ -175,18 +173,18 @@ func (h *Handler) AdminUpdateProduct(c *gin.Context) {
 // @Router /admin/products/{id} [delete]
 func (h *Handler) AdminDeleteProduct(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	id := c.Param("id")
 	if _, err := h.services.Product.GetProductByID(c.Request.Context(), id); err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "product_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "product_not_found")
 		return
 	}
 
 	if err := h.services.Product.DeleteProduct(c.Request.Context(), id); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "product_delete_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "product_delete_failed")
 		return
 	}
 
@@ -278,7 +276,7 @@ func applyProductPatch(product *modelsProduct.Product, req adminProductUpdateReq
 func buildProductSlug(name string) string {
 	slug := normalizeSlug(name)
 	if slug == "" {
-		return "product-" + strings.ToLower(utils.GenerateSlug())
+		return "product-" + strings.ToLower(crypto.GenerateSlug())
 	}
 	return slug
 }

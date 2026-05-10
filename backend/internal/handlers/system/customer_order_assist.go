@@ -3,8 +3,9 @@ package system
 import (
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
-	"candypro/api/internal/kyb"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/crypto"
+	"candypro/api/internal/pkg/kyb"
+	"candypro/api/internal/pkg/response"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -50,33 +51,33 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 		return
 	}
 	if h.services == nil || h.services.Order == nil || h.services.Search == nil || h.services.Product == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, _ := authContext(c)
 	if userID == "" {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	var req customerOrderAssistRequest
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	if req.TaxAmount < 0 || req.ShippingAmount < 0 {
-		utils.InvalidResp(c, "tax_shipping_negative")
+		response.InvalidResp(c, "tax_shipping_negative")
 		return
 	}
 	if msg := validateAssistShippingAddress(req.ShippingAddress); msg != "" {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	targetCountry := strings.TrimSpace(req.TargetCountry)
 	if targetCountry == "" {
-		utils.InvalidResp(c, "target_country_required")
+		response.InvalidResp(c, "target_country_required")
 		return
 	}
 
@@ -88,7 +89,7 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 	searchQuery := strings.TrimSpace(strings.Join(filterNonEmpty(queryParts), " "))
 	searchRes, err := h.services.Search.Search(c.Request.Context(), searchQuery, "products", 8)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "ai_product_search_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "ai_product_search_failed")
 		return
 	}
 	if len(searchRes.Products) == 0 {
@@ -115,7 +116,7 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 
 	candidateJSON, err := json.Marshal(buildCandidatePayload(searchRes.Products))
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "ai_prepare_payload_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "ai_prepare_payload_failed")
 		return
 	}
 
@@ -125,7 +126,7 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 		// Fallback to regular Generate
 		aiResponse, err = h.aiService.Generate(c.Request.Context(), aiPrompt)
 		if err != nil {
-			utils.ErrorResp(c, http.StatusInternalServerError, "ai_draft_generate_failed")
+			response.ErrorResp(c, http.StatusInternalServerError, "ai_draft_generate_failed")
 			return
 		}
 	}
@@ -137,13 +138,13 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 
 	items, selectedProducts, selectedProductModels, selectionWarnings := buildAssistOrderItems(draft.RecommendedProducts, searchRes.Products, req.Quantity)
 	if len(items) == 0 {
-		utils.ErrorResp(c, http.StatusBadRequest, "no_valid_order_items")
+		response.ErrorResp(c, http.StatusBadRequest, "no_valid_order_items")
 		return
 	}
 
 	complianceValidation := h.services.Product.ValidateComplianceWithMarketProfiles(c.Request.Context(), targetCountry, selectedProductModels)
 	if len(complianceValidation.Violations) > 0 {
-		utils.ErrorRespDetail(c, http.StatusUnprocessableEntity, "order_draft_blocked_compliance", gin.H{
+		response.ErrorRespDetail(c, http.StatusUnprocessableEntity, "order_draft_blocked_compliance", gin.H{
 			"country":    complianceValidation.Country,
 			"violations": complianceValidation.Violations,
 			"warnings":   complianceValidation.Warnings,
@@ -163,7 +164,7 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 	sellableOMS, _ := h.services.Product.EffectiveSellableByProducts(c.Request.Context(), omsIDs, modelsProduct.ChannelWebstore)
 	inventoryValidation := h.services.Order.ValidateInventoryWithSellable(items, productByID, sellableOMS)
 	if len(inventoryValidation.Violations) > 0 {
-		utils.ErrorRespDetail(c, http.StatusUnprocessableEntity, "order_draft_blocked_inventory", gin.H{
+		response.ErrorRespDetail(c, http.StatusUnprocessableEntity, "order_draft_blocked_inventory", gin.H{
 			"violations": inventoryValidation.Violations,
 			"warnings":   inventoryValidation.Warnings,
 		})
@@ -208,8 +209,8 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 
 	now := time.Now()
 	order := &modelsOrder.Order{
-		ID:                         utils.GenerateID(),
-		OrderNumber:                fmt.Sprintf("AID-%s-%s", now.Format("20060102"), strings.ToUpper(utils.GenerateSlug())),
+		ID:                         crypto.GenerateID(),
+		OrderNumber:                fmt.Sprintf("AID-%s-%s", now.Format("20060102"), strings.ToUpper(crypto.GenerateSlug())),
 		UserID:                     userID,
 		InquiryID:                  inquiryID,
 		Status:                     "pending_confirmation",
@@ -238,7 +239,7 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 	}
 
 	if err := h.services.Order.CreateOrder(c.Request.Context(), order); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "ai_draft_create_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "ai_draft_create_failed")
 		return
 	}
 
@@ -289,11 +290,11 @@ func (h *Handler) validateAssistInquiry(c *gin.Context, rawInquiryID *string, us
 	inquiryID := strings.TrimSpace(*rawInquiryID)
 	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return nil, err
 	}
 	if inquiry.UserID == nil || *inquiry.UserID != userID {
-		utils.ErrorResp(c, http.StatusForbidden, "inquiry_no_access")
+		response.ErrorResp(c, http.StatusForbidden, "inquiry_no_access")
 		return nil, fmt.Errorf("inquiry does not belong to current user")
 	}
 	return &inquiryID, nil

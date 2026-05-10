@@ -4,22 +4,22 @@ import "time"
 
 // StockTransactionReason describes why the stock changed.
 const (
-	StockReasonOrderCreated       = "order_created"
-	StockReasonOrderConfirmed     = "order_confirmed"
-	StockReasonOrderCancelled     = "order_cancelled"
-	StockReasonOrderDeleted       = "order_deleted"
-	StockReasonOrderUpdated       = "order_updated"
-	StockReasonDraftExpired       = "draft_expired"
-	StockReasonManualAdjustment   = "manual_adjustment"
-	StockReasonDispatched         = "dispatched"
-	StockReasonGoodsIssued        = "goods_issued"
+	StockReasonOrderCreated     = "order_created"
+	StockReasonOrderConfirmed   = "order_confirmed"
+	StockReasonOrderCancelled   = "order_cancelled"
+	StockReasonOrderDeleted     = "order_deleted"
+	StockReasonOrderUpdated     = "order_updated"
+	StockReasonDraftExpired     = "draft_expired"
+	StockReasonManualAdjustment = "manual_adjustment"
+	StockReasonDispatched       = "dispatched"
+	StockReasonGoodsIssued      = "goods_issued"
 )
 
 // StockTransaction records every stock quantity change for audit and traceability.
 type StockTransaction struct {
 	ID          uint      `gorm:"primaryKey" json:"id"`
 	ProductID   string    `gorm:"type:varchar(100);index;not null" json:"productId"`
-	Change      int       `gorm:"not null" json:"change"`              // negative = deduction, positive = restoration
+	Change      int       `gorm:"not null" json:"change"` // negative = deduction, positive = restoration
 	StockBefore int       `gorm:"not null" json:"stockBefore"`
 	StockAfter  int       `gorm:"not null" json:"stockAfter"`
 	Reason      string    `gorm:"type:varchar(50);not null" json:"reason"`

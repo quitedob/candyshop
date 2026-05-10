@@ -280,6 +280,6 @@ func (s *LogisticsService) checkAndAdvanceOrderStatus(ctx context.Context, trans
 		order.DeliveredAt = &now
 	}
 	if err := s.orderRepo.Update(ctx, order); err != nil {
-			log.Printf("Warning: failed to update order %s status after shipment event: %v", order.ID, err)
-		}
+		log.Printf("Warning: failed to update order %s status after shipment event: %v", order.ID, err)
+	}
 }

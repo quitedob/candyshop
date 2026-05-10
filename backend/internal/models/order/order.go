@@ -11,13 +11,13 @@ import (
 
 // Order Statuses
 const (
-	OrderStatusPending            = "pending"
-	OrderStatusPendingConfirm     = "pending_confirmation"
-	OrderStatusConfirmed          = "confirmed"
-	OrderStatusProduction         = "production"
-	OrderStatusShipped            = "shipped"
-	OrderStatusDelivered          = "delivered"
-	OrderStatusCancelled          = "cancelled"
+	OrderStatusPending        = "pending"
+	OrderStatusPendingConfirm = "pending_confirmation"
+	OrderStatusConfirmed      = "confirmed"
+	OrderStatusProduction     = "production"
+	OrderStatusShipped        = "shipped"
+	OrderStatusDelivered      = "delivered"
+	OrderStatusCancelled      = "cancelled"
 )
 
 // Payment Statuses
@@ -30,13 +30,13 @@ const (
 
 // ValidOrderStatusTransitions defines the allowed order status flow.
 var ValidOrderStatusTransitions = map[string]map[string]bool{
-	OrderStatusPending:            {OrderStatusConfirmed: true, OrderStatusCancelled: true},
-	OrderStatusPendingConfirm:     {OrderStatusPending: true, OrderStatusConfirmed: true, OrderStatusCancelled: true},
-	OrderStatusConfirmed:          {OrderStatusProduction: true, OrderStatusCancelled: true},
-	OrderStatusProduction:         {OrderStatusShipped: true, OrderStatusCancelled: true},
-	OrderStatusShipped:            {OrderStatusDelivered: true},
-	OrderStatusDelivered:          {},
-	OrderStatusCancelled:          {},
+	OrderStatusPending:        {OrderStatusConfirmed: true, OrderStatusCancelled: true},
+	OrderStatusPendingConfirm: {OrderStatusPending: true, OrderStatusConfirmed: true, OrderStatusCancelled: true},
+	OrderStatusConfirmed:      {OrderStatusProduction: true, OrderStatusCancelled: true},
+	OrderStatusProduction:     {OrderStatusShipped: true, OrderStatusCancelled: true},
+	OrderStatusShipped:        {OrderStatusDelivered: true},
+	OrderStatusDelivered:      {},
+	OrderStatusCancelled:      {},
 }
 
 // ValidateOrderStatusTransition checks whether moving from current to target is allowed.

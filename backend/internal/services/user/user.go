@@ -2,9 +2,6 @@ package user
 
 import (
 	modelsUser "candypro/api/internal/models/user"
-)
-
-import (
 	"context"
 	"errors"
 	"time"

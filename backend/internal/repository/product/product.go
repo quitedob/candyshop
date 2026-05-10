@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	modelsProduct "candypro/api/internal/models/product"
+
 	"github.com/pgvector/pgvector-go"
 	"gorm.io/gorm"
 )

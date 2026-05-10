@@ -9,8 +9,11 @@ import (
 	"time"
 
 	modelsOrder "candypro/api/internal/models/order"
-	"candypro/api/internal/storage"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/crypto"
+	"candypro/api/internal/pkg/money"
+	"candypro/api/internal/pkg/response"
+	"candypro/api/internal/pkg/storage"
+	"candypro/api/internal/pkg/uploadpath"
 
 	"github.com/gin-gonic/gin"
 )
@@ -57,27 +60,27 @@ func sanitizeProofURL(raw string) string {
 // CustomerGetOrderPayments returns all payments for the customer's order.
 func (h *Handler) CustomerGetOrderPayments(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	orderID := c.Param("id")
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 	order, err := h.services.Order.GetOrder(c.Request.Context(), orderID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "order_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "order_not_found")
 		return
 	}
 	if order.UserID != userID {
-		utils.ErrorResp(c, http.StatusForbidden, "forbidden")
+		response.ErrorResp(c, http.StatusForbidden, "forbidden")
 		return
 	}
 	payments, err := h.services.Payment.GetPaymentsByOrder(c.Request.Context(), orderID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "payment_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "payment_fetch_failed")
 		return
 	}
 	c.JSON(http.StatusOK, payments)
@@ -86,36 +89,36 @@ func (h *Handler) CustomerGetOrderPayments(c *gin.Context) {
 // CustomerUploadPaymentProof creates payment record: supports multipart (method + proof file) or JSON (amount/method/proofUrl etc).
 func (h *Handler) CustomerUploadPaymentProof(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	orderID := c.Param("id")
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	order, err := h.services.Order.GetOrder(c.Request.Context(), orderID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "order_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "order_not_found")
 		return
 	}
 	if order.UserID != userID {
-		utils.ErrorResp(c, http.StatusForbidden, "forbidden")
+		response.ErrorResp(c, http.StatusForbidden, "forbidden")
 		return
 	}
 
 	payments, payErr := h.services.Payment.GetPaymentsByOrder(c.Request.Context(), orderID)
 	if payErr != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "payment_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "payment_fetch_failed")
 		return
 	}
 
 	remaining := paymentRemainingDue(order, payments)
-	if remaining <= utils.MoneyEpsilon {
-		utils.ErrorResp(c, http.StatusBadRequest, "payment_no_balance")
+	if remaining <= money.MoneyEpsilon {
+		response.ErrorResp(c, http.StatusBadRequest, "payment_no_balance")
 		return
 	}
 
@@ -132,7 +135,7 @@ func (h *Handler) CustomerUploadPaymentProof(c *gin.Context) {
 		if v := c.PostForm("amount"); v != "" {
 			a, err := strconv.ParseFloat(v, 64)
 			if err != nil || math.IsNaN(a) || math.IsInf(a, 0) {
-				utils.InvalidResp(c, "invalid_request")
+				response.InvalidResp(c, "invalid_request")
 				return
 			}
 			amount = a
@@ -143,12 +146,12 @@ func (h *Handler) CustomerUploadPaymentProof(c *gin.Context) {
 
 		fileHeader, ferr := c.FormFile("proof")
 		if ferr != nil || fileHeader == nil {
-			utils.InvalidResp(c, "payment_proof_required")
+			response.InvalidResp(c, "payment_proof_required")
 			return
 		}
 		file, oerr := fileHeader.Open()
 		if oerr != nil {
-			utils.InvalidResp(c, "file_open_failed")
+			response.InvalidResp(c, "file_open_failed")
 			return
 		}
 		defer file.Close()
@@ -157,13 +160,13 @@ func (h *Handler) CustomerUploadPaymentProof(c *gin.Context) {
 			FileName: fileHeader.Filename,
 		})
 		if serr != nil {
-			utils.ErrorResp(c, http.StatusInternalServerError, "payment_upload_failed")
+			response.ErrorResp(c, http.StatusInternalServerError, "payment_upload_failed")
 			return
 		}
 		proofURL = saved
 	} else {
 		var req customerUploadPaymentRequest
-		if !utils.BindJSONOrInvalid(c, &req) {
+		if !response.BindJSONOrInvalid(c, &req) {
 			return
 		}
 		method = strings.TrimSpace(req.Method)
@@ -175,22 +178,22 @@ func (h *Handler) CustomerUploadPaymentProof(c *gin.Context) {
 	}
 
 	if method == "" {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 	if !amountSet {
 		amount = remaining
 	}
 	if amount <= 0 {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 	if amount > remaining+1e-4 {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 	payment := &modelsOrder.Payment{
-		ID:        utils.GenerateID(),
+		ID:        crypto.GenerateID(),
 		OrderID:   orderID,
 		Amount:    amount,
 		Currency:  order.Currency,
@@ -204,7 +207,7 @@ func (h *Handler) CustomerUploadPaymentProof(c *gin.Context) {
 	}
 
 	if err := h.services.Payment.CreatePayment(c.Request.Context(), payment); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "payment_create_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "payment_create_failed")
 		return
 	}
 
@@ -214,50 +217,50 @@ func (h *Handler) CustomerUploadPaymentProof(c *gin.Context) {
 // CustomerDownloadPaymentProofFile returns payment proof file via authenticated stream.
 func (h *Handler) CustomerDownloadPaymentProofFile(c *gin.Context) {
 	if h.services == nil || h.cfg == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 	orderID := strings.TrimSpace(c.Param("id"))
 	paymentID := strings.TrimSpace(c.Param("paymentId"))
 	if orderID == "" || paymentID == "" {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 	order, err := h.services.Order.GetOrder(c.Request.Context(), orderID)
 	if err != nil || order.UserID != userID {
-		utils.ErrorResp(c, http.StatusForbidden, "forbidden")
+		response.ErrorResp(c, http.StatusForbidden, "forbidden")
 		return
 	}
 	pay, err := h.services.Payment.GetPayment(c.Request.Context(), paymentID)
 	if err != nil || pay == nil || pay.OrderID != orderID {
-		utils.ErrorResp(c, http.StatusNotFound, "payment_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "payment_not_found")
 		return
 	}
 	if strings.TrimSpace(pay.ProofURL) == "" {
-		utils.ErrorResp(c, http.StatusNotFound, "proof_file_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "proof_file_not_found")
 		return
 	}
 	if h.cfg.Upload.StorageDriver == "s3" {
 		presigned, err := h.storage.GetPresignedURL(c.Request.Context(), pay.ProofURL, 15*time.Minute)
 		if err != nil {
-			utils.ErrorResp(c, http.StatusInternalServerError, "internal_error")
+			response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 			return
 		}
 		c.Redirect(http.StatusTemporaryRedirect, presigned)
 		return
 	}
-	local, err := utils.LocalPathFromUploadURL(h.cfg.Upload.UploadPath, pay.ProofURL)
+	local, err := uploadpath.LocalPathFromUploadURL(h.cfg.Upload.UploadPath, pay.ProofURL)
 	if err != nil {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 	if _, statErr := os.Stat(local); statErr != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "file_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "file_not_found")
 		return
 	}
 	c.File(local)

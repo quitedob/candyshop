@@ -1,8 +1,8 @@
 package admin
 
 import (
-	"candypro/api/internal/storage"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/response"
+	"candypro/api/internal/pkg/storage"
 	"fmt"
 	"net/http"
 	"strings"
@@ -40,13 +40,13 @@ type uploadResponse struct {
 // @Router /admin/upload/image [post]
 func (h *Handler) AdminUploadImage(c *gin.Context) {
 	if h.cfg == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-		utils.InvalidResp(c, "upload_no_file")
+		response.InvalidResp(c, "upload_no_file")
 		return
 	}
 	defer file.Close()
@@ -54,13 +54,13 @@ func (h *Handler) AdminUploadImage(c *gin.Context) {
 	// Validate file type
 	contentType := header.Header.Get("Content-Type")
 	if !allowedImageTypes[contentType] {
-		utils.InvalidResp(c, "upload_file_type_invalid")
+		response.InvalidResp(c, "upload_file_type_invalid")
 		return
 	}
 
 	// Validate file size (max 5MB)
 	if header.Size > 5*1024*1024 {
-		utils.InvalidResp(c, "upload_file_too_large")
+		response.InvalidResp(c, "upload_file_too_large")
 		return
 	}
 
@@ -71,7 +71,7 @@ func (h *Handler) AdminUploadImage(c *gin.Context) {
 		MaxFileSize: h.cfg.Upload.MaxFileSize,
 	})
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "upload_save_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "upload_save_failed")
 		return
 	}
 
@@ -93,13 +93,13 @@ func (h *Handler) AdminUploadImage(c *gin.Context) {
 // @Router /admin/upload/document [post]
 func (h *Handler) AdminUploadDocument(c *gin.Context) {
 	if h.cfg == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-		utils.InvalidResp(c, "upload_no_file")
+		response.InvalidResp(c, "upload_no_file")
 		return
 	}
 	defer file.Close()
@@ -107,13 +107,13 @@ func (h *Handler) AdminUploadDocument(c *gin.Context) {
 	// Validate file type
 	contentType := header.Header.Get("Content-Type")
 	if !allowedDocTypes[contentType] {
-		utils.InvalidResp(c, "upload_file_type_invalid")
+		response.InvalidResp(c, "upload_file_type_invalid")
 		return
 	}
 
 	// Validate file size (max 10MB)
 	if header.Size > 10*1024*1024 {
-		utils.InvalidResp(c, "upload_file_too_large")
+		response.InvalidResp(c, "upload_file_too_large")
 		return
 	}
 
@@ -124,7 +124,7 @@ func (h *Handler) AdminUploadDocument(c *gin.Context) {
 		MaxFileSize: h.cfg.Upload.MaxFileSize,
 	})
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "upload_save_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "upload_save_failed")
 		return
 	}
 
@@ -146,19 +146,19 @@ func (h *Handler) AdminUploadDocument(c *gin.Context) {
 // @Router /admin/upload/multiple [post]
 func (h *Handler) AdminUploadMultiple(c *gin.Context) {
 	if h.cfg == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	form, err := c.MultipartForm()
 	if err != nil {
-		utils.InvalidResp(c, "upload_no_files")
+		response.InvalidResp(c, "upload_no_files")
 		return
 	}
 
 	files := form.File["files"]
 	if len(files) == 0 {
-		utils.InvalidResp(c, "upload_no_files")
+		response.InvalidResp(c, "upload_no_files")
 		return
 	}
 
@@ -221,7 +221,7 @@ func (h *Handler) AdminUploadMultiple(c *gin.Context) {
 // @Router /admin/upload/:filename [delete]
 func (h *Handler) AdminDeleteFile(c *gin.Context) {
 	if h.cfg == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -230,16 +230,16 @@ func (h *Handler) AdminDeleteFile(c *gin.Context) {
 		filename = c.Query("path")
 	}
 	if filename == "" {
-		utils.InvalidResp(c, "upload_file_path_required")
+		response.InvalidResp(c, "upload_file_path_required")
 		return
 	}
 
 	if err := h.storage.Delete(c.Request.Context(), filename); err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			utils.ErrorResp(c, http.StatusNotFound, "upload_file_not_found")
+			response.ErrorResp(c, http.StatusNotFound, "upload_file_not_found")
 			return
 		}
-		utils.ErrorResp(c, http.StatusForbidden, "forbidden")
+		response.ErrorResp(c, http.StatusForbidden, "forbidden")
 		return
 	}
 

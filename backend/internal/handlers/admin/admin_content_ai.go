@@ -1,10 +1,9 @@
 package admin
 
 import (
+	"candypro/api/internal/pkg/response"
 	"fmt"
 	"net/http"
-
-	"candypro/api/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,7 +16,7 @@ import (
 // @Router /admin/content/ai-generate [post]
 func (h *Handler) AdminAIGenerateContent(c *gin.Context) {
 	if h.aiService == nil || !h.aiService.IsEnabled() {
-		utils.ErrorResp(c, http.StatusServiceUnavailable, "ai_not_configured")
+		response.ErrorResp(c, http.StatusServiceUnavailable, "ai_not_configured")
 		return
 	}
 
@@ -26,7 +25,7 @@ func (h *Handler) AdminAIGenerateContent(c *gin.Context) {
 		Type     string `json:"type"`     // "post" or "case", default "post"
 		Language string `json:"language"` // "en" or "zh", default "en"
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -72,7 +71,7 @@ Tags: tag1, tag2, tag3`, req.Topic, langInstruction)
 
 	result, err := h.aiService.Generate(c.Request.Context(), prompt)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "ai_error")
+		response.ErrorResp(c, http.StatusInternalServerError, "ai_error")
 		return
 	}
 

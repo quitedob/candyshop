@@ -1,7 +1,7 @@
 package public
 
 import (
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/response"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -17,13 +17,13 @@ import (
 // @Router /oem/flows [get]
 func (h *Handler) GetOEMFlows(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	flows, err := h.services.OEM.GetFlows(c.Request.Context())
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "oem_flows_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "oem_flows_fetch_failed")
 		return
 	}
 
@@ -40,7 +40,7 @@ func (h *Handler) GetOEMFlows(c *gin.Context) {
 // @Router /oem/flows/{id} [get]
 func (h *Handler) GetOEMFlow(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -48,7 +48,7 @@ func (h *Handler) GetOEMFlow(c *gin.Context) {
 
 	flow, err := h.services.OEM.GetFlowByID(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "oem_flow_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "oem_flow_not_found")
 		return
 	}
 
@@ -63,13 +63,13 @@ func (h *Handler) GetOEMFlow(c *gin.Context) {
 // @Router /oem/solutions [get]
 func (h *Handler) GetOEMSolutions(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	solutions, err := h.services.OEM.GetSolutions(c.Request.Context())
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "oem_solutions_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "oem_solutions_fetch_failed")
 		return
 	}
 
@@ -86,7 +86,7 @@ func (h *Handler) GetOEMSolutions(c *gin.Context) {
 // @Router /oem/solutions/{slug} [get]
 func (h *Handler) GetOEMSolution(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -94,7 +94,7 @@ func (h *Handler) GetOEMSolution(c *gin.Context) {
 
 	solution, err := h.services.OEM.GetSolutionBySlug(c.Request.Context(), slug)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "oem_solution_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "oem_solution_not_found")
 		return
 	}
 

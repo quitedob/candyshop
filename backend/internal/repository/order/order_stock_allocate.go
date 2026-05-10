@@ -81,15 +81,15 @@ func deductFromDefaultWarehouse(tx *gorm.DB, warehouseID, productID string, qty 
 	afterP := beforeP - qty
 	wid := warehouseID
 	rec := &modelsOrder.StockTransaction{
-		ProductID:    productID,
-		Change:       -qty,
-		StockBefore:  beforeP,
-		StockAfter:   afterP,
-		Reason:       reason,
-		ReferenceID:  refID,
-		OperatorID:   operatorID,
-		WarehouseID:  &wid,
-		CreatedAt:    t,
+		ProductID:   productID,
+		Change:      -qty,
+		StockBefore: beforeP,
+		StockAfter:  afterP,
+		Reason:      reason,
+		ReferenceID: refID,
+		OperatorID:  operatorID,
+		WarehouseID: &wid,
+		CreatedAt:   t,
 	}
 	return []*modelsOrder.StockTransaction{rec}, nil
 }

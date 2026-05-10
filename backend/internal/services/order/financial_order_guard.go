@@ -11,11 +11,11 @@ import (
 
 // OrderFinancialSnapshot 订单财务相关字段快照（用于检测是否需填写调整原因）
 type OrderFinancialSnapshot struct {
-	Subtotal       float64                `json:"subtotal"`
-	TaxAmount      float64                `json:"taxAmount"`
-	ShippingAmount float64                `json:"shippingAmount"`
-	TotalAmount    float64                `json:"totalAmount"`
-	Currency       string                 `json:"currency"`
+	Subtotal       float64                    `json:"subtotal"`
+	TaxAmount      float64                    `json:"taxAmount"`
+	ShippingAmount float64                    `json:"shippingAmount"`
+	TotalAmount    float64                    `json:"totalAmount"`
+	Currency       string                     `json:"currency"`
 	Items          modelsOrder.OrderItemArray `json:"items"`
 }
 

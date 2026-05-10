@@ -1,11 +1,12 @@
 package admin
 
 import (
-	"errors"
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
+	"candypro/api/internal/pkg/crypto"
+	"candypro/api/internal/pkg/response"
 	orderSvc "candypro/api/internal/services/order"
-	"candypro/api/internal/utils"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -22,31 +23,31 @@ type adminConvertInquiryRequest struct {
 // AdminConvertInquiryToOrder converts a quoted/won inquiry into a draft order.
 func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	inquiryID := c.Param("id")
 	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
 
 	// Only quoted or won inquiries can be converted
 	if inquiry.Status != "quoted" && inquiry.Status != "won" && inquiry.Status != "negotiating" {
-		utils.ErrorResp(c, http.StatusUnprocessableEntity, "inquiry_status_invalid")
+		response.ErrorResp(c, http.StatusUnprocessableEntity, "inquiry_status_invalid")
 		return
 	}
 
 	// Must have a user assigned
 	if inquiry.UserID == nil || strings.TrimSpace(*inquiry.UserID) == "" {
-		utils.ErrorResp(c, http.StatusUnprocessableEntity, "inquiry_missing_user")
+		response.ErrorResp(c, http.StatusUnprocessableEntity, "inquiry_missing_user")
 		return
 	}
 
 	var req adminConvertInquiryRequest
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -61,7 +62,7 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 		destCountry = strings.TrimSpace(inquiry.TargetCountry)
 	}
 	if destCountry == "" {
-		utils.ErrorResp(c, http.StatusUnprocessableEntity, "inquiry_missing_country")
+		response.ErrorResp(c, http.StatusUnprocessableEntity, "inquiry_missing_country")
 		return
 	}
 
@@ -82,11 +83,11 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 		// Validate product exists and is active
 		product, prodErr := h.services.Product.GetProductByID(c.Request.Context(), pid)
 		if prodErr != nil {
-			utils.ErrorResp(c, http.StatusUnprocessableEntity, "product_not_found")
+			response.ErrorResp(c, http.StatusUnprocessableEntity, "product_not_found")
 			return
 		}
 		if status := strings.ToLower(strings.TrimSpace(product.Status)); status != "" && status != "active" {
-			utils.ErrorResp(c, http.StatusUnprocessableEntity, "product_unavailable")
+			response.ErrorResp(c, http.StatusUnprocessableEntity, "product_unavailable")
 			return
 		}
 
@@ -101,7 +102,7 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 			unitPrice = product.BasePrice
 		}
 		if unitPrice <= 0 {
-			utils.ErrorResp(c, http.StatusUnprocessableEntity, "no_price")
+			response.ErrorResp(c, http.StatusUnprocessableEntity, "no_price")
 			return
 		}
 
@@ -118,14 +119,14 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 	}
 
 	if len(items) == 0 {
-		utils.ErrorResp(c, http.StatusUnprocessableEntity, "inquiry_no_items")
+		response.ErrorResp(c, http.StatusUnprocessableEntity, "inquiry_no_items")
 		return
 	}
 
 	// Validate destination-country compliance
 	compliance := h.services.Product.ValidateComplianceWithMarketProfiles(c.Request.Context(), destCountry, selectedProducts)
 	if len(compliance.Violations) > 0 {
-		utils.ErrorRespDetail(c, http.StatusUnprocessableEntity, "compliance_violation", gin.H{
+		response.ErrorRespDetail(c, http.StatusUnprocessableEntity, "compliance_violation", gin.H{
 			"country":    compliance.Country,
 			"violations": compliance.Violations,
 			"warnings":   compliance.Warnings,
@@ -141,7 +142,7 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 	sellable, _ := h.services.Product.EffectiveSellableByProducts(c.Request.Context(), ids, modelsProduct.ChannelWebstore)
 	inventory := h.services.Order.ValidateInventoryWithSellable(items, productByID, sellable)
 	if len(inventory.Violations) > 0 {
-		utils.ErrorRespDetail(c, http.StatusUnprocessableEntity, "inventory_violation", gin.H{
+		response.ErrorRespDetail(c, http.StatusUnprocessableEntity, "inventory_violation", gin.H{
 			"violations": inventory.Violations,
 			"warnings":   inventory.Warnings,
 		})
@@ -154,7 +155,7 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 		subtotal += item.UnitPrice * float64(item.Quantity)
 	}
 
-	orderNumber := fmt.Sprintf("ORD-%s-%s", time.Now().Format("20060102"), strings.ToUpper(utils.GenerateSlug()))
+	orderNumber := fmt.Sprintf("ORD-%s-%s", time.Now().Format("20060102"), strings.ToUpper(crypto.GenerateSlug()))
 
 	var shippingAddr modelsOrder.Address
 	if req.ShippingAddress != nil {
@@ -166,7 +167,7 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 	}
 
 	order := &modelsOrder.Order{
-		ID:              utils.GenerateID(),
+		ID:              crypto.GenerateID(),
 		OrderNumber:     orderNumber,
 		UserID:          userID,
 		InquiryID:       &inquiryID,
@@ -186,10 +187,10 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 
 	if err := h.services.Order.CreateOrderWithStockReservation(c.Request.Context(), order); err != nil {
 		if errors.Is(err, modelsOrder.ErrInsufficientStock) {
-			utils.ErrorResp(c, http.StatusUnprocessableEntity, "inventory_violation")
+			response.ErrorResp(c, http.StatusUnprocessableEntity, "inventory_violation")
 			return
 		}
-		utils.ErrorResp(c, http.StatusInternalServerError, "order_create_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "order_create_failed")
 		return
 	}
 

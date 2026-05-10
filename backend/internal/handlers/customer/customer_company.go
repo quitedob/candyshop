@@ -2,8 +2,9 @@ package customer
 
 import (
 	modelsUser "candypro/api/internal/models/user"
-	"candypro/api/internal/storage"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/response"
+	"candypro/api/internal/pkg/storage"
+	"candypro/api/internal/pkg/uploadpath"
 	"net/http"
 	"os"
 	"strings"
@@ -14,26 +15,26 @@ import (
 
 func (h *Handler) CustomerGetCompany(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 	if user.CompanyID == nil {
-		utils.ErrorResp(c, http.StatusNotFound, "no_company_profile")
+		response.ErrorResp(c, http.StatusNotFound, "no_company_profile")
 		return
 	}
 	company, err := h.services.Company.GetCompany(c.Request.Context(), *user.CompanyID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "company_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "company_not_found")
 		return
 	}
 	c.JSON(http.StatusOK, company)
@@ -41,26 +42,26 @@ func (h *Handler) CustomerGetCompany(c *gin.Context) {
 
 func (h *Handler) CustomerUpdateCompany(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 	if user.CompanyID == nil {
-		utils.ErrorResp(c, http.StatusNotFound, "no_company_profile")
+		response.ErrorResp(c, http.StatusNotFound, "no_company_profile")
 		return
 	}
 	company, err := h.services.Company.GetCompany(c.Request.Context(), *user.CompanyID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "company_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "company_not_found")
 		return
 	}
 	var req struct {
@@ -68,7 +69,7 @@ func (h *Handler) CustomerUpdateCompany(c *gin.Context) {
 		Website *string                    `json:"website"`
 		Address *modelsUser.CompanyAddress `json:"address"`
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 	if req.Phone != nil {
@@ -82,7 +83,7 @@ func (h *Handler) CustomerUpdateCompany(c *gin.Context) {
 	}
 	company.UpdatedAt = time.Now()
 	if err := h.services.Company.UpdateCompany(c.Request.Context(), company); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "company_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "company_update_failed")
 		return
 	}
 	c.JSON(http.StatusOK, company)
@@ -91,36 +92,36 @@ func (h *Handler) CustomerUpdateCompany(c *gin.Context) {
 // CustomerUploadKYBDocument allows a customer to upload a KYB document (business license, etc.).
 func (h *Handler) CustomerUploadKYBDocument(c *gin.Context) {
 	if h.services == nil || h.cfg == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 	if user.CompanyID == nil {
-		utils.ErrorResp(c, http.StatusNotFound, "no_company_profile")
+		response.ErrorResp(c, http.StatusNotFound, "no_company_profile")
 		return
 	}
 
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-		utils.InvalidResp(c, "upload_no_file")
+		response.InvalidResp(c, "upload_no_file")
 		return
 	}
 	defer file.Close()
 
 	// Validate file size (max 10MB)
 	if header.Size > 10*1024*1024 {
-		utils.InvalidResp(c, "file_size_exceeded")
+		response.InvalidResp(c, "file_size_exceeded")
 		return
 	}
 
@@ -132,7 +133,7 @@ func (h *Handler) CustomerUploadKYBDocument(c *gin.Context) {
 		"image/png":       true,
 	}
 	if !allowed[contentType] {
-		utils.InvalidResp(c, "file_type_not_allowed")
+		response.InvalidResp(c, "file_type_not_allowed")
 		return
 	}
 
@@ -141,7 +142,7 @@ func (h *Handler) CustomerUploadKYBDocument(c *gin.Context) {
 		FileName: header.Filename,
 	})
 	if uploadErr != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "upload_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "upload_failed")
 		return
 	}
 
@@ -152,7 +153,7 @@ func (h *Handler) CustomerUploadKYBDocument(c *gin.Context) {
 		company.UpdatedAt = time.Now()
 		// SEC-16: Handle the DB update error properly instead of silently ignoring it
 		if updateErr := h.services.Company.UpdateCompany(c.Request.Context(), company); updateErr != nil {
-			utils.ErrorResp(c, http.StatusInternalServerError, "company_update_failed")
+			response.ErrorResp(c, http.StatusInternalServerError, "company_update_failed")
 			return
 		}
 	}
@@ -166,44 +167,44 @@ func (h *Handler) CustomerUploadKYBDocument(c *gin.Context) {
 // CustomerDownloadKYBDocumentFile returns KYB document file via authenticated stream.
 func (h *Handler) CustomerDownloadKYBDocumentFile(c *gin.Context) {
 	if h.services == nil || h.cfg == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil || user.CompanyID == nil {
-		utils.ErrorResp(c, http.StatusNotFound, "no_company_profile")
+		response.ErrorResp(c, http.StatusNotFound, "no_company_profile")
 		return
 	}
 	company, err := h.services.Company.GetCompany(c.Request.Context(), *user.CompanyID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "company_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "company_not_found")
 		return
 	}
 	if strings.TrimSpace(company.BusinessLicense) == "" {
-		utils.ErrorResp(c, http.StatusNotFound, "no_kyb_document")
+		response.ErrorResp(c, http.StatusNotFound, "no_kyb_document")
 		return
 	}
 	if h.cfg.Upload.StorageDriver == "s3" {
 		presigned, err := h.storage.GetPresignedURL(c.Request.Context(), company.BusinessLicense, 15*time.Minute)
 		if err != nil {
-			utils.ErrorResp(c, http.StatusInternalServerError, "internal_error")
+			response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 			return
 		}
 		c.Redirect(http.StatusTemporaryRedirect, presigned)
 		return
 	}
-	local, err := utils.LocalPathFromUploadURL(h.cfg.Upload.UploadPath, company.BusinessLicense)
+	local, err := uploadpath.LocalPathFromUploadURL(h.cfg.Upload.UploadPath, company.BusinessLicense)
 	if err != nil {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 	if _, statErr := os.Stat(local); statErr != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "file_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "file_not_found")
 		return
 	}
 	c.File(local)

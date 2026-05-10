@@ -10,7 +10,7 @@ import (
 	userPortal "candypro/api/internal/handlers/customer"
 	"candypro/api/internal/handlers/public"
 	"candypro/api/internal/handlers/system"
-	"candypro/api/internal/storage"
+	"candypro/api/internal/pkg/storage"
 	servicesCommon "candypro/api/internal/services/common"
 )
 

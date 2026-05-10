@@ -5,17 +5,13 @@ import (
 	modelsCommon "candypro/api/internal/models/common"
 	modelsProduct "candypro/api/internal/models/product"
 	modelsUser "candypro/api/internal/models/user"
-)
-
-import (
+	"candypro/api/internal/pkg/crypto"
+	"candypro/api/internal/pkg/password"
 	"errors"
 	"fmt"
 	"os"
 	"strings"
 	"time"
-
-	"candypro/api/internal/roles"
-	"candypro/api/internal/utils"
 
 	"gorm.io/gorm"
 )
@@ -24,7 +20,7 @@ func ensureSystemRoles(db *gorm.DB) (map[string]string, error) {
 	roleSeeds := []modelsAuth.Role{
 		{
 			ID:          "role_customer",
-			Name:        roles.User,
+			Name:        modelsAuth.User,
 			Description: "B2B user account",
 			IsSystem:    true,
 			CreatedAt:   time.Now(),
@@ -32,7 +28,7 @@ func ensureSystemRoles(db *gorm.DB) (map[string]string, error) {
 		},
 		{
 			ID:          "role_admin",
-			Name:        roles.Admin,
+			Name:        modelsAuth.Admin,
 			Description: "Operations and sales admin",
 			IsSystem:    true,
 			CreatedAt:   time.Now(),
@@ -40,7 +36,7 @@ func ensureSystemRoles(db *gorm.DB) (map[string]string, error) {
 		},
 		{
 			ID:          "role_superadmin",
-			Name:        roles.SuperAdmin,
+			Name:        modelsAuth.SuperAdmin,
 			Description: "Platform super administrator",
 			IsSystem:    true,
 			CreatedAt:   time.Now(),
@@ -88,12 +84,12 @@ func resolveSuperadminBootstrapCredentials() (string, string, error) {
 		return email, passwordHash, nil
 	}
 
-	password := strings.TrimSpace(os.Getenv("SEED_SUPERADMIN_PASSWORD"))
-	if password == "" {
+	pwd := strings.TrimSpace(os.Getenv("SEED_SUPERADMIN_PASSWORD"))
+	if pwd == "" {
 		return "", "", fmt.Errorf("missing SEED_SUPERADMIN_PASSWORD or SEED_SUPERADMIN_PASSWORD_HASH for superadmin bootstrap")
 	}
 
-	hashedPassword, err := utils.HashPassword(password)
+	hashedPassword, err := password.HashPassword(pwd)
 	if err != nil {
 		return "", "", err
 	}
@@ -111,7 +107,7 @@ func seedSuperadmin(db *gorm.DB) error {
 	if err != nil {
 		return err
 	}
-	superadminRoleID := roleIDs[roles.SuperAdmin]
+	superadminRoleID := roleIDs[modelsAuth.SuperAdmin]
 
 	var existing modelsUser.User
 	err = db.Where("email = ?", superadminEmail).First(&existing).Error
@@ -145,7 +141,7 @@ func seedSuperadmin(db *gorm.DB) error {
 
 	now := time.Now()
 	superadmin := modelsUser.User{
-		ID:              utils.GenerateID(),
+		ID:              crypto.GenerateID(),
 		FirstName:       "Super",
 		LastName:        "Admin",
 		Email:           superadminEmail,
@@ -241,7 +237,7 @@ func seedCategories(db *gorm.DB) error {
 func seedProducts(db *gorm.DB) error {
 	products := []modelsProduct.Product{
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Slug:           "4d-fruit-gummy",
 			Name:           "4D Fruit Gummy",
 			Summary:        "Real fruit juice gummy with natural flavors and fun 3D shapes",
@@ -267,7 +263,7 @@ func seedProducts(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Slug:           "crystal-hard-candy",
 			Name:           "Crystal Hard Candy",
 			Summary:        "Premium crystal-clear hard candies with natural fruit flavors",
@@ -293,7 +289,7 @@ func seedProducts(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Slug:           "rainbow-lollipop",
 			Name:           "Rainbow Swirl Lollipop",
 			Summary:        "Colorful swirl lollipops with multi-layered flavors",
@@ -319,7 +315,7 @@ func seedProducts(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Slug:           "sour-belt",
 			Name:           "Sour Belt Candy",
 			Summary:        "Tangy sour belt candies with intense fruit flavors",
@@ -345,7 +341,7 @@ func seedProducts(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Slug:           "jelly-fruits",
 			Name:           "Fruit Jelly Cups",
 			Summary:        "Soft jelly cups with real fruit pieces and natural juice",
@@ -371,7 +367,7 @@ func seedProducts(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Slug:           "chewy-toffee",
 			Name:           "Creamy Toffee Chews",
 			Summary:        "Rich and creamy toffee chews with buttery flavor",
@@ -397,7 +393,7 @@ func seedProducts(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Slug:           "gummy-bear-classic",
 			Name:           "Classic Gummy Bears",
 			Summary:        "Traditional gummy bears with authentic fruit flavors and perfect chewy texture",
@@ -423,7 +419,7 @@ func seedProducts(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Slug:           "gummy-worms",
 			Name:           "Sour Gummy Worms",
 			Summary:        "Dual-flavored gummy worms with sweet and sour coating",
@@ -449,7 +445,7 @@ func seedProducts(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Slug:           "fruit-slices",
 			Name:           "Citrus Fruit Slices",
 			Summary:        "Sugar-dusted fruit slice candies with authentic citrus flavors",
@@ -475,7 +471,7 @@ func seedProducts(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Slug:           "hard-candy-assorted-mix",
 			Name:           "Assorted Hard Candy Mix",
 			Summary:        "Premium mixed fruit hard candies with vibrant colors",
@@ -501,7 +497,7 @@ func seedProducts(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Slug:           "hard-candy-fruit-bonbon",
 			Name:           "Fruit Bonbon Hard Candy",
 			Summary:        "Fruit-filled bonbon hard candies with soft center",
@@ -527,7 +523,7 @@ func seedProducts(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Slug:           "chocolate-premium-truffles",
 			Name:           "Premium Chocolate Truffles",
 			Summary:        "Luxury compound chocolate truffles with smooth centers",
@@ -553,7 +549,7 @@ func seedProducts(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Slug:           "chocolate-variety-box",
 			Name:           "Chocolate Variety Gift Box",
 			Summary:        "Assorted compound chocolate gift box",
@@ -579,7 +575,7 @@ func seedProducts(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Slug:           "licorice-black-twists",
 			Name:           "Classic Black Licorice Twists",
 			Summary:        "Traditional black licorice twists with anise flavor",
@@ -605,7 +601,7 @@ func seedProducts(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Slug:           "licorice-fruit-ropes",
 			Name:           "Fruity Licorice Ropes",
 			Summary:        "Colorful fruity licorice ropes",
@@ -631,7 +627,7 @@ func seedProducts(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Slug:           "sour-gummy-extreme",
 			Name:           "Extreme Sour Gummy",
 			Summary:        "Ultra-sour gummy candies",
@@ -657,7 +653,7 @@ func seedProducts(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Slug:           "sour-belt-rainbow",
 			Name:           "Rainbow Sour Belts",
 			Summary:        "Multi-colored sour belts with tangy coating",
@@ -683,7 +679,7 @@ func seedProducts(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Slug:           "sour-gummy-bears-zing",
 			Name:           "Sour Zing Gummy Bears",
 			Summary:        "Sour-coated gummy bears",
@@ -793,7 +789,7 @@ func seedOEMFlows(db *gorm.DB) error {
 func seedOEMSolutions(db *gorm.DB) error {
 	solutions := []modelsProduct.OEMSolution{
 		{
-			ID:           utils.GenerateID(),
+			ID:           crypto.GenerateID(),
 			Slug:         "private-label-gummy",
 			Title:        "Private Label Gummy Manufacturing",
 			Description:  "Complete private label solution for gummy candies including formulation, design, and production. Ideal for brands looking to enter the confectionery market quickly.",
@@ -806,7 +802,7 @@ func seedOEMSolutions(db *gorm.DB) error {
 			UpdatedAt:    time.Now(),
 		},
 		{
-			ID:           utils.GenerateID(),
+			ID:           crypto.GenerateID(),
 			Slug:         "custom-shape-candy",
 			Title:        "Custom Shape Candy Development",
 			Description:  "Create unique candy shapes for your brand with our custom mold development service. Perfect for brand differentiation and special occasions.",
@@ -819,7 +815,7 @@ func seedOEMSolutions(db *gorm.DB) error {
 			UpdatedAt:    time.Now(),
 		},
 		{
-			ID:           utils.GenerateID(),
+			ID:           crypto.GenerateID(),
 			Slug:         "functional-candy",
 			Title:        "Functional Candy Solutions",
 			Description:  "Develop candies with added health benefits including vitamins, probiotics, and natural supplements. Meet the growing demand for healthier confectionery options.",
@@ -845,7 +841,7 @@ func seedOEMSolutions(db *gorm.DB) error {
 func seedCertifications(db *gorm.DB) error {
 	certifications := []modelsProduct.Certification{
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Name:           "Hazard Analysis Critical Control Point",
 			Abbreviation:   "HACCP",
 			Description:    "International food safety management system ensuring product safety from raw materials to consumption",
@@ -857,7 +853,7 @@ func seedCertifications(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Name:           "ISO 22000 Food Safety Management",
 			Abbreviation:   "ISO 22000",
 			Description:    "International standard for food safety management systems covering all organizations in the food chain",
@@ -869,7 +865,7 @@ func seedCertifications(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Name:           "Halal Certification",
 			Abbreviation:   "Halal",
 			Description:    "Certification confirming products comply with Islamic dietary laws and are suitable for Muslim consumers",
@@ -881,7 +877,7 @@ func seedCertifications(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Name:           "FDA Registration",
 			Abbreviation:   "FDA",
 			Description:    "Registration with the U.S. Food and Drug Administration for food facility compliance",
@@ -893,7 +889,7 @@ func seedCertifications(db *gorm.DB) error {
 			UpdatedAt:      time.Now(),
 		},
 		{
-			ID:             utils.GenerateID(),
+			ID:             crypto.GenerateID(),
 			Name:           "BRC Food Safety",
 			Abbreviation:   "BRC",
 			Description:    "British Retail Consortium Global Standard for Food Safety certification",
@@ -941,7 +937,7 @@ func seedFactoryInfo(db *gorm.DB) error {
 func seedBlogPosts(db *gorm.DB) error {
 	posts := []modelsProduct.BlogPost{
 		{
-			ID:           utils.GenerateID(),
+			ID:           crypto.GenerateID(),
 			Slug:         "trends-candy-industry-2026",
 			Title:        "Top 10 Candy Industry Trends for 2026",
 			Excerpt:      "Discover the latest trends shaping the confectionery industry, from functional candies to sustainable packaging.",
@@ -957,7 +953,7 @@ func seedBlogPosts(db *gorm.DB) error {
 			UpdatedAt:    time.Now(),
 		},
 		{
-			ID:           utils.GenerateID(),
+			ID:           crypto.GenerateID(),
 			Slug:         "guide-private-label-candy",
 			Title:        "Complete Guide to Private Label Candy Manufacturing",
 			Excerpt:      "Everything you need to know about launching your own candy brand through private label manufacturing.",
@@ -973,7 +969,7 @@ func seedBlogPosts(db *gorm.DB) error {
 			UpdatedAt:    time.Now(),
 		},
 		{
-			ID:           utils.GenerateID(),
+			ID:           crypto.GenerateID(),
 			Slug:         "halal-certification-candy",
 			Title:        "Understanding Halal Certification for Candy Products",
 			Excerpt:      "A comprehensive overview of halal certification requirements and processes for confectionery manufacturers.",
@@ -1002,7 +998,7 @@ func seedBlogPosts(db *gorm.DB) error {
 func seedCaseStudies(db *gorm.DB) error {
 	cases := []modelsProduct.CaseStudy{
 		{
-			ID:        utils.GenerateID(),
+			ID:        crypto.GenerateID(),
 			Slug:      "european-retailer-gummy-launch",
 			Title:     "European Retailer Gummy Product Line Launch",
 			Client:    "EuroCandy Mart",
@@ -1019,7 +1015,7 @@ func seedCaseStudies(db *gorm.DB) error {
 			UpdatedAt: time.Now(),
 		},
 		{
-			ID:        utils.GenerateID(),
+			ID:        crypto.GenerateID(),
 			Slug:      "functional-vitamin-gummies",
 			Title:     "Functional Vitamin Gummy Brand Development",
 			Client:    "NutriLife Supplements",
@@ -1036,7 +1032,7 @@ func seedCaseStudies(db *gorm.DB) error {
 			UpdatedAt: time.Now(),
 		},
 		{
-			ID:        utils.GenerateID(),
+			ID:        crypto.GenerateID(),
 			Slug:      "middle-east-halal-expansion",
 			Title:     "Middle East Market Halal Candy Expansion",
 			Client:    "Gulf Trading Company",

@@ -41,7 +41,7 @@ type Invoice struct {
 	// DerivedAt 从订单派生时的写入时间
 	DerivedAt *time.Time `json:"derivedAt,omitempty"`
 	// OrderFinancialHash 派生时订单财务域快照哈希（SHA256 十六进制）
-	OrderFinancialHash string `gorm:"type:varchar(64)" json:"orderFinancialHash,omitempty"`
-	CreatedAt            time.Time `json:"createdAt"`
-	UpdatedAt            time.Time `json:"updatedAt"`
+	OrderFinancialHash string    `gorm:"type:varchar(64)" json:"orderFinancialHash,omitempty"`
+	CreatedAt          time.Time `json:"createdAt"`
+	UpdatedAt          time.Time `json:"updatedAt"`
 }

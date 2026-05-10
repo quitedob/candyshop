@@ -1,9 +1,8 @@
 package middleware
 
 import (
+	"candypro/api/internal/pkg/response"
 	"net/http"
-
-	"candypro/api/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,14 +12,14 @@ func RequireRole(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userRole, exists := c.Get("userRole")
 		if !exists {
-			utils.ErrorResp(c, http.StatusUnauthorized, "role_not_found")
+			response.ErrorResp(c, http.StatusUnauthorized, "role_not_found")
 			c.Abort()
 			return
 		}
 
 		roleStr, ok := userRole.(string)
 		if !ok {
-			utils.ErrorResp(c, http.StatusUnauthorized, "invalid_role_format")
+			response.ErrorResp(c, http.StatusUnauthorized, "invalid_role_format")
 			c.Abort()
 			return
 		}
@@ -33,7 +32,7 @@ func RequireRole(roles ...string) gin.HandlerFunc {
 			}
 		}
 
-		utils.ErrorResp(c, http.StatusForbidden, "forbidden_insufficient_role")
+		response.ErrorResp(c, http.StatusForbidden, "forbidden_insufficient_role")
 		c.Abort()
 	}
 }

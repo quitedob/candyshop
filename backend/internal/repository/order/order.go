@@ -3,9 +3,6 @@ package order
 import (
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
-)
-
-import (
 	"context"
 	"log"
 	"sort"

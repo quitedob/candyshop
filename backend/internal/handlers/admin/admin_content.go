@@ -3,15 +3,14 @@ package admin
 import (
 	modelsCommon "candypro/api/internal/models/common"
 	modelsProduct "candypro/api/internal/models/product"
-)
-
-import (
+	"candypro/api/internal/pkg/crypto"
+	"candypro/api/internal/pkg/dberror"
+	"candypro/api/internal/pkg/pagination"
+	"candypro/api/internal/pkg/response"
 	"errors"
 	"net/http"
 	"strings"
 	"time"
-
-	"candypro/api/internal/utils"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -87,11 +86,11 @@ type adminContentUpdateRequest struct {
 // @Router /admin/content [get]
 func (h *Handler) AdminGetContent(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
-	page, limit := utils.ParsePagination(c, 20, 100)
+	page, limit := pagination.ParsePagination(c, 20, 100)
 	contentType := normalizeContentType(c.Query("type"))
 
 	if contentType == "" {
@@ -103,7 +102,7 @@ func (h *Handler) AdminGetContent(c *gin.Context) {
 		category := strings.TrimSpace(c.Query("category"))
 		posts, err := h.services.Content.GetPosts(c.Request.Context(), page, limit, category)
 		if err != nil {
-			utils.ErrorResp(c, http.StatusInternalServerError, "posts_fetch_failed")
+			response.ErrorResp(c, http.StatusInternalServerError, "posts_fetch_failed")
 			return
 		}
 
@@ -116,7 +115,7 @@ func (h *Handler) AdminGetContent(c *gin.Context) {
 		industry := strings.TrimSpace(c.Query("industry"))
 		cases, err := h.services.Content.GetCases(c.Request.Context(), page, limit, industry)
 		if err != nil {
-			utils.ErrorResp(c, http.StatusInternalServerError, "cases_fetch_failed")
+			response.ErrorResp(c, http.StatusInternalServerError, "cases_fetch_failed")
 			return
 		}
 
@@ -136,7 +135,7 @@ func (h *Handler) AdminGetContent(c *gin.Context) {
 // @Router /admin/content/{id} [get]
 func (h *Handler) AdminGetContentByID(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -146,7 +145,7 @@ func (h *Handler) AdminGetContentByID(c *gin.Context) {
 	if contentType == "post" {
 		post, err := h.services.Content.GetPostByID(c.Request.Context(), id)
 		if err != nil {
-			utils.ErrorResp(c, http.StatusNotFound, "content_not_found")
+			response.ErrorResp(c, http.StatusNotFound, "content_not_found")
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
@@ -159,7 +158,7 @@ func (h *Handler) AdminGetContentByID(c *gin.Context) {
 	if contentType == "case" {
 		caseStudy, err := h.services.Content.GetCaseByID(c.Request.Context(), id)
 		if err != nil {
-			utils.ErrorResp(c, http.StatusNotFound, "content_not_found")
+			response.ErrorResp(c, http.StatusNotFound, "content_not_found")
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
@@ -187,7 +186,7 @@ func (h *Handler) AdminGetContentByID(c *gin.Context) {
 		return
 	}
 
-	utils.ErrorResp(c, http.StatusNotFound, "content_not_found")
+	response.ErrorResp(c, http.StatusNotFound, "content_not_found")
 }
 
 // AdminCreateContent creates CMS content (blog/case study)
@@ -197,18 +196,18 @@ func (h *Handler) AdminGetContentByID(c *gin.Context) {
 // @Router /admin/content [post]
 func (h *Handler) AdminCreateContent(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	var req adminContentCreateRequest
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	contentType := normalizeContentType(req.Type)
 	if contentType == "" {
-		utils.InvalidResp(c, "content_type_invalid")
+		response.InvalidResp(c, "content_type_invalid")
 		return
 	}
 
@@ -216,16 +215,16 @@ func (h *Handler) AdminCreateContent(c *gin.Context) {
 	case "post":
 		post := buildPostFromCreateRequest(req)
 		if strings.TrimSpace(post.Title) == "" {
-			utils.InvalidResp(c, "content_title_required")
+			response.InvalidResp(c, "content_title_required")
 			return
 		}
 
 		if err := h.services.Content.CreatePost(c.Request.Context(), post); err != nil {
-			if utils.IsDuplicateKeyError(err) {
-				utils.ErrorResp(c, http.StatusConflict, "content_slug_conflict")
+			if dberror.IsDuplicateKeyError(err) {
+				response.ErrorResp(c, http.StatusConflict, "content_slug_conflict")
 				return
 			}
-			utils.ErrorResp(c, http.StatusInternalServerError, "content_create_failed")
+			response.ErrorResp(c, http.StatusInternalServerError, "content_create_failed")
 			return
 		}
 
@@ -237,16 +236,16 @@ func (h *Handler) AdminCreateContent(c *gin.Context) {
 	case "case":
 		caseStudy := buildCaseFromCreateRequest(req)
 		if strings.TrimSpace(caseStudy.Title) == "" {
-			utils.InvalidResp(c, "content_title_required")
+			response.InvalidResp(c, "content_title_required")
 			return
 		}
 
 		if err := h.services.Content.CreateCase(c.Request.Context(), caseStudy); err != nil {
-			if utils.IsDuplicateKeyError(err) {
-				utils.ErrorResp(c, http.StatusConflict, "content_slug_conflict")
+			if dberror.IsDuplicateKeyError(err) {
+				response.ErrorResp(c, http.StatusConflict, "content_slug_conflict")
 				return
 			}
-			utils.ErrorResp(c, http.StatusInternalServerError, "content_create_failed")
+			response.ErrorResp(c, http.StatusInternalServerError, "content_create_failed")
 			return
 		}
 
@@ -266,19 +265,19 @@ func (h *Handler) AdminCreateContent(c *gin.Context) {
 // @Router /admin/content/{id} [put]
 func (h *Handler) AdminUpdateContent(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	id := c.Param("id")
 	var req adminContentUpdateRequest
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	contentType := normalizeContentType(req.Type)
 	if contentType == "" {
-		utils.InvalidResp(c, "content_type_invalid")
+		response.InvalidResp(c, "content_type_invalid")
 		return
 	}
 
@@ -286,23 +285,23 @@ func (h *Handler) AdminUpdateContent(c *gin.Context) {
 	case "post":
 		post, err := h.services.Content.GetPostByID(c.Request.Context(), id)
 		if err != nil {
-			utils.ErrorResp(c, http.StatusNotFound, "content_not_found")
+			response.ErrorResp(c, http.StatusNotFound, "content_not_found")
 			return
 		}
 
 		applyPostPatch(post, req)
 		if strings.TrimSpace(post.Title) == "" {
-			utils.InvalidResp(c, "content_title_empty")
+			response.InvalidResp(c, "content_title_empty")
 			return
 		}
 
 		post.UpdatedAt = time.Now()
 		if err := h.services.Content.UpdatePost(c.Request.Context(), post); err != nil {
-			if utils.IsDuplicateKeyError(err) {
-				utils.ErrorResp(c, http.StatusConflict, "content_slug_conflict")
+			if dberror.IsDuplicateKeyError(err) {
+				response.ErrorResp(c, http.StatusConflict, "content_slug_conflict")
 				return
 			}
-			utils.ErrorResp(c, http.StatusInternalServerError, "content_update_failed")
+			response.ErrorResp(c, http.StatusInternalServerError, "content_update_failed")
 			return
 		}
 
@@ -314,23 +313,23 @@ func (h *Handler) AdminUpdateContent(c *gin.Context) {
 	case "case":
 		caseStudy, err := h.services.Content.GetCaseByID(c.Request.Context(), id)
 		if err != nil {
-			utils.ErrorResp(c, http.StatusNotFound, "content_not_found")
+			response.ErrorResp(c, http.StatusNotFound, "content_not_found")
 			return
 		}
 
 		applyCasePatch(caseStudy, req)
 		if strings.TrimSpace(caseStudy.Title) == "" {
-			utils.InvalidResp(c, "content_title_empty")
+			response.InvalidResp(c, "content_title_empty")
 			return
 		}
 
 		caseStudy.UpdatedAt = time.Now()
 		if err := h.services.Content.UpdateCase(c.Request.Context(), caseStudy); err != nil {
-			if utils.IsDuplicateKeyError(err) {
-				utils.ErrorResp(c, http.StatusConflict, "content_slug_conflict")
+			if dberror.IsDuplicateKeyError(err) {
+				response.ErrorResp(c, http.StatusConflict, "content_slug_conflict")
 				return
 			}
-			utils.ErrorResp(c, http.StatusInternalServerError, "content_update_failed")
+			response.ErrorResp(c, http.StatusInternalServerError, "content_update_failed")
 			return
 		}
 
@@ -350,7 +349,7 @@ func (h *Handler) AdminUpdateContent(c *gin.Context) {
 // @Router /admin/content/{id} [delete]
 func (h *Handler) AdminDeleteContent(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -406,7 +405,7 @@ func (h *Handler) AdminDeleteContent(c *gin.Context) {
 		return
 	}
 	if errors.Is(caseErr, gorm.ErrRecordNotFound) {
-		utils.ErrorResp(c, http.StatusNotFound, "content_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "content_not_found")
 		return
 	}
 	handleDeleteContentError(c, caseErr, "case")
@@ -422,7 +421,7 @@ func buildPostFromCreateRequest(req adminContentCreateRequest) *modelsProduct.Bl
 
 	id := strings.TrimSpace(req.ID)
 	if id == "" {
-		id = utils.GenerateID()
+		id = crypto.GenerateID()
 	}
 
 	post := &modelsProduct.BlogPost{
@@ -458,7 +457,7 @@ func buildCaseFromCreateRequest(req adminContentCreateRequest) *modelsProduct.Ca
 	title := strings.TrimSpace(req.Title)
 	id := strings.TrimSpace(req.ID)
 	if id == "" {
-		id = utils.GenerateID()
+		id = crypto.GenerateID()
 	}
 
 	slug := normalizeSlug(req.Slug)
@@ -595,8 +594,8 @@ func normalizeContentType(raw string) string {
 
 func handleDeleteContentError(c *gin.Context, err error, contentType string) {
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		utils.ErrorResp(c, http.StatusNotFound, "content_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "content_not_found")
 		return
 	}
-	utils.ErrorResp(c, http.StatusInternalServerError, "content_delete_failed")
+	response.ErrorResp(c, http.StatusInternalServerError, "content_delete_failed")
 }

@@ -5,8 +5,9 @@ import (
 	"strconv"
 
 	modelsCommon "candypro/api/internal/models/common"
+	"candypro/api/internal/pkg/pagination"
+	"candypro/api/internal/pkg/response"
 	translationSvc "candypro/api/internal/services/translation"
-	"candypro/api/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,17 +25,17 @@ func (h *TranslationHandler) ListTranslations(c *gin.Context) {
 	group := c.Query("group")
 	locale := c.Query("locale")
 	search := c.Query("search")
-	page, limit := utils.ParsePagination(c, 20, 100)
+	page, limit := pagination.ParsePagination(c, 20, 100)
 
 	translations, total, err := h.svc.List(group, locale, search, page, limit)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "internal_error")
+		response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":       translations,
-		"pagination": utils.BuildPagination(total, page, limit),
+		"pagination": pagination.BuildPagination(total, page, limit),
 	})
 }
 
@@ -42,13 +43,13 @@ func (h *TranslationHandler) ListTranslations(c *gin.Context) {
 func (h *TranslationHandler) GetTranslation(c *gin.Context) {
 	id, err := parseTranslationID(c)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusBadRequest, "invalid_request")
+		response.ErrorResp(c, http.StatusBadRequest, "invalid_request")
 		return
 	}
 
 	t, err := h.svc.GetByID(id)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "not_found")
+		response.ErrorResp(c, http.StatusNotFound, "not_found")
 		return
 	}
 
@@ -63,7 +64,7 @@ func (h *TranslationHandler) CreateTranslation(c *gin.Context) {
 		Value  string `json:"value" binding:"required"`
 		Group  string `json:"group"`
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -78,7 +79,7 @@ func (h *TranslationHandler) CreateTranslation(c *gin.Context) {
 	}
 
 	if err := h.svc.Create(t); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "internal_error")
+		response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 		return
 	}
 
@@ -89,7 +90,7 @@ func (h *TranslationHandler) CreateTranslation(c *gin.Context) {
 func (h *TranslationHandler) UpdateTranslation(c *gin.Context) {
 	id, err := parseTranslationID(c)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusBadRequest, "invalid_request")
+		response.ErrorResp(c, http.StatusBadRequest, "invalid_request")
 		return
 	}
 
@@ -98,13 +99,13 @@ func (h *TranslationHandler) UpdateTranslation(c *gin.Context) {
 		Group    string `json:"group"`
 		IsActive *bool  `json:"isActive"`
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	existing, err := h.svc.GetByID(id)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "not_found")
+		response.ErrorResp(c, http.StatusNotFound, "not_found")
 		return
 	}
 
@@ -119,7 +120,7 @@ func (h *TranslationHandler) UpdateTranslation(c *gin.Context) {
 	existing.UpdatedBy = &userID
 
 	if err := h.svc.Update(existing); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "internal_error")
+		response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 		return
 	}
 
@@ -130,12 +131,12 @@ func (h *TranslationHandler) UpdateTranslation(c *gin.Context) {
 func (h *TranslationHandler) DeleteTranslation(c *gin.Context) {
 	id, err := parseTranslationID(c)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusBadRequest, "invalid_request")
+		response.ErrorResp(c, http.StatusBadRequest, "invalid_request")
 		return
 	}
 
 	if err := h.svc.Delete(id); err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "not_found")
+		response.ErrorResp(c, http.StatusNotFound, "not_found")
 		return
 	}
 
@@ -146,7 +147,7 @@ func (h *TranslationHandler) DeleteTranslation(c *gin.Context) {
 func (h *TranslationHandler) ListGroups(c *gin.Context) {
 	groups, err := h.svc.Groups()
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "internal_error")
+		response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 		return
 	}
 
@@ -163,7 +164,7 @@ func (h *TranslationHandler) ImportTranslations(c *gin.Context) {
 			Group  string `json:"group"`
 		} `json:"translations" binding:"required"`
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -181,7 +182,7 @@ func (h *TranslationHandler) ImportTranslations(c *gin.Context) {
 	}
 
 	if err := h.svc.Import(translations); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "internal_error")
+		response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 		return
 	}
 
@@ -195,7 +196,7 @@ func (h *TranslationHandler) ImportTranslations(c *gin.Context) {
 func (h *TranslationHandler) ExportTranslations(c *gin.Context) {
 	translations, err := h.svc.Export()
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "internal_error")
+		response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 		return
 	}
 

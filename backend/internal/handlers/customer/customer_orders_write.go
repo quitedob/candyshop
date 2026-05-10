@@ -5,8 +5,12 @@ import (
 	modelsCommon "candypro/api/internal/models/common"
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
-	"candypro/api/internal/kyb"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/crypto"
+	"candypro/api/internal/pkg/dberror"
+	"candypro/api/internal/pkg/i18n"
+	"candypro/api/internal/pkg/kyb"
+	"candypro/api/internal/pkg/money"
+	"candypro/api/internal/pkg/response"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -40,28 +44,28 @@ type customerCreateOrderRequest struct {
 // CustomerCreateOrder creates a new customer order and binds it to the authenticated user.
 func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	var req customerCreateOrderRequest
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	if req.TaxAmount < 0 || req.ShippingAmount < 0 {
-		utils.InvalidResp(c, "tax_shipping_negative")
+		response.InvalidResp(c, "tax_shipping_negative")
 		return
 	}
 
 	if msg := validateCustomerShippingAddress(req.ShippingAddress); msg != "" {
-		utils.InvalidResp(c, msg)
+		response.InvalidResp(c, msg)
 		return
 	}
 
@@ -70,11 +74,11 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 		trimmedInquiryID := strings.TrimSpace(*req.InquiryID)
 		inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), trimmedInquiryID)
 		if err != nil {
-			utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
+			response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 			return
 		}
 		if inquiry.UserID == nil || *inquiry.UserID != userID {
-			utils.ErrorResp(c, http.StatusForbidden, "inquiry_no_access")
+			response.ErrorResp(c, http.StatusForbidden, "inquiry_no_access")
 			return
 		}
 		inquiryID = &trimmedInquiryID
@@ -98,21 +102,21 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 	for _, it := range req.Items {
 		productID := strings.TrimSpace(it.ProductID)
 		if productID == "" {
-			utils.InvalidResp(c, "invalid_request")
+			response.InvalidResp(c, "invalid_request")
 			return
 		}
 		if it.Quantity < 1 {
-			utils.InvalidResp(c, "quantity_min_1")
+			response.InvalidResp(c, "quantity_min_1")
 			return
 		}
 
 		product, err := h.services.Product.GetProductByID(c.Request.Context(), productID)
 		if err != nil {
-			utils.ErrorResp(c, http.StatusNotFound, "product_not_found")
+			response.ErrorResp(c, http.StatusNotFound, "product_not_found")
 			return
 		}
 		if status := strings.ToLower(strings.TrimSpace(product.Status)); status != "" && status != "active" {
-			utils.ErrorResp(c, http.StatusBadRequest, "product_unavailable")
+			response.ErrorResp(c, http.StatusBadRequest, "product_unavailable")
 			return
 		}
 
@@ -127,7 +131,7 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 			unitPrice = product.BasePrice
 		}
 		if unitPrice <= 0 {
-			utils.ErrorResp(c, http.StatusUnprocessableEntity, "no_price")
+			response.ErrorResp(c, http.StatusUnprocessableEntity, "no_price")
 			return
 		}
 		unitPrice = h.services.Product.ResolveCheckoutUnitPrice(c.Request.Context(), product, unitPrice, req.ShippingAddress.Country)
@@ -148,7 +152,7 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 	if len(compliance.Violations) > 0 {
 		c.JSON(http.StatusUnprocessableEntity, modelsCommon.ErrorResponse{
 			Error:   "compliance_violation",
-			Message: utils.T(c, "errors.compliance_violation"),
+			Message: i18n.T(c, "errors.compliance_violation"),
 			Details: gin.H{
 				"country":    compliance.Country,
 				"violations": compliance.Violations,
@@ -166,7 +170,7 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 	if len(inventory.Violations) > 0 {
 		c.JSON(http.StatusUnprocessableEntity, modelsCommon.ErrorResponse{
 			Error:   "inventory_violation",
-			Message: utils.T(c, "errors.inventory_violation"),
+			Message: i18n.T(c, "errors.inventory_violation"),
 			Details: gin.H{
 				"violations": inventory.Violations,
 				"warnings":   inventory.Warnings,
@@ -175,9 +179,9 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 		return
 	}
 
-	currencyNorm, curErr := utils.NormalizeISOCurrency(req.Currency)
+	currencyNorm, curErr := money.NormalizeISOCurrency(req.Currency)
 	if curErr != nil {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 	currency := currencyNorm
@@ -192,7 +196,7 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 
 	totalAmount := subtotal + req.TaxAmount + req.ShippingAmount
 	if math.IsNaN(totalAmount) || math.IsInf(totalAmount, 0) || totalAmount < 0 {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 	if !h.ensureActiveOrKYBBypassForAmount(c, userID, totalAmount, kyb.LineProductIDs(items)...) {
@@ -200,19 +204,19 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 	}
 	now := time.Now()
 	order := &modelsOrder.Order{
-		ID:            utils.GenerateID(),
-		OrderNumber:   orderNumber,
-		UserID:        userID,
-		InquiryID:     inquiryID,
-		Status:        "pending",
-		PaymentStatus: "unpaid",
-		Items:         items,
-		StockReserved: true,
-		Subtotal:      subtotal,
-		TaxAmount:     req.TaxAmount,
+		ID:             crypto.GenerateID(),
+		OrderNumber:    orderNumber,
+		UserID:         userID,
+		InquiryID:      inquiryID,
+		Status:         "pending",
+		PaymentStatus:  "unpaid",
+		Items:          items,
+		StockReserved:  true,
+		Subtotal:       subtotal,
+		TaxAmount:      req.TaxAmount,
 		ShippingAmount: req.ShippingAmount,
-		TotalAmount:   totalAmount,
-		Currency:      currency,
+		TotalAmount:    totalAmount,
+		Currency:       currency,
 		ShippingAddress: modelsOrder.Address{
 			Street:  strings.TrimSpace(req.ShippingAddress.Street),
 			City:    strings.TrimSpace(req.ShippingAddress.City),
@@ -225,17 +229,17 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 	}
 
 	if err := h.services.Order.CreateOrderWithStockReservation(c.Request.Context(), order); err != nil {
-		if utils.IsDuplicateKeyError(err) {
-			utils.ErrorResp(c, http.StatusConflict, "conflict")
+		if dberror.IsDuplicateKeyError(err) {
+			response.ErrorResp(c, http.StatusConflict, "conflict")
 			return
 		}
 		if errors.Is(err, modelsOrder.ErrInsufficientStock) {
-			utils.ErrorRespDetail(c, http.StatusUnprocessableEntity, "inventory_violation", gin.H{
+			response.ErrorRespDetail(c, http.StatusUnprocessableEntity, "inventory_violation", gin.H{
 				"message": "Inventory changed while creating order. Please retry with latest stock.",
 			})
 			return
 		}
-		utils.ErrorResp(c, http.StatusInternalServerError, "order_create_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "order_create_failed")
 		return
 	}
 
@@ -256,34 +260,34 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 // price changes are rejected — the server-authoritative draft data is used.
 func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	orderID := strings.TrimSpace(c.Param("id"))
 	if orderID == "" {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	order, err := h.services.Order.GetOrder(c.Request.Context(), orderID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "order_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "order_not_found")
 		return
 	}
 	if order.UserID != userID {
-		utils.ErrorResp(c, http.StatusForbidden, "forbidden")
+		response.ErrorResp(c, http.StatusForbidden, "forbidden")
 		return
 	}
 
 	if order.Status != "pending_confirmation" {
-		utils.ErrorResp(c, http.StatusConflict, "invalid_state")
+		response.ErrorResp(c, http.StatusConflict, "invalid_state")
 		return
 	}
 
@@ -293,7 +297,7 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 		rawBody, readErr := io.ReadAll(c.Request.Body)
 		c.Request.Body = io.NopCloser(bytes.NewReader(rawBody))
 		if readErr != nil {
-			utils.InvalidResp(c, "invalid_request")
+			response.InvalidResp(c, "invalid_request")
 			return
 		}
 		trimmedBody := bytes.TrimSpace(rawBody)
@@ -302,7 +306,7 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 				ComplianceAck bool `json:"complianceAck"`
 			}
 			if err := json.Unmarshal(trimmedBody, &parsed); err != nil {
-				utils.InvalidResp(c, "invalid_request")
+				response.InvalidResp(c, "invalid_request")
 				return
 			}
 			complianceAck = parsed.ComplianceAck
@@ -312,7 +316,7 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 	if !order.ComplianceOfficialEvidence && !complianceAck {
 		c.JSON(http.StatusConflict, modelsCommon.ErrorResponse{
 			Error:   "compliance_ack_required",
-			Message: utils.T(c, "errors.compliance_ack_required"),
+			Message: i18n.T(c, "errors.compliance_ack_required"),
 			Details: gin.H{
 				"requiresComplianceAck": true,
 			},
@@ -327,27 +331,27 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 	now := time.Now()
 	if err := h.services.Order.ConfirmAndReserveOrder(c.Request.Context(), orderID, order.Items, now); err != nil {
 		if errors.Is(err, modelsOrder.ErrInsufficientStock) {
-			utils.ErrorResp(c, http.StatusUnprocessableEntity, "insufficient_stock")
+			response.ErrorResp(c, http.StatusUnprocessableEntity, "insufficient_stock")
 			return
 		}
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			latest, latestErr := h.services.Order.GetOrder(c.Request.Context(), orderID)
 			if latestErr != nil {
-				utils.ErrorResp(c, http.StatusConflict, "invalid_state")
+				response.ErrorResp(c, http.StatusConflict, "invalid_state")
 				return
 			}
 			if latest.UserID != userID {
-				utils.ErrorResp(c, http.StatusForbidden, "forbidden")
+				response.ErrorResp(c, http.StatusForbidden, "forbidden")
 				return
 			}
 			if latest.Status == "cancelled" && !latest.StockReserved {
-				utils.ErrorResp(c, http.StatusConflict, "order_expired")
+				response.ErrorResp(c, http.StatusConflict, "order_expired")
 				return
 			}
-			utils.ErrorResp(c, http.StatusConflict, "invalid_state")
+			response.ErrorResp(c, http.StatusConflict, "invalid_state")
 			return
 		}
-		utils.ErrorResp(c, http.StatusInternalServerError, "order_confirm_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "order_confirm_failed")
 		return
 	}
 
@@ -375,7 +379,7 @@ func validateCustomerShippingAddress(address modelsOrder.Address) string {
 }
 
 func buildCustomerOrderNumber() string {
-	return fmt.Sprintf("CUS-%s-%s", time.Now().Format("20060102"), strings.ToUpper(utils.GenerateSlug()))
+	return fmt.Sprintf("CUS-%s-%s", time.Now().Format("20060102"), strings.ToUpper(crypto.GenerateSlug()))
 }
 
 func dedupeCustomerWarnings(values []string) []string {
@@ -400,36 +404,36 @@ func dedupeCustomerWarnings(values []string) []string {
 // Only orders in "pending" status can be cancelled by the customer.
 func (h *Handler) CustomerCancelOrder(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	orderID := strings.TrimSpace(c.Param("id"))
 	if orderID == "" {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	order, err := h.services.Order.GetOrder(c.Request.Context(), orderID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "order_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "order_not_found")
 		return
 	}
 
 	if order.UserID != userID {
-		utils.ErrorResp(c, http.StatusForbidden, "forbidden")
+		response.ErrorResp(c, http.StatusForbidden, "forbidden")
 		return
 	}
 
 	// Only allow cancellation of pending and pending_confirmation orders
 	if order.Status != "pending" && order.Status != "pending_confirmation" {
-		utils.ErrorResp(c, http.StatusConflict, "invalid_state")
+		response.ErrorResp(c, http.StatusConflict, "invalid_state")
 		return
 	}
 
@@ -439,13 +443,13 @@ func (h *Handler) CustomerCancelOrder(c *gin.Context) {
 
 	if order.StockReserved {
 		if err := h.services.Order.ReleaseOrderStock(c.Request.Context(), order); err != nil {
-			utils.ErrorResp(c, http.StatusInternalServerError, "order_update_failed")
+			response.ErrorResp(c, http.StatusInternalServerError, "order_update_failed")
 			return
 		}
 	} else {
 		order.StockReserved = false
 		if err := h.services.Order.UpdateOrder(c.Request.Context(), order); err != nil {
-			utils.ErrorResp(c, http.StatusInternalServerError, "order_update_failed")
+			response.ErrorResp(c, http.StatusInternalServerError, "order_update_failed")
 			return
 		}
 	}

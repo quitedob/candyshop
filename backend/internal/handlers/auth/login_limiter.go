@@ -20,10 +20,10 @@ const (
 
 // loginAttempt tracks failed login attempts for a single email.
 type loginAttempt struct {
-	failures  int
-	lastFail  time.Time
-	lockedAt  time.Time
-	isLocked  bool
+	failures int
+	lastFail time.Time
+	lockedAt time.Time
+	isLocked bool
 }
 
 // LoginAttemptTracker is an in-memory per-account brute-force limiter.

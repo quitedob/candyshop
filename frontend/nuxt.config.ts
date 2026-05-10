@@ -111,10 +111,12 @@ export default defineNuxtConfig({
   // Runtime config
   runtimeConfig: {
     public: {
-      apiBase: process.env.API_BASE_URL || 'http://localhost:8080/api/v1',
+      apiBase: process.env.API_BASE_URL || '/api/v1',
       siteUrl: process.env.SITE_URL || 'https://candypro-oem.com',
       whatsappNumber: process.env.WHATSAPP_NUMBER || '1234567890'
-    }
+    },
+    // Server-only: used during SSR so $fetch bypasses Nitro localFetch (which ignores devProxy)
+    internalApiBase: 'http://localhost:8080/api/v1'
   },
 
   // R4-20: Remove broken sitemap source — /api/__sitemap__/urls doesn't exist
@@ -125,7 +127,13 @@ export default defineNuxtConfig({
   // Nitro server
   nitro: {
     port: 3000,
-    host: '0.0.0.0'
+    host: '0.0.0.0',
+    devProxy: {
+      '/api': {
+        target: 'http://localhost:8080/api',
+        changeOrigin: true
+      }
+    }
   },
 
   // Disable appManifest to fix Vite pre-transform error with #app-manifest import

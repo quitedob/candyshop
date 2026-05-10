@@ -18,7 +18,7 @@ import (
 	"candypro/api/internal/config"
 	"candypro/api/internal/database"
 	"candypro/api/internal/handlers"
-	"candypro/api/internal/i18n"
+	"candypro/api/internal/pkg/i18n"
 
 	"github.com/joho/godotenv"
 	"gorm.io/gorm"
@@ -50,11 +50,6 @@ func main() {
 
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
-	// Load embedded i18n translations
-	if err := i18n.LoadEmbedded(i18n.LocaleFS); err != nil {
-		log.Fatalf("Failed to load i18n translations: %v", err)
-	}
-
 	// Connect to database
 	var db *gorm.DB
 	db, err = database.Connect(&cfg.Database)
@@ -70,6 +65,14 @@ func main() {
 		// Always seed essential system data (roles, superadmin)
 		if err := database.SeedEssential(db); err != nil {
 			log.Printf("Warning: Failed to seed essential data: %v", err)
+		}
+
+		// Seed i18n translations into DB and initialize the translation engine
+		if err := database.SeedTranslations(db, "internal/database/seed_locales"); err != nil {
+			log.Printf("Warning: Failed to seed translations: %v", err)
+		}
+		if err := i18n.Init(db); err != nil {
+			log.Printf("Warning: Failed to initialize i18n engine: %v", err)
 		}
 
 		// Optional: seed sample business data (products, categories, blog posts, etc.)

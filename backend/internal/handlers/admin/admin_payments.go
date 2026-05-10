@@ -1,13 +1,16 @@
 package admin
 
 import (
+	modelsCommon "candypro/api/internal/models/common"
+	modelsOrder "candypro/api/internal/models/order"
+	"candypro/api/internal/pkg/crypto"
+	"candypro/api/internal/pkg/money"
+	"candypro/api/internal/pkg/response"
+	"candypro/api/internal/pkg/uploadpath"
 	"encoding/json"
 	"fmt"
 	"log"
 	"math"
-	modelsCommon "candypro/api/internal/models/common"
-	modelsOrder "candypro/api/internal/models/order"
-	"candypro/api/internal/utils"
 	"net/http"
 	"os"
 	"strings"
@@ -19,14 +22,14 @@ import (
 // AdminGetOrderPayments returns all payments for an order.
 func (h *Handler) AdminGetOrderPayments(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	orderID := c.Param("id")
 	payments, err := h.services.Payment.GetPaymentsByOrder(c.Request.Context(), orderID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "payment_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "payment_fetch_failed")
 		return
 	}
 
@@ -45,47 +48,47 @@ type adminCreatePaymentRequest struct {
 // AdminCreatePayment creates a payment record for an order.
 func (h *Handler) AdminCreatePayment(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	orderID := c.Param("id")
 	ord, err := h.services.Order.GetOrder(c.Request.Context(), orderID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "order_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "order_not_found")
 		return
 	}
 
 	var req adminCreatePaymentRequest
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	if math.IsNaN(req.Amount) || math.IsInf(req.Amount, 0) || req.Amount < 0 {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
-	currencyNorm, curErr := utils.NormalizeISOCurrency(req.Currency)
+	currencyNorm, curErr := money.NormalizeISOCurrency(req.Currency)
 	if curErr != nil {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 	currency := currencyNorm
 	if currency == "" {
 		currency = "USD"
 	}
-	orderCur, _ := utils.NormalizeISOCurrency(ord.Currency)
+	orderCur, _ := money.NormalizeISOCurrency(ord.Currency)
 	if orderCur == "" {
 		orderCur = "USD"
 	}
 	if currency != orderCur {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	payment := &modelsOrder.Payment{
-		ID:        utils.GenerateID(),
+		ID:        crypto.GenerateID(),
 		OrderID:   orderID,
 		Amount:    req.Amount,
 		Currency:  currency,
@@ -101,10 +104,10 @@ func (h *Handler) AdminCreatePayment(c *gin.Context) {
 	// Atomic balance check + create within a transaction
 	if err := h.services.Payment.CreatePaymentWithBalanceCheck(c.Request.Context(), ord.TotalAmount, payment); err != nil {
 		if strings.Contains(err.Error(), "exceeds remaining balance") {
-			utils.InvalidResp(c, "invalid_request")
+			response.InvalidResp(c, "invalid_request")
 			return
 		}
-		utils.ErrorResp(c, http.StatusInternalServerError, "payment_create_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "payment_create_failed")
 		return
 	}
 
@@ -114,23 +117,23 @@ func (h *Handler) AdminCreatePayment(c *gin.Context) {
 // AdminConfirmPayment confirms a payment.
 func (h *Handler) AdminConfirmPayment(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	orderID := strings.TrimSpace(c.Param("id"))
 	paymentID := strings.TrimSpace(c.Param("paymentId"))
 	if orderID == "" || paymentID == "" {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 	pay, err := h.services.Payment.GetPayment(c.Request.Context(), paymentID)
 	if err != nil || pay == nil {
-		utils.ErrorResp(c, http.StatusNotFound, "payment_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "payment_not_found")
 		return
 	}
 	if pay.OrderID != orderID {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
@@ -141,7 +144,7 @@ func (h *Handler) AdminConfirmPayment(c *gin.Context) {
 	}
 
 	if err := h.services.Payment.ConfirmPayment(c.Request.Context(), paymentID, adminIDStr); err != nil {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
@@ -168,28 +171,28 @@ func (h *Handler) AdminConfirmPayment(c *gin.Context) {
 // AdminRefundPayment refunds a payment.
 func (h *Handler) AdminRefundPayment(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	orderID := strings.TrimSpace(c.Param("id"))
 	paymentID := strings.TrimSpace(c.Param("paymentId"))
 	if orderID == "" || paymentID == "" {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 	pay, err := h.services.Payment.GetPayment(c.Request.Context(), paymentID)
 	if err != nil || pay == nil {
-		utils.ErrorResp(c, http.StatusNotFound, "payment_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "payment_not_found")
 		return
 	}
 	if pay.OrderID != orderID {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	if err := h.services.Payment.RefundPayment(c.Request.Context(), paymentID); err != nil {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
@@ -233,7 +236,7 @@ func (h *Handler) logPaymentActivity(c *gin.Context, action, orderID, paymentID,
 		"amount":    amount,
 	})
 	_ = h.services.ActivityLog.LogActivity(c.Request.Context(), &modelsCommon.ActivityLog{
-		ID:         utils.GenerateID(),
+		ID:         crypto.GenerateID(),
 		UserID:     &adminID,
 		Action:     action,
 		EntityType: "payment",
@@ -248,44 +251,44 @@ func (h *Handler) logPaymentActivity(c *gin.Context, action, orderID, paymentID,
 // AdminDownloadPaymentProofFile 管理员下载订单付款凭证文件。
 func (h *Handler) AdminDownloadPaymentProofFile(c *gin.Context) {
 	if h.services == nil || h.cfg == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	orderID := strings.TrimSpace(c.Param("id"))
 	paymentID := strings.TrimSpace(c.Param("paymentId"))
 	if orderID == "" || paymentID == "" {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 	if _, err := h.services.Order.GetOrder(c.Request.Context(), orderID); err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "order_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "order_not_found")
 		return
 	}
 	pay, err := h.services.Payment.GetPayment(c.Request.Context(), paymentID)
 	if err != nil || pay == nil || pay.OrderID != orderID {
-		utils.ErrorResp(c, http.StatusNotFound, "payment_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "payment_not_found")
 		return
 	}
 	if strings.TrimSpace(pay.ProofURL) == "" {
-		utils.ErrorResp(c, http.StatusNotFound, "proof_file_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "proof_file_not_found")
 		return
 	}
 	if h.cfg.Upload.StorageDriver == "s3" {
 		presigned, err := h.storage.GetPresignedURL(c.Request.Context(), pay.ProofURL, 15*time.Minute)
 		if err != nil {
-			utils.ErrorResp(c, http.StatusInternalServerError, "payment_download_link_failed")
+			response.ErrorResp(c, http.StatusInternalServerError, "payment_download_link_failed")
 			return
 		}
 		c.Redirect(http.StatusTemporaryRedirect, presigned)
 		return
 	}
-	local, err := utils.LocalPathFromUploadURL(h.cfg.Upload.UploadPath, pay.ProofURL)
+	local, err := uploadpath.LocalPathFromUploadURL(h.cfg.Upload.UploadPath, pay.ProofURL)
 	if err != nil {
-		utils.InvalidResp(c, "payment_invalid_proof_path")
+		response.InvalidResp(c, "payment_invalid_proof_path")
 		return
 	}
 	if _, statErr := os.Stat(local); statErr != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "file_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "file_not_found")
 		return
 	}
 	c.File(local)

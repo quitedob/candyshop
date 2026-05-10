@@ -4,7 +4,7 @@ import (
 	"candypro/api/internal/config"
 	"candypro/api/internal/handlers"
 	"candypro/api/internal/middleware"
-	"candypro/api/internal/roles"
+	modelsAuth "candypro/api/internal/models/auth"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,7 +12,7 @@ import (
 // Register wires admin portal routes under /api/v1/admin.
 func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) {
 	group.Use(middleware.AuthMiddleware(cfg))
-	group.Use(middleware.RequireRole(roles.AdminPortal()...))
+	group.Use(middleware.RequireRole(modelsAuth.AdminPortal()...))
 
 	// Dashboard
 	group.GET("/dashboard", h.AdminPortal.GetDashboard)

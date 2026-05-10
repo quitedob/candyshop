@@ -3,7 +3,7 @@ package middleware
 import (
 	"strings"
 
-	"candypro/api/internal/i18n"
+	"candypro/api/internal/pkg/i18n"
 
 	"github.com/gin-gonic/gin"
 )

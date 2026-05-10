@@ -2,7 +2,7 @@ package customer
 
 import (
 	"candypro/api/internal/config"
-	"candypro/api/internal/storage"
+	"candypro/api/internal/pkg/storage"
 	servicesCommon "candypro/api/internal/services/common"
 )
 

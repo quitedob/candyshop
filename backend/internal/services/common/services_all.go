@@ -3,12 +3,12 @@ package common
 import (
 	"candypro/api/internal/config"
 	repositoryCommon "candypro/api/internal/repository/common"
+	order "candypro/api/internal/services/order"
 	adminportalscope "candypro/api/internal/services/scopes/adminportalscope"
 	authscopescope "candypro/api/internal/services/scopes/authscopescope"
 	publicscope "candypro/api/internal/services/scopes/publicscope"
 	systemscope "candypro/api/internal/services/scopes/systemscope"
 	userportalscope "candypro/api/internal/services/scopes/userportalscope"
-	order "candypro/api/internal/services/order"
 	searchsvc "candypro/api/internal/services/search"
 
 	"gorm.io/gorm"
@@ -23,12 +23,12 @@ type SearchService = searchsvc.SearchService
 
 // Services aggregates all scoped service instances.
 type Services struct {
-	Public                *PublicServices
-	UserPortal            *UserPortalServices
-	AdminPortal           *AdminPortalServices
-	AuthScope             *AuthScopeServices
-	System                *SystemServices
-	CountryPaymentPolicy  *order.CountryPaymentPolicyService
+	Public               *PublicServices
+	UserPortal           *UserPortalServices
+	AdminPortal          *AdminPortalServices
+	AuthScope            *AuthScopeServices
+	System               *SystemServices
+	CountryPaymentPolicy *order.CountryPaymentPolicyService
 }
 
 // NewServices creates all scoped services.

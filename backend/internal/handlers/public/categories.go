@@ -1,7 +1,7 @@
 package public
 
 import (
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/response"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -17,13 +17,13 @@ import (
 // @Router /categories [get]
 func (h *Handler) GetCategories(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	categories, err := h.services.Category.GetCategories(c.Request.Context())
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "category_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "category_fetch_failed")
 		return
 	}
 
@@ -40,7 +40,7 @@ func (h *Handler) GetCategories(c *gin.Context) {
 // @Router /categories/{slug} [get]
 func (h *Handler) GetCategory(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -48,7 +48,7 @@ func (h *Handler) GetCategory(c *gin.Context) {
 
 	category, err := h.services.Category.GetCategory(c.Request.Context(), slug)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "category_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "category_not_found")
 		return
 	}
 

@@ -87,7 +87,7 @@ type SecurityConfig struct {
 	PublicAIRateLimitPerMinute int
 	// PublicInquiryRateLimitPerMinute 针对 POST /public/inquiry 的独立 IP 限流（防刷询盘）
 	PublicInquiryRateLimitPerMinute int
-	EnableSwagger            bool
+	EnableSwagger                   bool
 }
 
 // JWTConfig holds JWT configuration
@@ -128,10 +128,10 @@ func Load() (*Config, error) {
 			FromName:     getEnv("FROM_NAME", "CandyPro OEM"),
 		},
 		Upload: UploadConfig{
-			MaxFileSize:  int64(getEnvInt("MAX_FILE_SIZE", 5*1024*1024)), // 5MB
-			AllowedTypes: []string{"image/jpeg", "image/png", "image/webp", "application/pdf"},
-			UploadPath:   getEnv("UPLOAD_PATH", "./uploads"),
-			UploadURL:    getEnv("UPLOAD_URL", "/uploads"),
+			MaxFileSize:   int64(getEnvInt("MAX_FILE_SIZE", 5*1024*1024)), // 5MB
+			AllowedTypes:  []string{"image/jpeg", "image/png", "image/webp", "application/pdf"},
+			UploadPath:    getEnv("UPLOAD_PATH", "./uploads"),
+			UploadURL:     getEnv("UPLOAD_URL", "/uploads"),
 			StorageDriver: getEnv("STORAGE_DRIVER", "local"),
 			S3Bucket:      getEnv("S3_BUCKET", ""),
 			S3Region:      getEnv("S3_REGION", "us-east-1"),
@@ -141,18 +141,18 @@ func Load() (*Config, error) {
 			S3CDNDomain:   getEnv("S3_CDN_DOMAIN", ""),
 		},
 		Security: SecurityConfig{
-			CORSAllowedOrigins:       parseCORSOrigins(),
-			RateLimitPerMinute:       getEnvInt("RATE_LIMIT_PER_MINUTE", 60),
-			PublicAIRateLimitPerMinute: getEnvInt("PUBLIC_AI_RATE_LIMIT_PER_MINUTE", 15),
+			CORSAllowedOrigins:              parseCORSOrigins(),
+			RateLimitPerMinute:              getEnvInt("RATE_LIMIT_PER_MINUTE", 60),
+			PublicAIRateLimitPerMinute:      getEnvInt("PUBLIC_AI_RATE_LIMIT_PER_MINUTE", 15),
 			PublicInquiryRateLimitPerMinute: getEnvInt("PUBLIC_INQUIRY_RATE_LIMIT_PER_MINUTE", 10),
-			EnableSwagger:            getEnv("ENABLE_SWAGGER", "true") == "true",
+			EnableSwagger:                   getEnv("ENABLE_SWAGGER", "true") == "true",
 		},
 		JWT: JWTConfig{
 			Secret:               getEnv("JWT_SECRET", ""),
 			AccessTokenDuration:  getEnvInt("JWT_ACCESS_MINUTES", 15),
 			RefreshTokenDuration: getEnvInt("JWT_REFRESH_DAYS", 7),
 		},
-		AI:  LoadAIConfig(),
+		AI: LoadAIConfig(),
 		KYB: KYBConfig{
 			BypassMaxOrderUSD:       getEnvFloat("KYB_BYPASS_MAX_ORDER_USD", 0),
 			BypassSampleMaxOrderUSD: getEnvFloat("KYB_BYPASS_SAMPLE_MAX_ORDER_USD", 0),

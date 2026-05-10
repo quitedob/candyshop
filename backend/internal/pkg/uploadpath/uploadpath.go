@@ -1,4 +1,4 @@
-package utils
+package uploadpath
 
 import (
 	"fmt"

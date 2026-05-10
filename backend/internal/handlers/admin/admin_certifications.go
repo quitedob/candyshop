@@ -2,7 +2,8 @@ package admin
 
 import (
 	modelsProduct "candypro/api/internal/models/product"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/crypto"
+	"candypro/api/internal/pkg/response"
 	"net/http"
 	"strings"
 	"time"
@@ -27,13 +28,13 @@ type adminCertificationRequest struct {
 // @Router /admin/certifications [get]
 func (h *Handler) AdminGetCertifications(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	certifications, err := h.services.Factory.GetCertifications(c.Request.Context())
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "certification_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "certification_fetch_failed")
 		return
 	}
 
@@ -48,14 +49,14 @@ func (h *Handler) AdminGetCertifications(c *gin.Context) {
 // @Router /admin/certifications/{id} [get]
 func (h *Handler) AdminGetCertification(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	id := c.Param("id")
 	certification, err := h.services.Factory.GetCertificationByID(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "certification_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "certification_not_found")
 		return
 	}
 
@@ -70,23 +71,23 @@ func (h *Handler) AdminGetCertification(c *gin.Context) {
 // @Router /admin/certifications [post]
 func (h *Handler) AdminCreateCertification(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	var req modelsProduct.Certification
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	req.Name = strings.TrimSpace(req.Name)
 	if req.Name == "" {
-		utils.InvalidResp(c, "certification_name_required")
+		response.InvalidResp(c, "certification_name_required")
 		return
 	}
 
 	if strings.TrimSpace(req.ID) == "" {
-		req.ID = utils.GenerateID()
+		req.ID = crypto.GenerateID()
 	}
 
 	now := time.Now()
@@ -94,7 +95,7 @@ func (h *Handler) AdminCreateCertification(c *gin.Context) {
 	req.UpdatedAt = now
 
 	if err := h.services.Factory.CreateCertification(c.Request.Context(), &req); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "certification_create_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "certification_create_failed")
 		return
 	}
 
@@ -113,19 +114,19 @@ func (h *Handler) AdminCreateCertification(c *gin.Context) {
 // @Router /admin/certifications/{id} [put]
 func (h *Handler) AdminUpdateCertification(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	id := c.Param("id")
 	certification, err := h.services.Factory.GetCertificationByID(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "certification_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "certification_not_found")
 		return
 	}
 
 	var req adminCertificationRequest
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -154,7 +155,7 @@ func (h *Handler) AdminUpdateCertification(c *gin.Context) {
 	certification.UpdatedAt = time.Now()
 
 	if err := h.services.Factory.UpdateCertification(c.Request.Context(), certification); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "certification_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "certification_update_failed")
 		return
 	}
 
@@ -172,19 +173,19 @@ func (h *Handler) AdminUpdateCertification(c *gin.Context) {
 // @Router /admin/certifications/{id} [delete]
 func (h *Handler) AdminDeleteCertification(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	id := c.Param("id")
 
 	if _, err := h.services.Factory.GetCertificationByID(c.Request.Context(), id); err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "certification_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "certification_not_found")
 		return
 	}
 
 	if err := h.services.Factory.DeleteCertification(c.Request.Context(), id); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "certification_delete_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "certification_delete_failed")
 		return
 	}
 

@@ -1,9 +1,11 @@
-package utils
+package money
 
 import (
 	"math"
 	"regexp"
 	"strings"
+
+	"candypro/api/internal/pkg/valerr"
 )
 
 // MoneyEpsilon 浮点金额比较容差（与付款「剩余应付」等处一致）
@@ -30,7 +32,7 @@ func NormalizeISOCurrency(raw string) (string, error) {
 		return "", nil
 	}
 	if !isoCurrencyRegexp.MatchString(s) {
-		return "", ErrInvalidCurrencyISO
+		return "", valerr.ErrInvalidCurrencyISO
 	}
 	return s, nil
 }

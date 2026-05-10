@@ -2,7 +2,8 @@ package customer
 
 import (
 	modelsTrade "candypro/api/internal/models/trade"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/pagination"
+	"candypro/api/internal/pkg/response"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,20 +14,20 @@ import (
 // CustomerListTradeTransactions lists current user's trades with pagination.
 func (h *Handler) CustomerListTradeTransactions(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
-	page, limit := utils.ParsePagination(c, 10, 50)
+	page, limit := pagination.ParsePagination(c, 10, 50)
 	transactions, totalItems, err := h.services.Trade.ListTransactions(c.Request.Context(), userID, page, limit)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "trade_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "trade_fetch_failed")
 		return
 	}
 
@@ -37,37 +38,37 @@ func (h *Handler) CustomerListTradeTransactions(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":       items,
-		"pagination": utils.BuildPagination(totalItems, page, limit),
+		"pagination": pagination.BuildPagination(totalItems, page, limit),
 	})
 }
 
 // CustomerGetTradeTransaction gets a single trade owned by current user.
 func (h *Handler) CustomerGetTradeTransaction(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	trans, err := h.services.Trade.GetTransaction(c.Request.Context(), uint(id))
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "trade_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "trade_not_found")
 		return
 	}
 
 	if trans.UserID != userID {
-		utils.ErrorResp(c, http.StatusForbidden, "forbidden")
+		response.ErrorResp(c, http.StatusForbidden, "forbidden")
 		return
 	}
 
@@ -77,13 +78,13 @@ func (h *Handler) CustomerGetTradeTransaction(c *gin.Context) {
 // CustomerCreateTradeTransaction creates a trade owned by current user.
 func (h *Handler) CustomerCreateTradeTransaction(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
@@ -96,7 +97,7 @@ func (h *Handler) CustomerCreateTradeTransaction(c *gin.Context) {
 		Terms       string  `json:"terms"`
 		Incoterms   string  `json:"incoterms"`
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -116,7 +117,7 @@ func (h *Handler) CustomerCreateTradeTransaction(c *gin.Context) {
 	}
 
 	if err := h.services.Trade.CreateTransaction(c.Request.Context(), transaction); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "internal_error")
+		response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 		return
 	}
 

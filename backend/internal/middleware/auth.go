@@ -5,7 +5,8 @@ import (
 	"strings"
 
 	"candypro/api/internal/config"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/jwtutil"
+	"candypro/api/internal/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,36 +16,36 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			utils.ErrorResp(c, http.StatusUnauthorized, "auth_header_required")
+			response.ErrorResp(c, http.StatusUnauthorized, "auth_header_required")
 			c.Abort()
 			return
 		}
 
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			utils.ErrorResp(c, http.StatusUnauthorized, "auth_header_invalid")
+			response.ErrorResp(c, http.StatusUnauthorized, "auth_header_invalid")
 			c.Abort()
 			return
 		}
 
 		tokenString := parts[1]
-		claims, err := utils.ValidateJWT(tokenString, cfg.JWT.Secret)
+		claims, err := jwtutil.ValidateJWT(tokenString, cfg.JWT.Secret)
 		if err != nil {
-			utils.ErrorResp(c, http.StatusUnauthorized, "token_invalid")
+			response.ErrorResp(c, http.StatusUnauthorized, "token_invalid")
 			c.Abort()
 			return
 		}
 
 		// R4-09: Reject tokens that carry a purpose claim (e.g. verify_email tokens)
 		if purpose, hasPurpose := claims["purpose"]; hasPurpose && purpose != "" {
-			utils.ErrorResp(c, http.StatusUnauthorized, "token_type_mismatch")
+			response.ErrorResp(c, http.StatusUnauthorized, "token_type_mismatch")
 			c.Abort()
 			return
 		}
 
 		sub, ok := claims["sub"].(string)
 		if !ok || strings.TrimSpace(sub) == "" {
-			utils.ErrorResp(c, http.StatusUnauthorized, "token_subject_invalid")
+			response.ErrorResp(c, http.StatusUnauthorized, "token_subject_invalid")
 			c.Abort()
 			return
 		}

@@ -4,7 +4,7 @@ import (
 	"candypro/api/internal/config"
 	"candypro/api/internal/handlers"
 	"candypro/api/internal/middleware"
-	"candypro/api/internal/roles"
+	modelsAuth "candypro/api/internal/models/auth"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -13,7 +13,7 @@ import (
 // Register wires user portal routes under /api/v1/user.
 func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, db *gorm.DB) {
 	group.Use(middleware.AuthMiddleware(cfg))
-	group.Use(middleware.RequireRole(roles.UserPortal()...))
+	group.Use(middleware.RequireRole(modelsAuth.UserPortal()...))
 
 	group.GET("/dashboard", h.UserPortal.CustomerGetDashboard)
 

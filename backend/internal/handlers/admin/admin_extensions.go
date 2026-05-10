@@ -4,7 +4,8 @@ import (
 	modelsCommon "candypro/api/internal/models/common"
 	modelsProduct "candypro/api/internal/models/product"
 	modelsUser "candypro/api/internal/models/user"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/pagination"
+	"candypro/api/internal/pkg/response"
 	"net/http"
 	"strings"
 	"time"
@@ -20,18 +21,18 @@ func (h *Handler) GetDashboard(c *gin.Context) {
 // GetSalesReport returns aggregate sales report.
 func (h *Handler) GetSalesReport(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	totalOrders, err := h.services.Order.CountOrders(c.Request.Context())
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 		return
 	}
 	totalSales, err := h.services.Order.SumSales(c.Request.Context())
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 		return
 	}
 
@@ -39,7 +40,7 @@ func (h *Handler) GetSalesReport(c *gin.Context) {
 	monthStart = time.Date(monthStart.Year(), monthStart.Month(), 1, 0, 0, 0, 0, monthStart.Location())
 	monthSales, err := h.services.Order.SumSalesSince(c.Request.Context(), monthStart)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 		return
 	}
 
@@ -55,13 +56,13 @@ func (h *Handler) GetSalesReport(c *gin.Context) {
 // GetInquiriesReport returns aggregate inquiry report.
 func (h *Handler) GetInquiriesReport(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	totalInquiries, err := h.services.Inquiry.CountInquiries(c.Request.Context())
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 		return
 	}
 
@@ -70,7 +71,7 @@ func (h *Handler) GetInquiriesReport(c *gin.Context) {
 	for _, status := range statuses {
 		count, countErr := h.services.Inquiry.CountInquiriesByStatus(c.Request.Context(), status)
 		if countErr != nil {
-			utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
+			response.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 			return
 		}
 		byStatus[status] = count
@@ -86,7 +87,7 @@ func (h *Handler) GetInquiriesReport(c *gin.Context) {
 // AdminCreateUser creates a new user.
 func (h *Handler) AdminCreateUser(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -101,17 +102,17 @@ func (h *Handler) AdminCreateUser(c *gin.Context) {
 		RoleName  string `json:"roleName"`
 		Status    string `json:"status"`
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	exists, err := h.services.User.EmailExists(c.Request.Context(), req.Email)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "internal_error")
+		response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 		return
 	}
 	if exists {
-		utils.ErrorResp(c, http.StatusConflict, "email_exists")
+		response.ErrorResp(c, http.StatusConflict, "email_exists")
 		return
 	}
 
@@ -128,7 +129,7 @@ func (h *Handler) AdminCreateUser(c *gin.Context) {
 	if strings.TrimSpace(req.RoleID) != "" || strings.TrimSpace(req.RoleName) != "" {
 		resolvedRoleID, roleErr := h.services.Auth.ResolveRoleID(c.Request.Context(), req.RoleID, req.RoleName)
 		if roleErr != nil {
-			utils.InvalidResp(c, "invalid_request")
+			response.InvalidResp(c, "invalid_request")
 			return
 		}
 		user.RoleID = resolvedRoleID
@@ -139,7 +140,7 @@ func (h *Handler) AdminCreateUser(c *gin.Context) {
 	}
 
 	if err := h.services.Auth.Register(c.Request.Context(), user); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "user_create_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "user_create_failed")
 		return
 	}
 
@@ -158,18 +159,18 @@ func (h *Handler) AdminCreateUser(c *gin.Context) {
 // AdminDeleteUser deletes a user by id.
 func (h *Handler) AdminDeleteUser(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID := c.Param("id")
 	if _, err := h.services.User.GetByID(c.Request.Context(), userID); err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 
 	if err := h.services.User.DeleteUser(c.Request.Context(), userID); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "user_delete_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "user_delete_failed")
 		return
 	}
 
@@ -182,7 +183,7 @@ func (h *Handler) AdminDeleteUser(c *gin.Context) {
 // AdminUpdateUserRole updates user role.
 func (h *Handler) AdminUpdateUserRole(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -191,25 +192,25 @@ func (h *Handler) AdminUpdateUserRole(c *gin.Context) {
 		RoleID   string `json:"roleId"`
 		RoleName string `json:"roleName"`
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	user, err := h.services.User.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 
 	resolvedRoleID, resolveErr := h.services.Auth.ResolveRoleID(c.Request.Context(), req.RoleID, req.RoleName)
 	if resolveErr != nil {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	user.RoleID = resolvedRoleID
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "user_role_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "user_role_update_failed")
 		return
 	}
 
@@ -223,14 +224,14 @@ func (h *Handler) AdminUpdateUserRole(c *gin.Context) {
 // AdminGetInquiry returns inquiry details for admins.
 func (h *Handler) AdminGetInquiry(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	inquiryID := c.Param("id")
 	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
 	c.JSON(http.StatusOK, inquiry)
@@ -239,7 +240,7 @@ func (h *Handler) AdminGetInquiry(c *gin.Context) {
 // AdminAssignInquiry assigns inquiry to a sales/admin user.
 func (h *Handler) AdminAssignInquiry(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -248,13 +249,13 @@ func (h *Handler) AdminAssignInquiry(c *gin.Context) {
 		AssignedTo string `json:"assignedTo" binding:"required"`
 		Priority   string `json:"priority"`
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
 
@@ -265,7 +266,7 @@ func (h *Handler) AdminAssignInquiry(c *gin.Context) {
 	inquiry.UpdatedAt = time.Now()
 
 	if err := h.services.Inquiry.UpdateInquiry(c.Request.Context(), inquiry); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "inquiry_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "inquiry_update_failed")
 		return
 	}
 
@@ -275,14 +276,14 @@ func (h *Handler) AdminAssignInquiry(c *gin.Context) {
 // AdminAnalyzeInquiry returns a lightweight AI-style analysis payload.
 func (h *Handler) AdminAnalyzeInquiry(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	inquiryID := c.Param("id")
 	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
 
@@ -319,25 +320,25 @@ func (h *Handler) AdminAnalyzeInquiry(c *gin.Context) {
 // AdminQuoteInquiry writes quote result back to inquiry.
 func (h *Handler) AdminQuoteInquiry(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	inquiryID := c.Param("id")
 	var req struct {
-		QuotedAmount         float64  `json:"quotedAmount" binding:"required"`
-		ValidUntil           *string  `json:"validUntil"`
-		Products             []string `json:"products"`
-		CustomerNotes        string   `json:"customerNotes"`
-		RequestHumanReview   bool     `json:"requestHumanReview"` // 与 Eino submit_quotation_for_human_review 工具配合的人审标记
+		QuotedAmount       float64  `json:"quotedAmount" binding:"required"`
+		ValidUntil         *string  `json:"validUntil"`
+		Products           []string `json:"products"`
+		CustomerNotes      string   `json:"customerNotes"`
+		RequestHumanReview bool     `json:"requestHumanReview"` // 与 Eino submit_quotation_for_human_review 工具配合的人审标记
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
 
@@ -355,7 +356,7 @@ func (h *Handler) AdminQuoteInquiry(c *gin.Context) {
 	}
 
 	if err := h.services.Inquiry.UpdateInquiry(c.Request.Context(), inquiry); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "inquiry_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "inquiry_update_failed")
 		return
 	}
 
@@ -368,15 +369,15 @@ func (h *Handler) AdminQuoteInquiry(c *gin.Context) {
 // AdminGetProducts returns paginated product list for admin.
 func (h *Handler) AdminGetProducts(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
-	page, limit := utils.ParsePagination(c, 20, 100)
+	page, limit := pagination.ParsePagination(c, 20, 100)
 	category := strings.TrimSpace(c.Query("category"))
 	products, err := h.services.Product.GetProducts(c.Request.Context(), page, limit, category)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "product_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "product_fetch_failed")
 		return
 	}
 
@@ -386,14 +387,14 @@ func (h *Handler) AdminGetProducts(c *gin.Context) {
 // AdminGetProduct returns a single product for admin.
 func (h *Handler) AdminGetProduct(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	productID := c.Param("id")
 	product, err := h.services.Product.GetProductByID(c.Request.Context(), productID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "product_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "product_not_found")
 		return
 	}
 	c.JSON(http.StatusOK, product)
@@ -402,7 +403,7 @@ func (h *Handler) AdminGetProduct(c *gin.Context) {
 // AdminUpdateProductStatus updates product status only.
 func (h *Handler) AdminUpdateProductStatus(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -410,24 +411,24 @@ func (h *Handler) AdminUpdateProductStatus(c *gin.Context) {
 	var req struct {
 		Status string `json:"status" binding:"required"`
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	product, err := h.services.Product.GetProductByID(c.Request.Context(), productID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "product_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "product_not_found")
 		return
 	}
 
 	product.Status = strings.TrimSpace(req.Status)
 	if !modelsProduct.IsValidProductStatus(product.Status) {
-		utils.InvalidResp(c, "product_status_invalid")
+		response.InvalidResp(c, "product_status_invalid")
 		return
 	}
 	product.UpdatedAt = time.Now()
 	if err := h.services.Product.UpdateProduct(c.Request.Context(), product); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "product_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "product_update_failed")
 		return
 	}
 

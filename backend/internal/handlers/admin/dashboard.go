@@ -1,8 +1,7 @@
 package admin
 
 import (
-	"candypro/api/internal/utils"
-
+	"candypro/api/internal/pkg/response"
 	"context"
 	"fmt"
 	"net/http"
@@ -27,7 +26,7 @@ type dashboardActivity struct {
 // @Router /admin/dashboard/stats [get]
 func (h *Handler) GetDashboardStats(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -35,43 +34,43 @@ func (h *Handler) GetDashboardStats(c *gin.Context) {
 
 	totalUsers, err := h.services.User.CountUsers(ctx)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 		return
 	}
 
 	newUsersThisWeek, err := h.services.User.CountUsersSince(ctx, time.Now().AddDate(0, 0, -7))
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 		return
 	}
 
 	totalOrders, err := h.services.Order.CountOrders(ctx)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 		return
 	}
 
 	pendingOrders, err := h.services.Order.CountOrdersByStatuses(ctx, []string{"pending", "confirmed", "production", "processing"})
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 		return
 	}
 
 	totalInquiries, err := h.services.Inquiry.CountInquiries(ctx)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 		return
 	}
 
 	pendingInquiries, err := h.services.Inquiry.CountInquiriesByStatus(ctx, "pending")
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 		return
 	}
 
 	totalSales, err := h.services.Order.SumSales(ctx)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 		return
 	}
 
@@ -79,7 +78,7 @@ func (h *Handler) GetDashboardStats(c *gin.Context) {
 	monthStart = time.Date(monthStart.Year(), monthStart.Month(), 1, 0, 0, 0, 0, monthStart.Location())
 	revenueThisMonth, err := h.services.Order.SumSalesSince(ctx, monthStart)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 		return
 	}
 
@@ -103,7 +102,7 @@ func (h *Handler) GetDashboardStats(c *gin.Context) {
 
 	recentActivity, err := h.buildRecentActivities(ctx, 10)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_activity_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "dashboard_activity_fetch_failed")
 		return
 	}
 

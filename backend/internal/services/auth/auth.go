@@ -1,19 +1,15 @@
 package auth
 
 import (
+	"candypro/api/internal/config"
 	modelsAuth "candypro/api/internal/models/auth"
 	modelsUser "candypro/api/internal/models/user"
-)
-
-import (
+	"candypro/api/internal/pkg/crypto"
+	pwdutil "candypro/api/internal/pkg/password"
 	"context"
 	"errors"
 	"strings"
 	"time"
-
-	"candypro/api/internal/config"
-	"candypro/api/internal/roles"
-	"candypro/api/internal/utils"
 )
 
 type userRepository interface {
@@ -60,7 +56,7 @@ func NewAuthService(
 // Register creates a new user, hashes their password, and sets up a default profile
 func (s *AuthService) Register(ctx context.Context, user *modelsUser.User) error {
 	if user.RoleID == "" && s.roleRepo != nil {
-		if customerRole, roleErr := s.roleRepo.FindByName(ctx, roles.User); roleErr == nil {
+		if customerRole, roleErr := s.roleRepo.FindByName(ctx, modelsAuth.User); roleErr == nil {
 			user.RoleID = customerRole.ID
 			user.Role = &modelsUser.RoleSnapshot{
 				ID:          customerRole.ID,
@@ -73,12 +69,12 @@ func (s *AuthService) Register(ctx context.Context, user *modelsUser.User) error
 	}
 
 	// Hash password
-	hash, err := utils.HashPassword(user.PasswordHash) // Password string originally passed through model field
+	hash, err := pwdutil.HashPassword(user.PasswordHash) // Password string originally passed through model field
 	if err != nil {
 		return err
 	}
 	user.PasswordHash = hash
-	user.ID = utils.GenerateID()
+	user.ID = crypto.GenerateID()
 
 	return s.userRepo.Create(ctx, user)
 }
@@ -90,7 +86,7 @@ func (s *AuthService) ValidateCredentials(ctx context.Context, email, password s
 		return nil, errors.New("invalid credentials")
 	}
 
-	if !utils.CheckPasswordHash(password, user.PasswordHash) {
+	if !pwdutil.CheckPasswordHash(password, user.PasswordHash) {
 		return nil, errors.New("invalid credentials")
 	}
 
@@ -106,7 +102,7 @@ func (s *AuthService) ValidateCredentials(ctx context.Context, email, password s
 		}
 	}
 	if user.Role == nil {
-		user.Role = &modelsUser.RoleSnapshot{Name: roles.User}
+		user.Role = &modelsUser.RoleSnapshot{Name: modelsAuth.User}
 	}
 
 	return user, nil

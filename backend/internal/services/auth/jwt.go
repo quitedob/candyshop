@@ -1,20 +1,16 @@
 package auth
 
 import (
+	"candypro/api/internal/config"
 	modelsAuth "candypro/api/internal/models/auth"
 	modelsUser "candypro/api/internal/models/user"
-)
-
-import (
+	"candypro/api/internal/pkg/crypto"
+	"candypro/api/internal/pkg/jwtutil"
 	"context"
 	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-
-	"candypro/api/internal/config"
-	"candypro/api/internal/roles"
-	"candypro/api/internal/utils"
 )
 
 type JWTService struct {
@@ -31,7 +27,7 @@ func NewJWTService(repo refreshTokenCreator, cfg *config.Config) *JWTService {
 }
 
 func (s *JWTService) GenerateAccessToken(user *modelsUser.User) (string, error) {
-	roleName := roles.User
+	roleName := modelsAuth.User
 	if user.Role != nil && strings.TrimSpace(user.Role.Name) != "" {
 		roleName = strings.TrimSpace(user.Role.Name)
 	}
@@ -43,14 +39,14 @@ func (s *JWTService) GenerateAccessToken(user *modelsUser.User) (string, error) 
 		"iat":   time.Now().Unix(),
 		"exp":   time.Now().Add(time.Duration(s.cfg.JWT.AccessTokenDuration) * time.Minute).Unix(),
 	}
-	return utils.GenerateJWT(claims, s.cfg.JWT.Secret)
+	return jwtutil.GenerateJWT(claims, s.cfg.JWT.Secret)
 }
 
 func (s *JWTService) GenerateRefreshToken(ctx context.Context, user *modelsUser.User, ipAddress, userAgent string) (string, error) {
-	tokenString := utils.GenerateRandomString(64) // 64 chars random string for custom token
+	tokenString := crypto.GenerateRandomString(64) // 64 chars random string for custom token
 
 	token := &modelsAuth.RefreshToken{
-		ID:        utils.GenerateID(),
+		ID:        crypto.GenerateID(),
 		UserID:    user.ID,
 		Token:     tokenString,
 		ExpiresAt: time.Now().Add(time.Duration(s.cfg.JWT.RefreshTokenDuration) * 24 * time.Hour),

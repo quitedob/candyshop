@@ -1,8 +1,8 @@
 package translation
 
 import (
-	"candypro/api/internal/i18n"
 	"candypro/api/internal/models/common"
+	"candypro/api/internal/pkg/i18n"
 	"strconv"
 )
 
@@ -87,7 +87,7 @@ func (s *TranslationService) refreshCache() {
 	entries := make([]struct{ Locale, Key, Value string }, len(records))
 	for i, r := range records {
 		entries[i].Locale = r.Locale
-		entries[i].Key = "errors." + r.Key
+		entries[i].Key = r.Group + "." + r.Key
 		entries[i].Value = r.Value
 	}
 	i18n.WarmCache(entries)

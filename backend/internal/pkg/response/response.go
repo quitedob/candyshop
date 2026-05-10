@@ -1,36 +1,18 @@
-package utils
+package response
 
 import (
-	modelsCommon "candypro/api/internal/models/common"
-	"candypro/api/internal/i18n"
 	"log"
 	"net/http"
-	"strconv"
+
+	modelsCommon "candypro/api/internal/models/common"
+	i18nutil "candypro/api/internal/pkg/i18n"
 
 	"github.com/gin-gonic/gin"
 )
 
-// T returns the translated string for the given i18n key using the locale from gin.Context.
-func T(c *gin.Context, key string) string {
-	locale, _ := c.Get("locale")
-	if loc, ok := locale.(string); ok && loc != "" {
-		return i18n.Translate(loc, key)
-	}
-	return i18n.Translate(i18n.DefaultLocale(), key)
-}
-
-// TWithVars translates with variable substitution.
-func TWithVars(c *gin.Context, key string, vars map[string]string) string {
-	locale, _ := c.Get("locale")
-	if loc, ok := locale.(string); ok && loc != "" {
-		return i18n.TranslateWithVars(loc, key, vars)
-	}
-	return i18n.TranslateWithVars(i18n.DefaultLocale(), key, vars)
-}
-
 // ErrorResp writes a translated error response using the error code as the i18n key.
 func ErrorResp(c *gin.Context, status int, code string) {
-	msg := T(c, "errors."+code)
+	msg := i18nutil.T(c, "errors."+code)
 	c.JSON(status, modelsCommon.ErrorResponse{
 		Error:   code,
 		Message: msg,
@@ -39,7 +21,7 @@ func ErrorResp(c *gin.Context, status int, code string) {
 
 // ErrorRespDetail writes a translated error with additional details.
 func ErrorRespDetail(c *gin.Context, status int, code string, detail any) {
-	msg := T(c, "errors."+code)
+	msg := i18nutil.T(c, "errors."+code)
 	c.JSON(status, modelsCommon.ErrorResponse{
 		Error:   code,
 		Message: msg,
@@ -105,36 +87,4 @@ func BindJSONOrInvalidRequest(c *gin.Context, dst any) bool {
 		return false
 	}
 	return true
-}
-
-// ParsePagination extracts page and limit from query parameters with defaults
-// and range clamping.
-func ParsePagination(c *gin.Context, defaultLimit, maxLimit int) (page, limit int) {
-	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
-	if err != nil || page < 1 {
-		page = 1
-	}
-	limit, err = strconv.Atoi(c.DefaultQuery("limit", strconv.Itoa(defaultLimit)))
-	if err != nil || limit < 1 || limit > maxLimit {
-		limit = defaultLimit
-	}
-	return page, limit
-}
-
-// BuildPagination builds a consistent pagination payload for frontend consumers.
-func BuildPagination(total int64, page, limit int) gin.H {
-	totalPages := 0
-	if limit > 0 && total > 0 {
-		totalPages = int(total) / limit
-		if int(total)%limit != 0 {
-			totalPages++
-		}
-	}
-
-	return gin.H{
-		"total":      total,
-		"page":       page,
-		"limit":      limit,
-		"totalPages": totalPages,
-	}
 }

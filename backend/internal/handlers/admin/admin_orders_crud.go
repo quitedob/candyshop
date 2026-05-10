@@ -1,10 +1,11 @@
 package admin
 
 import (
-	"errors"
 	modelsOrder "candypro/api/internal/models/order"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/crypto"
+	"candypro/api/internal/pkg/response"
 	orderSvc "candypro/api/internal/services/order"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -51,23 +52,23 @@ type adminUpdateOrderRequest struct {
 // AdminCreateOrder creates a new order.
 func (h *Handler) AdminCreateOrder(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	var req adminCreateOrderRequest
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	userID := strings.TrimSpace(req.UserID)
 	if userID == "" {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	if _, err := h.services.User.GetByID(c.Request.Context(), userID); err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
 
@@ -75,7 +76,7 @@ func (h *Handler) AdminCreateOrder(c *gin.Context) {
 	if req.InquiryID != nil && strings.TrimSpace(*req.InquiryID) != "" {
 		trimmed := strings.TrimSpace(*req.InquiryID)
 		if _, err := h.services.Inquiry.GetInquiry(c.Request.Context(), trimmed); err != nil {
-			utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
+			response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 			return
 		}
 		inquiryID = &trimmed
@@ -83,7 +84,7 @@ func (h *Handler) AdminCreateOrder(c *gin.Context) {
 
 	orderNumber := strings.TrimSpace(req.OrderNumber)
 	if orderNumber == "" {
-		orderNumber = fmt.Sprintf("ORD-%s-%s", time.Now().Format("20060102"), strings.ToUpper(utils.GenerateSlug()))
+		orderNumber = fmt.Sprintf("ORD-%s-%s", time.Now().Format("20060102"), strings.ToUpper(crypto.GenerateSlug()))
 	}
 
 	status := strings.TrimSpace(req.Status)
@@ -116,7 +117,7 @@ func (h *Handler) AdminCreateOrder(c *gin.Context) {
 	}
 
 	order := &modelsOrder.Order{
-		ID:             utils.GenerateID(),
+		ID:             crypto.GenerateID(),
 		OrderNumber:    orderNumber,
 		UserID:         userID,
 		InquiryID:      inquiryID,
@@ -139,7 +140,7 @@ func (h *Handler) AdminCreateOrder(c *gin.Context) {
 	if h.requiresFullPrepaymentForOrder(c.Request.Context(), order.ShippingAddress.Country, order.UserID) &&
 		requiresPaidBeforeExecution(order.Status) &&
 		!isPaidInFull(order.PaymentStatus) {
-		utils.ErrorResp(c, http.StatusUnprocessableEntity, "payment_policy_violation")
+		response.ErrorResp(c, http.StatusUnprocessableEntity, "payment_policy_violation")
 		return
 	}
 
@@ -151,10 +152,10 @@ func (h *Handler) AdminCreateOrder(c *gin.Context) {
 	}
 	if createErr != nil {
 		if errors.Is(createErr, modelsOrder.ErrInsufficientStock) {
-			utils.ErrorResp(c, http.StatusUnprocessableEntity, "inventory_violation")
+			response.ErrorResp(c, http.StatusUnprocessableEntity, "inventory_violation")
 			return
 		}
-		utils.ErrorResp(c, http.StatusInternalServerError, "order_create_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "order_create_failed")
 		return
 	}
 
@@ -164,14 +165,14 @@ func (h *Handler) AdminCreateOrder(c *gin.Context) {
 // AdminUpdateOrder updates an order.
 func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	orderID := c.Param("id")
 	order, err := h.services.Order.GetOrder(c.Request.Context(), orderID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "order_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "order_not_found")
 		return
 	}
 	previousStatus := strings.ToLower(strings.TrimSpace(order.Status))
@@ -179,18 +180,18 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 	origFin := orderSvc.SnapshotOrderFinancial(order)
 
 	var req adminUpdateOrderRequest
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	if req.UserID != nil {
 		userID := strings.TrimSpace(*req.UserID)
 		if userID == "" {
-			utils.InvalidResp(c, "invalid_request")
+			response.InvalidResp(c, "invalid_request")
 			return
 		}
 		if _, userErr := h.services.User.GetByID(c.Request.Context(), userID); userErr != nil {
-			utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
+			response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 			return
 		}
 		order.UserID = userID
@@ -203,7 +204,7 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 			order.Inquiry = nil
 		} else {
 			if _, inquiryErr := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID); inquiryErr != nil {
-				utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
+				response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 				return
 			}
 			order.InquiryID = &inquiryID
@@ -254,7 +255,7 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 	// Validate status transition before any side-effects.
 	if currentStatus != previousStatus {
 		if err := modelsOrder.ValidateOrderStatusTransition(previousStatus, currentStatus); err != nil {
-			utils.ErrorResp(c, http.StatusUnprocessableEntity, "invalid_status_transition")
+			response.ErrorResp(c, http.StatusUnprocessableEntity, "invalid_status_transition")
 			return
 		}
 	}
@@ -262,7 +263,7 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 	if h.requiresFullPrepaymentForOrder(c.Request.Context(), order.ShippingAddress.Country, order.UserID) &&
 		requiresPaidBeforeExecution(order.Status) &&
 		!isPaidInFull(order.PaymentStatus) {
-		utils.ErrorResp(c, http.StatusUnprocessableEntity, "payment_policy_violation")
+		response.ErrorResp(c, http.StatusUnprocessableEntity, "payment_policy_violation")
 		return
 	}
 
@@ -270,7 +271,7 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 	company := h.resolveUserCompany(c, order.UserID)
 	if company != nil && requiresPaidBeforeExecution(currentStatus) && !isPaidInFull(order.PaymentStatus) {
 		if !requiresPrepaymentByTerms(company.PaymentTerms) && company.CreditLimit > 0 && order.TotalAmount > company.CreditLimit {
-			utils.ErrorResp(c, http.StatusUnprocessableEntity, "credit_limit_exceeded")
+			response.ErrorResp(c, http.StatusUnprocessableEntity, "credit_limit_exceeded")
 			return
 		}
 	}
@@ -278,7 +279,7 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 	newFin := orderSvc.SnapshotOrderFinancial(order)
 	if orderSvc.OrderFinancialChanged(origFin, newFin) && orderSvc.OrderStatusRequiresFinancialReason(previousStatus) {
 		if strings.TrimSpace(req.FinancialAdjustmentReason) == "" {
-			utils.ErrorResp(c, http.StatusUnprocessableEntity, "financial_adjustment_reason_required")
+			response.ErrorResp(c, http.StatusUnprocessableEntity, "financial_adjustment_reason_required")
 			return
 		}
 	}
@@ -286,7 +287,7 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 	if previousStatus != "cancelled" && currentStatus == "cancelled" && order.StockReserved {
 		order.UpdatedAt = time.Now()
 		if err := h.services.Order.ReleaseOrderStock(c.Request.Context(), order); err != nil {
-			utils.ErrorResp(c, http.StatusInternalServerError, "order_stock_release_failed")
+			response.ErrorResp(c, http.StatusInternalServerError, "order_stock_release_failed")
 			return
 		}
 		h.syncOrderFinancialSideEffects(c, order, origFin, newFin, previousStatus, req.FinancialAdjustmentReason)
@@ -302,10 +303,10 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 		order.UpdatedAt = time.Now()
 		if err := h.services.Order.UpdateOrderWithStockAdjustment(c.Request.Context(), order, stockAdjustment); err != nil {
 			if errors.Is(err, modelsOrder.ErrInsufficientStock) {
-				utils.ErrorResp(c, http.StatusUnprocessableEntity, "inventory_violation")
+				response.ErrorResp(c, http.StatusUnprocessableEntity, "inventory_violation")
 				return
 			}
-			utils.ErrorResp(c, http.StatusInternalServerError, "order_update_stock_failed")
+			response.ErrorResp(c, http.StatusInternalServerError, "order_update_stock_failed")
 			return
 		}
 		h.syncOrderFinancialSideEffects(c, order, origFin, newFin, previousStatus, req.FinancialAdjustmentReason)
@@ -332,12 +333,12 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 	// Route through UpdateOrderForAdmin to trigger outbox when transitioning to confirmed
 	if currentStatus != previousStatus {
 		if err := h.services.Order.UpdateOrderForAdmin(c.Request.Context(), order, previousStatus, currentStatus); err != nil {
-			utils.ErrorResp(c, http.StatusInternalServerError, "order_update_failed")
+			response.ErrorResp(c, http.StatusInternalServerError, "order_update_failed")
 			return
 		}
 	} else {
 		if err := h.services.Order.UpdateOrder(c.Request.Context(), order); err != nil {
-			utils.ErrorResp(c, http.StatusInternalServerError, "order_update_failed")
+			response.ErrorResp(c, http.StatusInternalServerError, "order_update_failed")
 			return
 		}
 	}
@@ -372,14 +373,14 @@ func (h *Handler) syncOrderFinancialSideEffects(c *gin.Context, order *modelsOrd
 // AdminDeleteOrder deletes an order.
 func (h *Handler) AdminDeleteOrder(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	orderID := c.Param("id")
 	order, err := h.services.Order.GetOrder(c.Request.Context(), orderID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "order_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "order_not_found")
 		return
 	}
 
@@ -390,7 +391,7 @@ func (h *Handler) AdminDeleteOrder(c *gin.Context) {
 		deleteErr = h.services.Order.DeleteOrder(c.Request.Context(), orderID)
 	}
 	if deleteErr != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "order_delete_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "order_delete_failed")
 		return
 	}
 

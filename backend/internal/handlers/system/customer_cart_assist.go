@@ -2,7 +2,7 @@ package system
 
 import (
 	modelsProduct "candypro/api/internal/models/product"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/response"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -40,12 +40,12 @@ func (h *Handler) CustomerAIRecommendForCart(c *gin.Context) {
 		return
 	}
 	if h.services == nil || h.services.Search == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	var req cartRecommendRequest
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -121,7 +121,7 @@ Rules:
 		// Fallback to regular Generate if JSON mode unavailable
 		aiResponse, err = h.aiService.Generate(c.Request.Context(), aiPrompt)
 		if err != nil {
-			utils.ErrorResp(c, http.StatusInternalServerError, "ai_recommendation_failed")
+			response.ErrorResp(c, http.StatusInternalServerError, "ai_recommendation_failed")
 			return
 		}
 	}

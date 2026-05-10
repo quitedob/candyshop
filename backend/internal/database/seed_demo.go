@@ -7,13 +7,13 @@ import (
 	"strings"
 	"time"
 
+	modelsAuth "candypro/api/internal/models/auth"
 	modelsCommon "candypro/api/internal/models/common"
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
 	modelsTrade "candypro/api/internal/models/trade"
 	modelsUser "candypro/api/internal/models/user"
-	"candypro/api/internal/roles"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/password"
 
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -48,7 +48,7 @@ func SeedDemoWorkspace(db *gorm.DB) error {
 	if pwd == "" {
 		pwd = "DemoBuyer123!"
 	}
-	hash, err := utils.HashPassword(pwd)
+	hash, err := password.HashPassword(pwd)
 	if err != nil {
 		return err
 	}
@@ -81,8 +81,8 @@ func SeedDemoWorkspace(db *gorm.DB) error {
 		return err
 	}
 
-	customerRoleID := roleIDs[roles.User]
-	adminRoleID := roleIDs[roles.Admin]
+	customerRoleID := roleIDs[modelsAuth.User]
+	adminRoleID := roleIDs[modelsAuth.Admin]
 
 	buyer := modelsUser.User{
 		ID:              demoBuyerUserID,
@@ -167,13 +167,13 @@ func SeedDemoWorkspace(db *gorm.DB) error {
 
 	// 订单1：待确认 / 未付款（无库存预占，纯展示）
 	orderPending := modelsOrder.Order{
-		ID:              demoOrder1,
-		OrderNumber:     "DEMO-ORD-PENDING-01",
-		UserID:          demoBuyerUserID,
-		InquiryID:       strPtr(demoInquiryID),
-		Status:          "pending",
-		PaymentStatus:   "unpaid",
-		StockReserved:   false,
+		ID:            demoOrder1,
+		OrderNumber:   "DEMO-ORD-PENDING-01",
+		UserID:        demoBuyerUserID,
+		InquiryID:     strPtr(demoInquiryID),
+		Status:        "pending",
+		PaymentStatus: "unpaid",
+		StockReserved: false,
 		Items: modelsOrder.OrderItemArray{
 			{ProductID: p1.ID, Quantity: 5000, UnitPrice: 8.5},
 		},
@@ -190,13 +190,13 @@ func SeedDemoWorkspace(db *gorm.DB) error {
 
 	confirmedAt := now.AddDate(0, 0, -2)
 	orderConfirmed := modelsOrder.Order{
-		ID:              demoOrder2,
-		OrderNumber:     "DEMO-ORD-CONFIRMED-01",
-		UserID:          demoBuyerUserID,
-		InquiryID:       strPtr(demoInquiryID),
-		Status:          "confirmed",
-		PaymentStatus:   "partial",
-		StockReserved:   false,
+		ID:            demoOrder2,
+		OrderNumber:   "DEMO-ORD-CONFIRMED-01",
+		UserID:        demoBuyerUserID,
+		InquiryID:     strPtr(demoInquiryID),
+		Status:        "confirmed",
+		PaymentStatus: "partial",
+		StockReserved: false,
 		Items: modelsOrder.OrderItemArray{
 			{ProductID: p1.ID, Quantity: 8000, UnitPrice: 8.2},
 			{ProductID: p2.ID, Quantity: 4000, UnitPrice: 5.1},
@@ -214,12 +214,12 @@ func SeedDemoWorkspace(db *gorm.DB) error {
 	}
 
 	orderProduction := modelsOrder.Order{
-		ID:              demoOrder3,
-		OrderNumber:     "DEMO-ORD-PRODUCTION-01",
-		UserID:          demoBuyerUserID,
-		Status:          "production",
-		PaymentStatus:   "paid",
-		StockReserved:   false,
+		ID:            demoOrder3,
+		OrderNumber:   "DEMO-ORD-PRODUCTION-01",
+		UserID:        demoBuyerUserID,
+		Status:        "production",
+		PaymentStatus: "paid",
+		StockReserved: false,
 		Items: modelsOrder.OrderItemArray{
 			{ProductID: p2.ID, Quantity: 12000, UnitPrice: 4.95},
 		},

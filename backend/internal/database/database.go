@@ -1,22 +1,18 @@
 package database
 
 import (
+	"candypro/api/internal/config"
 	modelsAuth "candypro/api/internal/models/auth"
 	modelsCommon "candypro/api/internal/models/common"
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
 	modelsTrade "candypro/api/internal/models/trade"
 	modelsUser "candypro/api/internal/models/user"
-)
-
-import (
 	"fmt"
 	"log"
 	"regexp"
 	"strings"
 	"time"
-
-	"candypro/api/internal/config"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

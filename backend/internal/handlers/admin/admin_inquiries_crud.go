@@ -3,7 +3,8 @@ package admin
 import (
 	modelsCommon "candypro/api/internal/models/common"
 	modelsProduct "candypro/api/internal/models/product"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/crypto"
+	"candypro/api/internal/pkg/response"
 	"net/http"
 	"strings"
 	"time"
@@ -31,34 +32,34 @@ type adminCreateInquiryRequest struct {
 }
 
 type adminUpdateInquiryRequest struct {
-	UserID                *string  `json:"userId"`
-	CompanyName           *string  `json:"companyName"`
-	ContactPerson         *string  `json:"contactPerson"`
-	Email                 *string  `json:"email"`
-	WhatsApp              *string  `json:"whatsapp"`
-	TargetCountry         *string  `json:"targetCountry"`
-	EstimatedQuantity     *string  `json:"estimatedQuantity"`
+	UserID                *string   `json:"userId"`
+	CompanyName           *string   `json:"companyName"`
+	ContactPerson         *string   `json:"contactPerson"`
+	Email                 *string   `json:"email"`
+	WhatsApp              *string   `json:"whatsapp"`
+	TargetCountry         *string   `json:"targetCountry"`
+	EstimatedQuantity     *string   `json:"estimatedQuantity"`
 	InterestedProducts    *[]string `json:"interestedProducts"`
-	PackagingRequirements *string  `json:"packagingRequirements"`
-	FlavorRequirements    *string  `json:"flavorRequirements"`
-	OEMNeeded             *bool    `json:"oemNeeded"`
-	ExpectedDelivery      *string  `json:"expectedDelivery"`
-	Message               *string  `json:"message"`
-	Status                *string  `json:"status"`
-	Priority              *string  `json:"priority"`
-	AssignedTo            *string  `json:"assignedTo"`
-	CustomerNotes         *string  `json:"customerNotes"`
+	PackagingRequirements *string   `json:"packagingRequirements"`
+	FlavorRequirements    *string   `json:"flavorRequirements"`
+	OEMNeeded             *bool     `json:"oemNeeded"`
+	ExpectedDelivery      *string   `json:"expectedDelivery"`
+	Message               *string   `json:"message"`
+	Status                *string   `json:"status"`
+	Priority              *string   `json:"priority"`
+	AssignedTo            *string   `json:"assignedTo"`
+	CustomerNotes         *string   `json:"customerNotes"`
 }
 
 // AdminCreateInquiry creates a new inquiry.
 func (h *Handler) AdminCreateInquiry(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	var req adminCreateInquiryRequest
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -66,14 +67,14 @@ func (h *Handler) AdminCreateInquiry(c *gin.Context) {
 	if req.UserID != nil && strings.TrimSpace(*req.UserID) != "" {
 		trimmed := strings.TrimSpace(*req.UserID)
 		if _, err := h.services.User.GetByID(c.Request.Context(), trimmed); err != nil {
-			utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
+			response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 			return
 		}
 		userID = &trimmed
 	}
 
 	inquiry := &modelsProduct.Inquiry{
-		ID:                    utils.GenerateID(),
+		ID:                    crypto.GenerateID(),
 		UserID:                userID,
 		CompanyName:           strings.TrimSpace(req.CompanyName),
 		ContactPerson:         strings.TrimSpace(req.ContactPerson),
@@ -103,7 +104,7 @@ func (h *Handler) AdminCreateInquiry(c *gin.Context) {
 	}
 
 	if err := h.services.Inquiry.CreateInquiry(c.Request.Context(), inquiry); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "inquiry_create_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "inquiry_create_failed")
 		return
 	}
 
@@ -113,19 +114,19 @@ func (h *Handler) AdminCreateInquiry(c *gin.Context) {
 // AdminUpdateInquiry updates inquiry fields.
 func (h *Handler) AdminUpdateInquiry(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	inquiryID := c.Param("id")
 	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
 
 	var req adminUpdateInquiryRequest
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -135,7 +136,7 @@ func (h *Handler) AdminUpdateInquiry(c *gin.Context) {
 		} else {
 			uid := strings.TrimSpace(*req.UserID)
 			if _, userErr := h.services.User.GetByID(c.Request.Context(), uid); userErr != nil {
-				utils.ErrorResp(c, http.StatusNotFound, "user_not_found")
+				response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 				return
 			}
 			inquiry.UserID = &uid
@@ -198,7 +199,7 @@ func (h *Handler) AdminUpdateInquiry(c *gin.Context) {
 
 	inquiry.UpdatedAt = time.Now()
 	if err := h.services.Inquiry.UpdateInquiry(c.Request.Context(), inquiry); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "inquiry_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "inquiry_update_failed")
 		return
 	}
 
@@ -208,18 +209,18 @@ func (h *Handler) AdminUpdateInquiry(c *gin.Context) {
 // AdminDeleteInquiry deletes an inquiry.
 func (h *Handler) AdminDeleteInquiry(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	inquiryID := c.Param("id")
 	if _, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID); err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
 
 	if err := h.services.Inquiry.DeleteInquiry(c.Request.Context(), inquiryID); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "inquiry_delete_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "inquiry_delete_failed")
 		return
 	}
 

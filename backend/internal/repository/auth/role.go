@@ -2,9 +2,6 @@ package auth
 
 import (
 	modelsAuth "candypro/api/internal/models/auth"
-)
-
-import (
 	"context"
 
 	"gorm.io/gorm"

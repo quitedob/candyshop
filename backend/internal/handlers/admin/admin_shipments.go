@@ -1,9 +1,10 @@
 package admin
 
 import (
-	modelsTrade "candypro/api/internal/models/trade"
 	modelsProduct "candypro/api/internal/models/product"
-	"candypro/api/internal/utils"
+	modelsTrade "candypro/api/internal/models/trade"
+	"candypro/api/internal/pkg/pagination"
+	"candypro/api/internal/pkg/response"
 	"net/http"
 	"strconv"
 	"strings"
@@ -15,15 +16,15 @@ import (
 // AdminGetShipments returns paginated shipment records.
 func (h *Handler) AdminGetShipments(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
-	page, limit := utils.ParsePagination(c, 20, 100)
+	page, limit := pagination.ParsePagination(c, 20, 100)
 	status := strings.TrimSpace(c.Query("status"))
 
 	shipments, total, err := h.services.Shipment.ListShipments(c.Request.Context(), page, limit, status)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "shipment_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "shipment_fetch_failed")
 		return
 	}
 	totalPages := int(total) / limit
@@ -44,17 +45,17 @@ func (h *Handler) AdminGetShipments(c *gin.Context) {
 // AdminGetShipment returns a single shipment by ID.
 func (h *Handler) AdminGetShipment(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		utils.InvalidResp(c, "invalid_shipment_id")
+		response.InvalidResp(c, "invalid_shipment_id")
 		return
 	}
 	shipment, err := h.services.Shipment.GetShipment(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "shipment_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "shipment_not_found")
 		return
 	}
 	c.JSON(http.StatusOK, shipment)
@@ -75,11 +76,11 @@ type adminCreateShipmentRequest struct {
 // AdminCreateShipment creates a new shipment tracking record.
 func (h *Handler) AdminCreateShipment(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	var req adminCreateShipmentRequest
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -104,7 +105,7 @@ func (h *Handler) AdminCreateShipment(c *gin.Context) {
 	}
 
 	if err := h.services.Shipment.CreateShipment(c.Request.Context(), shipment); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "shipment_create_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "shipment_create_failed")
 		return
 	}
 	c.JSON(http.StatusCreated, shipment)
@@ -113,22 +114,22 @@ func (h *Handler) AdminCreateShipment(c *gin.Context) {
 // AdminUpdateShipment updates an existing shipment.
 func (h *Handler) AdminUpdateShipment(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		utils.InvalidResp(c, "invalid_shipment_id")
+		response.InvalidResp(c, "invalid_shipment_id")
 		return
 	}
 	shipment, err := h.services.Shipment.GetShipment(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "shipment_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "shipment_not_found")
 		return
 	}
 
 	var req adminCreateShipmentRequest
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -162,7 +163,7 @@ func (h *Handler) AdminUpdateShipment(c *gin.Context) {
 	}
 
 	if err := h.services.Shipment.UpdateShipment(c.Request.Context(), shipment); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "shipment_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "shipment_update_failed")
 		return
 	}
 	c.JSON(http.StatusOK, shipment)
@@ -171,20 +172,20 @@ func (h *Handler) AdminUpdateShipment(c *gin.Context) {
 // AdminDeleteShipment removes a shipment record.
 func (h *Handler) AdminDeleteShipment(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 	id, err := parseUintParam(c, "id")
 	if err != nil {
-		utils.InvalidResp(c, "invalid_shipment_id")
+		response.InvalidResp(c, "invalid_shipment_id")
 		return
 	}
 	if _, fetchErr := h.services.Shipment.GetShipment(c.Request.Context(), id); fetchErr != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "shipment_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "shipment_not_found")
 		return
 	}
 	if err := h.services.Shipment.DeleteShipment(c.Request.Context(), id); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "shipment_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "shipment_update_failed")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Shipment deleted", "id": id})

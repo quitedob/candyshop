@@ -44,7 +44,7 @@ func New(db *gorm.DB) *Repositories {
 		Project:        oem.NewProjectRepository(db),
 		Trade:          trade.NewTradeRepository(db),
 		Shipment:       trade.NewShipmentRepository(db),
-			ShipmentEvent:  trade.NewShipmentEventRepository(db),
+		ShipmentEvent:  trade.NewShipmentEventRepository(db),
 		TradeDocDetail: trade.NewTradeDocumentDetailRepository(db),
 		Notification:   notificationrepo.NewNotificationRepository(db),
 	}

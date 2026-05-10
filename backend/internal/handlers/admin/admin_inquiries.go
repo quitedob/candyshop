@@ -1,7 +1,8 @@
 package admin
 
 import (
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/pagination"
+	"candypro/api/internal/pkg/response"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,20 +15,20 @@ import (
 // @Router /admin/inquiries [get]
 func (h *Handler) AdminGetInquiries(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
-	page, limit := utils.ParsePagination(c, 20, 100)
+	page, limit := pagination.ParsePagination(c, 20, 100)
 	inquiries, total, err := h.services.Inquiry.GetInquiries(c.Request.Context(), page, limit)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "inquiry_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "inquiry_fetch_failed")
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":       inquiries,
-		"pagination": utils.BuildPagination(total, page, limit),
+		"pagination": pagination.BuildPagination(total, page, limit),
 	})
 }
 
@@ -40,7 +41,7 @@ func (h *Handler) AdminGetInquiries(c *gin.Context) {
 // @Router /admin/inquiries/{id}/status [put]
 func (h *Handler) AdminUpdateInquiryStatus(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -48,18 +49,18 @@ func (h *Handler) AdminUpdateInquiryStatus(c *gin.Context) {
 	var req struct {
 		Status string `json:"status" binding:"required"`
 	}
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
 
 	if err := h.services.Inquiry.UpdateInquiryStatus(c.Request.Context(), id, req.Status); err != nil {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 

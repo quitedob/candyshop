@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
+	modelsAuth "candypro/api/internal/models/auth"
 	modelsTrade "candypro/api/internal/models/trade"
-	"candypro/api/internal/roles"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -50,7 +50,7 @@ func (h *Handler) aiUnavailable(c *gin.Context) bool {
 	if h.aiService != nil && h.aiService.IsEnabled() {
 		return false
 	}
-	utils.ErrorResp(c, http.StatusServiceUnavailable, "ai_not_configured")
+	response.ErrorResp(c, http.StatusServiceUnavailable, "ai_not_configured")
 	return true
 }
 
@@ -71,13 +71,13 @@ func (h *Handler) Chatbot(c *gin.Context) {
 
 	prompt := extractPrompt(c)
 	if prompt == "" {
-		utils.ErrorResp(c, http.StatusBadRequest, "ai_prompt_required")
+		response.ErrorResp(c, http.StatusBadRequest, "ai_prompt_required")
 		return
 	}
 
 	reply, err := h.aiService.Generate(c.Request.Context(), prompt)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "ai_chatbot_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "ai_chatbot_failed")
 		return
 	}
 
@@ -101,7 +101,7 @@ func (h *Handler) AnalyzeInquiry(c *gin.Context) {
 		Prompt        string `json:"prompt"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.ErrorResp(c, http.StatusBadRequest, "invalid_request")
+		response.ErrorResp(c, http.StatusBadRequest, "invalid_request")
 		return
 	}
 
@@ -110,7 +110,7 @@ func (h *Handler) AnalyzeInquiry(c *gin.Context) {
 		inquiryText = strings.TrimSpace(req.Prompt)
 	}
 	if inquiryText == "" {
-		utils.ErrorResp(c, http.StatusBadRequest, "inquiry_text_required")
+		response.ErrorResp(c, http.StatusBadRequest, "inquiry_text_required")
 		return
 	}
 
@@ -121,7 +121,7 @@ func (h *Handler) AnalyzeInquiry(c *gin.Context) {
 
 	analysis, err := h.aiService.AnalyzeInquiry(c.Request.Context(), inquiryText, targetCountry)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "ai_analyze_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "ai_analyze_failed")
 		return
 	}
 
@@ -149,7 +149,7 @@ func (h *Handler) GenerateQuotation(c *gin.Context) {
 		MarketCode           string   `json:"marketCode"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.ErrorResp(c, http.StatusBadRequest, "invalid_request")
+		response.ErrorResp(c, http.StatusBadRequest, "invalid_request")
 		return
 	}
 
@@ -161,7 +161,7 @@ func (h *Handler) GenerateQuotation(c *gin.Context) {
 	prompt := strings.TrimSpace(req.Prompt)
 	if prompt == "" {
 		if strings.TrimSpace(req.CustomerRequirements) == "" {
-			utils.ErrorResp(c, http.StatusBadRequest, "prompt_or_requirements_required")
+			response.ErrorResp(c, http.StatusBadRequest, "prompt_or_requirements_required")
 			return
 		}
 		prompt = fmt.Sprintf(
@@ -209,7 +209,7 @@ func (h *Handler) GenerateQuotation(c *gin.Context) {
 
 	quotation, err := h.aiService.Generate(c.Request.Context(), prompt)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "ai_quotation_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "ai_quotation_failed")
 		return
 	}
 
@@ -241,7 +241,7 @@ func (h *Handler) Translate(c *gin.Context) {
 		SourceLang string `json:"sourceLang"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.ErrorResp(c, http.StatusBadRequest, "invalid_request")
+		response.ErrorResp(c, http.StatusBadRequest, "invalid_request")
 		return
 	}
 
@@ -259,7 +259,7 @@ func (h *Handler) Translate(c *gin.Context) {
 
 	translated, err := h.aiService.Generate(c.Request.Context(), translationPrompt)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "ai_translate_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "ai_translate_failed")
 		return
 	}
 
@@ -274,17 +274,17 @@ func (h *Handler) Translate(c *gin.Context) {
 func (h *Handler) RecommendProducts(c *gin.Context) {
 	prompt := extractPrompt(c)
 	if prompt == "" {
-		utils.ErrorResp(c, http.StatusBadRequest, "ai_prompt_required")
+		response.ErrorResp(c, http.StatusBadRequest, "ai_prompt_required")
 		return
 	}
 	if h.services == nil || h.services.Search == nil {
-		utils.ErrorResp(c, http.StatusServiceUnavailable, "ai_search_unavailable")
+		response.ErrorResp(c, http.StatusServiceUnavailable, "ai_search_unavailable")
 		return
 	}
 
 	searchRes, err := h.services.Search.Search(c.Request.Context(), prompt, "products", 6)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "ai_search_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "ai_search_failed")
 		return
 	}
 
@@ -316,17 +316,17 @@ func (h *Handler) RecommendProducts(c *gin.Context) {
 func (h *Handler) AISearch(c *gin.Context) {
 	prompt := extractPrompt(c)
 	if prompt == "" {
-		utils.ErrorResp(c, http.StatusBadRequest, "query_required")
+		response.ErrorResp(c, http.StatusBadRequest, "query_required")
 		return
 	}
 	if h.services == nil || h.services.Search == nil {
-		utils.ErrorResp(c, http.StatusServiceUnavailable, "ai_search_unavailable")
+		response.ErrorResp(c, http.StatusServiceUnavailable, "ai_search_unavailable")
 		return
 	}
 
 	results, err := h.services.Search.Search(c.Request.Context(), prompt, "all", 10)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "ai_search_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "ai_search_failed")
 		return
 	}
 
@@ -339,26 +339,26 @@ func (h *Handler) AISearch(c *gin.Context) {
 // GetConversation returns trade-centric conversation context.
 func (h *Handler) GetConversation(c *gin.Context) {
 	if h.services == nil || h.services.Trade == nil {
-		utils.ErrorResp(c, http.StatusServiceUnavailable, "service_not_configured")
+		response.ErrorResp(c, http.StatusServiceUnavailable, "service_not_configured")
 		return
 	}
 
 	idStr := strings.TrimSpace(c.Param("id"))
 	tradeID, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusBadRequest, "invalid_conversation_id")
+		response.ErrorResp(c, http.StatusBadRequest, "invalid_conversation_id")
 		return
 	}
 
 	transaction, err := h.services.Trade.GetTransaction(c.Request.Context(), uint(tradeID))
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "trade_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "trade_not_found")
 		return
 	}
 
 	currentUserID, currentRole := authContext(c)
-	if currentRole != roles.Admin && currentRole != roles.SuperAdmin && transaction.UserID != currentUserID {
-		utils.ErrorResp(c, http.StatusForbidden, "trade_conversation_no_access")
+	if currentRole != modelsAuth.Admin && currentRole != modelsAuth.SuperAdmin && transaction.UserID != currentUserID {
+		response.ErrorResp(c, http.StatusForbidden, "trade_conversation_no_access")
 		return
 	}
 

@@ -192,7 +192,11 @@ interface ApiError {
 
 export const useApi = () => {
   const config = useRuntimeConfig()
-  const baseURL = config.public.apiBase || '/api/v1'
+  // During SSR, $fetch uses Nitro's localFetch which bypasses devProxy.
+  // Use the direct backend URL on the server so requests don't fall through to Vue Router.
+  const baseURL = import.meta.server
+    ? config.internalApiBase
+    : config.public.apiBase || '/api/v1'
   const publicBaseURL = `${baseURL}/public`
   const { t, locale } = useI18n()
 

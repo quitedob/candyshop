@@ -2,9 +2,6 @@ package oem
 
 import (
 	modelsProduct "candypro/api/internal/models/product"
-)
-
-import (
 	"context"
 
 	"gorm.io/gorm"

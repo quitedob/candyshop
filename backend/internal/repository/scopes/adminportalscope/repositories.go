@@ -10,8 +10,8 @@ import (
 	order "candypro/api/internal/repository/order"
 	product "candypro/api/internal/repository/product"
 	systemsetting "candypro/api/internal/repository/systemsetting"
-	translation "candypro/api/internal/repository/translation"
 	trade "candypro/api/internal/repository/trade"
+	translation "candypro/api/internal/repository/translation"
 	user "candypro/api/internal/repository/user"
 
 	"gorm.io/gorm"
@@ -25,21 +25,21 @@ type Repositories struct {
 	Payment            *order.PaymentRepository
 	Invoice            *order.InvoiceRepository
 	DocumentAdjustment *order.DocumentAdjustmentRepository
-	Product        *product.ProductRepository
-	Price          *product.PriceRepository
-	Content        *content.ContentRepository
-	Role           *auth.RoleRepository
-	Factory        *oem.FactoryRepository
-	Project        *oem.ProjectRepository
-	Trade          trade.TradeRepository
-	Shipment       *trade.ShipmentRepository
-	ShipmentEvent  *trade.ShipmentEventRepository
-	TradeDocDetail *trade.TradeDocumentDetailRepository
-	ActivityLog       *activitylog.ActivityLogRepository
-	SystemSetting     *systemsetting.SystemSettingRepository
-	StockTransaction  *order.StockTransactionRepository
-	Translation       *translation.TranslationRepository
-	Notification      *notificationrepo.NotificationRepository
+	Product            *product.ProductRepository
+	Price              *product.PriceRepository
+	Content            *content.ContentRepository
+	Role               *auth.RoleRepository
+	Factory            *oem.FactoryRepository
+	Project            *oem.ProjectRepository
+	Trade              trade.TradeRepository
+	Shipment           *trade.ShipmentRepository
+	ShipmentEvent      *trade.ShipmentEventRepository
+	TradeDocDetail     *trade.TradeDocumentDetailRepository
+	ActivityLog        *activitylog.ActivityLogRepository
+	SystemSetting      *systemsetting.SystemSettingRepository
+	StockTransaction   *order.StockTransactionRepository
+	Translation        *translation.TranslationRepository
+	Notification       *notificationrepo.NotificationRepository
 }
 
 func New(db *gorm.DB) *Repositories {
@@ -51,21 +51,20 @@ func New(db *gorm.DB) *Repositories {
 		Payment:            order.NewPaymentRepository(db),
 		Invoice:            order.NewInvoiceRepository(db),
 		DocumentAdjustment: order.NewDocumentAdjustmentRepository(db),
-		Product:        product.NewProductRepository(db),
-		Price:          product.NewPriceRepository(db),
-		Content:        content.NewContentRepository(db),
-		Role:           auth.NewRoleRepository(db),
-		Factory:        oem.NewFactoryRepository(db),
-		Project:        oem.NewProjectRepository(db),
-		Trade:          trade.NewTradeRepository(db),
-		Shipment:       trade.NewShipmentRepository(db),
-			ShipmentEvent:  trade.NewShipmentEventRepository(db),
-		TradeDocDetail: trade.NewTradeDocumentDetailRepository(db),
-		ActivityLog:    activitylog.NewActivityLogRepository(db),
-		SystemSetting:     systemsetting.NewSystemSettingRepository(db),
-		StockTransaction:  order.NewStockTransactionRepository(db),
-		Translation:       translation.New(db),
-		Notification:      notificationrepo.NewNotificationRepository(db),
+		Product:            product.NewProductRepository(db),
+		Price:              product.NewPriceRepository(db),
+		Content:            content.NewContentRepository(db),
+		Role:               auth.NewRoleRepository(db),
+		Factory:            oem.NewFactoryRepository(db),
+		Project:            oem.NewProjectRepository(db),
+		Trade:              trade.NewTradeRepository(db),
+		Shipment:           trade.NewShipmentRepository(db),
+		ShipmentEvent:      trade.NewShipmentEventRepository(db),
+		TradeDocDetail:     trade.NewTradeDocumentDetailRepository(db),
+		ActivityLog:        activitylog.NewActivityLogRepository(db),
+		SystemSetting:      systemsetting.NewSystemSettingRepository(db),
+		StockTransaction:   order.NewStockTransactionRepository(db),
+		Translation:        translation.New(db),
+		Notification:       notificationrepo.NewNotificationRepository(db),
 	}
 }
-

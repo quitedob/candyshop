@@ -2,11 +2,12 @@
  * SEO Composable
  * Provides SEO helpers with structured data support
  */
+import { toValue, type MaybeRef } from '#imports'
 
 interface SEOOptions {
-  title?: string
-  description?: string
-  ogImage?: string
+  title?: MaybeRef<string>
+  description?: MaybeRef<string>
+  ogImage?: MaybeRef<string>
   ogType?: 'website' | 'product' | 'article'
   canonical?: string
   noindex?: boolean
@@ -72,6 +73,14 @@ export const useSeo = (options: SEOOptions = {}) => {
   const defaultTitle = t('seo.default_title')
   const defaultDescription = t('seo.default_description')
 
+  // Unwrap MaybeRef values
+  const title = toValue(options.title) || defaultTitle
+  const description = toValue(options.description) || defaultDescription
+  const ogImage = toValue(options.ogImage)
+  const resolvedOgImage = ogImage
+    ? (ogImage.startsWith('http') ? ogImage : new URL(ogImage, siteUrl).href)
+    : ''
+
   // Build full URL for path
   const fullUrl = (path: string) => {
     return new URL(path, siteUrl).href
@@ -88,25 +97,25 @@ export const useSeo = (options: SEOOptions = {}) => {
     htmlAttrs?: { lang: string }
     script?: { type: string; innerHTML: string; tagPosition?: 'head' | 'bodyClose' | 'bodyOpen' }[]
   } = {
-    title: options.title || defaultTitle,
+    title,
     meta: [
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { name: 'description', content: options.description || defaultDescription },
+      { name: 'description', content: description },
       { name: 'format-detection', content: 'telephone=no' },
 
       // Open Graph
-      { property: 'og:title', content: options.title || defaultTitle },
-      { property: 'og:description', content: options.description || defaultDescription },
+      { property: 'og:title', content: title },
+      { property: 'og:description', content: description },
       { property: 'og:type', content: options.ogType || 'website' },
       { property: 'og:url', content: canonical },
       { property: 'og:site_name', content: 'CandyPro OEM' },
-      ...(options.ogImage ? [{ property: 'og:image', content: options.ogImage.startsWith('http') ? options.ogImage : fullUrl(options.ogImage) }] : []),
+      ...(resolvedOgImage ? [{ property: 'og:image', content: resolvedOgImage }] : []),
 
       // Twitter Card
       { name: 'twitter:card', content: options.twitterCard || 'summary_large_image' },
-      { name: 'twitter:title', content: options.title || defaultTitle },
-      { name: 'twitter:description', content: options.description || defaultDescription },
-      ...(options.ogImage ? [{ name: 'twitter:image', content: options.ogImage.startsWith('http') ? options.ogImage : fullUrl(options.ogImage) }] : []),
+      { name: 'twitter:title', content: title },
+      { name: 'twitter:description', content: description },
+      ...(resolvedOgImage ? [{ name: 'twitter:image', content: resolvedOgImage }] : []),
 
       // Robots
       ...(options.noindex ? [{ name: 'robots', content: 'noindex, nofollow' }] : [])

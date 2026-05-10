@@ -1,7 +1,8 @@
 package public
 
 import (
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/pagination"
+	apiresp "candypro/api/internal/pkg/response"
 	"net/http"
 	"strconv"
 
@@ -21,16 +22,16 @@ import (
 // @Router /posts [get]
 func (h *Handler) GetPosts(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		apiresp.ServiceUnavailableResp(c)
 		return
 	}
 
-	page, limit := utils.ParsePagination(c, 10, 50)
+	page, limit := pagination.ParsePagination(c, 10, 50)
 	category := c.Query("category")
 
 	response, err := h.services.Content.GetPosts(c.Request.Context(), page, limit, category)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "posts_fetch_failed")
+		apiresp.ErrorResp(c, http.StatusInternalServerError, "posts_fetch_failed")
 		return
 	}
 
@@ -47,7 +48,7 @@ func (h *Handler) GetPosts(c *gin.Context) {
 // @Router /posts/{slug} [get]
 func (h *Handler) GetPost(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		apiresp.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -55,7 +56,7 @@ func (h *Handler) GetPost(c *gin.Context) {
 
 	post, err := h.services.Content.GetPostBySlug(c.Request.Context(), slug)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "post_not_found")
+		apiresp.ErrorResp(c, http.StatusNotFound, "post_not_found")
 		return
 	}
 
@@ -72,7 +73,7 @@ func (h *Handler) GetPost(c *gin.Context) {
 // @Router /posts/{slug}/related [get]
 func (h *Handler) GetRelatedPosts(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		apiresp.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -84,7 +85,7 @@ func (h *Handler) GetRelatedPosts(c *gin.Context) {
 
 	posts, err := h.services.Content.GetRelatedPosts(c.Request.Context(), slug, limit)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "related_posts_fetch_failed")
+		apiresp.ErrorResp(c, http.StatusInternalServerError, "related_posts_fetch_failed")
 		return
 	}
 
@@ -102,16 +103,16 @@ func (h *Handler) GetRelatedPosts(c *gin.Context) {
 // @Router /cases [get]
 func (h *Handler) GetCases(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		apiresp.ServiceUnavailableResp(c)
 		return
 	}
 
-	page, limit := utils.ParsePagination(c, 10, 50)
+	page, limit := pagination.ParsePagination(c, 10, 50)
 	industry := c.Query("industry")
 
 	response, err := h.services.Content.GetCases(c.Request.Context(), page, limit, industry)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "cases_fetch_failed")
+		apiresp.ErrorResp(c, http.StatusInternalServerError, "cases_fetch_failed")
 		return
 	}
 
@@ -128,7 +129,7 @@ func (h *Handler) GetCases(c *gin.Context) {
 // @Router /cases/{slug} [get]
 func (h *Handler) GetCase(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		apiresp.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -136,7 +137,7 @@ func (h *Handler) GetCase(c *gin.Context) {
 
 	caseStudy, err := h.services.Content.GetCaseBySlug(c.Request.Context(), slug)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "case_not_found")
+		apiresp.ErrorResp(c, http.StatusNotFound, "case_not_found")
 		return
 	}
 

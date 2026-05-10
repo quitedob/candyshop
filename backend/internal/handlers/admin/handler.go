@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"candypro/api/internal/config"
-	"candypro/api/internal/storage"
+	"candypro/api/internal/pkg/storage"
 	servicesCommon "candypro/api/internal/services/common"
 	orderSvc "candypro/api/internal/services/order"
 	tradeSvc "candypro/api/internal/services/trade"

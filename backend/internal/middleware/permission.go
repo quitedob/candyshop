@@ -1,9 +1,8 @@
 package middleware
 
 import (
+	"candypro/api/internal/pkg/response"
 	"net/http"
-
-	"candypro/api/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,14 +14,14 @@ func RequirePermission(permissions ...string) gin.HandlerFunc {
 		userPermissionsInter, exists := c.Get("userPermissions")
 		if !exists {
 			// If not using precise permissions, we can fallback to role checks or just block
-			utils.ErrorResp(c, http.StatusForbidden, "forbidden_no_permissions")
+			response.ErrorResp(c, http.StatusForbidden, "forbidden_no_permissions")
 			c.Abort()
 			return
 		}
 
 		userPerms, ok := userPermissionsInter.([]interface{}) // Assume parsed from JSON/JWT or DB
 		if !ok {
-			utils.ErrorResp(c, http.StatusForbidden, "forbidden_invalid_permissions")
+			response.ErrorResp(c, http.StatusForbidden, "forbidden_invalid_permissions")
 			c.Abort()
 			return
 		}
@@ -43,7 +42,7 @@ func RequirePermission(permissions ...string) gin.HandlerFunc {
 			}
 		}
 
-		utils.ErrorResp(c, http.StatusForbidden, "forbidden_insufficient_permissions")
+		response.ErrorResp(c, http.StatusForbidden, "forbidden_insufficient_permissions")
 		c.Abort()
 	}
 }

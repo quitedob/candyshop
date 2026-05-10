@@ -3,7 +3,9 @@ package customer
 import (
 	modelsCommon "candypro/api/internal/models/common"
 	modelsProduct "candypro/api/internal/models/product"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/crypto"
+	"candypro/api/internal/pkg/pagination"
+	"candypro/api/internal/pkg/response"
 	"fmt"
 	"net/http"
 	"time"
@@ -23,25 +25,25 @@ func contextUserID(c *gin.Context) (string, bool) {
 // CustomerGetDashboard returns quick summary for customer portal.
 func (h *Handler) CustomerGetDashboard(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	orders, err := h.services.Order.GetUserOrders(c.Request.Context(), userID, 1, 5)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 		return
 	}
 
 	inquiries, totalInquiries, err := h.services.Inquiry.GetUserInquiries(c.Request.Context(), userID, 1, 5)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 		return
 	}
 
@@ -58,13 +60,13 @@ func (h *Handler) CustomerGetDashboard(c *gin.Context) {
 // CustomerCreateInquiry creates an authenticated customer inquiry.
 func (h *Handler) CustomerCreateInquiry(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
@@ -84,12 +86,12 @@ func (h *Handler) CustomerCreateInquiry(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	inquiry := &modelsProduct.Inquiry{
-		ID:                    utils.GenerateID(),
+		ID:                    crypto.GenerateID(),
 		UserID:                &userID,
 		CompanyName:           req.CompanyName,
 		ContactPerson:         req.ContactPerson,
@@ -109,7 +111,7 @@ func (h *Handler) CustomerCreateInquiry(c *gin.Context) {
 	}
 
 	if err := h.services.Inquiry.SubmitInquiry(c.Request.Context(), inquiry); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "inquiry_create_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "inquiry_create_failed")
 		return
 	}
 
@@ -122,25 +124,25 @@ func (h *Handler) CustomerCreateInquiry(c *gin.Context) {
 // CustomerUpdateInquiry updates an existing inquiry that belongs to current user.
 func (h *Handler) CustomerUpdateInquiry(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	inquiryID := c.Param("id")
 	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
 
 	if inquiry.UserID == nil || *inquiry.UserID != userID {
-		utils.ErrorResp(c, http.StatusForbidden, "inquiry_no_access")
+		response.ErrorResp(c, http.StatusForbidden, "inquiry_no_access")
 		return
 	}
 
@@ -155,7 +157,7 @@ func (h *Handler) CustomerUpdateInquiry(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
@@ -183,7 +185,7 @@ func (h *Handler) CustomerUpdateInquiry(c *gin.Context) {
 	inquiry.UpdatedAt = time.Now()
 
 	if err := h.services.Inquiry.UpdateInquiry(c.Request.Context(), inquiry); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "internal_error")
+		response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 		return
 	}
 
@@ -193,24 +195,24 @@ func (h *Handler) CustomerUpdateInquiry(c *gin.Context) {
 // CustomerGetOrderProgress returns a normalized order progress payload.
 func (h *Handler) CustomerGetOrderProgress(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	orderID := c.Param("id")
 	order, err := h.services.Order.GetOrder(c.Request.Context(), orderID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "order_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "order_not_found")
 		return
 	}
 	if order.UserID != userID {
-		utils.ErrorResp(c, http.StatusForbidden, "forbidden")
+		response.ErrorResp(c, http.StatusForbidden, "forbidden")
 		return
 	}
 
@@ -241,20 +243,20 @@ func (h *Handler) CustomerGetOrderProgress(c *gin.Context) {
 // CustomerGetQuotes returns quote-oriented inquiry records for current user.
 func (h *Handler) CustomerGetQuotes(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
-	page, limit := utils.ParsePagination(c, 1, 20)
+	page, limit := pagination.ParsePagination(c, 1, 20)
 	inquiries, total, err := h.services.Inquiry.GetUserInquiries(c.Request.Context(), userID, page, limit)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "internal_error")
+		response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 		return
 	}
 
@@ -267,27 +269,27 @@ func (h *Handler) CustomerGetQuotes(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":       quotes,
-		"pagination": utils.BuildPagination(total, page, limit),
+		"pagination": pagination.BuildPagination(total, page, limit),
 	})
 }
 
 // CustomerGetNotifications returns persistent notification feed from database.
 func (h *Handler) CustomerGetNotifications(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	limit := 50
 	notifications, err := h.services.Notification.GetUserNotifications(c.Request.Context(), userID, limit)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
 		return
 	}
 
@@ -308,25 +310,25 @@ func (h *Handler) CustomerGetNotifications(c *gin.Context) {
 // CustomerMarkNotificationRead marks a single notification as read.
 func (h *Handler) CustomerMarkNotificationRead(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	idStr := c.Param("id")
 	var id uint
 	if _, err := fmt.Sscanf(idStr, "%d", &id); err != nil || id == 0 {
-		utils.InvalidResp(c, "invalid_request")
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	if err := h.services.Notification.MarkRead(c.Request.Context(), id, userID); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "notification_mark_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "notification_mark_failed")
 		return
 	}
 
@@ -336,18 +338,18 @@ func (h *Handler) CustomerMarkNotificationRead(c *gin.Context) {
 // CustomerMarkAllNotificationsRead marks all notifications for the user as read.
 func (h *Handler) CustomerMarkAllNotificationsRead(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	userID, ok := contextUserID(c)
 	if !ok {
-		utils.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	if err := h.services.Notification.MarkAllRead(c.Request.Context(), userID); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "notification_mark_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "notification_mark_failed")
 		return
 	}
 

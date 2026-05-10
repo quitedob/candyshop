@@ -1,4 +1,4 @@
-package utils
+package crypto
 
 import (
 	"crypto/rand"
@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+
+	"candypro/api/internal/pkg/timeutil"
 )
 
 // GenerateID generates a cryptographically secure random ID
@@ -42,7 +44,7 @@ func GenerateSlug() string {
 
 // GenerateUniqueFilename generates a unique filename
 func GenerateUniqueFilename(ext string) string {
-	return fmt.Sprintf("%s_%s%s", Now().Format("20060102_150405"), GenerateRandomString(8), ext)
+	return fmt.Sprintf("%s_%s%s", timeutil.Now().Format("20060102_150405"), GenerateRandomString(8), ext)
 }
 
 // HashResetToken returns a SHA-256 hex digest of a password reset token.

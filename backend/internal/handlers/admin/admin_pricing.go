@@ -2,7 +2,9 @@ package admin
 
 import (
 	modelsProduct "candypro/api/internal/models/product"
-	"candypro/api/internal/utils"
+	"candypro/api/internal/pkg/crypto"
+	"candypro/api/internal/pkg/pagination"
+	"candypro/api/internal/pkg/response"
 	"net/http"
 	"strings"
 	"time"
@@ -15,14 +17,14 @@ import (
 // AdminGetPriceLists returns all price lists with pagination.
 func (h *Handler) AdminGetPriceLists(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
-	page, limit := utils.ParsePagination(c, 20, 100)
+	page, limit := pagination.ParsePagination(c, 20, 100)
 	result, err := h.services.Price.GetPriceLists(c.Request.Context(), page, limit)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "price_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "price_fetch_failed")
 		return
 	}
 
@@ -39,12 +41,12 @@ type adminCreatePriceListRequest struct {
 // AdminCreatePriceList creates a new price list.
 func (h *Handler) AdminCreatePriceList(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	var req adminCreatePriceListRequest
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -54,7 +56,7 @@ func (h *Handler) AdminCreatePriceList(c *gin.Context) {
 	}
 
 	list := &modelsProduct.PriceList{
-		ID:          utils.GenerateID(),
+		ID:          crypto.GenerateID(),
 		Name:        strings.TrimSpace(req.Name),
 		Description: strings.TrimSpace(req.Description),
 		Currency:    currency,
@@ -64,7 +66,7 @@ func (h *Handler) AdminCreatePriceList(c *gin.Context) {
 	}
 
 	if err := h.services.Price.CreatePriceList(c.Request.Context(), list); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "price_list_create_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "price_list_create_failed")
 		return
 	}
 
@@ -81,19 +83,19 @@ type adminUpdatePriceListRequest struct {
 // AdminUpdatePriceList updates a price list.
 func (h *Handler) AdminUpdatePriceList(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	id := c.Param("id")
 	list, err := h.services.Price.GetPriceList(c.Request.Context(), id)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "price_list_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "price_list_not_found")
 		return
 	}
 
 	var req adminUpdatePriceListRequest
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
@@ -112,7 +114,7 @@ func (h *Handler) AdminUpdatePriceList(c *gin.Context) {
 	list.UpdatedAt = time.Now()
 
 	if err := h.services.Price.UpdatePriceList(c.Request.Context(), list); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "price_list_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "price_list_update_failed")
 		return
 	}
 
@@ -122,13 +124,13 @@ func (h *Handler) AdminUpdatePriceList(c *gin.Context) {
 // AdminDeletePriceList deletes a price list.
 func (h *Handler) AdminDeletePriceList(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	id := c.Param("id")
 	if err := h.services.Price.DeletePriceList(c.Request.Context(), id); err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "price_list_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "price_list_not_found")
 		return
 	}
 
@@ -140,14 +142,14 @@ func (h *Handler) AdminDeletePriceList(c *gin.Context) {
 // AdminGetProductPrices returns all price rules for a product.
 func (h *Handler) AdminGetProductPrices(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	productID := c.Param("id")
 	rules, err := h.services.Price.GetProductPrices(c.Request.Context(), productID)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "price_fetch_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "price_fetch_failed")
 		return
 	}
 
@@ -164,19 +166,19 @@ type adminSetProductPriceRequest struct {
 // AdminSetProductPrice creates or updates a price rule for a product.
 func (h *Handler) AdminSetProductPrice(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	productID := c.Param("id")
 	var req adminSetProductPriceRequest
-	if !utils.BindJSONOrInvalid(c, &req) {
+	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
 
 	// Verify product exists
 	if _, err := h.services.Product.GetProductByID(c.Request.Context(), productID); err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "product_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "product_not_found")
 		return
 	}
 
@@ -190,7 +192,7 @@ func (h *Handler) AdminSetProductPrice(c *gin.Context) {
 	}
 
 	rule := &modelsProduct.PriceRule{
-		ID:          utils.GenerateID(),
+		ID:          crypto.GenerateID(),
 		ProductID:   productID,
 		PriceListID: strings.TrimSpace(req.PriceListID),
 		MinQuantity: minQty,
@@ -201,7 +203,7 @@ func (h *Handler) AdminSetProductPrice(c *gin.Context) {
 	}
 
 	if err := h.services.Price.SetProductPrice(c.Request.Context(), rule); err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "price_set_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "price_set_failed")
 		return
 	}
 
@@ -211,13 +213,13 @@ func (h *Handler) AdminSetProductPrice(c *gin.Context) {
 // AdminDeleteProductPrice deletes a specific price rule for a product.
 func (h *Handler) AdminDeleteProductPrice(c *gin.Context) {
 	if h.services == nil {
-		utils.ServiceUnavailableResp(c)
+		response.ServiceUnavailableResp(c)
 		return
 	}
 
 	priceID := c.Param("priceId")
 	if err := h.services.Price.DeleteProductPrice(c.Request.Context(), priceID); err != nil {
-		utils.ErrorResp(c, http.StatusNotFound, "price_rule_not_found")
+		response.ErrorResp(c, http.StatusNotFound, "price_rule_not_found")
 		return
 	}
 

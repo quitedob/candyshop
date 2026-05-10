@@ -1,7 +1,5 @@
 package auth
 
-import ()
-
 import (
 	"time"
 )

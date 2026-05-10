@@ -1,7 +1,7 @@
 package public
 
 import (
-	"candypro/api/internal/utils"
+	apiresp "candypro/api/internal/pkg/response"
 	"net/http"
 	"strconv"
 
@@ -21,7 +21,7 @@ import (
 // @Router /search [get]
 func (h *Handler) Search(c *gin.Context) {
 	if !(h.services != nil) {
-		utils.ServiceUnavailableResp(c)
+		apiresp.ServiceUnavailableResp(c)
 		return
 	}
 
@@ -33,19 +33,19 @@ func (h *Handler) Search(c *gin.Context) {
 	}
 
 	if query == "" {
-		utils.ErrorResp(c, http.StatusBadRequest, "search_query_required")
+		apiresp.ErrorResp(c, http.StatusBadRequest, "search_query_required")
 		return
 	}
 
 	// SEC-22: Cap search query length (consistent with SSE handler 4000 char limit)
 	if len(query) > 4000 {
-		utils.ErrorResp(c, http.StatusBadRequest, "search_query_too_long")
+		apiresp.ErrorResp(c, http.StatusBadRequest, "search_query_too_long")
 		return
 	}
 
 	response, err := h.services.Search.Search(c.Request.Context(), query, searchType, limit)
 	if err != nil {
-		utils.ErrorResp(c, http.StatusInternalServerError, "search_failed")
+		apiresp.ErrorResp(c, http.StatusInternalServerError, "search_failed")
 		return
 	}
 
