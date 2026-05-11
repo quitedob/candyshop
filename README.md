@@ -13,6 +13,13 @@ Professional candy OEM (Original Equipment Manufacturing) B2B platform with admi
 | i18n | Chinese (default) + English |
 | Infra | Docker / docker-compose |
 
+## Prerequisites
+
+- Go 1.24+
+- Node.js 20+
+- PostgreSQL 15
+- Docker & docker-compose (optional, for containerized setup)
+
 ## Quick Start
 
 ```bash
@@ -27,17 +34,17 @@ backend/
   cmd/api/main.go              # Entry point
   internal/
     api/                       # Router + routes (5 scopes)
-    handlers/                  # HTTP layer (66 files)
-    services/                  # Business logic (49 files)
-    repository/                # Data access (38 files)
-    models/                    # Database models (31 files)
+    handlers/                  # HTTP layer (70 files)
+    services/                  # Business logic (48 files)
+    repository/                # Data access (39 files)
+    models/                    # Database models (32 files)
     middleware/                 # Auth, CORS, rate limit, locale, active user
 frontend/
   pages/
     admin/                     # Admin portal (26 pages)
     customer/                  # Customer portal (25 pages)
     auth/                      # Authentication (6 pages)
-    products/, blog/, ...      # Public marketing pages (12 pages)
+    products/, blog/, ...      # Public marketing pages (16 pages)
   components/                  # Auto-imported (pathPrefix: false)
   composables/                 # useApi, useAuth, useInquiry, etc.
   layouts/                     # admin, customer, auth, default
@@ -56,7 +63,7 @@ frontend/
 | `admin` | JWT + admin | 155 | Full admin management |
 | `system` | Mixed | 7 | AI chatbot, search, recommendations |
 
-**Total: ~253 API endpoints, 77 frontend pages**
+**Total: ~268 API endpoints, 77 frontend pages**
 
 ## Roles & Permissions
 
@@ -70,19 +77,34 @@ User lifecycle: `pending` (register) → `active` (admin approves / KYB verified
 
 ## Configuration
 
-### Backend (.env)
-```
-PORT=8080  DB_HOST=localhost  DB_PORT=5432
-DB_USER=postgres  DB_PASSWORD=postgres  DB_NAME=candypro
-JWT_SECRET=your-secret
-OPENAI_API_KEY=sk-...
-CORS_ORIGINS=http://localhost:3000
+Copy the example files and edit as needed:
+
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 ```
 
-### Frontend (.env)
-```
-API_BASE_URL=http://localhost:8080/api/v1
-```
+Key variables you must set:
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `JWT_SECRET` | Yes | — | Min 32 characters, use a strong random value |
+| `DB_USER` / `DB_PASSWORD` | Yes | candypro | PostgreSQL credentials |
+| `FRONTEND_URL` | Yes | http://localhost:3000 | CORS origin (frontend URL) |
+| `OPENAI_API_KEY` | AI features | — | OpenAI-compatible API key |
+
+All available options are documented in the example files:
+`backend/.env.example` and `frontend/.env.example`.
+
+## Troubleshooting
+
+| Problem | Likely Cause | Fix |
+|---------|-------------|-----|
+| App fails to start with JWT error | `JWT_SECRET` not set or too short | Set `JWT_SECRET` to 32+ characters in `.env` |
+| Database connection refused | PostgreSQL not running or wrong credentials | Check `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD` |
+| Frontend can't reach backend | `API_BASE_URL` mismatch | Ensure `frontend/.env` has `API_BASE_URL=http://localhost:8080/api` |
+| CORS errors in browser | `FRONTEND_URL` doesn't match the frontend origin | Set `FRONTEND_URL=http://localhost:3000` in `backend/.env` |
+| AI features return errors | `OPENAI_API_KEY` missing or invalid | Set a valid OpenAI-compatible API key |
 
 ## Notes
 
