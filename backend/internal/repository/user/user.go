@@ -113,6 +113,20 @@ func (r *UserRepository) FindRecent(ctx context.Context, limit int) ([]modelsUse
 	return users, nil
 }
 
+// FindByRoleNames returns users whose role name is in the provided list.
+func (r *UserRepository) FindByRoleNames(ctx context.Context, names []string) ([]modelsUser.User, error) {
+	var users []modelsUser.User
+	err := r.db.WithContext(ctx).
+		Joins("JOIN roles ON roles.id = users.role_id").
+		Where("roles.name IN ?", names).
+		Preload("Role").
+		Find(&users).Error
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
 // ActivateUsersByCompanyID sets all pending users of a company to active.
 func (r *UserRepository) ActivateUsersByCompanyID(ctx context.Context, companyID string) error {
 	now := time.Now()

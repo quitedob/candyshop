@@ -2,6 +2,7 @@ package database
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -367,18 +368,25 @@ func seedDemoTradeDocuments(db *gorm.DB, tradeID uint, orderConfirmed modelsOrde
 	}
 
 	// TradeDocument envelope entries
+	totalAmt := orderConfirmed.TotalAmount
+	currency := orderConfirmed.Currency
+	if currency == "" {
+		currency = "USD"
+	}
 	docs := []modelsTrade.TradeDocument{
 		{
 			TransactionID: tradeID,
 			Type:          "proforma_invoice",
 			DocNumber:     "PI-DEMO-2026-001",
 			Status:        modelsTrade.TradeStatusConfirmed,
-			Content: datatypes.JSON(`{
+			Content: datatypes.JSON(fmt.Sprintf(`{
 				"buyerName": "Demo Global Sourcing Ltd",
 				"sellerName": "CandyPro Manufacturing",
 				"incoterms": "CIF New York",
-				"paymentTerms": "30% T/T advance, 70% before shipment"
-			}`),
+				"paymentTerms": "30%% T/T advance, 70%% before shipment",
+				"totalAmount": %.2f,
+				"currency": "%s"
+			}`, totalAmt, currency)),
 			CreatedAt: now.AddDate(0, 0, -2),
 			UpdatedAt: now,
 		},
@@ -387,13 +395,13 @@ func seedDemoTradeDocuments(db *gorm.DB, tradeID uint, orderConfirmed modelsOrde
 			Type:          "sales_contract",
 			DocNumber:     "SC-DEMO-2026-001",
 			Status:        modelsTrade.TradeStatusConfirmed,
-			Content: datatypes.JSON(`{
+			Content: datatypes.JSON(fmt.Sprintf(`{
 				"buyerName": "Demo Global Sourcing Ltd",
 				"sellerName": "CandyPro Manufacturing",
 				"incoterms": "CIF New York",
-				"totalAmount": 85600,
-				"currency": "USD"
-			}`),
+				"totalAmount": %.2f,
+				"currency": "%s"
+			}`, totalAmt, currency)),
 			CreatedAt: now.AddDate(0, 0, -2),
 			UpdatedAt: now,
 		},

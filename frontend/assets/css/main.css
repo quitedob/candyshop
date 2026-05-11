@@ -213,7 +213,8 @@
 
   body.body-lock {
     overflow: hidden;
-    touch-action: none;
+    touch-action: pan-y;
+    overscroll-behavior: contain;
   }
 
   /* Typography */
@@ -975,6 +976,38 @@
 
   .auth-input--error:focus {
     box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+  }
+
+  .auth-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .auth-input-wrapper .auth-input {
+    padding-right: 2.75rem;
+  }
+
+  .auth-password-toggle {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    color: var(--color-text-lighter);
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    transition: color var(--transition-fast);
+  }
+
+  .auth-password-toggle:hover {
+    color: var(--color-text);
   }
 
   .auth-field-error {

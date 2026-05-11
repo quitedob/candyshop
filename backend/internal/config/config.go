@@ -10,14 +10,15 @@ import (
 
 // Config holds all configuration for the application
 type Config struct {
-	Server   ServerConfig
-	Database DatabaseConfig
-	Email    EmailConfig
-	Upload   UploadConfig
-	Security SecurityConfig
-	JWT      JWTConfig
-	AI       AIConfig
-	KYB      KYBConfig
+	Server        ServerConfig
+	Database      DatabaseConfig
+	Email         EmailConfig
+	Upload        UploadConfig
+	Security      SecurityConfig
+	JWT           JWTConfig
+	AI            AIConfig
+	KYB           KYBConfig
+	ExchangeRates map[string]float64
 }
 
 // KYBConfig 客户激活与小额免审策略
@@ -70,7 +71,7 @@ type UploadConfig struct {
 	UploadPath   string
 	UploadURL    string
 	// S3 / cloud storage
-	StorageDriver string // "local" or "s3"
+	StorageDriver string // "local", "s3", or "oss" (Alibaba Cloud OSS, S3-compatible)
 	S3Bucket      string
 	S3Region      string
 	S3AccessKey   string
@@ -152,7 +153,8 @@ func Load() (*Config, error) {
 			AccessTokenDuration:  getEnvInt("JWT_ACCESS_MINUTES", 15),
 			RefreshTokenDuration: getEnvInt("JWT_REFRESH_DAYS", 7),
 		},
-		AI: LoadAIConfig(),
+		AI:            LoadAIConfig(),
+		ExchangeRates: parseExchangeRates(getEnv("EXCHANGE_RATES", "")),
 		KYB: KYBConfig{
 			BypassMaxOrderUSD:       getEnvFloat("KYB_BYPASS_MAX_ORDER_USD", 0),
 			BypassSampleMaxOrderUSD: getEnvFloat("KYB_BYPASS_SAMPLE_MAX_ORDER_USD", 0),
@@ -257,4 +259,29 @@ func getEnvFloat(key string, defaultValue float64) float64 {
 		return defaultValue
 	}
 	return value
+}
+
+// parseExchangeRates parses EXCHANGE_RATES env var in format "EUR:0.92,CNY:7.24,GBP:0.79"
+func parseExchangeRates(raw string) map[string]float64 {
+	rates := make(map[string]float64)
+	if raw == "" {
+		return rates
+	}
+	for _, pair := range strings.Split(raw, ",") {
+		pair = strings.TrimSpace(pair)
+		if pair == "" {
+			continue
+		}
+		parts := strings.SplitN(pair, ":", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		code := strings.ToUpper(strings.TrimSpace(parts[0]))
+		rate, err := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
+		if err != nil || rate <= 0 {
+			continue
+		}
+		rates[code] = rate
+	}
+	return rates
 }

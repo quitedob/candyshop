@@ -46,8 +46,9 @@
             <p class="product-header__summary">{{ product.summary }}</p>
 
             <!-- Price -->
-            <p v-if="product.unitPrice" class="product-header__price">
-              {{ $t('product.price_from') }} {{ cur() }}{{ formatNumber(product.unitPrice) }}{{ $t('product.price_per_unit') }}
+            <p v-if="product.basePrice" class="product-header__price">
+              {{ $t('product.price_from') }} {{ priceDisplay }}{{ $t('product.price_per_unit') }}
+              <span v-if="currency.isConverted.value" class="product-header__price-note">{{ $t('product.reference_price') }}</span>
             </p>
 
             <!-- Quick Specs -->
@@ -68,14 +69,10 @@
 
             <!-- Quick Actions -->
             <div class="product-header__actions">
-              <button v-if="isAuthenticated" class="btn btn-highlight btn-lg" @click="openInquiryModal">
+              <button class="btn btn-highlight btn-lg" @click="openInquiryModal">
                 <Icon name="lucide:message-circle" size="20" />
                 {{ $t('product.inquire_now') }}
               </button>
-              <NuxtLink v-else :to="localePath(`/auth/login?redirect=${encodeURIComponent(route.fullPath)}`)" class="btn btn-highlight btn-lg">
-                <Icon name="lucide:message-circle" size="20" />
-                {{ $t('product.inquire_now') }}
-              </NuxtLink>
               <NuxtLink v-if="isAuthenticated && !isAdmin" :to="localePath(`/customer/products/${product.id || product.slug}`)" class="btn btn-outline btn-lg">
                 <Icon name="lucide:shopping-bag" size="20" />
                 {{ $t('product.place_order') }}
@@ -172,8 +169,6 @@
             v-for="related in relatedProducts"
             :key="related.id"
             :product="related"
-            @inquire="handleInquire"
-            @sample="handleSample"
           />
         </div>
       </div>
@@ -200,13 +195,10 @@
 
     <!-- Sticky Inquiry CTA (Mobile) -->
     <div class="sticky-cta hide-desktop">
-      <NuxtLink v-if="isAuthenticated" class="sticky-cta__inquire" @click.prevent="openInquiryModal">
+      <button class="sticky-cta__inquire" @click="openInquiryModal">
         {{ $t('product.inquire_now') }}
-      </NuxtLink>
-      <NuxtLink v-else :to="localePath(`/auth/login?redirect=${encodeURIComponent(route.fullPath)}`)" class="sticky-cta__inquire">
-        {{ $t('product.inquire_now') }}
-      </NuxtLink>
-      <button class="sticky-cta__whatsapp" @click="openInquiryModal">
+      </button>
+      <button class="sticky-cta__sample" @click="openInquiryModal">
         {{ $t('product.request_sample') }}
       </button>
     </div>
@@ -245,10 +237,12 @@ import { useDisplay } from '~/composables/useDisplay'
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
-const router = useRouter()
 const { isAuthenticated, isAdmin, isPending } = useAuth()
-const { currencyOrDefault: cur, formatNumber } = useDisplay()
+const { formatNumber } = useDisplay()
+const currency = useCurrency()
 const api = useApi()
+
+const priceDisplay = computed(() => currency.formatPrice(product.value.basePrice || 0))
 const { getProduct, getRelatedProducts } = api
 
 // State
@@ -411,39 +405,17 @@ const scenarios = [
 
 // Modal functions
 const openInquiryModal = () => {
-  const productName = product.value.name || ''
-  const inquiryPath = localePath(`/customer/inquiries/new?name=${encodeURIComponent(productName)}`)
   if (isAuthenticated.value) {
+    const productName = product.value.name || ''
+    const inquiryPath = localePath(`/customer/inquiries/new?name=${encodeURIComponent(productName)}`)
     navigateTo(inquiryPath)
   } else {
-    navigateTo(localePath(`/auth/login?redirect=${encodeURIComponent(inquiryPath)}`))
+    isInquiryOpen.value = true
   }
 }
 
 const closeInquiryModal = () => {
   isInquiryOpen.value = false
-}
-
-const handleInquire = (product: any) => {
-  if (!isAuthenticated.value) {
-    router.push({ path: localePath('/auth/login'), query: { redirect: route.fullPath } })
-    return
-  }
-  router.push({
-    path: localePath('/customer/inquiries/new'),
-    query: { product: product.name }
-  })
-}
-
-const handleSample = (product: any) => {
-  if (!isAuthenticated.value) {
-    router.push({ path: localePath('/auth/login'), query: { redirect: route.fullPath } })
-    return
-  }
-  router.push({
-    path: localePath('/customer/inquiries/new'),
-    query: { product: product.name, message: 'I would like to request a sample for this product.' }
-  })
 }
 
 // SEO
@@ -455,10 +427,22 @@ useSeo({
   schema: {
     '@context': 'https://schema.org',
     '@type': 'Product',
+    '@id': `${siteUrl}/products/${categorySlug.value}/${productSlug.value}#product`,
     name: product.value.name,
     description: product.value.summary,
     image: product.value.images,
-    category: categoryName.value
+    sku: product.value.sku || product.value.slug,
+    category: categoryName.value,
+    brand: product.value.brand ? { '@type': 'Brand', name: product.value.brand } : undefined,
+    offers: {
+      '@type': 'Offer',
+      price: product.value.basePrice,
+      priceCurrency: product.value.currency || 'USD',
+      availability: product.value.inStock
+        ? 'https://schema.org/InStock'
+        : 'https://schema.org/OutOfStock',
+    },
+    manufacturer: { '@id': `${siteUrl}/#organization` },
   }
 })
 </script>
@@ -499,6 +483,14 @@ useSeo({
   font-weight: 700;
   color: var(--color-highlight);
   margin-bottom: var(--spacing-lg);
+}
+
+.product-header__price-note {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 400;
+  color: var(--color-text-light);
+  margin-top: var(--spacing-xs);
 }
 
 .product-header__specs {
@@ -708,7 +700,7 @@ useSeo({
   z-index: var(--z-sticky);
 }
 
-.sticky-cta__whatsapp,
+.sticky-cta__sample,
 .sticky-cta__inquire {
   flex: 1;
   display: flex;
@@ -720,8 +712,8 @@ useSeo({
   font-weight: 600;
 }
 
-.sticky-cta__whatsapp {
-  background-color: #25D366;
+.sticky-cta__sample {
+  background-color: var(--color-accent);
   color: white;
 }
 

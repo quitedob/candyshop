@@ -198,7 +198,7 @@ const { t } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
 const config = useRuntimeConfig()
-const { getCase, getCases } = useApi()
+const { getCase, getRelatedCases } = useApi()
 
 const slug = computed(() => String(route.params.slug || ''))
 
@@ -285,29 +285,24 @@ const timelineSteps = computed(() => {
 const { data: relatedData } = await useAsyncData(
   () => `case-related-${slug.value}`,
   async () => {
-    const current = caseData.value as RawCaseStudy | null
-    if (!current?.industry) {
-      return { data: [] as RawCaseStudy[] }
-    }
-    return await getCases({ industry: current.industry, page: 1, limit: 6 })
+    return await getRelatedCases(slug.value, 3)
   },
-  { watch: [slug, caseData] }
+  { watch: [slug] }
 )
 
 const relatedCases = computed(() => {
-  const rows = (relatedData.value?.data || []) as RawCaseStudy[]
-  return rows
-    .filter((item) => item.slug !== slug.value)
-    .slice(0, 3)
-    .map(normalizeCase)
+  const rows = (relatedData.value || []) as RawCaseStudy[]
+  return rows.map(normalizeCase)
 })
 
 const breadcrumbItems = computed(() => {
   const label = caseStudy.value?.client || t('cases_detail.fallback_client')
-  return [
-    { label: t('nav.cases'), to: '/cases-clients' },
-    { label }
-  ]
+  const items = [{ label: t('nav.cases'), to: '/cases-clients' }]
+  if (caseStudy.value?.industry) {
+    items.push({ label: caseStudy.value.industry })
+  }
+  items.push({ label })
+  return items
 })
 
 const whatsappUrl = computed(() => {

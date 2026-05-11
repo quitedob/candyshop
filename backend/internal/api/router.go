@@ -130,10 +130,15 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
+		aiReady := false
+		if h.System != nil {
+			aiReady = h.System.IsAgentReady()
+		}
 		c.JSON(http.StatusOK, gin.H{
-			"status":  "ok",
-			"service": "candypro-api",
-			"version": "1.0.0",
+			"status":   "ok",
+			"service":  "candypro-api",
+			"version":  "1.0.0",
+			"ai_agent": aiReady,
 		})
 	})
 

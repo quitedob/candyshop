@@ -101,6 +101,15 @@ func main() {
 	h := handlers.New(cfg, svcs)
 	if initErr := h.System.InitAgent(); initErr != nil {
 		log.Printf("Warning: trade AI agent initialization failed: %v", initErr)
+	} else if h.System.IsAgentReady() {
+		// Propagate the full TradeAgent to admin and system AIService
+		if h.AdminPortal != nil {
+			h.AdminPortal.AttachTradeAgent(h.System.TradeAgent())
+		}
+		if h.System != nil {
+			h.System.AttachAgentToAIService(h.System.TradeAgent())
+		}
+		log.Println("Trade AI agent initialized successfully (13 tools)")
 	}
 
 	// Background jobs (linked to process lifecycle)

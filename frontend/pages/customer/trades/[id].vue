@@ -316,7 +316,16 @@ const handleSSEEvent = (data: any) => {
       messages.value.push({ role: 'ai', content: streamingText.value, sender: data.agent_name || t('customer.trades.agent_ai') })
       streamingText.value = ''
     }
-    messages.value.push({ role: 'ai', content: data.content || '', sender: data.agent_name || t('customer.trades.agent_ai'), tool_calls: data.tool_calls })
+    messages.value.push({
+      role: 'ai',
+      content: data.content || '',
+      sender: data.agent_name || t('customer.trades.agent_ai'),
+      tool_calls: data.tool_calls,
+    })
+    // When AI generates a document, refresh the document list
+    if (data.document_type) {
+      fetchAllDocs()
+    }
   } else if (data.type === 'stream_chunk') {
     streamingText.value += data.content
   } else if (data.type === 'error') {

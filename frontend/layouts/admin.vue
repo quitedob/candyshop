@@ -172,6 +172,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 
+useSeo({ noindex: true })
+
 const { user, logout } = useAuth()
 const route = useRoute()
 const { t, locale, setLocale } = useI18n()

@@ -207,13 +207,13 @@ const buttonClasses = computed(() => {
 }
 
 .btn--icon-only.btn--xs {
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
 }
 
 .btn--icon-only.btn--sm {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
 }
 
 .btn--icon-only.btn--md {
@@ -235,7 +235,7 @@ const buttonClasses = computed(() => {
 .btn--primary {
   background-color: var(--color-primary);
   border-color: var(--color-primary);
-  color: white;
+  color: var(--color-text-on-primary);
 }
 
 .btn--primary:hover:not(.btn--disabled) {
@@ -248,7 +248,7 @@ const buttonClasses = computed(() => {
 .btn--secondary {
   background-color: var(--color-text);
   border-color: var(--color-text);
-  color: white;
+  color: var(--color-text-on-primary);
 }
 
 .btn--secondary:hover:not(.btn--disabled) {
@@ -261,7 +261,7 @@ const buttonClasses = computed(() => {
 .btn--accent {
   background-color: var(--color-accent);
   border-color: var(--color-accent);
-  color: white;
+  color: var(--color-text-on-primary);
 }
 
 .btn--accent:hover:not(.btn--disabled) {
@@ -274,7 +274,7 @@ const buttonClasses = computed(() => {
 .btn--highlight {
   background-color: var(--color-highlight);
   border-color: var(--color-highlight);
-  color: white;
+  color: var(--color-text-on-primary);
 }
 
 .btn--highlight:hover:not(.btn--disabled) {
@@ -292,7 +292,7 @@ const buttonClasses = computed(() => {
 
 .btn--outline:hover:not(.btn--disabled) {
   background-color: var(--color-primary);
-  color: white;
+  color: var(--color-text-on-primary);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }

@@ -50,7 +50,7 @@
 
         <div class="hero__visual">
           <div class="hero__image-wrap">
-            <img src="/images/hero-candy.jpg" :alt="$t('home.hero.title')" class="hero__img" loading="eager" />
+            <img src="/images/hero-candy.jpg" :alt="$t('home.hero.title')" class="hero__img" width="1200" height="800" loading="eager" />
             <div class="hero__image-accent"></div>
           </div>
           <div class="hero__float hero__float--1">

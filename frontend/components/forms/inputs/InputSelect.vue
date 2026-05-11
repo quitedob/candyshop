@@ -127,7 +127,7 @@ const handleFocus = () => {
   font-size: var(--text-base);
   font-family: inherit;
   color: var(--color-text);
-  background-color: white;
+  background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   appearance: none;

@@ -290,7 +290,8 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
         oemNeeded: state.oemNeeded === true,
         expectedDelivery: state.expectedDelivery || undefined,
         message: state.message || undefined,
-        files: state.files
+        files: state.files,
+        userId: (state as any).userId || undefined
       })
 
       isSubmitted.value = true

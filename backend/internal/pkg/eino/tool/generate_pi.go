@@ -2,10 +2,12 @@ package tool
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
-	einotool "github.com/cloudwego/eino-examples/adk/common/tool"
+	tradeModels "candypro/api/internal/models/trade"
+
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
 )
@@ -18,39 +20,63 @@ type GeneratePIRequest struct {
 	Incoterms       string  `json:"incoterms" jsonschema_description:"Incoterms, e.g., FOB Shanghai, CIF New York"`
 	PaymentTerms    string  `json:"payment_terms" jsonschema_description:"Payment terms, e.g., 30% TT advance, 70% LC"`
 	EstimatedAmount float64 `json:"estimated_amount" jsonschema_description:"Estimated total amount"`
+	TradeID         uint    `json:"trade_id" jsonschema_description:"Transaction ID to attach this document to"`
 }
 
 // GeneratePIResponse is the result of the PI generation
 type GeneratePIResponse struct {
-	status  string
-	content string
+	Status   string `json:"status"`
+	DocNo    string `json:"doc_number"`
+	Content  string `json:"content"`
+	SavedTo  string `json:"saved_to,omitempty"`
 }
 
-// NewGeneratePITool creates an Eino tool that generates a Proforma Invoice.
-// Wrapped in an InvokableReviewEditTool so the user can review/edit it before saving.
-func NewGeneratePITool(ctx context.Context) (tool.BaseTool, error) {
-	baseTool, err := utils.InferTool("generate_proforma_invoice", "Generate a Proforma Invoice based on buyer/seller details and items. Requires user review.",
+// NewGeneratePITool creates an Eino tool that generates and persists a Proforma Invoice.
+func NewGeneratePITool(ctx context.Context, persister DocumentPersister) (tool.BaseTool, error) {
+	baseTool, err := utils.InferTool("generate_proforma_invoice",
+		"Generate a Proforma Invoice based on buyer/seller details and items. Requires user review.",
 		func(ctx context.Context, req *GeneratePIRequest) (*GeneratePIResponse, error) {
+			docNo := fmt.Sprintf("PI-%d", time.Now().Unix())
 
-			// Build the PI Content JSON
 			contentStr := fmt.Sprintf(`{
-				"buyer": "%s",
-				"seller": "%s",
-				"items": %s,
-				"incoterms": "%s",
-				"payment_terms": "%s",
-				"total_amount": %.2f,
-				"valid_until": "%s"
-			}`, req.BuyerName, req.SellerName, req.ItemsJSON, req.Incoterms, req.PaymentTerms, req.EstimatedAmount, time.Now().AddDate(0, 1, 0).Format("2006-01-02"))
+	"buyer": %q,
+	"seller": %q,
+	"items": %s,
+	"incoterms": %q,
+	"payment_terms": %q,
+	"total_amount": %.2f,
+	"valid_until": %q
+}`, req.BuyerName, req.SellerName, req.ItemsJSON, req.Incoterms, req.PaymentTerms, req.EstimatedAmount,
+				time.Now().AddDate(0, 1, 0).Format("2006-01-02"))
 
-			return &GeneratePIResponse{
-				status:  "draft_created",
-				content: contentStr,
-			}, nil
+			resp := &GeneratePIResponse{
+				Status:  "draft_created",
+				DocNo:   docNo,
+				Content: contentStr,
+			}
+
+			if persister != nil && req.TradeID > 0 {
+				doc := &tradeModels.TradeDocument{
+					TransactionID: req.TradeID,
+					Type:          tradeModels.DocTypeProformaInvoice,
+					DocNumber:     docNo,
+					Status:        tradeModels.TradeStatusDraft,
+					IsAIGenerated: true,
+					LineageSource: "ai_draft",
+				}
+				contentJSON, _ := json.Marshal(contentStr)
+				_ = json.Unmarshal(contentJSON, &doc.Content)
+				if err := persister.AddDocument(ctx, doc); err != nil {
+					return resp, fmt.Errorf("saved to DB but persist failed: %w", err)
+				}
+				resp.SavedTo = fmt.Sprintf("DB(trade=%d)", req.TradeID)
+			}
+
+			return resp, nil
 		})
 	if err != nil {
 		return nil, err
 	}
 
-	return &einotool.InvokableReviewEditTool{InvokableTool: baseTool}, nil
+	return baseTool, nil
 }

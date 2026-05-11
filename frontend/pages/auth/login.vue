@@ -39,15 +39,25 @@
 
           <div class="auth-field">
             <label for="password" class="auth-label">{{ $t('auth.password') }}</label>
-            <input
-              id="password"
-              v-model="form.password"
-              type="password"
-              autocomplete="current-password"
-              required
-              class="auth-input"
-              :class="{ 'auth-input--error': errors.password }"
-            />
+            <div class="auth-input-wrapper">
+              <input
+                id="password"
+                v-model="form.password"
+                :type="showPassword ? 'text' : 'password'"
+                autocomplete="current-password"
+                required
+                class="auth-input"
+                :class="{ 'auth-input--error': errors.password }"
+              />
+              <button
+                type="button"
+                class="auth-password-toggle"
+                :aria-label="showPassword ? $t('auth.hide_password') : $t('auth.show_password')"
+                @click="showPassword = !showPassword"
+              >
+                <Icon :name="showPassword ? 'lucide:eye-off' : 'lucide:eye'" size="18" />
+              </button>
+            </div>
             <p v-if="errors.password" class="auth-field-error">{{ errors.password }}</p>
           </div>
 
@@ -78,19 +88,21 @@
       </div>
 
       <p class="auth-page__footer">
-        © {{ new Date().getFullYear() }} {{ $t('auth.footer_rights') }}
+        © {{ currentYear }} {{ $t('auth.footer_rights') }}
       </p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, computed } from 'vue'
 
 definePageMeta({
   layout: 'auth',
   middleware: ['auth']
 })
+
+const currentYear = computed(() => new Date().getFullYear())
 
 const { login } = useAuth()
 const route = useRoute()
@@ -104,6 +116,7 @@ const form = reactive({
 })
 
 const loading = ref(false)
+const showPassword = ref(false)
 const error = ref('')
 const errors = reactive({
   email: '',

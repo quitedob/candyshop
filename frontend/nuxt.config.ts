@@ -7,11 +7,18 @@ export default defineNuxtConfig({
 
   // Modules
   modules: [
+    '@nuxtjs/seo',
     '@nuxtjs/i18n',
     '@nuxtjs/tailwindcss',
-    '@nuxtjs/sitemap',
     '@nuxt/icon'
   ],
+
+  // Site config for @nuxtjs/seo
+  site: {
+    url: process.env.SITE_URL || 'https://candypro-oem.com',
+    name: 'CandyPro — Professional OEM Candy Manufacturer',
+    defaultLocale: 'zh',
+  },
 
   // Components Configuration
   components: [
@@ -119,10 +126,40 @@ export default defineNuxtConfig({
     internalApiBase: 'http://localhost:8080/api/v1'
   },
 
-  // R4-20: Remove broken sitemap source — /api/__sitemap__/urls doesn't exist
-  // sitemap: {
-  //   sources: ['/api/__sitemap__/urls']
-  // },
+  // Sitemap
+  sitemap: {
+    sources: ['/api/__sitemap__/urls'],
+    exclude: [
+      '/admin/**',
+      '/customer/**',
+      '/auth/**',
+      '/login',
+      '/register',
+      '/forgot-password',
+      '/reset-password',
+    ],
+    autoLastmod: true,
+  },
+
+  // Robots.txt (via nuxt-simple-robots, bundled in @nuxtjs/seo)
+  robots: {
+    disallow: [
+      '/admin/',
+      '/customer/',
+      '/auth/',
+    ],
+    allow: [
+      '/',
+      '/products/**',
+      '/blog/**',
+      '/faq',
+      '/about',
+      '/contact',
+      '/oem-solutions',
+      '/factory-quality',
+      '/cases-clients/**',
+    ],
+  },
 
   // Nitro server
   nitro: {
@@ -133,7 +170,31 @@ export default defineNuxtConfig({
         target: 'http://localhost:8080/api',
         changeOrigin: true
       }
-    }
+    },
+    prerender: {
+      routes: ['/', '/about', '/faq', '/contact', '/factory-quality', '/oem-solutions', '/privacy', '/terms', '/products', '/blog'],
+    },
+  },
+
+  // Hybrid rendering strategy
+  routeRules: {
+    // SSG — public content, max crawl budget
+    '/': { prerender: true },
+    '/about': { prerender: true },
+    '/faq': { prerender: true },
+    '/contact': { prerender: true },
+    '/factory-quality': { prerender: true },
+    '/oem-solutions': { prerender: true },
+    '/privacy': { prerender: true },
+    '/terms': { prerender: true },
+    '/blog/**': { prerender: true },
+    '/products/**': { prerender: true },
+    // CSR only — authenticated, zero SEO value
+    '/admin/**': { ssr: false },
+    '/customer/**': { ssr: false },
+    '/auth/**': { ssr: false },
+    // SSR + ISR — dynamic content refreshed hourly
+    '/cases-clients/**': { swr: 3600 },
   },
 
   // Disable appManifest to fix Vite pre-transform error with #app-manifest import

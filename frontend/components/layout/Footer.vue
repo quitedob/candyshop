@@ -195,13 +195,13 @@ const switchLocale = async (newLocale: string) => {
 <style scoped>
 .footer {
   background-color: var(--color-primary);
-  color: white;
+  color: var(--color-text-on-primary);
 }
 
 /* ── Newsletter CTA ── */
 .footer__newsletter {
   padding: var(--spacing-3xl) 0;
-  background: linear-gradient(135deg, #e8590c 0%, #f59e0b 100%);
+  background: linear-gradient(135deg, var(--color-highlight-hover) 0%, var(--color-accent) 100%);
 }
 
 .footer__newsletter-inner {
@@ -212,7 +212,7 @@ const switchLocale = async (newLocale: string) => {
 }
 
 .footer__newsletter-content h3 {
-  color: white;
+  color: var(--color-text-on-primary);
   font-size: var(--text-2xl);
   margin-bottom: var(--spacing-xs);
 }
@@ -241,18 +241,18 @@ const switchLocale = async (newLocale: string) => {
 }
 
 .footer__newsletter-btn--inquiry {
-  background-color: white;
-  color: #e8590c;
+  background-color: var(--color-bg);
+  color: var(--color-highlight);
 }
 
 .footer__newsletter-btn--inquiry:hover {
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: var(--color-bg-alt);
   transform: translateY(-1px);
 }
 
 .footer__newsletter-btn--whatsapp {
   background-color: rgba(0, 0, 0, 0.2);
-  color: white;
+  color: var(--color-text-on-primary);
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
@@ -285,7 +285,7 @@ const switchLocale = async (newLocale: string) => {
 
 .footer__logo {
   width: 150px;
-  color: white;
+  color: var(--color-text-on-primary);
 }
 
 .footer__tagline {
@@ -307,11 +307,11 @@ const switchLocale = async (newLocale: string) => {
   border-radius: var(--radius-sm);
   font-size: var(--text-xs);
   font-weight: 600;
-  color: #f59e0b;
+  color: var(--color-accent);
 }
 
 .footer__title {
-  color: white;
+  color: var(--color-text-on-primary);
   font-size: var(--text-sm);
   font-weight: 600;
   text-transform: uppercase;
@@ -332,7 +332,7 @@ const switchLocale = async (newLocale: string) => {
 }
 
 .footer__links a:hover {
-  color: #f59e0b;
+  color: var(--color-accent);
 }
 
 /* ── Contact Info ── */
@@ -354,7 +354,7 @@ const switchLocale = async (newLocale: string) => {
 .footer__contact-item svg {
   flex-shrink: 0;
   margin-top: 3px;
-  color: #f59e0b;
+  color: var(--color-accent);
 }
 
 .footer__contact-item a {
@@ -363,7 +363,7 @@ const switchLocale = async (newLocale: string) => {
 }
 
 .footer__contact-item a:hover {
-  color: #f59e0b;
+  color: var(--color-accent);
 }
 
 /* ── Social Links ── */
@@ -381,7 +381,7 @@ const switchLocale = async (newLocale: string) => {
   height: 36px;
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-full);
-  color: white;
+  color: var(--color-text-on-primary);
   transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
@@ -441,7 +441,7 @@ const switchLocale = async (newLocale: string) => {
 }
 
 .footer__legal a:hover {
-  color: white;
+  color: var(--color-text-on-primary);
 }
 
 /* ── Language Switcher ── */
@@ -462,11 +462,11 @@ const switchLocale = async (newLocale: string) => {
 }
 
 .footer__lang-btn:hover {
-  color: white;
+  color: var(--color-text-on-primary);
 }
 
 .footer__lang-btn--active {
-  background-color: white;
+  background-color: var(--color-text-on-primary);
   color: var(--color-primary);
 }
 

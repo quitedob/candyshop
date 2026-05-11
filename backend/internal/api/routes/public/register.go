@@ -39,10 +39,14 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, inquiryExtra ...gin.
 	group.GET("/posts/:slug/related", h.Public.GetRelatedPosts)
 	group.GET("/cases", h.Public.GetCases)
 	group.GET("/cases/:slug", h.Public.GetCase)
+	group.GET("/cases/:slug/related", h.Public.GetRelatedCases)
 
 	// Inquiry submission（独立中间件：询盘防刷限流）
 	inquiry := group.Group("", inquiryExtra...)
 	inquiry.POST("/inquiry", h.Public.SubmitInquiry)
+
+	// Exchange Rates
+	group.GET("/exchange-rates", h.Public.GetExchangeRates)
 
 	// Search
 	group.GET("/search", h.Public.Search)

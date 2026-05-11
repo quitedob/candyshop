@@ -213,6 +213,7 @@ interface Props {
   productSlug?: string
   productName?: string
   category?: string
+  userId?: string
 }
 
 const props = defineProps<Props>()
@@ -290,6 +291,10 @@ if (props.productSlug) {
 // Ensure the form never shows a stale submitted state from a previous navigation or SSR
 onMounted(() => {
   form.isSubmitted = false
+  // Associate user ID if logged in
+  if (props.userId) {
+    ;(form.state as any).userId = props.userId
+  }
   // Re-apply pre-fill after mount (reset clears it)
   if (props.productName) {
     productsInput.value = props.productName

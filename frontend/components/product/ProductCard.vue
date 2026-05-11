@@ -57,8 +57,9 @@
         <p class="product-card__summary">{{ product.summary }}</p>
 
         <!-- Price -->
-        <p v-if="product.unitPrice" class="product-card__price">
-          {{ $t('product.price_from') }} {{ cur() }}{{ formatNumber(product.unitPrice) }}{{ $t('product.price_per_unit') }}
+        <p v-if="product.basePrice" class="product-card__price">
+          {{ $t('product.price_from') }} {{ priceDisplay }}{{ $t('product.price_per_unit') }}
+          <span v-if="currency.isConverted.value" class="product-card__price-note">{{ $t('product.reference_price') }}</span>
         </p>
 
         <!-- Meta -->
@@ -103,7 +104,7 @@ interface Product {
   featured?: boolean
   moq?: number
   leadTime?: string
-  unitPrice?: number
+  basePrice?: number
 }
 
 interface Props {
@@ -112,14 +113,12 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const emit = defineEmits<{
-  inquire: [product: Product]
-  sample: [product: Product]
-}>()
-
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { currencyOrDefault: cur, formatNumber } = useDisplay()
+const { formatNumber } = useDisplay()
+const currency = useCurrency()
+
+const priceDisplay = computed(() => currency.formatPrice(props.product.basePrice || 0))
 
 const FALLBACK = '/images/categories/gummy-candy.jpg'
 const imgSrc = ref(props.product.thumbnail || FALLBACK)
@@ -139,12 +138,10 @@ const hasBadges = computed(() => {
 const { openInquiry: triggerInquiry } = useQuickInquiry()
 
 const openInquiry = () => {
-  emit('inquire', props.product)
   triggerInquiry(props.product, false)
 }
 
 const requestSample = () => {
-  emit('sample', props.product)
   triggerInquiry(props.product, true)
 }
 </script>
@@ -355,6 +352,14 @@ const requestSample = () => {
   font-weight: 700;
   color: var(--color-highlight);
   margin-bottom: var(--spacing-sm);
+}
+
+.product-card__price-note {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 400;
+  color: var(--color-text-light);
+  margin-top: 2px;
 }
 
 /* Compact variant */

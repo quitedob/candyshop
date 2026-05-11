@@ -14,6 +14,7 @@
 
     <!-- Quick Inquiry Button -->
     <button
+      ref="inquireBtnRef"
       class="inquiry-floating__inquire"
       :aria-label="$t('form.submit')"
       @click="openInquiry"
@@ -38,11 +39,13 @@
         v-if="isInquiryOpen"
         class="inquiry-modal"
         @click.self="closeInquiry"
+        @keydown.esc="closeInquiry"
       >
         <div class="inquiry-modal__content">
           <div class="inquiry-modal__header">
             <h3>{{ $t('form.title') }}</h3>
             <button
+              ref="closeBtnRef"
               class="inquiry-modal__close"
               :aria-label="t('common.a11y.close')"
               @click="closeInquiry"
@@ -60,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 
 const route = useRoute()
 const config = useRuntimeConfig()
@@ -69,6 +72,8 @@ const { t } = useI18n()
 // State
 const showScrollTop = ref(false)
 const isInquiryOpen = ref(false)
+const inquireBtnRef = ref<HTMLButtonElement | null>(null)
+const closeBtnRef = ref<HTMLButtonElement | null>(null)
 
 // WhatsApp URL
 const whatsappUrl = computed(() => {
@@ -91,21 +96,32 @@ const scrollToTop = () => {
 // Open inquiry modal
 const openInquiry = () => {
   isInquiryOpen.value = true
-  document.body.style.overflow = 'hidden'
+  document.body.classList.add('body-lock')
+  nextTick(() => closeBtnRef.value?.focus())
 }
 
 // Close inquiry modal
 const closeInquiry = () => {
   isInquiryOpen.value = false
-  document.body.style.overflow = ''
+  document.body.classList.remove('body-lock')
+  nextTick(() => inquireBtnRef.value?.focus())
+}
+
+// Handle escape key
+const handleEscKey = (e: KeyboardEvent) => {
+  if (e.key === 'Escape' && isInquiryOpen.value) {
+    closeInquiry()
+  }
 }
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
+  document.addEventListener('keydown', handleEscKey)
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  document.removeEventListener('keydown', handleEscKey)
 })
 </script>
 
@@ -234,7 +250,14 @@ onUnmounted(() => {
   padding: var(--spacing-md);
   background-color: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
+  overscroll-behavior: contain;
   animation: fadeIn 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inquiry-modal {
+    animation: none;
+  }
 }
 
 .inquiry-modal__content {

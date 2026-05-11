@@ -64,6 +64,9 @@ func (f *fakeUserRepo) CountCreatedSince(ctx context.Context, since time.Time) (
 func (f *fakeUserRepo) ActivateUsersByCompanyID(ctx context.Context, companyID string) error {
 	return nil
 }
+func (f *fakeUserRepo) FindByRoleNames(ctx context.Context, names []string) ([]modelsUser.User, error) {
+	return []modelsUser.User{}, nil
+}
 
 type fakeProductRepo struct {
 	products map[string]modelsProduct.Product
@@ -214,7 +217,7 @@ type fakeOrderRepo struct {
 	forceConfirmNotFound bool
 }
 
-func (f *fakeOrderRepo) FindAll(ctx context.Context, page, limit int) ([]modelsOrder.Order, int64, error) {
+func (f *fakeOrderRepo) FindAll(ctx context.Context, page, limit int, status, userID, dateFrom, dateTo string) ([]modelsOrder.Order, int64, error) {
 	return []modelsOrder.Order{}, 0, nil
 }
 func (f *fakeOrderRepo) FindByID(ctx context.Context, id string) (*modelsOrder.Order, error) {

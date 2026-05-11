@@ -41,6 +41,7 @@ type Services struct {
 	SystemSetting    *systemsettingSvc.SystemSettingService
 	StockTransaction *orderRepo.StockTransactionRepository
 	Translation      *translationSvc.TranslationService
+	OrderMessage     *order.OrderMessageService
 	Notification     *notificationsvc.NotificationService
 }
 
@@ -72,6 +73,7 @@ func New(repos *repositoryCommon.AdminPortalRepositories, cfg *config.Config, au
 		SystemSetting:    systemsettingSvc.NewSystemSettingService(repos.SystemSetting),
 		StockTransaction: repos.StockTransaction,
 		Translation:      translationSvc.NewService(repos.Translation),
+		OrderMessage:     order.NewOrderMessageService(repos.OrderMessage),
 		Notification:     notificationsvc.NewNotificationService(repos.Notification),
 	}
 }

@@ -421,12 +421,28 @@ func (h *Handler) AdminUpdateProductStatus(c *gin.Context) {
 		return
 	}
 
+	oldStatus := product.Status
+
 	product.Status = strings.TrimSpace(req.Status)
 	if !modelsProduct.IsValidProductStatus(product.Status) {
 		response.InvalidResp(c, "product_status_invalid")
 		return
 	}
+	if err := modelsProduct.ValidateProductStatusTransition(oldStatus, product.Status); err != nil {
+		response.InvalidResp(c, "product_status_transition_invalid")
+		return
+	}
+	if product.Status == modelsProduct.ProductStatusActive && product.StockQuantity <= 0 {
+		response.InvalidResp(c, "product_activation_no_stock")
+		return
+	}
 	product.UpdatedAt = time.Now()
+
+	if rawID, ok := c.Get("userID"); ok {
+		if uid, ok2 := rawID.(string); ok2 {
+			product.UpdatedBy = &uid
+		}
+	}
 	if err := h.services.Product.UpdateProduct(c.Request.Context(), product); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "product_update_failed")
 		return

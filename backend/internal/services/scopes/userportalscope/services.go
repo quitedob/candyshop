@@ -29,6 +29,7 @@ type Services struct {
 	Shipment       *trade.ShipmentService
 	Logistics      *trade.LogisticsService
 	TradeDocDetail *trade.TradeDocumentDetailService
+	OrderMessage   *order.OrderMessageService
 	Notification   *notificationsvc.NotificationService
 }
 
@@ -54,6 +55,7 @@ func New(repos *repositoryCommon.UserPortalRepositories, cfg *config.Config, db 
 		Shipment:       trade.NewShipmentService(repos.Shipment),
 		Logistics:      trade.NewLogisticsService(repos.Shipment, repos.ShipmentEvent, repos.Order, repos.Trade, db),
 		TradeDocDetail: trade.NewTradeDocumentDetailService(repos.TradeDocDetail),
+		OrderMessage:   order.NewOrderMessageService(repos.OrderMessage),
 		Notification:   notificationsvc.NewNotificationService(repos.Notification),
 	}
 }

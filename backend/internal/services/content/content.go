@@ -16,6 +16,7 @@ type contentRepository interface {
 	FindAllCases(ctx context.Context, page, limit int, industry string) ([]modelsProduct.CaseStudy, int64, error)
 	FindCaseBySlug(ctx context.Context, slug string) (*modelsProduct.CaseStudy, error)
 	FindCaseByID(ctx context.Context, id string) (*modelsProduct.CaseStudy, error)
+	FindRelatedCases(ctx context.Context, slug string, limit int) ([]modelsProduct.CaseStudy, error)
 	CreateCase(ctx context.Context, caseStudy *modelsProduct.CaseStudy) error
 	UpdateCase(ctx context.Context, caseStudy *modelsProduct.CaseStudy) error
 	DeleteCase(ctx context.Context, id string) error
@@ -126,6 +127,14 @@ func (s *ContentService) GetCaseBySlug(ctx context.Context, slug string) (*model
 // GetCaseByID returns a case study by id.
 func (s *ContentService) GetCaseByID(ctx context.Context, id string) (*modelsProduct.CaseStudy, error) {
 	return s.repo.FindCaseByID(ctx, id)
+}
+
+// GetRelatedCases returns related case studies by industry.
+func (s *ContentService) GetRelatedCases(ctx context.Context, slug string, limit int) ([]modelsProduct.CaseStudy, error) {
+	if limit <= 0 {
+		limit = 3
+	}
+	return s.repo.FindRelatedCases(ctx, slug, limit)
 }
 
 // CreateCase creates a new case study.

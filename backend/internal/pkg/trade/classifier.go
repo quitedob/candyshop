@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"strings"
 
-	"candypro/api/internal/pkg/eino/prompts"
+	"candypro/api/internal/pkg/eino/prompts/extraction"
 
 	"github.com/cloudwego/eino/components/model"
 )
 
 // ClassifyDocument classifies the given document
 func ClassifyDocument(ctx context.Context, cm model.ChatModel, doc *RawDocument) (*ExtractedData, error) {
-	msgs, err := prompts.DocumentClassificationPrompt.Format(ctx, map[string]any{
+	msgs, err := extraction.DocumentClassificationPrompt.Format(ctx, map[string]any{
 		"text": doc.Text,
 	})
 	if err != nil {

@@ -312,7 +312,7 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 		selectedProducts = append(selectedProducts, *product)
 		productByID[item.ProductID] = *product
 		subtotal += float64(item.Quantity) * unitPrice
-		if item.Currency != "" && req.Currency == "" {
+		if currency == "USD" && item.Currency != "" {
 			currency = item.Currency
 		}
 	}
@@ -320,6 +320,14 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 	// H1: Require shipping country for compliance validation
 	if strings.TrimSpace(req.ShippingAddress.Country) == "" {
 		response.InvalidResp(c, "target_country_required")
+		return
+	}
+	if strings.TrimSpace(req.ShippingAddress.Street) == "" {
+		response.InvalidResp(c, "shipping_street_required")
+		return
+	}
+	if strings.TrimSpace(req.ShippingAddress.City) == "" {
+		response.InvalidResp(c, "shipping_city_required")
 		return
 	}
 
@@ -395,6 +403,17 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 		},
 		"inventory": gin.H{"warnings": append(inventory.Warnings, priceChangeWarnings...)},
 	})
+
+	// Send order confirmation notification
+	if h.services.Notification != nil {
+		_ = h.services.Notification.Create(c.Request.Context(), &modelsCommon.Notification{
+			UserID:    userID,
+			Type:      "order",
+			Reference: order.ID,
+			Title:     "Order Placed",
+			Message:   "Your order #" + order.OrderNumber + " has been placed and is pending review.",
+		})
+	}
 }
 
 func generateCartOrderID() string {

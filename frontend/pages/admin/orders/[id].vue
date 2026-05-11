@@ -221,6 +221,37 @@
         </div>
       </div>
 
+      <!-- Order Messages -->
+      <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">{{ t('admin.orders.messages_title') }}</h3>
+        </div>
+        <div class="px-4 py-5 sm:p-6">
+          <div class="bg-gray-50 rounded-lg p-4 max-h-80 overflow-y-auto space-y-3 mb-4" ref="msgListRef">
+            <div v-if="messages.length === 0" class="text-center text-sm text-gray-500 py-4">
+              {{ t('admin.orders.no_messages') }}
+            </div>
+            <div v-for="msg in messages" :key="msg.id" :class="['flex', msg.senderType === 'admin' ? 'justify-end' : 'justify-start']">
+              <div :class="['max-w-xs lg:max-w-md rounded-lg px-4 py-2', msg.senderType === 'admin' ? 'bg-orange-600 text-white' : 'bg-white border border-gray-200 text-gray-900']">
+                <div class="text-xs font-semibold mb-1">
+                  {{ msg.senderType === 'admin' ? t('admin.orders.sender_admin') : t('admin.orders.sender_customer') }}
+                </div>
+                <p class="text-sm whitespace-pre-wrap">{{ msg.message }}</p>
+                <p class="text-xs mt-1 opacity-70">{{ formatDate(msg.createdAt) }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <input v-model="newMessage" @keyup.enter="sendMessage" :placeholder="t('admin.orders.message_placeholder')"
+              class="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm" :disabled="sending" />
+            <button @click="sendMessage" :disabled="sending || !newMessage.trim()"
+              class="inline-flex items-center gap-1 rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50">
+              {{ sending ? '...' : t('admin.orders.send_message') }}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Timeline / Activity Log -->
       <div class="bg-white shadow overflow-hidden sm:rounded-lg">
         <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
@@ -248,7 +279,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, onUnmounted, ref, computed, nextTick } from 'vue'
 
 definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
@@ -273,6 +304,35 @@ const creatingTrade = ref(false)
 const tradeMessage = ref('')
 const tradeError = ref(false)
 const createdTradeId = ref<number | null>(null)
+const messages = ref<any[]>([])
+const newMessage = ref('')
+const sending = ref(false)
+const msgListRef = ref<HTMLElement | null>(null)
+
+const fetchMessages = async () => {
+  if (!route.params.id) return
+  try {
+    const res = await api.get<any>(`/admin/orders/${route.params.id}/messages`)
+    messages.value = res.data || []
+  } catch (_) {}
+}
+
+const sendMessage = async () => {
+  if (!route.params.id || !newMessage.value.trim()) return
+  sending.value = true
+  try {
+    const msg = await api.post<any>(`/admin/orders/${route.params.id}/messages`, { message: newMessage.value.trim() })
+    messages.value.push(msg)
+    newMessage.value = ''
+    nextTick(() => { if (msgListRef.value) msgListRef.value.scrollTop = msgListRef.value.scrollHeight })
+  } catch (err: any) {
+    alert(err?.message || t('admin.orders.message_send_error'))
+  } finally { sending.value = false }
+}
+
+let msgInterval: ReturnType<typeof setInterval> | null = null
+onMounted(() => { fetchOrder(); fetchPayments(); fetchMessages(); msgInterval = setInterval(fetchMessages, 30000) })
+onUnmounted(() => { if (msgInterval) clearInterval(msgInterval) })
 
 const paymentPolicyWarning = computed(() => {
   const key = `admin.payment_policy.${statusInput.value}`
@@ -373,5 +433,4 @@ const formatAddress = (address: any) => {
   return [address.street, address.city, address.state, address.zipCode, address.country].filter(Boolean).join(', ')
 }
 
-onMounted(() => { fetchOrder(); fetchPayments() })
 </script>

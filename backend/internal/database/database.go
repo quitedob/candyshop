@@ -159,6 +159,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&modelsTrade.ComplianceRequirement{},
 		&modelsOrder.StockTransaction{},
 		&modelsOrder.EventOutbox{},
+		&modelsOrder.OrderMessage{},
 		&modelsOrder.CountryPaymentPolicy{},
 		&modelsOrder.DocumentAdjustment{},
 		&modelsTrade.ShipmentEvent{},

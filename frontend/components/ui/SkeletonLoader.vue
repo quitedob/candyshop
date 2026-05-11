@@ -32,6 +32,12 @@ defineProps<{
   100% { background-position: -200% 0; }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .skeleton.animate {
+    animation: none;
+  }
+}
+
 .skeleton-text {
   height: 1rem;
   width: 100%;

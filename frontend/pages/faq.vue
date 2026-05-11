@@ -129,7 +129,11 @@ watch(activeCategory, () => {
 useSeo({
   title: t('seo.faq_title'),
   description: t('seo.faq_description'),
-  ogType: 'website'
+  ogType: 'website',
+  schema: useFAQSchema(allFaqs.value.map(faq => ({
+    question: faq.question,
+    answer: faq.answer,
+  }))),
 })
 </script>
 

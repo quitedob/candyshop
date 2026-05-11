@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"candypro/api/internal/pkg/eino/prompts"
+	"candypro/api/internal/pkg/eino/prompts/extraction"
 
 	"github.com/cloudwego/eino/components/model"
 )
@@ -16,7 +16,7 @@ func ExtractDocument(ctx context.Context, cm model.ChatModel, input *ExtractedDa
 
 	rawText, _ := input.Data["raw_text"].(string)
 
-	msgs, err := prompts.ExtractionPrompt.Format(ctx, map[string]any{
+	msgs, err := extraction.ExtractionPrompt.Format(ctx, map[string]any{
 		"doc_type": input.DocumentType,
 		"content":  rawText,
 	})

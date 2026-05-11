@@ -12,7 +12,35 @@
       </div>
     </div>
 
-    <div class="mt-8 overflow-hidden rounded-lg bg-white shadow ring-1 ring-black ring-opacity-5">
+    <!-- Filters -->
+    <div class="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div>
+        <label for="filter-status" class="block text-xs font-medium text-gray-500">{{ t('admin.orders.filter_status') }}</label>
+        <select id="filter-status" v-model="filterStatus" class="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm">
+          <option value="">{{ t('admin.orders.filter_all') }}</option>
+          <option value="pending">{{ enumLabel('order_status', 'pending') }}</option>
+          <option value="confirmed">{{ enumLabel('order_status', 'confirmed') }}</option>
+          <option value="production">{{ enumLabel('order_status', 'production') }}</option>
+          <option value="shipped">{{ enumLabel('order_status', 'shipped') }}</option>
+          <option value="delivered">{{ enumLabel('order_status', 'delivered') }}</option>
+          <option value="cancelled">{{ enumLabel('order_status', 'cancelled') }}</option>
+        </select>
+      </div>
+      <div>
+        <label for="filter-userId" class="block text-xs font-medium text-gray-500">{{ t('admin.orders.filter_user') }}</label>
+        <input id="filter-userId" v-model="filterUserId" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" :placeholder="t('admin.orders.filter_user_placeholder')" />
+      </div>
+      <div>
+        <label for="filter-dateFrom" class="block text-xs font-medium text-gray-500">{{ t('admin.orders.filter_from') }}</label>
+        <input id="filter-dateFrom" v-model="filterDateFrom" type="date" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
+      </div>
+      <div>
+        <label for="filter-dateTo" class="block text-xs font-medium text-gray-500">{{ t('admin.orders.filter_to') }}</label>
+        <input id="filter-dateTo" v-model="filterDateTo" type="date" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
+      </div>
+    </div>
+
+    <div class="mt-4 overflow-hidden rounded-lg bg-white shadow ring-1 ring-black ring-opacity-5">
       <table class="min-w-full divide-y divide-gray-300">
         <thead class="bg-gray-50">
           <tr>
@@ -233,6 +261,11 @@ const localePath = useLocalePath()
 const { currencyOrDefault: cur, cell, enumLabel, formatNumber, formatDate } = useDisplay()
 const api = useApi()
 
+const filterStatus = ref('')
+const filterUserId = ref('')
+const filterDateFrom = ref('')
+const filterDateTo = ref('')
+
 const orders = ref<any[]>([])
 const pagination = ref<any>(null)
 const pending = ref(true)
@@ -282,7 +315,12 @@ const fetchOrders = async () => {
   pending.value = true
   error.value = ''
   try {
-    const res = await api.get<any>('/admin/orders', { page: page.value, limit: pageSize })
+    const params: Record<string, any> = { page: page.value, limit: pageSize }
+    if (filterStatus.value) params.status = filterStatus.value
+    if (filterUserId.value) params.userId = filterUserId.value
+    if (filterDateFrom.value) params.dateFrom = filterDateFrom.value
+    if (filterDateTo.value) params.dateTo = filterDateTo.value
+    const res = await api.get<any>('/admin/orders', params)
     orders.value = res.data || []
     pagination.value = res.pagination
   } catch (err: any) {
@@ -446,6 +484,10 @@ const deleteOrder = async (id: string) => {
 }
 
 watch(page, fetchOrders)
+watch([filterStatus, filterUserId, filterDateFrom, filterDateTo], () => {
+  page.value = 1
+  fetchOrders()
+})
 onMounted(fetchOrders)
 </script>
 

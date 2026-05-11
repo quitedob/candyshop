@@ -218,10 +218,14 @@ func (h *Handler) CustomerGetOrderProgress(c *gin.Context) {
 
 	steps := []string{"pending_confirmation", "pending", "confirmed", "production", "shipped", "delivered"}
 	currentStep := 0
-	for idx, step := range steps {
-		if step == order.Status {
-			currentStep = idx
-			break
+	if order.Status == "cancelled" {
+		currentStep = -1
+	} else {
+		for idx, step := range steps {
+			if step == order.Status {
+				currentStep = idx
+				break
+			}
 		}
 	}
 

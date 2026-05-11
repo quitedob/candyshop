@@ -1,6 +1,7 @@
 package product
 
 import (
+	"fmt"
 	"time"
 
 	common "candypro/api/internal/models/common"
@@ -58,6 +59,29 @@ func IsValidProductStatus(s string) bool {
 		return true
 	}
 	return false
+}
+
+var validProductStatusTransitions = map[string][]string{
+	ProductStatusDraft:    {ProductStatusActive},
+	ProductStatusActive:   {ProductStatusInactive},
+	ProductStatusInactive: {ProductStatusActive},
+}
+
+// ValidateProductStatusTransition returns an error if the transition is not allowed.
+func ValidateProductStatusTransition(from, to string) error {
+	if from == to {
+		return nil
+	}
+	allowed, ok := validProductStatusTransitions[from]
+	if !ok {
+		return fmt.Errorf("product: unknown status %q", from)
+	}
+	for _, a := range allowed {
+		if a == to {
+			return nil
+		}
+	}
+	return fmt.Errorf("product: invalid status transition from %q to %q", from, to)
 }
 
 // ProductEmbedding stores semantic-search vectors separately so baseline product migration works on plain Postgres.

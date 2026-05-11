@@ -15,6 +15,7 @@ type Handler struct {
 	services   *servicesCommon.SystemServices
 	aiService  *tradeService.AIService
 	tradeAgent adk.Agent
+	agentReady bool
 }
 
 func NewHandler(cfg *config.Config, svcs *servicesCommon.SystemServices) *Handler {
@@ -33,4 +34,18 @@ func NewHandler(cfg *config.Config, svcs *servicesCommon.SystemServices) *Handle
 	}
 
 	return h
+}
+
+// IsAgentReady reports whether the TradeAgent initialized successfully.
+func (h *Handler) IsAgentReady() bool { return h.agentReady }
+
+// TradeAgent returns the 13-tool TradeAgent for cross-handler wiring.
+func (h *Handler) TradeAgent() adk.Agent { return h.tradeAgent }
+
+// AttachAgentToAIService wires the TradeAgent into the AIService so Generate() calls
+// benefit from the full 13-tool agent instead of the single-tool legacy agent.
+func (h *Handler) AttachAgentToAIService(agent adk.Agent) {
+	if h.aiService != nil {
+		h.aiService.AttachAgent(agent)
+	}
 }

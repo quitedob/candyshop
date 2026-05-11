@@ -79,6 +79,10 @@
               {{ $t('contact.send_inquiry') }}
             </NuxtLink>
           </div>
+          <p v-if="isPending" class="cta-hint">
+            <Icon name="lucide:info" size="16" />
+            {{ $t('product.pending_kyb_hint') }}
+          </p>
         </div>
       </div>
     </section>
@@ -91,10 +95,13 @@ import { useI18n, useLocalePath } from '#i18n'
 
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
-const { isAuthenticated, isAdmin, isPending } = useAuth()
+const { isAuthenticated, isAdmin, isPending, user } = useAuth()
 const { getCategories, getProducts } = useApi()
 
 const orderingCtaPath = computed(() => {
+  if (isPending.value) {
+    return localePath('/customer/company')
+  }
   if (isAuthenticated.value) {
     return localePath(isAdmin.value ? '/admin' : '/customer/products')
   }
@@ -102,11 +109,11 @@ const orderingCtaPath = computed(() => {
 })
 
 const orderingCtaLabel = computed(() => {
-  if (isAuthenticated.value && isAdmin.value) {
+  if (isAdmin.value) {
     return t('nav.admin_panel')
   }
   if (isPending.value) {
-    return t('product.pending_approval')
+    return t('product.complete_kyb')
   }
   if (isAuthenticated.value) {
     return t('product.inquire_now')
@@ -296,5 +303,19 @@ useSeo({
   justify-content: center;
   flex-wrap: wrap;
   gap: var(--spacing-md);
+}
+
+.cta-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background-color: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: var(--radius-md);
+  color: #92400e;
+  font-size: var(--text-sm);
 }
 </style>

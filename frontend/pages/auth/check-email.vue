@@ -55,14 +55,14 @@
       </div>
 
       <p class="auth-page__footer">
-        © {{ new Date().getFullYear() }} {{ t('auth.footer_rights') }}
+        © {{ currentYear }} {{ t('auth.footer_rights') }}
       </p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 
 definePageMeta({
   layout: 'auth',
@@ -78,6 +78,7 @@ const email = computed(() => (route.query.email as string) || '')
 const resending = ref(false)
 const resendSuccess = ref(false)
 const resendError = ref('')
+const currentYear = computed(() => new Date().getFullYear())
 const cooldown = ref(0)
 let timer: ReturnType<typeof setInterval> | null = null
 

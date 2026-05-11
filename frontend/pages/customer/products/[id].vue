@@ -97,6 +97,18 @@
               </div>
             </div>
 
+            <!-- Destination Country -->
+            <div class="flex items-center gap-4 mb-4">
+              <label for="dest-country" class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ t('customer.products.destination_country') }}</label>
+              <input
+                id="dest-country"
+                v-model="shippingCountry"
+                type="text"
+                :placeholder="t('customer.products.destination_country_placeholder')"
+                class="flex-1 h-10 px-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+
             <!-- Quantity Selector -->
             <div class="flex items-center gap-4 mb-4">
               <label class="text-sm font-medium text-gray-700">{{ t('customer.products.quantity') }}</label>
@@ -255,6 +267,7 @@ const quantity = ref(1)
 const selectedImage = ref('')
 const contractPrice = ref<number | null>(null)
 const loadingPrice = ref(false)
+const shippingCountry = ref('')
 const submitting = ref(false)
 const showSuccess = ref(false)
 
@@ -283,7 +296,7 @@ const allImages = computed(() => {
 })
 
 // Displayed unit price: contract price takes priority over public price
-const displayPrice = computed(() => contractPrice.value ?? product.value?.unitPrice ?? 0)
+const displayPrice = computed(() => contractPrice.value ?? product.value?.basePrice ?? 0)
 
 const fetchProduct = async () => {
   pending.value = true
@@ -343,7 +356,7 @@ const submitOrderRequest = async () => {
         unitPrice: displayPrice.value,
         specifications: selectedVariant.value?.sku || ''
       }],
-      shippingAddress: {} as any
+      shippingAddress: { country: shippingCountry.value || '' } as any
     })
     showSuccess.value = true
   } catch (err: any) {

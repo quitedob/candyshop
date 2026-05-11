@@ -2,72 +2,56 @@ package eino
 
 import (
 	"context"
+	"fmt"
+	"log"
+	"os"
+	"path/filepath"
 
-	"candypro/api/internal/pkg/eino/prompts"
+	"candypro/api/internal/pkg/eino/graph"
+	"candypro/api/internal/pkg/eino/prompts/agent"
 	einotool "candypro/api/internal/pkg/eino/tool"
+	"candypro/api/internal/pkg/eino/tool/rag"
 
-	commonModel "github.com/cloudwego/eino-examples/adk/common/model"
 	"github.com/cloudwego/eino/adk"
+	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/compose"
 )
 
-// NewTradeAgent creates a smart agent that acts as a Trade Coordinator,
-// guiding the user through Quotation -> PI -> CI -> etc.
-// 人工审核：长链路可扩展为 compose.Graph + internal/trade.NewHitlNode；此处以 ChatModelAgent + submit_quotation_for_human_review 工具实现报价审批闭环。
-func NewTradeAgent(ctx context.Context) (adk.Agent, error) {
-	// Initialize tools
-	piTool, err := einotool.NewGeneratePITool(ctx)
+// NewTradeAgent creates a TradeAssistant ChatModelAgent following the official Eino
+// "Graph as Agent Tool" architecture.
+//
+// Architecture:
+//
+//	Agent (LLM decision center)
+//	├── generate_trade_documents (Graph Tool: deterministic doc pipeline)
+//	├── check_compliance (rule-based country check)
+//	├── compliance_lookup (RAG corpus search)
+//	├── validate_lc_documents (L/C document verification)
+//	├── track_shipment (shipment tracking)
+//	└── submit_quotation_for_human_review (HITL approval)
+//
+// chatModel is injected by the caller so both agent and AIService share one model config.
+// persister may be nil for chat-only deployments.
+func NewTradeAgent(ctx context.Context, chatModel model.ToolCallingChatModel, persister einotool.DocumentPersister) (adk.Agent, error) {
+	// ── Graph Tool: deterministic document generation pipeline ──
+	// Per Eino official guide: "Encapsulating Graph as Agent's Tool achieves 1+1 > 2"
+	docGraph, err := graph.NewDocumentPipelineGraph(ctx, persister)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("document pipeline graph: %w", err)
+	}
+	docGraphTool, err := graph.NewDocPipelineTool(ctx, docGraph)
+	if err != nil {
+		return nil, fmt.Errorf("document pipeline tool: %w", err)
 	}
 
-	ciTool, err := einotool.NewGenerateCITool(ctx)
-	if err != nil {
-		return nil, err
-	}
-
+	// ── Individual tools for non-document operations ──
 	compTool, err := einotool.NewComplianceCheckTool(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	scTool, err := einotool.NewGenerateSalesContractTool(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	plTool, err := einotool.NewGeneratePackingListTool(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	cooTool, err := einotool.NewGenerateCertificateOfOriginTool(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	hcTool, err := einotool.NewGenerateHealthCertificateTool(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	ingTool, err := einotool.NewGenerateIngredientsDeclarationTool(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	sliTool, err := einotool.NewGenerateSLITool(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	lcTool, err := einotool.NewValidateLCTool(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	insTool, err := einotool.NewGenerateInsuranceCertTool(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -82,25 +66,32 @@ func NewTradeAgent(ctx context.Context) (adk.Agent, error) {
 		return nil, err
 	}
 
-	llmModel := commonModel.NewChatModel() // Needs API key in env (.env loaded via config)
+	tools := []tool.BaseTool{
+		docGraphTool, // Replaces 9 individual doc generation tools
+		compTool,
+		lcTool,
+		trackTool,
+		quoteReviewTool,
+	}
 
-	// Since we're using a standard ReAct style ChatModelAgent we pass the tools.
-	// You can also use PlanExecute if it involves deep long-running planning.
-	agent, err := adk.NewChatModelAgent(ctx, &adk.ChatModelAgentConfig{
+	// RAG compliance lookup tool (optional — needs corpus directory)
+	if ragTool, ragErr := buildRagComplianceTool(); ragErr == nil {
+		tools = append(tools, ragTool)
+	} else {
+		log.Printf("Warning: RAG compliance lookup tool not available: %v", ragErr)
+	}
+
+	a, err := adk.NewChatModelAgent(ctx, &adk.ChatModelAgentConfig{
 		Name:        "TradeAssistant",
-		Description: "An AI assistant capable of guiding users through candy foreign trade procedures.",
-		Instruction: prompts.TradeAgentInstruction,
-		Model:       llmModel,
+		Description: "AI trade coordinator for CandyPro OEM. Generates trade documents, checks compliance, validates L/C, tracks shipments, and queues quotations for human review.",
+		Instruction: agent.TradeAgentInstruction,
+		Model:       chatModel,
 		ToolsConfig: adk.ToolsConfig{
 			ToolsNodeConfig: compose.ToolsNodeConfig{
-				Tools: []tool.BaseTool{
-					piTool, ciTool, compTool, scTool, plTool, cooTool,
-					hcTool, ingTool, sliTool, lcTool, insTool, trackTool,
-					quoteReviewTool,
-				},
+				Tools: tools,
 			},
 			ReturnDirectly: map[string]bool{
-				// Can mark tools to return directly if we stream
+				"submit_quotation_for_human_review": true, // Exit after queuing for review
 			},
 		},
 	})
@@ -108,5 +99,35 @@ func NewTradeAgent(ctx context.Context) (adk.Agent, error) {
 		return nil, err
 	}
 
-	return agent, nil
+	return a, nil
+}
+
+func buildRagComplianceTool() (tool.BaseTool, error) {
+	corpusDir, err := resolveComplianceCorpusDir()
+	if err != nil {
+		return nil, err
+	}
+
+	retriever, err := rag.NewComplianceRetriever(corpusDir)
+	if err != nil {
+		return nil, err
+	}
+
+	return rag.NewComplianceTool(retriever)
+}
+
+func resolveComplianceCorpusDir() (string, error) {
+	candidates := []string{
+		filepath.Join("internal", "pkg", "eino", "corpus"),
+		filepath.Join(".", "internal", "pkg", "eino", "corpus"),
+		filepath.Join("backend", "internal", "pkg", "eino", "corpus"),
+	}
+
+	for _, candidate := range candidates {
+		info, err := os.Stat(candidate)
+		if err == nil && info.IsDir() {
+			return candidate, nil
+		}
+	}
+	return "", fmt.Errorf("cannot find compliance corpus directory in known locations")
 }

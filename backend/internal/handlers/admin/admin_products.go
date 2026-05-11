@@ -81,12 +81,26 @@ func (h *Handler) AdminCreateProduct(c *gin.Context) {
 		response.InvalidResp(c, "product_stock_negative")
 		return
 	}
+	if product.MOQ < 1 {
+		product.MOQ = 1
+	}
+	if product.BasePrice <= 0 {
+		response.InvalidResp(c, "product_price_required")
+		return
+	}
 
 	now := time.Now()
 	if product.CreatedAt.IsZero() {
 		product.CreatedAt = now
 	}
 	product.UpdatedAt = now
+
+	if rawID, ok := c.Get("userID"); ok {
+		if uid, ok2 := rawID.(string); ok2 {
+			product.CreatedBy = &uid
+			product.UpdatedBy = &uid
+		}
+	}
 
 	if err := h.services.Product.CreateProduct(c.Request.Context(), &product); err != nil {
 		if dberror.IsDuplicateKeyError(err) {
@@ -134,9 +148,28 @@ func (h *Handler) AdminUpdateProduct(c *gin.Context) {
 		response.InvalidResp(c, "product_status_invalid")
 		return
 	}
+	if req.Status != nil {
+		newStatus := strings.TrimSpace(*req.Status)
+		if err := modelsProduct.ValidateProductStatusTransition(product.Status, newStatus); err != nil {
+			response.InvalidResp(c, "product_status_transition_invalid")
+			return
+		}
+	}
 
 	applyProductPatch(product, req)
 	product.UpdatedAt = time.Now()
+
+	if rawID, ok := c.Get("userID"); ok {
+		if uid, ok2 := rawID.(string); ok2 {
+			product.UpdatedBy = &uid
+		}
+	}
+
+	if req.MOQ != nil && *req.MOQ < 1 {
+		response.InvalidResp(c, "product_moq_min_1")
+		return
+	}
+
 	if product.Name == "" {
 		response.InvalidResp(c, "product_name_empty")
 		return

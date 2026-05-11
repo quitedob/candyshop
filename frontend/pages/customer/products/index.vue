@@ -290,7 +290,7 @@
                     <div>
                       <p class="text-xs text-gray-500">{{ t('customer.products.unit_price') }}</p>
                       <p class="text-lg font-bold text-orange-600">
-                        {{ cur(product.currency) }} {{ formatNumber(product.unitPrice || 0) }}
+                        {{ currency.formatPrice(product.basePrice || 0) }}
                       </p>
                     </div>
                     <div class="flex gap-2">
@@ -345,7 +345,8 @@ definePageMeta({
 
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { currencyOrDefault: cur, formatNumber } = useDisplay()
+const { formatNumber } = useDisplay()
+const currency = useCurrency()
 const api = useApi()
 
 const products = ref<any[]>([])

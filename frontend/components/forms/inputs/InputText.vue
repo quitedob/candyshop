@@ -19,6 +19,7 @@
         :minlength="minlength"
         :pattern="pattern"
         :inputmode="inputmode"
+        :autocomplete="autocomplete"
         class="input-text__field"
         @input="handleInput"
         @blur="handleBlur"
@@ -29,6 +30,7 @@
         v-if="clearable && modelValue"
         type="button"
         class="input-text__clear"
+        aria-label="Clear input"
         @click="handleClear"
       >
         <Icon name="lucide:x" size="14" />
@@ -65,6 +67,7 @@ interface Props {
   minlength?: number
   pattern?: string
   inputmode?: 'text' | 'email' | 'tel' | 'numeric' | 'decimal' | 'search'
+  autocomplete?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -137,10 +140,10 @@ defineExpose({
   font-size: var(--text-base);
   font-family: inherit;
   color: var(--color-text);
-  background-color: white;
+  background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .input-text__field::placeholder {

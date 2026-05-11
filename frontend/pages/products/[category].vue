@@ -114,8 +114,6 @@
             v-for="product in products"
             :key="product.id"
             :product="product"
-            @inquire="handleInquire"
-            @sample="handleSample"
           />
         </div>
 
@@ -264,10 +262,8 @@ import { useI18n, useLocalePath } from '#i18n'
 const { t, te, locale } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
-const router = useRouter()
 const config = useRuntimeConfig()
 const { getProducts, getCategory } = useApi()
-const { isAuthenticated } = useAuth()
 
 // State
 const currentPage = ref(1)
@@ -428,28 +424,6 @@ const clearFilters = () => {
 
 const toggleFAQ = (index: number) => {
   openFAQ.value = openFAQ.value === index ? -1 : index
-}
-
-const handleInquire = (product: any) => {
-  if (!isAuthenticated.value) {
-    router.push({ path: localePath('/auth/login'), query: { redirect: route.fullPath } })
-    return
-  }
-  router.push({
-    path: localePath('/contact'),
-    query: { product: product.name }
-  })
-}
-
-const handleSample = (product: any) => {
-  if (!isAuthenticated.value) {
-    router.push({ path: localePath('/auth/login'), query: { redirect: route.fullPath } })
-    return
-  }
-  router.push({
-    path: localePath('/contact'),
-    query: { product: product.name, sample: 'true' }
-  })
 }
 
 // WhatsApp URL

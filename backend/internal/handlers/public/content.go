@@ -119,6 +119,35 @@ func (h *Handler) GetCases(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// GetRelatedCases returns related case studies
+// @Summary Get related case studies
+// @Tags cases
+// @Produce json
+// @Param slug path string true "Case study slug"
+// @Param limit query int false "Number of cases" default(3)
+// @Success 200 {array} modelsProduct.CaseStudy
+// @Router /cases/{slug}/related [get]
+func (h *Handler) GetRelatedCases(c *gin.Context) {
+	if !(h.services != nil) {
+		apiresp.ServiceUnavailableResp(c)
+		return
+	}
+
+	slug := c.Param("slug")
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "3"))
+	if err != nil || limit < 1 || limit > 20 {
+		limit = 3
+	}
+
+	cases, err := h.services.Content.GetRelatedCases(c.Request.Context(), slug, limit)
+	if err != nil {
+		apiresp.ErrorResp(c, http.StatusInternalServerError, "related_cases_fetch_failed")
+		return
+	}
+
+	c.JSON(http.StatusOK, cases)
+}
+
 // GetCase returns a case study by slug
 // @Summary Get case study by slug
 // @Tags cases

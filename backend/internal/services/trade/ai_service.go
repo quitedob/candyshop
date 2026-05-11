@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"candypro/api/internal/config"
-	"candypro/api/internal/pkg/eino/prompts"
+	"candypro/api/internal/pkg/eino/prompts/agent"
 	"candypro/api/internal/pkg/eino/tool/rag"
 
 	"github.com/cloudwego/eino-ext/components/model/openai"
@@ -23,16 +23,17 @@ import (
 
 var ErrAIServiceDisabled = errors.New("ai service is not configured")
 
-// AIService provides AI capabilities using Eino framework
+// AIService provides AI capabilities using Eino framework.
 type AIService struct {
 	cfg                 config.AIConfig
 	chatModel           *openai.ChatModel
-	chatModelJSON       *openai.ChatModel // dedicated model with json_object response format
+	chatModelJSON       *openai.ChatModel
+	agent               adk.Agent // full 13-tool TradeAgent if initialized
 	runner              *adk.Runner
 	complianceRetriever *rag.ComplianceRetriever
 }
 
-// NewAIService creates a new AI service
+// NewAIService creates a new AI service with a basic chat model.
 func NewAIService(cfg config.AIConfig) (*AIService, error) {
 	if cfg.OpenAIAPIKey == "" {
 		return nil, ErrAIServiceDisabled
@@ -48,7 +49,6 @@ func NewAIService(cfg config.AIConfig) (*AIService, error) {
 		return nil, fmt.Errorf("failed to initialize chat model: %w", err)
 	}
 
-	// JSON-mode model: forces response_format = json_object
 	jsonResponseFormat := openai.ChatCompletionResponseFormat{
 		Type: openai.ChatCompletionResponseFormatTypeJSONObject,
 	}
@@ -58,20 +58,45 @@ func NewAIService(cfg config.AIConfig) (*AIService, error) {
 		ResponseFormat: &jsonResponseFormat,
 	})
 	if err != nil {
-		// Non-fatal: fall back to regular model
 		log.Printf("Warning: failed to initialize JSON chat model, falling back: %v", err)
 		chatModelJSON = chatModel
 	}
 
-	agentTools := make([]tool.BaseTool, 0, 1)
-	var complianceRetriever *rag.ComplianceRetriever
-
 	complianceTool, retriever, toolErr := buildComplianceTool()
 	if toolErr != nil {
 		log.Printf("Warning: compliance_lookup tool disabled: %v", toolErr)
-	} else {
+	}
+
+	return &AIService{
+		cfg:                 cfg,
+		chatModel:           chatModel,
+		chatModelJSON:       chatModelJSON,
+		complianceRetriever: retriever,
+		// legacy runner for when no agent is attached
+		runner: buildLegacyRunner(ctx, chatModel, complianceTool),
+	}, nil
+}
+
+// NewAIServiceWithAgent creates an AI service that uses the full 13-tool TradeAgent for Generate calls.
+func NewAIServiceWithAgent(cfg config.AIConfig, agent adk.Agent) (*AIService, error) {
+	svc, err := NewAIService(cfg)
+	if err != nil {
+		return nil, err
+	}
+	svc.agent = agent
+	return svc, nil
+}
+
+// AttachAgent sets or replaces the TradeAgent. Call after NewAIService if the agent
+// is constructed later.
+func (s *AIService) AttachAgent(agent adk.Agent) {
+	s.agent = agent
+}
+
+func buildLegacyRunner(ctx context.Context, chatModel *openai.ChatModel, complianceTool tool.BaseTool) *adk.Runner {
+	agentTools := make([]tool.BaseTool, 0, 1)
+	if complianceTool != nil {
 		agentTools = append(agentTools, complianceTool)
-		complianceRetriever = retriever
 	}
 
 	agentConfig := &adk.ChatModelAgentConfig{
@@ -91,28 +116,19 @@ func NewAIService(cfg config.AIConfig) (*AIService, error) {
 
 	agent, err := adk.NewChatModelAgent(ctx, agentConfig)
 	if err != nil {
-		return nil, err
+		return nil
 	}
 
-	runner := adk.NewRunner(ctx, adk.RunnerConfig{
+	return adk.NewRunner(ctx, adk.RunnerConfig{
 		Agent:           agent,
 		EnableStreaming: false,
 	})
-
-	return &AIService{
-		cfg:                 cfg,
-		chatModel:           chatModel,
-		chatModelJSON:       chatModelJSON,
-		runner:              runner,
-		complianceRetriever: complianceRetriever,
-	}, nil
 }
 
 func buildAssistantInstruction(hasComplianceTool bool) string {
-	instruction := prompts.AssistantInstructionBase
-
+	instruction := agent.AssistantInstructionBase
 	if hasComplianceTool {
-		instruction += prompts.AssistantInstructionComplianceAddition
+		instruction += agent.AssistantInstructionComplianceAddition
 	}
 	return instruction
 }
@@ -154,16 +170,23 @@ func resolveComplianceCorpusDir() (string, error) {
 
 // IsEnabled returns true if AI service is available
 func (s *AIService) IsEnabled() bool {
-	return s.cfg.IsEnabled() && s.runner != nil
+	return s.cfg.IsEnabled()
 }
 
-// Generate generates a response using the AI model
+// Generate generates a response using the full TradeAgent if available, or the legacy runner.
 func (s *AIService) Generate(ctx context.Context, prompt string) (string, error) {
-	if s.runner == nil {
+	runner := s.runner
+	if s.agent != nil {
+		runner = adk.NewRunner(ctx, adk.RunnerConfig{
+			Agent:           s.agent,
+			EnableStreaming: false,
+		})
+	}
+	if runner == nil {
 		return "", ErrAIServiceDisabled
 	}
 
-	iter := s.runner.Query(ctx, prompt)
+	iter := runner.Query(ctx, prompt)
 	var finalResponse string
 
 	for {
@@ -265,72 +288,18 @@ type CountryContext struct {
 func getCountryContext(country string) CountryContext {
 	normalized := strings.TrimSpace(strings.ToLower(country))
 
-	// Handle aliases - common country name variations
 	aliases := map[string]string{
-		// Americas
-		"us":                       "usa",
-		"united states":            "usa",
-		"united states of america": "usa",
-		"america":                  "usa",
-		"can":                      "canada",
-		"mx":                       "mexico",
-		"br":                       "brazil",
-		"ar":                       "argentina",
-		// Middle East
-		"ksa":                  "saudi arabia",
-		"saudi":                "saudi arabia",
-		"united arab emirates": "uae",
-		"emirates":             "uae",
-		"kw":                   "kuwait",
-		"qa":                   "qatar",
-		"om":                   "oman",
-		"bh":                   "bahrain",
-		"eg":                   "egypt",
-		"tr":                   "turkey",
-		"türkiye":              "turkey",
-		// Europe
-		"prc":            "china",
-		"de":             "germany",
-		"deutschland":    "germany",
-		"fr":             "france",
-		"gb":             "uk",
-		"united kingdom": "uk",
-		"great britain":  "uk",
-		"britain":        "uk",
-		"nl":             "netherlands",
-		"holland":        "netherlands",
-		"be":             "belgium",
-		"it":             "italy",
-		"es":             "spain",
-		"pl":             "poland",
-		"ru":             "russia",
-		// Asia
-		"jp":     "japan",
-		"nippon": "japan",
-		"cn":     "china",
-		"kr":     "south korea",
-		"korea":  "south korea",
-		"tw":     "taiwan",
-		"hk":     "hong kong",
-		// Southeast Asia
-		"id": "indonesia",
-		"my": "malaysia",
-		"th": "thailand",
-		"vn": "vietnam",
-		"ph": "philippines",
-		"sg": "singapore",
-		// South Asia
-		"in": "india",
-		"pk": "pakistan",
-		"bd": "bangladesh",
-		// Africa
-		"za": "south africa",
-		"ng": "nigeria",
-		"ke": "kenya",
-		"ma": "morocco",
-		// Oceania
-		"au": "australia",
-		"nz": "new zealand",
+		"us": "usa", "united states": "usa", "united states of america": "usa", "america": "usa",
+		"can": "canada", "mx": "mexico", "br": "brazil", "ar": "argentina",
+		"ksa": "saudi arabia", "saudi": "saudi arabia", "united arab emirates": "uae", "emirates": "uae",
+		"kw": "kuwait", "qa": "qatar", "om": "oman", "bh": "bahrain", "eg": "egypt", "tr": "turkey", "türkiye": "turkey",
+		"de": "germany", "deutschland": "germany", "fr": "france", "gb": "uk", "united kingdom": "uk", "britain": "uk",
+		"nl": "netherlands", "holland": "netherlands", "be": "belgium", "it": "italy", "es": "spain", "pl": "poland", "ru": "russia",
+		"jp": "japan", "nippon": "japan", "cn": "china", "prc": "china", "kr": "south korea", "korea": "south korea", "tw": "taiwan", "hk": "hong kong",
+		"id": "indonesia", "my": "malaysia", "th": "thailand", "vn": "vietnam", "ph": "philippines", "sg": "singapore",
+		"in": "india", "pk": "pakistan", "bd": "bangladesh",
+		"za": "south africa", "ng": "nigeria", "ke": "kenya", "ma": "morocco",
+		"au": "australia", "nz": "new zealand",
 	}
 
 	if alias, exists := aliases[normalized]; exists {
@@ -338,7 +307,6 @@ func getCountryContext(country string) CountryContext {
 	}
 
 	contexts := map[string]CountryContext{
-		// === Americas ===
 		"usa": {
 			Regulations:    "FDA registration required, FSMA compliance, nutrition labeling (English)",
 			MarketPrefs:    "Lower sweetness, natural ingredients preferred, portion-controlled packaging",
@@ -346,7 +314,7 @@ func getCountryContext(country string) CountryContext {
 			Certifications: "FDA, HACCP, GMP, OU Kosher (optional)",
 		},
 		"canada": {
-			Regulations:    "CFIA registration, CFIA compliance, bilingual labeling (English/French)",
+			Regulations:    "CFIA registration, bilingual labeling (English/French)",
 			MarketPrefs:    "Similar to US preferences, natural/organic trend, maple flavors popular",
 			ShippingNotes:  "3-5 days truck from US, NAFTA/CUSMA benefits, import duty ~0-3%",
 			Certifications: "CFIA, HACCP, SQF, Organic (optional)",
@@ -369,8 +337,6 @@ func getCountryContext(country string) CountryContext {
 			ShippingNotes:  "10-14 days air freight, import restrictions possible, duty ~12%",
 			Certifications: "ANMAT, HACCP",
 		},
-
-		// === Middle East ===
 		"saudi arabia": {
 			Regulations:    "SFDA registration, mandatory Halal certification, Arabic labeling required",
 			MarketPrefs:    "Higher sweetness accepted, date/flavor combinations popular, family-size packaging",
@@ -419,8 +385,6 @@ func getCountryContext(country string) CountryContext {
 			ShippingNotes:  "5-7 days truck/air, customs union with EU, duty ~0-10%",
 			Certifications: "Halal (preferred), HACCP, TSE",
 		},
-
-		// === Europe ===
 		"germany": {
 			Regulations:    "EU food safety standards, EFSA compliance, German labeling required",
 			MarketPrefs:    "Low sugar trend, organic preferred, sustainable packaging important",
@@ -475,8 +439,6 @@ func getCountryContext(country string) CountryContext {
 			ShippingNotes:  "10-14 days rail/truck, sanctions considerations, duty ~10%",
 			Certifications: "EAC, HACCP, Halal (optional)",
 		},
-
-		// === Asia ===
 		"japan": {
 			Regulations:    "MHLW standards, Japanese labeling, strict quality requirements",
 			MarketPrefs:    "Refined sweetness, seasonal flavors, gift packaging important",
@@ -507,8 +469,6 @@ func getCountryContext(country string) CountryContext {
 			ShippingNotes:  "3-5 days air freight, free port benefits, duty ~0%",
 			Certifications: "HACCP, ISO22000, Halal (optional)",
 		},
-
-		// === Southeast Asia ===
 		"indonesia": {
 			Regulations:    "BPOM registration, MUI Halal mandatory, Indonesian labeling",
 			MarketPrefs:    "Tropical fruit flavors, moderate sweetness, value packaging",
@@ -545,8 +505,6 @@ func getCountryContext(country string) CountryContext {
 			ShippingNotes:  "3-5 days air freight, free port, duty ~0%",
 			Certifications: "SFA, HACCP, Halal MUIS (optional)",
 		},
-
-		// === South Asia ===
 		"india": {
 			Regulations:    "FSSAI registration, Hindi/English labeling, strict standards",
 			MarketPrefs:    "Mango flavors, spice combinations, value packaging, vegetarian",
@@ -565,8 +523,6 @@ func getCountryContext(country string) CountryContext {
 			ShippingNotes:  "7-10 days air freight, SAFTA benefits, duty ~10-25%",
 			Certifications: "Halal (mandatory), BFSA, HACCP",
 		},
-
-		// === Africa ===
 		"south africa": {
 			Regulations:    "DTI registration, English labeling, SABS standards",
 			MarketPrefs:    "Value to mid-range, diverse market, gift packaging",
@@ -591,8 +547,6 @@ func getCountryContext(country string) CountryContext {
 			ShippingNotes:  "5-7 days air freight, EU trade agreement, duty ~0-10%",
 			Certifications: "ONSSA, HACCP, Halal (optional)",
 		},
-
-		// === Oceania ===
 		"australia": {
 			Regulations:    "FSANZ standards, strict biosecurity, mandatory Australian labeling",
 			MarketPrefs:    "Natural colors/flavors, bite-sized portions, high quality ingredients",
@@ -611,7 +565,6 @@ func getCountryContext(country string) CountryContext {
 		return ctx
 	}
 
-	// Default for unknown countries
 	return CountryContext{
 		Regulations:    "Check local food safety authority requirements",
 		MarketPrefs:    "Research local taste preferences and packaging norms",

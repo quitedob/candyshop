@@ -213,9 +213,9 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 		Items:          items,
 		StockReserved:  true,
 		Subtotal:       subtotal,
-		TaxAmount:      req.TaxAmount,
-		ShippingAmount: req.ShippingAmount,
-		TotalAmount:    totalAmount,
+		TaxAmount:      0,
+		ShippingAmount: 0,
+		TotalAmount:    subtotal,
 		Currency:       currency,
 		ShippingAddress: modelsOrder.Address{
 			Street:  strings.TrimSpace(req.ShippingAddress.Street),
@@ -253,6 +253,17 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 		},
 		"inventory": gin.H{"warnings": inventory.Warnings},
 	})
+
+	// Send order confirmation notification
+	if h.services.Notification != nil {
+		_ = h.services.Notification.Create(c.Request.Context(), &modelsCommon.Notification{
+			UserID:    userID,
+			Type:      "order",
+			Reference: order.ID,
+			Title:     "Order Placed",
+			Message:   "Your order #" + order.OrderNumber + " has been placed and is pending review.",
+		})
+	}
 }
 
 // CustomerConfirmOrder confirms an AI-drafted order before final processing.
@@ -289,6 +300,35 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 	if order.Status != "pending_confirmation" {
 		response.ErrorResp(c, http.StatusConflict, "invalid_state")
 		return
+	}
+
+	// Re-validate compliance at confirm time with current market profiles
+	if order.ShippingAddress.Country != "" && len(order.Items) > 0 {
+		products := make([]modelsProduct.Product, 0, len(order.Items))
+		allFound := true
+		for _, item := range order.Items {
+			product, err := h.services.Product.GetProductByID(c.Request.Context(), item.ProductID)
+			if err != nil {
+				allFound = false
+				break
+			}
+			products = append(products, *product)
+		}
+		if allFound {
+			complianceRecheck := h.services.Product.ValidateComplianceWithMarketProfiles(c.Request.Context(), order.ShippingAddress.Country, products)
+			if len(complianceRecheck.Violations) > 0 {
+				c.JSON(http.StatusUnprocessableEntity, modelsCommon.ErrorResponse{
+					Error:   "compliance_violation",
+					Message: i18n.T(c, "errors.compliance_violation"),
+					Details: gin.H{
+						"country":    complianceRecheck.Country,
+						"violations": complianceRecheck.Violations,
+						"warnings":   complianceRecheck.Warnings,
+					},
+				})
+				return
+			}
+		}
 	}
 
 	// Parse compliance acknowledgement only — no item/price edits allowed.
@@ -432,7 +472,7 @@ func (h *Handler) CustomerCancelOrder(c *gin.Context) {
 	}
 
 	// Only allow cancellation of pending and pending_confirmation orders
-	if order.Status != "pending" && order.Status != "pending_confirmation" {
+	if err := modelsOrder.ValidateOrderStatusTransition(order.Status, "cancelled"); err != nil {
 		response.ErrorResp(c, http.StatusConflict, "invalid_state")
 		return
 	}
@@ -458,5 +498,88 @@ func (h *Handler) CustomerCancelOrder(c *gin.Context) {
 		"message": "Order cancelled successfully",
 		"orderId": order.ID,
 		"status":  "cancelled",
+	})
+
+	// Notify customer of cancellation
+	if h.services.Notification != nil {
+		_ = h.services.Notification.Create(c.Request.Context(), &modelsCommon.Notification{
+			UserID:    userID,
+			Type:      "order",
+			Reference: order.ID,
+			Title:     "Order Cancelled",
+			Message:   "Your order #" + order.OrderNumber + " has been cancelled.",
+		})
+	}
+}
+
+// CustomerNudgeOrder allows a customer to send a reminder about their order to all admin users.
+func (h *Handler) CustomerNudgeOrder(c *gin.Context) {
+	if h.services == nil {
+		response.ServiceUnavailableResp(c)
+		return
+	}
+
+	userID, ok := contextUserID(c)
+	if !ok {
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	orderID := strings.TrimSpace(c.Param("id"))
+	if orderID == "" {
+		response.InvalidResp(c, "invalid_request")
+		return
+	}
+
+	order, err := h.services.Order.GetOrder(c.Request.Context(), orderID)
+	if err != nil {
+		response.ErrorResp(c, http.StatusNotFound, "order_not_found")
+		return
+	}
+
+	if order.UserID != userID {
+		response.ErrorResp(c, http.StatusForbidden, "forbidden")
+		return
+	}
+
+	nudgeable := map[string]bool{
+		modelsOrder.OrderStatusPending:    true,
+		modelsOrder.OrderStatusConfirmed:  true,
+		modelsOrder.OrderStatusProduction: true,
+	}
+	if !nudgeable[order.Status] {
+		response.ErrorResp(c, http.StatusConflict, "cannot_nudge_order")
+		return
+	}
+
+	// Confirm to customer
+	if h.services.Notification != nil {
+		_ = h.services.Notification.Create(c.Request.Context(), &modelsCommon.Notification{
+			UserID:    userID,
+			Type:      "order",
+			Reference: order.ID,
+			Title:     "Nudge Sent",
+			Message:   "Your reminder for order #" + order.OrderNumber + " has been sent to our team.",
+		})
+	}
+
+	// Notify all admin users
+	if h.services.User != nil && h.services.Notification != nil {
+		adminUsers, userErr := h.services.User.FindAdminUsers(c.Request.Context())
+		if userErr == nil {
+			for _, admin := range adminUsers {
+				_ = h.services.Notification.Create(c.Request.Context(), &modelsCommon.Notification{
+					UserID:    admin.ID,
+					Type:      "order",
+					Reference: order.ID,
+					Title:     "Customer Nudge",
+					Message:   "Customer sent a reminder for order #" + order.OrderNumber + ".",
+				})
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Nudge sent successfully",
 	})
 }

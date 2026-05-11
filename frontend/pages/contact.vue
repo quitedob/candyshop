@@ -29,6 +29,7 @@
                 <InquiryForm
                   :product-name="productFromQuery"
                   :category="categoryFromQuery"
+                  :user-id="currentUserId || undefined"
                 />
                 <template #fallback>
                   <div class="form-loading">
@@ -238,9 +239,11 @@ const { t, tm, rt } = useI18n()
 const localePath = useLocalePath()
 const config = useRuntimeConfig()
 const route = useRoute()
+const { isAuthenticated, user } = useAuth()
 
 const productFromQuery = computed(() => (route.query.product as string) || undefined)
 const categoryFromQuery = computed(() => (route.query.category as string) || undefined)
+const currentUserId = computed(() => isAuthenticated.value ? (user.value?.id || '') : '')
 
 const openFaq = ref(0)
 

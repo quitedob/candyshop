@@ -6,10 +6,10 @@ Professional candy OEM (Original Equipment Manufacturing) B2B platform with admi
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | Nuxt 3.15, Vue 3.5, TypeScript, Tailwind CSS, @nuxtjs/i18n v9 |
-| Backend | Go 1.24, Gin 1.10, GORM 1.30, PostgreSQL 15 |
+| Frontend | Nuxt 3.15, Vue 3.5, TypeScript 5.6, Tailwind CSS, @nuxtjs/i18n v9 |
+| Backend | Go 1.24.7, Gin 1.10, GORM 1.30, PostgreSQL 15 |
 | Auth | JWT (HS256), Cookie-based tokens |
-| AI | Cloudwego Eino (OpenAI compatible) |
+| AI | Cloudwego Eino (OpenAI compatible), pgvector |
 | i18n | Chinese (default) + English |
 | Infra | Docker / docker-compose |
 
@@ -20,8 +20,6 @@ make install          # Install all dependencies
 make dev-all          # Start backend (:8080) + frontend (:3000)
 ```
 
-See [CLAUDE.md](CLAUDE.md) for full command reference.
-
 ## Project Structure
 
 ```
@@ -29,22 +27,21 @@ backend/
   cmd/api/main.go              # Entry point
   internal/
     api/                       # Router + routes (5 scopes)
-    handlers/                  # HTTP layer (57 files)
-    services/                  # Business logic (37 files)
-    repository/                # Data access (GORM)
-    models/                    # Database models (20 files)
-    middleware/                 # Auth, CORS, rate limit, security headers
+    handlers/                  # HTTP layer (66 files)
+    services/                  # Business logic (49 files)
+    repository/                # Data access (38 files)
+    models/                    # Database models (31 files)
+    middleware/                 # Auth, CORS, rate limit, locale, active user
 frontend/
   pages/
-    admin/                     # Admin portal (25 pages)
-    customer/                  # Customer portal (23 pages)
-    auth/                      # Authentication (5 pages)
-    products/, blog/, ...      # Public marketing pages
+    admin/                     # Admin portal (26 pages)
+    customer/                  # Customer portal (25 pages)
+    auth/                      # Authentication (6 pages)
+    products/, blog/, ...      # Public marketing pages (12 pages)
   components/                  # Auto-imported (pathPrefix: false)
   composables/                 # useApi, useAuth, useInquiry, etc.
   layouts/                     # admin, customer, auth, default
   i18n/                        # en/ + zh/ locale files
-docs/                          # Business domain documentation
 ```
 
 ## Architecture
@@ -55,11 +52,11 @@ docs/                          # Business domain documentation
 |-------|------|-----------|-------------|
 | `public` | None | 23 | Products, categories, OEM, factory, blog, search |
 | `auth` | Mixed | 11 | Login, register, profile, password reset |
-| `user` | JWT + customer | 49 | Customer portal (read open, write needs KYB) |
-| `admin` | JWT + admin | 80 | Full admin management |
-| `system` | Mixed | 8 | AI chatbot, search, recommendations |
+| `user` | JWT + customer | 54 | Customer portal (read open, write needs KYB) |
+| `admin` | JWT + admin | 155 | Full admin management |
+| `system` | Mixed | 7 | AI chatbot, search, recommendations |
 
-**Total: ~160 API endpoints, 72 frontend pages**
+**Total: ~253 API endpoints, 77 frontend pages**
 
 ## Roles & Permissions
 
@@ -70,25 +67,6 @@ docs/                          # Business domain documentation
 | `superadmin` | Admin portal + user management |
 
 User lifecycle: `pending` (register) → `active` (admin approves / KYB verified)
-
-## Business Documentation
-
-See [docs/](docs/) for detailed per-domain documentation:
-
-| Domain | Document | Description |
-|--------|----------|-------------|
-| Auth & Users | [docs/01-auth.md](docs/01-auth.md) | Registration, login, JWT, KYB, user management |
-| Products | [docs/02-products.md](docs/02-products.md) | Product catalog, categories, featured products |
-| Orders | [docs/03-orders.md](docs/03-orders.md) | Order lifecycle, cart, checkout, payments |
-| Inquiries | [docs/04-inquiries.md](docs/04-inquiries.md) | B2B inquiries, AI analysis, quotation |
-| Trade | [docs/05-trade.md](docs/05-trade.md) | International trade, documents, compliance |
-| Inventory | [docs/06-inventory.md](docs/06-inventory.md) | Stock management, reservation, adjustments |
-| Pricing | [docs/07-pricing.md](docs/07-pricing.md) | Price lists, product pricing, customer tiers |
-| OEM Projects | [docs/08-oem.md](docs/08-oem.md) | Custom manufacturing projects |
-| Invoices | [docs/09-invoices.md](docs/09-invoices.md) | Proforma, commercial invoices, credit notes |
-| Shipments | [docs/10-shipments.md](docs/10-shipments.md) | Shipping tracking, logistics |
-| AI Services | [docs/11-ai.md](docs/11-ai.md) | Chatbot, recommendations, semantic search |
-| Public Site | [docs/12-public-site.md](docs/12-public-site.md) | Marketing pages, SEO, content |
 
 ## Configuration
 
@@ -114,3 +92,5 @@ API_BASE_URL=http://localhost:8080/api/v1
 - Order creation enforces destination-country compliance checks
 - Background worker auto-cancels expired draft orders and restores inventory
 - Default language is Chinese (zh); English available via language switcher
+- File uploads served via `/uploads/*filepath` (payment proofs and KYB paths blocked)
+- Customer portal write operations require active status (KYB gate)

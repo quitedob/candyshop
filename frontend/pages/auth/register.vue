@@ -66,14 +66,14 @@
       </div>
 
       <p class="auth-page__footer">
-        © {{ new Date().getFullYear() }} {{ $t('auth.footer_rights') }}
+        © {{ currentYear }} {{ $t('auth.footer_rights') }}
       </p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, computed } from 'vue'
 
 definePageMeta({
   layout: 'auth',
@@ -92,6 +92,7 @@ const form = reactive({
   password: ''
 })
 
+const currentYear = computed(() => new Date().getFullYear())
 const loading = ref(false)
 const error = ref('')
 const success = ref(false)

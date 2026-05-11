@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"candypro/api/internal/pkg/eino/prompts"
+	"candypro/api/internal/pkg/eino/prompts/extraction"
 
 	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/compose"
@@ -30,7 +30,7 @@ func NewValidatorNode(cm model.ChatModel) *compose.Lambda {
 		// Convert to JSON string for the prompt
 		docsJSON, _ := json.MarshalIndent(docs, "", "  ")
 
-		msgs, err := prompts.ValidationPrompt.Format(ctx, map[string]any{
+		msgs, err := extraction.ValidationPrompt.Format(ctx, map[string]any{
 			"target_doc":     "All Documents",
 			"reference_data": string(docsJSON),
 		})

@@ -118,9 +118,16 @@ func (h *Handler) SubmitInquiry(c *gin.Context) {
 		}
 	}
 
+	// Associate with user if provided (from authenticated contact form)
+	var userID *string
+	if uid := getFormValue(form, "userId"); uid != "" {
+		userID = &uid
+	}
+
 	// Create inquiry record
 	inquiry := &modelsProduct.Inquiry{
 		ID:                    crypto.GenerateID(),
+		UserID:                userID,
 		CompanyName:           companyName,
 		ContactPerson:         contactPerson,
 		Email:                 email,

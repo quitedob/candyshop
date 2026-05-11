@@ -108,7 +108,11 @@
             </div>
             <div>
               <label for="product-moq" class="block text-sm font-medium text-gray-700">{{ t('admin.products.moq') }}</label>
-              <input id="product-moq" v-model.number="form.moq" name="moq" type="number" min="0" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <input id="product-moq" v-model.number="form.moq" name="moq" type="number" min="1" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label for="product-basePrice" class="block text-sm font-medium text-gray-700">{{ t('admin.products.base_price') }}</label>
+              <input id="product-basePrice" v-model.number="form.basePrice" name="basePrice" type="number" min="0.01" step="0.01" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </div>
             <div>
               <label for="product-leadTime" class="block text-sm font-medium text-gray-700">{{ t('admin.products.lead_time') }}</label>
@@ -299,6 +303,7 @@ const form = reactive({
   categorySlug: '',
   thumbnail: '',
   moq: 0,
+  basePrice: 0,
   stockQuantity: 0,
   leadTime: '',
   oemAvailable: false,
@@ -326,6 +331,7 @@ const resetForm = () => {
   form.categorySlug = ''
   form.thumbnail = ''
   form.moq = 0
+  form.basePrice = 0
   form.stockQuantity = 0
   form.leadTime = ''
   form.oemAvailable = false
@@ -351,6 +357,7 @@ const fillFormFromProduct = (product: any) => {
   form.categorySlug = product.categorySlug || ''
   form.thumbnail = product.thumbnail || ''
   form.moq = product.moq || 0
+  form.basePrice = product.basePrice || 0
   form.stockQuantity = product.stockQuantity || 0
   form.leadTime = product.leadTime || ''
   form.oemAvailable = Boolean(product.oemAvailable)
@@ -392,7 +399,7 @@ const closeModal = () => { showModal.value = false; saving.value = false; formEr
 const buildPayload = () => ({
   name: form.name, slug: form.slug, summary: form.summary, description: form.description,
   category: form.category, categorySlug: form.categorySlug, thumbnail: form.thumbnail,
-  moq: form.moq, stockQuantity: Math.max(0, Number(form.stockQuantity) || 0), leadTime: form.leadTime,
+  moq: form.moq, basePrice: Math.max(0, Number(form.basePrice) || 0), stockQuantity: Math.max(0, Number(form.stockQuantity) || 0), leadTime: form.leadTime,
   oemAvailable: form.oemAvailable, halalCertified: form.halalCertified, featured: form.featured, status: form.status,
   images: parseCSV(form.imagesInput), flavors: parseCSV(form.flavorsInput), shapes: parseCSV(form.shapesInput),
   certifications: parseCSV(form.certificationsInput), ingredients: form.ingredients, allergens: form.allergens,

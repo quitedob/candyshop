@@ -65,13 +65,29 @@ interface OrganizationSchema {
 }
 
 export const useSeo = (options: SEOOptions = {}) => {
-  const { t, locale } = useI18n()
+  const { t, locale, locales } = useI18n()
   const config = useRuntimeConfig()
   const route = useRoute()
 
   const siteUrl = config.public.siteUrl || 'https://candyfactory.example.com'
   const defaultTitle = t('seo.default_title')
   const defaultDescription = t('seo.default_description')
+
+  // Determine locale codes used in the app
+  const localeCodes = (locales.value as any[]).map((l: any) => l.code) as string[]
+  const defaultLocaleCode = 'zh'
+
+  // Strip any locale prefix to get the bare path (e.g. /en/about → /about)
+  const stripLocalePrefix = (path: string): string => {
+    for (const code of localeCodes) {
+      const prefix = `/${code}`
+      if (path === prefix) return '/'
+      if (path.startsWith(`${prefix}/`)) return path.slice(prefix.length)
+    }
+    return path
+  }
+
+  const barePath = stripLocalePrefix(route.path)
 
   // Unwrap MaybeRef values
   const title = toValue(options.title) || defaultTitle
@@ -123,10 +139,18 @@ export const useSeo = (options: SEOOptions = {}) => {
     link: [
       { rel: 'canonical', href: canonical, hid: 'canonical' },
 
-      // Alternate language links
-      { rel: 'alternate', hreflang: 'en', href: fullUrl(route.path.replace(`/${locale.value}`, '').replace(/^\/?/, '/')) },
-      { rel: 'alternate', hreflang: 'zh', href: fullUrl(`/zh${route.path.replace(`/${locale.value}`, '')}`) },
-      { rel: 'alternate', hreflang: 'x-default', href: fullUrl(route.path.replace(`/${locale.value}`, '').replace(/^\/?/, '/')) }
+      // Alternate language links — bidirectional hreflang
+      ...localeCodes.map(code => ({
+        rel: 'alternate' as const,
+        hreflang: code,
+        href: fullUrl(code === defaultLocaleCode ? barePath : `/${code}${barePath === '/' ? '' : barePath}`),
+      })),
+      // x-default points to the default locale
+      {
+        rel: 'alternate' as const,
+        hreflang: 'x-default',
+        href: fullUrl(defaultLocaleCode === 'zh' ? barePath : `/${defaultLocaleCode}${barePath === '/' ? '' : barePath}`),
+      },
     ],
     htmlAttrs: {
       lang: locale.value

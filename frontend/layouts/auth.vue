@@ -6,6 +6,10 @@
   </div>
 </template>
 
+<script setup lang="ts">
+useSeo({ noindex: true })
+</script>
+
 <style scoped>
 /* 认证区专用令牌：羊皮纸底、陶土强调、无障碍焦点蓝（uxdesign） */
 .auth-layout {

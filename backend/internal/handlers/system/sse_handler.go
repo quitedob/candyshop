@@ -12,6 +12,7 @@ import (
 
 	"candypro/api/internal/pkg/eino"
 
+	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/adk"
 	"github.com/cloudwego/eino/schema"
 	"github.com/gin-gonic/gin"
@@ -27,13 +28,35 @@ type SSEEvent struct {
 	DocumentType string            `json:"document_type,omitempty"` // UI Anchor
 }
 
-// InitAgent initializes the trade agent
+// InitAgent initializes the trade agent with the Graph Tool architecture.
+// The TradeService is wired as the document persister so generated docs are saved to DB.
 func (h *Handler) InitAgent() error {
-	agent, err := eino.NewTradeAgent(context.Background())
+	ctx := context.Background()
+
+	chatModel, modelErr := openai.NewChatModel(ctx, &openai.ChatModelConfig{
+		Model:  h.cfg.AI.OpenAIModel,
+		APIKey: h.cfg.AI.OpenAIAPIKey,
+	})
+	if modelErr != nil {
+		return fmt.Errorf("init chat model: %w", modelErr)
+	}
+
+	if h.services != nil && h.services.Trade != nil {
+		a, err := eino.NewTradeAgent(ctx, chatModel, h.services.Trade)
+		if err != nil {
+			return err
+		}
+		h.tradeAgent = a
+		h.agentReady = true
+		return nil
+	}
+
+	a, err := eino.NewTradeAgent(ctx, chatModel, nil)
 	if err != nil {
 		return err
 	}
-	h.tradeAgent = agent
+	h.tradeAgent = a
+	h.agentReady = true
 	return nil
 }
 

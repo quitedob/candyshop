@@ -147,23 +147,15 @@
       </div>
     </section>
 
-    <!-- Newsletter -->
+    <!-- Contact CTA -->
     <section class="newsletter section bg-alt">
       <div class="container container-narrow">
         <div class="newsletter__inner">
-          <h2>{{ t('blog_extra.stay_updated') }}</h2>
+          <h2>{{ t('blog_extra.cta_questions') }}</h2>
           <p>{{ t('blog_extra.subscribe_desc') }}</p>
-          <form class="newsletter__form" @submit.prevent="subscribeNewsletter">
-            <input
-              type="email"
-              v-model="newsletterEmail"
-              :placeholder="t('blog_extra.email_placeholder')"
-              required
-              class="newsletter__input"
-            />
-            <button type="submit" class="btn btn-primary">Subscribe</button>
-          </form>
-          <p v-if="newsletterMessage" class="newsletter__message">{{ newsletterMessage }}</p>
+          <NuxtLink :to="localePath('/contact')" class="btn btn-primary">
+            {{ t('form.submit') }}
+          </NuxtLink>
         </div>
       </div>
     </section>
@@ -181,19 +173,29 @@ const { getPosts } = useApi()
 const activeCategory = ref('')
 const currentPage = ref(1)
 const limit = 9
-const newsletterEmail = ref('')
-const newsletterMessage = ref('')
 
-const { data: postsResponse, pending } = await useAsyncData('blog-posts-all', async () => {
+// Fetch all posts once for building the category filter list
+const { data: allPostsData } = await useAsyncData('blog-categories', async () => {
   return await getPosts({ page: 1, limit: 200 })
 })
 
 const allPosts = computed(() => {
-  const posts = (postsResponse.value?.data || []) as any[]
+  const posts = (allPostsData.value?.data || []) as any[]
   return [...posts].sort((a, b) => {
     return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
   })
 })
+
+// Server-side paginated posts for the grid
+const { data: postsResponse, pending } = await useAsyncData(
+  () => `blog-posts-${activeCategory.value}-${currentPage.value}`,
+  async () => {
+    const params: any = { page: currentPage.value, limit }
+    if (activeCategory.value) params.category = activeCategory.value
+    return await getPosts(params)
+  },
+  { watch: [activeCategory, currentPage] }
+)
 
 const mapCategoryName = (categoryId: string) => {
   const mapping: Record<string, string> = {
@@ -211,30 +213,22 @@ const categories = computed(() => {
 })
 
 const featuredPost = computed(() => {
-  if (activeCategory.value || allPosts.value.length === 0) {
+  if (activeCategory.value || currentPage.value !== 1 || allPosts.value.length === 0) {
     return null
   }
   return allPosts.value[0]
 })
 
-const filteredPosts = computed(() => {
-  let posts = allPosts.value
-  if (activeCategory.value) {
-    posts = posts.filter(p => p.category === activeCategory.value)
-  }
-  if (!activeCategory.value && featuredPost.value) {
-    return posts.slice(1)
+const pagedPosts = computed(() => {
+  const posts = (postsResponse.value?.data || []) as any[]
+  // Filter out featured post from first page results when no category filter
+  if (!activeCategory.value && currentPage.value === 1 && featuredPost.value && posts.length > 0) {
+    return posts.filter(p => p.slug !== featuredPost.value.slug)
   }
   return posts
 })
 
-const totalPages = computed(() => Math.ceil(filteredPosts.value.length / limit))
-
-const pagedPosts = computed(() => {
-  const start = (currentPage.value - 1) * limit
-  const end = start + limit
-  return filteredPosts.value.slice(start, end)
-})
+const totalPages = computed(() => postsResponse.value?.pagination?.totalPages || 0)
 
 const visiblePages = computed(() => {
   const pages: number[] = []
@@ -267,17 +261,6 @@ const setCategory = (categoryId: string) => {
 const goToPage = (page: number) => {
   if (page < 1 || page > totalPages.value) return
   currentPage.value = page
-}
-
-const subscribeNewsletter = async () => {
-  const email = newsletterEmail.value.trim()
-  if (!email) {
-    newsletterMessage.value = 'Please enter a valid email address.'
-    return
-  }
-
-  newsletterMessage.value = 'Redirecting to contact form...'
-  await navigateTo(localePath(`/contact?email=${encodeURIComponent(email)}&source=blog-newsletter`))
 }
 
 watch(activeCategory, () => {
@@ -540,7 +523,7 @@ useSeo({
   color: white;
 }
 
-/* Newsletter */
+/* Contact CTA */
 .newsletter__inner {
   text-align: center;
 }
@@ -552,25 +535,6 @@ useSeo({
 .newsletter__inner p {
   color: var(--color-text-light);
   margin-bottom: var(--spacing-xl);
-}
-
-.newsletter__form {
-  display: flex;
-  gap: var(--spacing-sm);
-  max-width: 500px;
-  margin: 0 auto;
-}
-
-.newsletter__input {
-  flex: 1;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-}
-
-.newsletter__message {
-  margin-top: var(--spacing-md);
-  color: var(--color-primary);
 }
 
 .posts__empty {

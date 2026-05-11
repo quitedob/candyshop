@@ -60,14 +60,14 @@
       </div>
 
       <p class="auth-page__footer">
-        © {{ new Date().getFullYear() }} {{ t('auth.footer_rights') }}
+        © {{ currentYear }} {{ t('auth.footer_rights') }}
       </p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 definePageMeta({
   layout: 'auth',
@@ -79,6 +79,7 @@ const { t } = useI18n()
 const localePath = useLocalePath()
 const { verifyEmail } = useAuth()
 
+const currentYear = computed(() => new Date().getFullYear())
 const verifying = ref(true)
 const success = ref(false)
 const errorMessage = ref('')

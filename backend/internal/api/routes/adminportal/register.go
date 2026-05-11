@@ -44,6 +44,8 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.GET("/orders/:id/payments/:paymentId/file", h.AdminPortal.AdminDownloadPaymentProofFile)
 	group.PUT("/orders/:id/payments/:paymentId/confirm", h.AdminPortal.AdminConfirmPayment)
 	group.PUT("/orders/:id/payments/:paymentId/refund", h.AdminPortal.AdminRefundPayment)
+	group.GET("/orders/:id/messages", h.AdminPortal.AdminGetOrderMessages)
+	group.POST("/orders/:id/messages", h.AdminPortal.AdminSendOrderMessage)
 
 	// Inquiries
 	group.GET("/inquiries", h.AdminPortal.AdminGetInquiries)
@@ -98,6 +100,8 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.PUT("/trades/:id/status", h.AdminPortal.AdminUpdateTradeStatus)
 	group.GET("/trades/:id/documents", h.AdminPortal.AdminGetTradeDocuments)
 	group.POST("/trades/:id/documents", h.AdminPortal.AdminCreateTradeDocument)
+	group.POST("/trades/:id/documents/ai-generate", h.AdminPortal.AdminAIGenerateTradeDocument)
+	group.GET("/trades/:id/ai-chat", h.AdminPortal.AdminAITradeChat)
 	group.PUT("/trades/:id/documents/:docId", h.AdminPortal.AdminUpdateTradeDocument)
 	group.DELETE("/trades/:id/documents/:docId", h.AdminPortal.AdminDeleteTradeDocument)
 
@@ -203,6 +207,15 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.GET("/staff", h.AdminPortal.GetStaffList)
 	group.GET("/staff/:id/activity", h.AdminPortal.GetStaffActivity)
 	group.GET("/audit-log", h.AdminPortal.GetAuditLog)
+
+	// XLSX Export & Translation
+	group.GET("/xlsx/export/products", h.AdminPortal.AdminExportProductsXLSX)
+	group.GET("/xlsx/export/orders", h.AdminPortal.AdminExportOrdersXLSX)
+	group.GET("/xlsx/export/revenue", h.AdminPortal.AdminExportRevenueXLSX)
+	group.GET("/xlsx/export/trades", h.AdminPortal.AdminExportTradesXLSX)
+	group.GET("/xlsx/export/customers", h.AdminPortal.AdminExportCustomersXLSX)
+	group.POST("/xlsx/translate", h.AdminPortal.AdminTranslateXLSX)
+	group.POST("/xlsx/translate-batch", h.AdminPortal.AdminBatchTranslateXLSX)
 
 	// Settings
 	group.GET("/settings", h.AdminPortal.GetSettings)

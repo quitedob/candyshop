@@ -27,6 +27,7 @@ type Repositories struct {
 	Shipment       *trade.ShipmentRepository
 	ShipmentEvent  *trade.ShipmentEventRepository
 	TradeDocDetail *trade.TradeDocumentDetailRepository
+	OrderMessage   *order.OrderMessageRepository
 	Notification   *notificationrepo.NotificationRepository
 }
 
@@ -46,6 +47,7 @@ func New(db *gorm.DB) *Repositories {
 		Shipment:       trade.NewShipmentRepository(db),
 		ShipmentEvent:  trade.NewShipmentEventRepository(db),
 		TradeDocDetail: trade.NewTradeDocumentDetailRepository(db),
+		OrderMessage:   order.NewOrderMessageRepository(db),
 		Notification:   notificationrepo.NewNotificationRepository(db),
 	}
 }

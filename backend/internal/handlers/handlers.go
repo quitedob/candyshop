@@ -44,7 +44,7 @@ func New(cfg *config.Config, svcs *servicesCommon.Services) *Handlers {
 
 func newStorage(cfg *config.Config) storage.StorageService {
 	switch cfg.Upload.StorageDriver {
-	case "s3":
+	case "s3", "oss": // Alibaba Cloud OSS is S3-compatible
 		s3st, err := storage.NewS3StorageService(
 			context.Background(),
 			storage.S3Config{

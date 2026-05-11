@@ -172,6 +172,21 @@ func (r *ContentRepository) FindCaseByID(ctx context.Context, id string) (*model
 	return &caseStudy, nil
 }
 
+// FindRelatedCases returns related case studies by industry
+func (r *ContentRepository) FindRelatedCases(ctx context.Context, slug string, limit int) ([]modelsProduct.CaseStudy, error) {
+	var caseStudy modelsProduct.CaseStudy
+	if err := r.db.WithContext(ctx).Where("slug = ?", slug).First(&caseStudy).Error; err != nil {
+		return nil, err
+	}
+
+	var cases []modelsProduct.CaseStudy
+	if err := r.db.WithContext(ctx).Where("industry = ? AND slug != ?", caseStudy.Industry, slug).
+		Limit(limit).Order("created_at DESC").Find(&cases).Error; err != nil {
+		return nil, err
+	}
+	return cases, nil
+}
+
 // SearchCases searches case studies by query
 func (r *ContentRepository) SearchCases(ctx context.Context, query string, limit int) ([]modelsProduct.CaseStudy, error) {
 	var cases []modelsProduct.CaseStudy

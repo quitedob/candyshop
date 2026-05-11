@@ -13,7 +13,7 @@ import (
 )
 
 type orderRepository interface {
-	FindAll(ctx context.Context, page, limit int) ([]modelsOrder.Order, int64, error)
+	FindAll(ctx context.Context, page, limit int, status, userID, dateFrom, dateTo string) ([]modelsOrder.Order, int64, error)
 	FindByID(ctx context.Context, id string) (*modelsOrder.Order, error)
 	FindByUserID(ctx context.Context, userID string, page, limit int) ([]modelsOrder.Order, int64, error)
 	Create(ctx context.Context, order *modelsOrder.Order) error
@@ -59,13 +59,13 @@ func NewOrderServiceWithConfig(repo orderRepository, cfg *config.Config) *OrderS
 	return &OrderService{repo: repo, cfg: cfg}
 }
 
-// GetOrders returns paginated orders.
-func (s *OrderService) GetOrders(ctx context.Context, page, limit int) (*modelsProduct.PaginatedResponse, error) {
+// GetOrders returns paginated orders with optional filters.
+func (s *OrderService) GetOrders(ctx context.Context, page, limit int, status, userID, dateFrom, dateTo string) (*modelsProduct.PaginatedResponse, error) {
 	if limit <= 0 {
 		limit = 20
 	}
 
-	orders, total, err := s.repo.FindAll(ctx, page, limit)
+	orders, total, err := s.repo.FindAll(ctx, page, limit, status, userID, dateFrom, dateTo)
 	if err != nil {
 		return nil, err
 	}
@@ -307,6 +307,25 @@ Best regards,
 CandyPro OEM Team`,
 			greeting, order.OrderNumber,
 			order.OrderNumber, order.TotalAmount, order.Currency)
+		return subject, body
+
+	case "production":
+		subject := fmt.Sprintf("Order %s In Production - CandyPro OEM", order.OrderNumber)
+		body := fmt.Sprintf(`%s,
+
+Your order #%s has entered production.
+
+Order Details:
+- Order Number: %s
+- Total Amount: %.2f %s
+- Items: %d product(s)
+
+You can track your order status at: %s
+
+Best regards,
+CandyPro OEM Team`,
+			greeting, order.OrderNumber, order.OrderNumber,
+			order.TotalAmount, order.Currency, len(order.Items), orderLink)
 		return subject, body
 
 	case "cancelled":

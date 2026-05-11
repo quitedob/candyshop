@@ -55,7 +55,7 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span :class="[statusBadge(order.status), 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium']">
-                {{ order.status }}
+                {{ enumLabel('order_status', order.status) }}
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -104,7 +104,7 @@ definePageMeta({
 })
 
 const { t } = useI18n()
-const { formatNumber, formatDate, currencyOrDefault: cur } = useDisplay()
+const { formatNumber, formatDate, currencyOrDefault: cur, enumLabel } = useDisplay()
 const localePath = useLocalePath()
 const api = useApi()
 

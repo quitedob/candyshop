@@ -378,6 +378,10 @@ export const useApi = () => {
     return fetchPublicApi<CaseStudy>(`/cases/${slug}`)
   }
 
+  const getRelatedCases = async (slug: string, limit = 3): Promise<CaseStudy[]> => {
+    return fetchPublicApi<CaseStudy[]>(`/cases/${slug}/related?limit=${limit}`)
+  }
+
   /**
    * Inquiry Submission
    */
@@ -637,6 +641,7 @@ export const useApi = () => {
     getRelatedPosts,
     getCases,
     getCase,
+    getRelatedCases,
 
     // Actions
     submitInquiry,

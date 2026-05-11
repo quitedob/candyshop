@@ -22,12 +22,24 @@ func NewOrderRepository(db *gorm.DB) *OrderRepository {
 	return &OrderRepository{db: db}
 }
 
-// FindAll returns paginated orders
-func (r *OrderRepository) FindAll(ctx context.Context, page, limit int) ([]modelsOrder.Order, int64, error) {
+// FindAll returns paginated orders with optional filters.
+func (r *OrderRepository) FindAll(ctx context.Context, page, limit int, status, userID, dateFrom, dateTo string) ([]modelsOrder.Order, int64, error) {
 	var orders []modelsOrder.Order
 	var total int64
 
 	query := r.db.WithContext(ctx).Model(&modelsOrder.Order{})
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+	if userID != "" {
+		query = query.Where("user_id = ?", userID)
+	}
+	if dateFrom != "" {
+		query = query.Where("created_at >= ?", dateFrom)
+	}
+	if dateTo != "" {
+		query = query.Where("created_at <= ?", dateTo)
+	}
 
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -401,13 +413,14 @@ func (r *OrderRepository) FindRecent(ctx context.Context, limit int) ([]modelsOr
 // RevenueByMonth returns monthly revenue for the last N months.
 func (r *OrderRepository) RevenueByMonth(ctx context.Context, months int) ([]map[string]interface{}, error) {
 	type row struct {
-		Month   string
-		Revenue float64
+		Month      string
+		Revenue    float64
+		OrderCount int64
 	}
 	var rows []row
 	if err := r.db.WithContext(ctx).
 		Model(&modelsOrder.Order{}).
-		Select("TO_CHAR(created_at, 'YYYY-MM') AS month, COALESCE(SUM(total_amount), 0) AS revenue").
+		Select("TO_CHAR(created_at, 'YYYY-MM') AS month, COALESCE(SUM(total_amount), 0) AS revenue, COUNT(*) AS order_count").
 		Where("created_at >= NOW() - INTERVAL '? months' AND status != 'cancelled'", months).
 		Group("month").
 		Order("month").
@@ -418,8 +431,9 @@ func (r *OrderRepository) RevenueByMonth(ctx context.Context, months int) ([]map
 	result := make([]map[string]interface{}, len(rows))
 	for i, row := range rows {
 		result[i] = map[string]interface{}{
-			"month":   row.Month,
-			"revenue": row.Revenue,
+			"month":       row.Month,
+			"revenue":     row.Revenue,
+			"order_count": row.OrderCount,
 		}
 	}
 	return result, nil

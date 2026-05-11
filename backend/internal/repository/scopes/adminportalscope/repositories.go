@@ -39,6 +39,7 @@ type Repositories struct {
 	SystemSetting      *systemsetting.SystemSettingRepository
 	StockTransaction   *order.StockTransactionRepository
 	Translation        *translation.TranslationRepository
+	OrderMessage       *order.OrderMessageRepository
 	Notification       *notificationrepo.NotificationRepository
 }
 
@@ -65,6 +66,7 @@ func New(db *gorm.DB) *Repositories {
 		SystemSetting:      systemsetting.NewSystemSettingRepository(db),
 		StockTransaction:   order.NewStockTransactionRepository(db),
 		Translation:        translation.New(db),
+		OrderMessage:       order.NewOrderMessageRepository(db),
 		Notification:       notificationrepo.NewNotificationRepository(db),
 	}
 }

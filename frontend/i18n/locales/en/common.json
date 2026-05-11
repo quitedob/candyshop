@@ -72,7 +72,13 @@
       "company_verify_failed": "Could not verify company.",
       "inquiry_convert_failed": "Could not convert inquiry.",
       "payment_confirm_failed": "Could not confirm payment.",
-      "fetch_payments_failed": "Could not load payments."
+      "fetch_payments_failed": "Could not load payments.",
+      "product_price_required": "Base price must be greater than zero.",
+      "product_status_transition_invalid": "Invalid status transition. Allowed: draft → active, active ↔ inactive.",
+      "product_activation_no_stock": "Cannot activate a product with zero stock. Please add stock first.",
+      "product_moq_min_1": "Minimum order quantity must be at least 1.",
+      "shipping_street_required": "Shipping street address is required.",
+      "shipping_city_required": "Shipping city is required."
     }
   },
   "validation": {

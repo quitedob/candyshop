@@ -52,6 +52,8 @@ const errorMessage = computed(() => {
 })
 
 const handleError = () => clearError({ redirect: '/' })
+
+useSeo({ noindex: true })
 </script>
 
 <style scoped>

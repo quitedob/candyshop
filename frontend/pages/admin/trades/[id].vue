@@ -79,10 +79,60 @@
         </div>
       </div>
 
+      <!-- AI Trade Assistant -->
+      <div class="bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-4 border-b border-gray-200 flex items-center justify-between">
+          <div>
+            <h3 class="text-base font-medium text-gray-900">{{ t('admin.trades.ai_assistant') }}</h3>
+            <p class="text-xs text-gray-500 mt-0.5">{{ t('admin.trades.ai_assistant_desc') }}</p>
+          </div>
+          <button @click="aiChatExpanded = !aiChatExpanded"
+            class="text-gray-400 hover:text-gray-600 text-xs font-medium">
+            {{ aiChatExpanded ? t('admin.trades.collapse') : t('admin.trades.expand') }}
+          </button>
+        </div>
+        <div v-if="aiChatExpanded" class="flex flex-col h-[420px]">
+          <div class="flex-1 p-3 overflow-y-auto bg-gray-50 text-sm" ref="adminChatContainer">
+            <div v-for="(msg, i) in aiMessages" :key="i" class="mb-3">
+              <div :class="['rounded-lg p-2.5 max-w-[85%] text-sm', msg.role === 'user' ? 'bg-orange-600 text-white ml-auto' : 'bg-white border text-gray-800 mr-auto']">
+                <div v-if="msg.sender" class="text-xs font-semibold mb-0.5 opacity-70">{{ msg.sender }}</div>
+                <div class="whitespace-pre-wrap">{{ msg.content }}</div>
+                <div v-if="msg.tool_calls?.length" class="mt-1.5 border-t pt-1.5 border-gray-200">
+                  <p class="text-xs font-bold text-gray-500 mb-0.5">{{ t('admin.trades.tools_called') }}:</p>
+                  <div v-for="tc in msg.tool_calls" :key="tc.id" class="text-xs text-orange-800 bg-orange-50 rounded px-1 py-0.5 mb-0.5">{{ tc.function.name }}</div>
+                </div>
+                <div v-if="msg.documentType" class="text-xs text-green-700 mt-1 font-medium">📄 {{ msg.documentType }}</div>
+              </div>
+            </div>
+            <div v-if="aiStreamingText" class="mb-3">
+              <div class="rounded-lg p-2.5 max-w-[85%] bg-white border text-gray-800 mr-auto text-sm">
+                <div class="text-xs font-semibold mb-0.5 opacity-70">{{ t('admin.trades.ai_typing') }}</div>
+                <div class="whitespace-pre-wrap">{{ aiStreamingText }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="p-3 border-t border-gray-200 flex gap-2 bg-white rounded-b-lg">
+            <input v-model="aiInputQuery" @keyup.enter="aiSendMessage" type="text"
+              :placeholder="t('admin.trades.ai_input_placeholder')"
+              class="flex-1 shadow-sm focus:ring-orange-500 focus:border-orange-500 block w-full sm:text-sm border-gray-300 rounded-md"
+              :disabled="aiStreaming" />
+            <button @click="aiSendMessage" :disabled="aiStreaming || !aiInputQuery.trim()"
+              class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-50">
+              {{ t('admin.trades.send') }}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Trade Documents (generic) -->
       <div class="bg-white shadow sm:rounded-lg">
         <div class="px-4 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
           <h3 class="text-base font-medium text-gray-900">{{ t('admin.trades.documents') }}</h3>
+          <button @click="aiGenerateDocument" :disabled="aiGenerating"
+            class="px-3 py-1.5 bg-orange-600 text-white text-xs font-medium rounded-md hover:bg-orange-700 disabled:opacity-50 flex items-center gap-1">
+            <Icon name="heroicons:sparkles" class="h-3.5 w-3.5" />
+            {{ aiGenerating ? t('admin.trades.ai_generating') : t('admin.trades.ai_generate_doc') }}
+          </button>
         </div>
         <div class="p-4">
           <div v-if="!documents.length" class="text-gray-500 text-sm">{{ t('admin.trades.no_documents') }}</div>
@@ -126,9 +176,47 @@
               <div v-if="rdoc.data.totalAmount"><span class="font-medium">{{ dl('amount') }}:</span> {{ cur(rdoc.data.currency) }} {{ formatNumber(rdoc.data.totalAmount) }}</div>
               <div v-if="rdoc.data.incoterms"><span class="font-medium">{{ dl('incoterms') }}:</span> {{ rdoc.data.incoterms }}</div>
             </div>
-            <button @click="openRichDocModal(rdoc)" class="text-xs text-orange-600 hover:text-orange-800 font-medium">
-              {{ rdoc.data ? t('admin.trades.edit') : t('admin.trades.create') }}
+            <div class="flex gap-3">
+              <button @click="openRichDocModal(rdoc)" class="text-xs text-orange-600 hover:text-orange-800 font-medium">
+                {{ rdoc.data ? t('admin.trades.edit') : t('admin.trades.create') }}
+              </button>
+              <button @click="aiGenerateRichDoc(rdoc)" :disabled="aiGenerating"
+                class="text-xs text-purple-600 hover:text-purple-800 font-medium disabled:opacity-40">
+                <Icon name="heroicons:sparkles" class="h-3 w-3 inline" /> AI
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Generate Document Modal -->
+      <div v-if="aiGenModal.docType" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">{{ t('admin.trades.ai_generate_title', { type: aiGenModal.docType }) }}</h3>
+            <button @click="aiGenModal = { docType: '', context: '' }" class="text-gray-400 hover:text-gray-600">
+              <Icon name="heroicons:x-mark" class="h-5 w-5" />
             </button>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1">{{ t('admin.trades.ai_context_label') }}</label>
+              <textarea v-model="aiGenModal.context" rows="3" :placeholder="t('admin.trades.ai_context_placeholder')"
+                class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-orange-500"></textarea>
+            </div>
+            <div class="flex gap-3 pt-2">
+              <button @click="aiSubmitGenerate" :disabled="aiGenerating"
+                class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 disabled:opacity-50 flex items-center gap-1">
+                <Icon name="heroicons:sparkles" class="h-4 w-4" />
+                {{ aiGenerating ? t('admin.trades.ai_generating') : t('admin.trades.ai_generate') }}
+              </button>
+              <button @click="aiGenModal = { docType: '', context: '' }"
+                class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200">
+                {{ t('admin.trades.cancel') }}
+              </button>
+            </div>
+            <p v-if="aiGenError" class="text-sm text-red-600">{{ aiGenError }}</p>
+            <p v-if="aiGenResult" class="text-sm text-green-700">{{ aiGenResult }}</p>
           </div>
         </div>
       </div>
@@ -169,7 +257,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, reactive, computed } from 'vue'
+import { onMounted, ref, reactive, computed, nextTick } from 'vue'
 
 definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
@@ -202,6 +290,160 @@ const savingRichDoc = ref(false)
 const richDocError = ref('')
 
 const dl = (k: string) => t(`admin.docLabels.${k}`)
+
+// ── AI Chat State ──
+const aiChatExpanded = ref(false)
+const aiMessages = ref<{role: string, content: string, sender?: string, tool_calls?: any[], documentType?: string}[]>([])
+const aiInputQuery = ref('')
+const aiStreaming = ref(false)
+const aiStreamingText = ref('')
+const adminChatContainer = ref<HTMLElement | null>(null)
+const { token } = useAuth()
+const config = useRuntimeConfig()
+const baseURL = config.public.apiBase || '/api/v1'
+
+// ── AI Doc Generation State ──
+const aiGenerating = ref(false)
+const aiGenModal = reactive({ docType: '', context: '' })
+const aiGenError = ref('')
+const aiGenResult = ref('')
+
+const docTypeToKey: Record<string, string> = {
+  'PROFORMA_INVOICE': 'proforma-invoice',
+  'COMMERCIAL_INVOICE': 'commercial-invoice',
+  'SALES_CONTRACT': 'sales-contract',
+  'PACKING_LIST': 'packing-list',
+  'ORIGIN_CERTIFICATE': 'certificate-of-origin',
+  'HEALTH_CERTIFICATE': 'health-certificate',
+  'BILL_OF_LADING': 'bill-of-lading',
+}
+
+const richDocKeyToType = (key: string) => {
+  const map: Record<string, string> = {
+    pi: 'PROFORMA_INVOICE', ci: 'COMMERCIAL_INVOICE', bl: 'BILL_OF_LADING',
+    sc: 'SALES_CONTRACT', pl: 'PACKING_LIST', coo: 'ORIGIN_CERTIFICATE', hc: 'HEALTH_CERTIFICATE',
+  }
+  return map[key] || ''
+}
+
+const aiScrollToBottom = () => {
+  nextTick(() => { if (adminChatContainer.value) adminChatContainer.value.scrollTop = adminChatContainer.value.scrollHeight })
+}
+
+const aiSendMessage = () => {
+  if (!aiInputQuery.value.trim() || aiStreaming.value) return
+  const query = aiInputQuery.value
+  aiMessages.value.push({ role: 'user', content: query })
+  aiInputQuery.value = ''
+  aiStreaming.value = true
+  aiStreamingText.value = ''
+  aiScrollToBottom()
+  const url = `${baseURL}/admin/trades/${route.params.id}/ai-chat?query=${encodeURIComponent(query)}`
+  aiStreamFetch(url)
+}
+
+const aiStreamFetch = async (url: string) => {
+  try {
+    const resp = await fetch(url, { headers: { 'Authorization': `Bearer ${token.value}` } })
+    if (!resp.ok) {
+      aiMessages.value.push({ role: 'ai', content: `*Connection error*`, sender: 'System' })
+      aiStreaming.value = false
+      return
+    }
+    const reader = resp.body?.getReader()
+    if (!reader) {
+      // Non-streaming fallback
+      const data = await resp.json()
+      aiMessages.value.push({ role: 'ai', content: data.reply || '', sender: 'AI' })
+      aiStreaming.value = false
+      return
+    }
+    const decoder = new TextDecoder()
+    let partial = ''
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      partial += decoder.decode(value, { stream: true })
+      const parts = partial.split('\n\n')
+      partial = parts.pop() || ''
+      for (const part of parts) {
+        if (part.startsWith('data: ')) {
+          try { aiHandleSSE(JSON.parse(part.replace('data: ', ''))) } catch(e) {}
+        }
+      }
+    }
+  } catch(e) {
+    aiMessages.value.push({ role: 'ai', content: `*Stream interrupted*`, sender: 'System' })
+  } finally {
+    aiStreaming.value = false
+    if (aiStreamingText.value) {
+      aiMessages.value.push({ role: 'ai', content: aiStreamingText.value, sender: 'AI' })
+      aiStreamingText.value = ''
+    }
+    aiScrollToBottom()
+    fetchRichDocs()
+    fetchDocuments()
+  }
+}
+
+const aiHandleSSE = (data: any) => {
+  if (data.type === 'message' || data.type === 'tool_result') {
+    if (aiStreamingText.value) {
+      aiMessages.value.push({ role: 'ai', content: aiStreamingText.value, sender: data.agent_name || 'AI' })
+      aiStreamingText.value = ''
+    }
+    aiMessages.value.push({
+      role: 'ai', content: data.content || '',
+      sender: data.agent_name || 'AI',
+      tool_calls: data.tool_calls,
+      documentType: data.document_type,
+    })
+  } else if (data.type === 'stream_chunk') {
+    aiStreamingText.value += data.content
+  } else if (data.type === 'error') {
+    aiMessages.value.push({ role: 'ai', content: `**Error:** ${data.error}`, sender: 'System' })
+  }
+  aiScrollToBottom()
+}
+
+// ── AI Document Generation ──
+const aiGenerateDocument = () => {
+  aiGenError.value = ''
+  aiGenResult.value = ''
+  // Show a prompt to select document type
+  aiGenModal.context = ''
+  aiGenModal.docType = 'PROFORMA_INVOICE'
+}
+
+const aiGenerateRichDoc = (rdoc: any) => {
+  aiGenError.value = ''
+  aiGenResult.value = ''
+  aiGenModal.context = ''
+  aiGenModal.docType = richDocKeyToType(rdoc.key)
+}
+
+const aiSubmitGenerate = async () => {
+  if (!aiGenModal.docType || aiGenerating.value) return
+  aiGenerating.value = true
+  aiGenError.value = ''
+  aiGenResult.value = ''
+  try {
+    const result = await api.post<any>(`/admin/trades/${route.params.id}/documents/ai-generate`, {
+      docType: aiGenModal.docType,
+      context: aiGenModal.context,
+      prompt: `Generate a ${aiGenModal.docType} for this trade transaction.`,
+    })
+    aiGenResult.value = result?.message || 'Document generated successfully'
+    aiGenModal.docType = ''
+    aiGenModal.context = ''
+    await fetchRichDocs()
+    await fetchDocuments()
+  } catch (err: any) {
+    aiGenError.value = err?.message || 'AI generation failed'
+  } finally {
+    aiGenerating.value = false
+  }
+}
 const richDocCards = computed(() => [
   {
     key: 'pi', label: dl('proforma_invoice'), data: piData.value,

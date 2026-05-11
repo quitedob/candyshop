@@ -381,7 +381,7 @@ watch(() => route.path, closeMenu)
   transform: translateX(-50%) translateY(8px);
   min-width: 200px;
   padding: var(--spacing-xs) 0;
-  background: #fff;
+  background: var(--color-bg);
   border-radius: var(--radius-lg);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
   opacity: 0;
@@ -446,7 +446,7 @@ watch(() => route.path, closeMenu)
 }
 
 .header__lang-btn--active {
-  background: #fff;
+  background: var(--color-bg);
   color: var(--color-primary);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
@@ -458,12 +458,12 @@ watch(() => route.path, closeMenu)
   width: 36px;
   height: 36px;
   border-radius: var(--radius-full);
-  color: #25d366;
+  color: #25D366;
   transition: background var(--transition-fast);
 }
 
 .header__whatsapp:hover {
-  background: rgba(37, 211, 102, 0.1);
+  background: rgba(37, 211, 102, 0.12);
 }
 
 .header__cta {
@@ -523,7 +523,7 @@ watch(() => route.path, closeMenu)
   right: 0;
   bottom: 0;
   width: min(85vw, 380px);
-  background: #fff;
+  background: var(--color-bg);
   z-index: calc(var(--z-sticky) + 2);
   display: flex;
   flex-direction: column;

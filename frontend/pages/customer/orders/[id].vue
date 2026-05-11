@@ -116,6 +116,20 @@
         <div v-else class="text-center py-8 text-light bg-white border border-border rounded-lg shadow-sm">{{ t('customer.orders.no_items') }}</div>
       </div>
 
+      <!-- Nudge Order -->
+      <div v-if="['pending', 'confirmed', 'production'].includes(order.status)" class="px-6 py-4 border-t border-border bg-blue-50">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-blue-800">{{ t('customer.orders.nudge_description') }}</p>
+          </div>
+          <button @click="nudgeOrder" :disabled="nudging" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+            <Icon name="heroicons:bell-alert" class="mr-1.5 h-4 w-4 inline" />
+            {{ nudging ? t('customer.orders.nudging') : t('customer.orders.nudge_button') }}
+          </button>
+        </div>
+        <p v-if="nudgeMessage" class="mt-2 text-sm" :class="nudgeError ? 'text-red-700' : 'text-green-700'">{{ nudgeMessage }}</p>
+      </div>
+
       <!-- Cancel Order -->
       <div v-if="order.status === 'pending'" class="px-6 py-4 border-t border-border bg-red-50">
         <div class="flex items-center justify-between">
@@ -156,12 +170,40 @@
           </div>
         </form>
       </div>
+
+      <!-- Order Messages -->
+      <div class="px-6 py-6 border-t border-border">
+        <h4 class="text-md font-semibold text-primary mb-4">{{ t('customer.orders.messages_title') }}</h4>
+        <div class="bg-gray-50 rounded-lg p-4 max-h-80 overflow-y-auto space-y-3 mb-4" ref="messageListRef">
+          <div v-if="messages.length === 0" class="text-center text-sm text-light py-4">
+            {{ t('customer.orders.no_messages') }}
+          </div>
+          <div v-for="msg in messages" :key="msg.id" :class="['flex', msg.senderType === 'customer' ? 'justify-end' : 'justify-start']">
+            <div :class="['max-w-xs lg:max-w-md rounded-lg px-4 py-2', msg.senderType === 'customer' ? 'bg-highlight text-white' : 'bg-white border border-border text-primary']">
+              <div class="text-xs font-semibold mb-1" :class="msg.senderType === 'customer' ? 'text-highlight-100' : 'text-highlight'">
+                {{ msg.senderType === 'customer' ? t('customer.orders.sender_customer') : t('customer.orders.sender_admin') }}
+              </div>
+              <p class="text-sm whitespace-pre-wrap">{{ msg.message }}</p>
+              <p class="text-xs mt-1 opacity-70">{{ formatDate(msg.createdAt) }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <input v-model="newMessage" @keyup.enter="sendMessage" :placeholder="t('customer.orders.message_placeholder')"
+            class="flex-1 form-input" :disabled="sending" />
+          <button @click="sendMessage" :disabled="sending || !newMessage.trim()"
+            class="btn btn-highlight px-4">
+            <Icon name="heroicons:paper-airplane" class="h-4 w-4" />
+            {{ sending ? '...' : t('customer.orders.send_message') }}
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick, onUnmounted } from 'vue'
 
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
@@ -188,7 +230,52 @@ const paymentForm = reactive({
   method: 'bank_transfer'
 })
 
-onMounted(async () => { await fetchOrder() })
+const nudging = ref(false)
+const nudgeMessage = ref('')
+const nudgeError = ref(false)
+const messages = ref<any[]>([])
+const newMessage = ref('')
+const sending = ref(false)
+const messageListRef = ref<HTMLElement | null>(null)
+
+const nudgeOrder = async () => {
+  if (!order.value?.id) return
+  nudging.value = true; nudgeMessage.value = ''; nudgeError.value = false
+  try {
+    await api.post(`/user/orders/${order.value.id}/nudge`, {})
+    nudgeMessage.value = t('customer.orders.nudge_success')
+  } catch (err: any) {
+    nudgeError.value = true
+    nudgeMessage.value = err?.data?.message || err?.message || t('customer.orders.nudge_error')
+  } finally { nudging.value = false }
+}
+
+const fetchMessages = async () => {
+  if (!order.value?.id) return
+  try {
+    const res = await api.get<any>(`/user/orders/${order.value.id}/messages`)
+    messages.value = res.data || []
+  } catch (_) { /* silently fail */ }
+}
+
+const sendMessage = async () => {
+  if (!order.value?.id || !newMessage.value.trim()) return
+  sending.value = true
+  try {
+    const msg = await api.post<any>(`/user/orders/${order.value.id}/messages`, { message: newMessage.value.trim() })
+    messages.value.push(msg)
+    newMessage.value = ''
+    nextTick(() => {
+      if (messageListRef.value) messageListRef.value.scrollTop = messageListRef.value.scrollHeight
+    })
+  } catch (err: any) {
+    alert(err?.message || t('customer.orders.message_send_error'))
+  } finally { sending.value = false }
+}
+
+let messageInterval: ReturnType<typeof setInterval> | null = null
+onMounted(async () => { await fetchOrder(); await fetchMessages(); messageInterval = setInterval(fetchMessages, 30000) })
+onUnmounted(() => { if (messageInterval) clearInterval(messageInterval) })
 
 const fetchOrder = async () => {
   pending.value = true; error.value = ''

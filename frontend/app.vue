@@ -54,10 +54,9 @@ const authLegacyRoutes = ['/login', '/register', '/forgot-password', '/reset-pas
 
 const showMarketingChrome = computed(() => {
   const path = route.path
-  // Note: App routes and Auth logic regardless of locale prefix (e.g. /zh/auth/login)
   const isAppRoute = /\/(admin|customer|auth)(\/|$)/.test(path)
   const isLegacyAuth = authLegacyRoutes.some(p => path.endsWith(p))
-  
+
   return !(isAppRoute || isLegacyAuth)
 })
 
@@ -65,6 +64,9 @@ const showMarketingChrome = computed(() => {
 useHead({
   titleTemplate
 })
+
+// Render Organization + LocalBusiness JSON-LD globally (server-side)
+useGlobalSchema()
 </script>
 
 <style>

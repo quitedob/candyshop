@@ -72,7 +72,13 @@
       "company_verify_failed": "无法验证企业。",
       "inquiry_convert_failed": "无法转换询价。",
       "payment_confirm_failed": "无法确认付款。",
-      "fetch_payments_failed": "无法加载付款记录。"
+      "fetch_payments_failed": "无法加载付款记录。",
+      "product_price_required": "产品价格必须大于零。",
+      "product_status_transition_invalid": "状态变更无效。允许：草稿 → 上架，上架 ↔ 下架。",
+      "product_activation_no_stock": "库存为零的产品无法上架，请先补货。",
+      "product_moq_min_1": "最小起订量必须大于等于 1。",
+      "shipping_street_required": "收货街道地址为必填项。",
+      "shipping_city_required": "收货城市为必填项。"
     }
   },
   "validation": {

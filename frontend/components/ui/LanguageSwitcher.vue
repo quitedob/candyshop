@@ -189,7 +189,7 @@ onUnmounted(() => {
 
 .lang-switcher__trigger:hover {
   border-color: var(--color-accent);
-  background-color: white;
+  background-color: var(--color-bg);
 }
 
 .lang-switcher__current {
@@ -214,7 +214,7 @@ onUnmounted(() => {
   right: 0;
   z-index: var(--z-dropdown);
   min-width: 160px;
-  background-color: white;
+  background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
@@ -264,7 +264,7 @@ onUnmounted(() => {
 
 .lang-switcher__option--active {
   background-color: var(--color-primary);
-  color: white;
+  color: var(--color-text-on-primary);
 }
 
 .lang-switcher__flag {

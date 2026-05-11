@@ -94,7 +94,14 @@ onMounted(() => {
 
 .toast-enter-active,
 .toast-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity var(--transition-base), transform var(--transition-base);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-enter-active,
+  .toast-leave-active {
+    transition: opacity 0.01ms ease;
+  }
 }
 
 .toast-enter-from,

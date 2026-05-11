@@ -21,6 +21,7 @@ type userRepository interface {
 	CountAll(ctx context.Context) (int64, error)
 	CountCreatedSince(ctx context.Context, since time.Time) (int64, error)
 	ActivateUsersByCompanyID(ctx context.Context, companyID string) error
+	FindByRoleNames(ctx context.Context, names []string) ([]modelsUser.User, error)
 }
 
 type UserService struct {
@@ -94,6 +95,11 @@ func (s *UserService) CountUsersSince(ctx context.Context, since time.Time) (int
 // GetRecentUsers returns latest users.
 func (s *UserService) GetRecentUsers(ctx context.Context, limit int) ([]modelsUser.User, error) {
 	return s.repo.FindRecent(ctx, limit)
+}
+
+// FindAdminUsers returns all users with the "admin" or "superadmin" role.
+func (s *UserService) FindAdminUsers(ctx context.Context) ([]modelsUser.User, error) {
+	return s.repo.FindByRoleNames(ctx, []string{"admin", "superadmin"})
 }
 
 // ActivateUsersByCompanyID activates all pending users linked to a company.

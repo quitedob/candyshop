@@ -113,12 +113,38 @@
               </div>
             </div>
 
+            <!-- Author fields (post only) -->
+            <div v-if="form.type === 'post'" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label for="content-authorName" class="block text-sm font-medium text-gray-700">{{ t('admin.content.author_name') }}</label>
+                <input id="content-authorName" v-model="form.authorName" name="authorName" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label for="content-authorTitle" class="block text-sm font-medium text-gray-700">{{ t('admin.content.author_title') }}</label>
+                <input id="content-authorTitle" v-model="form.authorTitle" name="authorTitle" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label for="content-authorAvatar" class="block text-sm font-medium text-gray-700">{{ t('admin.content.author_avatar') }}</label>
+                <input id="content-authorAvatar" v-model="form.authorAvatar" name="authorAvatar" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" :placeholder="t('admin.content.url_or_upload')" />
+              </div>
+              <div>
+                <label for="content-authorBio" class="block text-sm font-medium text-gray-700">{{ t('admin.content.author_bio') }}</label>
+                <input id="content-authorBio" v-model="form.authorBio" name="authorBio" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              </div>
+            </div>
+
             <!-- Case-specific meta -->
             <div v-if="form.type === 'case'" class="grid grid-cols-1 gap-4 sm:grid-cols-4">
               <div><label for="content-client" class="block text-sm font-medium text-gray-700">{{ t('admin.content.case_client') }}</label><input id="content-client" v-model="form.client" name="client" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
               <div><label for="content-industry" class="block text-sm font-medium text-gray-700">{{ t('admin.content.case_industry') }}</label><input id="content-industry" v-model="form.industry" name="industry" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
               <div><label for="content-location" class="block text-sm font-medium text-gray-700">{{ t('admin.content.case_location') }}</label><input id="content-location" v-model="form.location" name="location" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
               <div><label for="content-timeline" class="block text-sm font-medium text-gray-700">{{ t('admin.content.case_timeline') }}</label><input id="content-timeline" v-model="form.timeline" name="timeline" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
+            </div>
+
+            <!-- Case images (comma-separated URLs) -->
+            <div v-if="form.type === 'case'">
+              <label for="content-imagesInput" class="block text-sm font-medium text-gray-700">{{ t('admin.content.case_images') }}</label>
+              <input id="content-imagesInput" v-model="form.imagesInput" name="imagesInput" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" :placeholder="t('admin.content.url_or_upload')" />
             </div>
 
             <!-- Excerpt (post only) -->
@@ -220,8 +246,9 @@ const form = reactive({
   type: 'post' as ContentType,
   title: '', slug: '', thumbnail: '', category: '', readTime: 5,
   excerpt: '', tagsInput: '', content: '',
+  authorName: '', authorAvatar: '', authorTitle: '', authorBio: '',
   client: '', industry: '', location: '', timeline: '',
-  servicesInput: '', challenge: '', solution: '', result: ''
+  servicesInput: '', imagesInput: '', challenge: '', solution: '', result: ''
 })
 
 const parseCSV = (v: string) => v.split(',').map(s => s.trim()).filter(Boolean)
@@ -229,8 +256,9 @@ const parseCSV = (v: string) => v.split(',').map(s => s.trim()).filter(Boolean)
 const resetForm = () => {
   form.type = selectedType.value; form.title = ''; form.slug = ''; form.thumbnail = ''
   form.category = ''; form.readTime = 5; form.excerpt = ''; form.tagsInput = ''; form.content = ''
+  form.authorName = ''; form.authorAvatar = ''; form.authorTitle = ''; form.authorBio = ''
   form.client = ''; form.industry = ''; form.location = ''; form.timeline = ''
-  form.servicesInput = ''; form.challenge = ''; form.solution = ''; form.result = ''
+  form.servicesInput = ''; form.imagesInput = ''; form.challenge = ''; form.solution = ''; form.result = ''
 }
 
 // --- AI Generate ---
@@ -296,9 +324,12 @@ const openEditModal = async (item: any) => {
     form.readTime = c.readTime || 5; form.excerpt = c.excerpt || ''
     form.tagsInput = Array.isArray(c.tags) ? c.tags.join(', ') : ''
     form.content = c.content || ''
+    form.authorName = c.author?.name || ''; form.authorAvatar = c.author?.avatar || ''
+    form.authorTitle = c.author?.title || ''; form.authorBio = c.author?.bio || ''
     form.client = c.client || ''; form.industry = c.industry || ''
     form.location = c.location || ''; form.timeline = c.timeline || ''
     form.servicesInput = Array.isArray(c.services) ? c.services.join(', ') : ''
+    form.imagesInput = Array.isArray(c.images) ? c.images.join(', ') : ''
     form.challenge = c.challenge || ''; form.solution = c.solution || ''; form.result = c.result || ''
     showModal.value = true
   } catch (err: any) { actionError.value = true; actionMessage.value = err?.data?.message || 'Load failed' }
@@ -308,9 +339,9 @@ const closeModal = () => { showModal.value = false; saving.value = false; formEr
 
 const buildPayload = () => {
   if (form.type === 'post') {
-    return { type: 'post', title: form.title, slug: form.slug, thumbnail: form.thumbnail, category: form.category, readTime: form.readTime, excerpt: form.excerpt, tags: parseCSV(form.tagsInput), content: form.content }
+    return { type: 'post', title: form.title, slug: form.slug, thumbnail: form.thumbnail, category: form.category, readTime: form.readTime, excerpt: form.excerpt, tags: parseCSV(form.tagsInput), content: form.content, author: { name: form.authorName, avatar: form.authorAvatar, title: form.authorTitle, bio: form.authorBio } }
   }
-  return { type: 'case', title: form.title, slug: form.slug, thumbnail: form.thumbnail, client: form.client, industry: form.industry, location: form.location, timeline: form.timeline, services: parseCSV(form.servicesInput), challenge: form.challenge, solution: form.solution, result: form.result, content: form.content }
+  return { type: 'case', title: form.title, slug: form.slug, thumbnail: form.thumbnail, client: form.client, industry: form.industry, location: form.location, timeline: form.timeline, services: parseCSV(form.servicesInput), images: parseCSV(form.imagesInput), challenge: form.challenge, solution: form.solution, result: form.result, content: form.content }
 }
 
 const saveContent = async () => {

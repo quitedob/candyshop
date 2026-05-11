@@ -27,7 +27,11 @@ func (h *Handler) AdminGetOrders(c *gin.Context) {
 	}
 
 	page, limit := pagination.ParsePagination(c, 20, 100)
-	orders, err := h.services.Order.GetOrders(c.Request.Context(), page, limit)
+	status := strings.TrimSpace(c.Query("status"))
+	userID := strings.TrimSpace(c.Query("userId"))
+	dateFrom := strings.TrimSpace(c.Query("dateFrom"))
+	dateTo := strings.TrimSpace(c.Query("dateTo"))
+	orders, err := h.services.Order.GetOrders(c.Request.Context(), page, limit, status, userID, dateFrom, dateTo)
 	if err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "order_fetch_failed")
 		return

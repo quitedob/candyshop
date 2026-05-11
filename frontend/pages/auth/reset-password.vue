@@ -65,14 +65,14 @@
       </div>
 
       <p class="auth-page__footer">
-        © {{ new Date().getFullYear() }} {{ t('auth.footer_rights') }}
+        © {{ currentYear }} {{ t('auth.footer_rights') }}
       </p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref, computed } from 'vue'
 
 definePageMeta({
   layout: 'auth',
@@ -85,6 +85,7 @@ const route = useRoute()
 const config = useRuntimeConfig()
 const baseURL = config.public.apiBase || '/api/v1'
 
+const currentYear = computed(() => new Date().getFullYear())
 const loading = ref(false)
 const success = ref(false)
 const errorMsg = ref('')

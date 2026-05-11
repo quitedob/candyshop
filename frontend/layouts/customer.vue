@@ -150,6 +150,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 
+useSeo({ noindex: true })
+
 const { user, logout, isPending } = useAuth()
 const route = useRoute()
 const localePath = useLocalePath()
