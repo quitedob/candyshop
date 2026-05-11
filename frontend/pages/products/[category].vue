@@ -358,13 +358,13 @@ const filterTags = [
 // Related categories
 const relatedCategories = computed(() => {
   const allCategories = [
-    { slug: 'gummy-candy', name: t('product.categories.gummy_candy'), productCount: 120 },
-    { slug: 'hard-candy', name: t('product.categories.hard_candy'), productCount: 85 },
-    { slug: 'aerated-candy', name: t('product.categories.aerated_candy'), productCount: 45 },
-    { slug: 'toffee-candy', name: t('product.categories.toffee_candy'), productCount: 35 },
-    { slug: 'compound-chocolate', name: t('product.categories.compound_chocolate'), productCount: 60 },
-    { slug: 'licorice', name: t('product.categories.licorice'), productCount: 25 },
-    { slug: 'sour-candies', name: t('product.categories.sour_candies'), productCount: 40 }
+    { slug: 'gummy-candy', name: t('product.categories.gummy_candy'), productCount: 120, image: '/images/categories/gummy-candy.jpg' },
+    { slug: 'hard-candy', name: t('product.categories.hard_candy'), productCount: 85, image: '/images/categories/hard-candy.jpg' },
+    { slug: 'aerated-candy', name: t('product.categories.aerated_candy'), productCount: 45, image: '/images/categories/aerated-candy.jpg' },
+    { slug: 'toffee-candy', name: t('product.categories.toffee_candy'), productCount: 35, image: '/images/categories/toffee-candy.jpg' },
+    { slug: 'compound-chocolate', name: t('product.categories.compound_chocolate'), productCount: 60, image: '/images/categories/compound-chocolate.jpg' },
+    { slug: 'licorice', name: t('product.categories.licorice'), productCount: 25, image: '/images/categories/licorice.jpg' },
+    { slug: 'sour-candies', name: t('product.categories.sour_candies'), productCount: 40, image: '/images/categories/sour-candies.jpg' }
   ]
   return allCategories.filter(c => c.slug !== categorySlug.value)
 })

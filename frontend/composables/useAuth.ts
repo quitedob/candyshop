@@ -123,8 +123,29 @@ export const useAuth = () => {
   }
 
   const initAuth = async () => {
-    if (initialized.value) {
+    if (initialized.value && user.value) {
       return
+    }
+
+    // Re-initialize: have token but user state was lost (e.g., cookie persisted but state cleared)
+    if (initialized.value && !user.value && token.value) {
+      try {
+        await fetchCurrentUser()
+        return
+      } catch {
+        const refreshed = await refreshAccessToken()
+        if (!refreshed) {
+          clearAuthState()
+          return
+        }
+        try {
+          await fetchCurrentUser()
+          return
+        } catch {
+          clearAuthState()
+          return
+        }
+      }
     }
 
     initialized.value = true

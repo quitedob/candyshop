@@ -78,21 +78,31 @@
 
           <!-- Auth CTAs -->
           <div class="header__cta hide-mobile">
-            <template v-if="!isAuthenticated">
-              <NuxtLink :to="localePath('/auth/login')" class="btn btn-ghost btn-sm">
-                {{ $t('nav.sign_in') }}
+            <ClientOnly>
+              <template v-if="!isAuthenticated">
+                <NuxtLink :to="localePath('/auth/login')" class="btn btn-ghost btn-sm">
+                  {{ $t('nav.sign_in') }}
+                </NuxtLink>
+                <NuxtLink :to="localePath('/auth/register')" class="btn btn-highlight btn-sm">
+                  {{ $t('nav.register') }}
+                </NuxtLink>
+              </template>
+              <NuxtLink
+                v-else
+                :to="localePath(isAdmin ? '/admin' : '/customer/dashboard')"
+                class="btn btn-highlight btn-sm"
+              >
+                {{ $t(isAdmin ? 'nav.admin_panel' : 'nav.my_account') }}
               </NuxtLink>
-              <NuxtLink :to="localePath('/auth/register')" class="btn btn-highlight btn-sm">
-                {{ $t('nav.register') }}
-              </NuxtLink>
-            </template>
-            <NuxtLink
-              v-else
-              :to="localePath(isAdmin ? '/admin' : '/customer/dashboard')"
-              class="btn btn-highlight btn-sm"
-            >
-              {{ $t(isAdmin ? 'nav.admin_panel' : 'nav.my_account') }}
-            </NuxtLink>
+              <template #fallback>
+                <NuxtLink :to="localePath('/auth/login')" class="btn btn-ghost btn-sm">
+                  {{ $t('nav.sign_in') }}
+                </NuxtLink>
+                <NuxtLink :to="localePath('/auth/register')" class="btn btn-highlight btn-sm">
+                  {{ $t('nav.register') }}
+                </NuxtLink>
+              </template>
+            </ClientOnly>
           </div>
 
           <!-- Mobile Hamburger -->
@@ -177,22 +187,32 @@
               {{ $t(`languages.${loc}_short`) }}
             </button>
           </div>
-          <template v-if="!isAuthenticated">
-            <NuxtLink :to="localePath('/auth/login')" class="btn btn-ghost btn-sm" @click="closeMenu">
-              {{ $t('nav.sign_in') }}
+          <ClientOnly>
+            <template v-if="!isAuthenticated">
+              <NuxtLink :to="localePath('/auth/login')" class="btn btn-ghost btn-sm" @click="closeMenu">
+                {{ $t('nav.sign_in') }}
+              </NuxtLink>
+              <NuxtLink :to="localePath('/auth/register')" class="btn btn-highlight btn-sm" @click="closeMenu">
+                {{ $t('nav.register') }}
+              </NuxtLink>
+            </template>
+            <NuxtLink
+              v-else
+              :to="localePath(isAdmin ? '/admin' : '/customer/dashboard')"
+              class="btn btn-highlight btn-sm"
+              @click="closeMenu"
+            >
+              {{ $t(isAdmin ? 'nav.admin_panel' : 'nav.my_account') }}
             </NuxtLink>
-            <NuxtLink :to="localePath('/auth/register')" class="btn btn-highlight btn-sm" @click="closeMenu">
-              {{ $t('nav.register') }}
-            </NuxtLink>
-          </template>
-          <NuxtLink
-            v-else
-            :to="localePath(isAdmin ? '/admin' : '/customer/dashboard')"
-            class="btn btn-highlight btn-sm"
-            @click="closeMenu"
-          >
-            {{ $t(isAdmin ? 'nav.admin_panel' : 'nav.my_account') }}
-          </NuxtLink>
+            <template #fallback>
+              <NuxtLink :to="localePath('/auth/login')" class="btn btn-ghost btn-sm" @click="closeMenu">
+                {{ $t('nav.sign_in') }}
+              </NuxtLink>
+              <NuxtLink :to="localePath('/auth/register')" class="btn btn-highlight btn-sm" @click="closeMenu">
+                {{ $t('nav.register') }}
+              </NuxtLink>
+            </template>
+          </ClientOnly>
         </div>
       </nav>
     </Transition>

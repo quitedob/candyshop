@@ -33,6 +33,7 @@
     "vue-chartjs": "^5.3.3"
   },
   "devDependencies": {
+    "@iconify-json/heroicons": "^1.2.0",
     "@iconify-json/logos": "^1.2.10",
     "@iconify-json/lucide": "^1.2.97",
     "@nuxtjs/tailwindcss": "^6.0.0",

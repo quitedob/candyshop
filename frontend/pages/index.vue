@@ -313,9 +313,6 @@ const orderingCtaPath = computed(() => {
 })
 
 const orderingCtaLabel = computed(() => {
-  if (isPending.value) {
-    return t('product.pending_approval')
-  }
   if (isAuthenticated.value) {
     return t('product.inquire_now')
   }

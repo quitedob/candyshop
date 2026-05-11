@@ -66,7 +66,7 @@
               <li><NuxtLink :to="localePath('/cases-clients')">{{ $t('nav.cases') }}</NuxtLink></li>
               <li><NuxtLink :to="localePath('/blog')">{{ $t('nav.blog') }}</NuxtLink></li>
               <li><NuxtLink :to="localePath('/contact')">{{ $t('nav.contact') }}</NuxtLink></li>
-              <li><NuxtLink :to="portalLink">{{ portalLabel }}</NuxtLink></li>
+              <li><ClientOnly><NuxtLink :to="portalLink">{{ portalLabel }}</NuxtLink><template #fallback><NuxtLink :to="localePath('/auth/login')">{{ $t('footer.sign_in') }}</NuxtLink></template></ClientOnly></li>
             </ul>
           </div>
 

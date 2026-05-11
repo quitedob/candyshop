@@ -127,6 +127,11 @@ export const useCurrency = () => {
     return `${sym}${formatter.format(converted)}`
   }
 
+  function cur(input?: string | null): string {
+    if (input && input.trim()) return input.trim()
+    return selectedCurrency.value
+  }
+
   const disclaimer = computed(() => {
     if (selectedCurrency.value === 'USD') return ''
     return 'This is a reference converted price. Actual pricing may vary based on exchange rates. Please confirm with our sales team.'
@@ -145,6 +150,7 @@ export const useCurrency = () => {
     formatPrice,
     setCurrency,
     fetchRates,
-    disclaimer
+    disclaimer,
+    cur
   }
 }

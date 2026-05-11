@@ -56,7 +56,7 @@
                     :placeholder="t('customer.products.ai_budget_placeholder')"
                     class="w-1/3 px-3 py-2 rounded-xl bg-white/20 placeholder-blue-200 text-white border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 text-sm" />
                   <input v-model="aiForm.currency" type="text" maxlength="3"
-                    :placeholder="cur()"
+                    :placeholder="currency.cur()"
                     class="w-1/3 px-3 py-2 rounded-xl bg-white/20 placeholder-blue-200 text-white border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 text-sm uppercase" />
                 </div>
               </div>
@@ -370,7 +370,7 @@ const aiForm = reactive({
   targetCountry: '',
   quantity: 1,
   budget: 0,
-  currency: cur(null),
+  currency: currency.cur(null),
 })
 
 const runAIRecommend = async () => {
@@ -385,7 +385,7 @@ const runAIRecommend = async () => {
       targetCountry: aiForm.targetCountry.trim() || 'global',
       quantity: Math.max(1, aiForm.quantity || 1),
       budget: aiForm.budget || 0,
-      currency: cur(aiForm.currency).toUpperCase(),
+      currency: currency.cur(aiForm.currency).toUpperCase(),
     })
     aiResults.value = (res.recommendations || []).map((item: any) => ({
       ...item,

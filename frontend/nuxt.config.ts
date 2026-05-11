@@ -104,7 +104,7 @@ export default defineNuxtConfig({
       }
     ],
     lazy: true,
-    langDir: 'locales',
+    langDir: '',
     defaultLocale: 'zh',
     strategy: 'prefix_except_default',
     seo: false,
@@ -205,7 +205,14 @@ export default defineNuxtConfig({
   // Vite config
   vite: {
     optimizeDeps: {
-      include: []
+      include: [],
+      exclude: ['unenv', 'nuxt-og-image']
+    },
+    resolve: {
+      alias: {
+        // Fix unenv v2 double-runtime path issue (unenv/dist/runtime/runtime/mock/empty.mjs)
+        'unenv/runtime/mock/empty.mjs': 'unenv/dist/runtime/mock/empty.mjs'
+      }
     }
   },
 

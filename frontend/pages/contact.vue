@@ -101,7 +101,7 @@
             <!-- Map -->
             <div class="map-card">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3418.5!2d121.3422!3d30.7413!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x35b27a!2sJinshan+Industrial+Zone!5e0!3m2!1sen!2scn"
+                src="https://www.google.com/maps/embed?q=No.88+Shipin+Road+Jinshan+District+Shanghai+China&output=embed"
                 width="100%"
                 height="300"
                 style="border:0;"
