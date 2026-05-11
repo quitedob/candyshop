@@ -5,5 +5,6 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
-await navigateTo('/admin', { replace: true })
+const localePath = useLocalePath()
+await navigateTo(localePath('/admin'), { replace: true })
 </script>

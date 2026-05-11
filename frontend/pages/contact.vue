@@ -101,7 +101,7 @@
             <!-- Map -->
             <div class="map-card">
               <iframe
-                src="https://www.google.com/maps/embed?q=No.88+Shipin+Road+Jinshan+District+Shanghai+China&output=embed"
+                src="https://www.google.com/maps/embed/v1/place?key=&q=No.88+Shipin+Road+Jinshan+District+Shanghai+China&zoom=15"
                 width="100%"
                 height="300"
                 style="border:0;"

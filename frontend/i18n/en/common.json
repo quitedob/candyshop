@@ -39,6 +39,7 @@
       "description": "You do not have permission to access this page."
     },
     "default": "An error occurred",
+    "forbidden_insufficient_role": "You do not have permission to access this resource.",
     "boundary": "Something went wrong",
     "goHome": "Go to Home",
     "tryAgain": "Try Again",

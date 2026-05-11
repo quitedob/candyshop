@@ -103,8 +103,8 @@ export default defineNuxtConfig({
         name: '中文'
       }
     ],
-    lazy: true,
-    langDir: '',
+    lazy: false,
+    langDir: '.',
     defaultLocale: 'zh',
     strategy: 'prefix_except_default',
     seo: false,
@@ -173,6 +173,13 @@ export default defineNuxtConfig({
     },
     prerender: {
       routes: ['/', '/about', '/faq', '/contact', '/factory-quality', '/oem-solutions', '/privacy', '/terms', '/products', '/blog'],
+    },
+    alias: {
+      // Fix nuxt-og-image unenv v2 incompatibility — the module references
+      // "unenv/runtime/mock/*" which resolves to dist/runtime/runtime/mock/* (double)
+      // under unenv v2's wildcard export map. Correct to the canonical paths.
+      'unenv/runtime/mock/empty': 'unenv/mock/empty',
+      'unenv/runtime/mock/proxy-cjs': 'unenv/mock/proxy-cjs',
     },
   },
 

@@ -39,6 +39,7 @@
       "description": "您没有权限查看此页面。"
     },
     "default": "发生错误",
+    "forbidden_insufficient_role": "您没有权限访问此资源。",
     "boundary": "出了点问题",
     "goHome": "返回首页",
     "tryAgain": "重试",

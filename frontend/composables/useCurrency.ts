@@ -122,7 +122,7 @@ export const useCurrency = () => {
   function formatPrice(usdPrice: number, showOriginal = true): string {
     const converted = convert(usdPrice)
     const { locale: loc } = useI18n()
-    const formatter = new Intl.NumberFormat(loc.value, { maximumFractionDigits: 0 })
+    const formatter = new Intl.NumberFormat(loc.value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     const sym = CURRENCY_SYMBOLS[selectedCurrency.value] || selectedCurrency.value
     return `${sym}${formatter.format(converted)}`
   }

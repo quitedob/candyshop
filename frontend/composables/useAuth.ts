@@ -45,14 +45,16 @@ export const useAuth = () => {
   const localePath = useLocalePath()
   const token = useCookie<string | null>('auth_token', {
     maxAge: 60 * 60 * 24 * 7,
-    httpOnly: false, // must be false for client-side JS access in SPA; use secure + sameSite instead
-    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    httpOnly: false,
+    secure: typeof window !== 'undefined' ? window.location.protocol === 'https:' : false,
     sameSite: 'lax'
   })
   const refreshToken = useCookie<string | null>('refresh_token', {
     maxAge: 60 * 60 * 24 * 30,
+    path: '/',
     httpOnly: false,
-    secure: process.env.NODE_ENV === 'production',
+    secure: typeof window !== 'undefined' ? window.location.protocol === 'https:' : false,
     sameSite: 'lax'
   })
   const user = useState<User | null>('auth_user', () => null)

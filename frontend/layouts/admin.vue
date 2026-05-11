@@ -154,7 +154,7 @@
           >{{ t('languages.en_short') }}</button>
         </div>
         <button type="button" class="admin-sidebar__logout" :title="!showNavLabels ? t('admin.logout') : ''" @click="handleLogout">
-          <Icon name="heroicons:arrow-right-start-on-rectangle" class="admin-sidebar__logout-icon" />
+          <Icon name="heroicons:arrow-right-on-rectangle" class="admin-sidebar__logout-icon" />
           <span v-if="showNavLabels" class="admin-sidebar__logout-text">{{ t('admin.logout') }}</span>
         </button>
       </div>

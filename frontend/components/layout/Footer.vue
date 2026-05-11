@@ -157,6 +157,7 @@ const { isAuthenticated, isAdmin } = useAuth()
 
 const currentYear = computed(() => new Date().getFullYear())
 const certifications = ['HACCP', 'ISO22000', 'BRC', 'HALAL', 'FDA']
+const hydrated = ref(false)
 
 const availableLocales = [
   { code: 'en', name: 'English' },
@@ -172,15 +173,17 @@ const whatsappUrl = computed(() => {
 })
 
 const portalLink = computed(() => {
-  if (isAuthenticated.value) {
+  if (hydrated.value && isAuthenticated.value) {
     return localePath(isAdmin.value ? '/admin' : '/customer/products')
   }
   return localePath('/auth/login')
 })
 
 const portalLabel = computed(() => {
-  return isAuthenticated.value ? t('footer.customer_portal') : t('footer.sign_in')
+  return (hydrated.value && isAuthenticated.value) ? t('footer.customer_portal') : t('footer.sign_in')
 })
+
+onMounted(() => { hydrated.value = true })
 
 const LOCALE_STORAGE_KEY = 'user-locale'
 

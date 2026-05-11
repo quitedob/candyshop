@@ -1,4 +1,5 @@
 import { useI18n } from '#i18n'
+import { useCurrency } from './useCurrency'
 
 /**
  * 统一展示：默认货币、空单元格、枚举状态（common.enum.*），无硬编码英文兜底
@@ -6,12 +7,14 @@ import { useI18n } from '#i18n'
 export function useDisplay() {
   const { t, te, locale } = useI18n()
 
-  const currencyOrDefault = (code?: string | null) =>
-    code != null && String(code).trim() !== '' ? String(code).trim() : t('common.defaults.currency')
+  const currencyOrDefault = (code?: string | null) => {
+    if (code != null && String(code).trim() !== '') return String(code).trim()
+    try { return useCurrency().cur() } catch { return 'USD' }
+  }
 
-  /** 贸易术语空值时用 common.defaults.incoterms（如 FOB） */
+  /** 贸易术语空值默认 FOB */
   const incotermsOrDefault = (v?: string | null) =>
-    v != null && String(v).trim() !== '' ? String(v).trim() : t('common.defaults.incoterms')
+    v != null && String(v).trim() !== '' ? String(v).trim() : 'FOB'
 
   const cell = (value?: string | number | null | undefined) => {
     if (value === null || value === undefined) return t('common.display.em_dash')
@@ -34,7 +37,7 @@ export function useDisplay() {
 
   const formatNumber = (num: number | null | undefined, opts?: Intl.NumberFormatOptions) => {
     if (num == null || Number.isNaN(num)) return cell(null)
-    return new Intl.NumberFormat(locale.value, { maximumFractionDigits: 0, ...opts }).format(num)
+    return new Intl.NumberFormat(locale.value, { minimumFractionDigits: 2, maximumFractionDigits: 2, ...opts }).format(num)
   }
 
   const formatDate = (d: string | null | undefined, opts?: Intl.DateTimeFormatOptions) => {

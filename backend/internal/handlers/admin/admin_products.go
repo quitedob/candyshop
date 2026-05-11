@@ -38,6 +38,7 @@ type adminProductUpdateRequest struct {
 	ShelfLife      *string   `json:"shelfLife"`
 	Storage        *string   `json:"storage"`
 	Status         *string   `json:"status"`
+	BasePrice      *float64  `json:"basePrice"`
 }
 
 // AdminCreateProduct creates a new product
@@ -296,6 +297,9 @@ func applyProductPatch(product *modelsProduct.Product, req adminProductUpdateReq
 	}
 	if req.Status != nil {
 		product.Status = strings.TrimSpace(*req.Status)
+	}
+	if req.BasePrice != nil {
+		product.BasePrice = *req.BasePrice
 	}
 
 	if product.CategorySlug == "" && product.Category != "" {

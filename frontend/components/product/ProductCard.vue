@@ -120,15 +120,18 @@ const currency = useCurrency()
 
 const priceDisplay = computed(() => currency.formatPrice(props.product.basePrice || 0))
 
-const FALLBACK = '/images/categories/gummy-candy.jpg'
-const imgSrc = ref(props.product.thumbnail || FALLBACK)
+const FALLBACK = computed(() => {
+  const catSlug = props.product.categorySlug || props.product.category
+  return catSlug ? `/images/categories/${catSlug}.jpg` : '/images/categories/gummy-candy.jpg'
+})
+const imgSrc = ref(props.product.thumbnail || FALLBACK.value)
 
 watch(() => props.product.thumbnail, (val) => {
-  imgSrc.value = val || FALLBACK
+  imgSrc.value = val || FALLBACK.value
 })
 
 const handleImageError = () => {
-  imgSrc.value = FALLBACK
+  imgSrc.value = FALLBACK.value
 }
 
 const hasBadges = computed(() => {
