@@ -28,7 +28,8 @@
       "certifications": "认证管理",
       "staff": "员工管理",
       "auditLog": "操作日志",
-      "settings": "系统设置"
+      "settings": "系统设置",
+      "translations": "翻译管理"
     },
     "dashboard": {
       "title": "仪表盘",

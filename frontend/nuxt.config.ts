@@ -104,7 +104,7 @@ export default defineNuxtConfig({
       }
     ],
     lazy: false,
-    langDir: '.',
+    langDir: 'i18n',
     defaultLocale: 'zh',
     strategy: 'prefix_except_default',
     seo: false,
@@ -113,6 +113,11 @@ export default defineNuxtConfig({
       localeDetector: './composables/useLocaleDetector.ts'
     },
     vueI18n: './i18n.config.ts'
+  },
+
+  // Icon configuration (serve from local bundle, avoid CDN 404s)
+  icon: {
+    serverBundle: 'local'
   },
 
   // Runtime config

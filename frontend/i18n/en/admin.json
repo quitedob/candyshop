@@ -28,7 +28,8 @@
       "certifications": "Certifications",
       "staff": "Staff",
       "auditLog": "Audit Log",
-      "settings": "Settings"
+      "settings": "Settings",
+      "translations": "Translations"
     },
     "dashboard": {
       "title": "Dashboard",

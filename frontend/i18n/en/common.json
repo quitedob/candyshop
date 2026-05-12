@@ -79,7 +79,8 @@
       "product_activation_no_stock": "Cannot activate a product with zero stock. Please add stock first.",
       "product_moq_min_1": "Minimum order quantity must be at least 1.",
       "shipping_street_required": "Shipping street address is required.",
-      "shipping_city_required": "Shipping city is required."
+      "shipping_city_required": "Shipping city is required.",
+      "target_country_required": "Target country is required."
     }
   },
   "validation": {

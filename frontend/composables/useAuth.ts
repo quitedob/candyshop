@@ -48,14 +48,16 @@ export const useAuth = () => {
     path: '/',
     httpOnly: false,
     secure: typeof window !== 'undefined' ? window.location.protocol === 'https:' : false,
-    sameSite: 'lax'
+    sameSite: 'lax',
+    watch: false
   })
   const refreshToken = useCookie<string | null>('refresh_token', {
     maxAge: 60 * 60 * 24 * 30,
     path: '/',
     httpOnly: false,
     secure: typeof window !== 'undefined' ? window.location.protocol === 'https:' : false,
-    sameSite: 'lax'
+    sameSite: 'lax',
+    watch: false
   })
   const user = useState<User | null>('auth_user', () => null)
   const initialized = useState<boolean>('auth_initialized', () => false)
@@ -188,7 +190,7 @@ export const useAuth = () => {
     }
   }
 
-  const login = async (credentials: { email: string; password: string }) => {
+  const login = async (credentials: { email: string; password: string; remember?: boolean }) => {
     try {
       const response = await $fetch<any>(`${baseURL}/auth/login`, {
         method: 'POST',
@@ -197,6 +199,14 @@ export const useAuth = () => {
 
       token.value = response.access_token
       refreshToken.value = response.refresh_token
+
+      // If "Remember me" is NOT checked, make cookies session-only
+      if (!credentials.remember && typeof document !== 'undefined') {
+        // Overwrite with session cookies (no maxAge/expires)
+        const secureFlag = window.location.protocol === 'https:' ? '; Secure' : ''
+        document.cookie = `auth_token=${response.access_token}; path=/; SameSite=Lax${secureFlag}`
+        document.cookie = `refresh_token=${response.refresh_token}; path=/; SameSite=Lax${secureFlag}`
+      }
 
       const role =
         typeof response.user?.role === 'string'

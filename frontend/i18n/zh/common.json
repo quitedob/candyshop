@@ -79,7 +79,8 @@
       "product_activation_no_stock": "库存为零的产品无法上架，请先补货。",
       "product_moq_min_1": "最小起订量必须大于等于 1。",
       "shipping_street_required": "收货街道地址为必填项。",
-      "shipping_city_required": "收货城市为必填项。"
+      "shipping_city_required": "收货城市为必填项。",
+      "target_country_required": "目标国家为必填项。"
     }
   },
   "validation": {
