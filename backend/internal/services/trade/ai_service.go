@@ -12,10 +12,12 @@ import (
 
 	"candypro/api/internal/config"
 	"candypro/api/internal/pkg/eino/prompts/agent"
+	"candypro/api/internal/pkg/eino/retry"
 	"candypro/api/internal/pkg/eino/tool/rag"
 
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/adk"
+	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
@@ -26,8 +28,8 @@ var ErrAIServiceDisabled = errors.New("ai service is not configured")
 // AIService provides AI capabilities using Eino framework.
 type AIService struct {
 	cfg                 config.AIConfig
-	chatModel           *openai.ChatModel
-	chatModelJSON       *openai.ChatModel
+	chatModel           model.ToolCallingChatModel
+	chatModelJSON       model.ToolCallingChatModel
 	agent               adk.Agent // full 13-tool TradeAgent if initialized
 	runner              *adk.Runner
 	complianceRetriever *rag.ComplianceRetriever
@@ -41,39 +43,49 @@ func NewAIService(cfg config.AIConfig) (*AIService, error) {
 
 	ctx := context.Background()
 
-	chatModel, err := openai.NewChatModel(ctx, &openai.ChatModelConfig{
-		Model:  cfg.OpenAIModel,
-		APIKey: cfg.OpenAIAPIKey,
+	rawModel, err := openai.NewChatModel(ctx, &openai.ChatModelConfig{
+		Model:   cfg.OpenAIModel,
+		APIKey:  cfg.OpenAIAPIKey,
+		BaseURL: cfg.OpenAIBaseURL,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize chat model: %w", err)
 	}
+	chatModel := retry.New(rawModel, cfg.RetryMaxAttempts, cfg.RetryIntervalSec)
 
 	jsonResponseFormat := openai.ChatCompletionResponseFormat{
 		Type: openai.ChatCompletionResponseFormatTypeJSONObject,
 	}
-	chatModelJSON, err := openai.NewChatModel(ctx, &openai.ChatModelConfig{
+	rawJSONModel, err := openai.NewChatModel(ctx, &openai.ChatModelConfig{
 		Model:          cfg.OpenAIModel,
 		APIKey:         cfg.OpenAIAPIKey,
+		BaseURL:        cfg.OpenAIBaseURL,
 		ResponseFormat: &jsonResponseFormat,
 	})
+	var chatModelJSON model.ToolCallingChatModel
 	if err != nil {
 		log.Printf("Warning: failed to initialize JSON chat model, falling back: %v", err)
 		chatModelJSON = chatModel
+	} else {
+		chatModelJSON = retry.New(rawJSONModel, cfg.RetryMaxAttempts, cfg.RetryIntervalSec)
 	}
 
+	// RAG compliance lookup is temporarily disabled (Phase 5).
+	// Keep rag package + corpus/ intact; uncomment below to re-enable.
+	/*
 	complianceTool, retriever, toolErr := buildComplianceTool()
 	if toolErr != nil {
 		log.Printf("Warning: compliance_lookup tool disabled: %v", toolErr)
 	}
+	*/
 
 	return &AIService{
-		cfg:                 cfg,
-		chatModel:           chatModel,
-		chatModelJSON:       chatModelJSON,
-		complianceRetriever: retriever,
+		cfg:           cfg,
+		chatModel:     chatModel,
+		chatModelJSON: chatModelJSON,
+		// complianceRetriever: retriever, // RAG — Phase 5
 		// legacy runner for when no agent is attached
-		runner: buildLegacyRunner(ctx, chatModel, complianceTool),
+		runner: buildLegacyRunner(ctx, chatModel, nil),
 	}, nil
 }
 
@@ -93,7 +105,7 @@ func (s *AIService) AttachAgent(agent adk.Agent) {
 	s.agent = agent
 }
 
-func buildLegacyRunner(ctx context.Context, chatModel *openai.ChatModel, complianceTool tool.BaseTool) *adk.Runner {
+func buildLegacyRunner(ctx context.Context, chatModel model.ToolCallingChatModel, complianceTool tool.BaseTool) *adk.Runner {
 	agentTools := make([]tool.BaseTool, 0, 1)
 	if complianceTool != nil {
 		agentTools = append(agentTools, complianceTool)
@@ -116,6 +128,7 @@ func buildLegacyRunner(ctx context.Context, chatModel *openai.ChatModel, complia
 
 	agent, err := adk.NewChatModelAgent(ctx, agentConfig)
 	if err != nil {
+		log.Printf("buildLegacyRunner: NewChatModelAgent failed: %v", err)
 		return nil
 	}
 
@@ -133,6 +146,7 @@ func buildAssistantInstruction(hasComplianceTool bool) string {
 	return instruction
 }
 
+// Deprecated: use rag.NewFromCorpus() instead.
 func buildComplianceTool() (tool.BaseTool, *rag.ComplianceRetriever, error) {
 	corpusDir, err := resolveComplianceCorpusDir()
 	if err != nil {

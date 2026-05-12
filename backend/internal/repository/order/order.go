@@ -421,7 +421,7 @@ func (r *OrderRepository) RevenueByMonth(ctx context.Context, months int) ([]map
 	if err := r.db.WithContext(ctx).
 		Model(&modelsOrder.Order{}).
 		Select("TO_CHAR(created_at, 'YYYY-MM') AS month, COALESCE(SUM(total_amount), 0) AS revenue, COUNT(*) AS order_count").
-		Where("created_at >= NOW() - INTERVAL '? months' AND status != 'cancelled'", months).
+		Where("created_at >= NOW() - (? * INTERVAL '1 month') AND status != 'cancelled'", months).
 		Group("month").
 		Order("month").
 		Scan(&rows).Error; err != nil {
@@ -449,7 +449,7 @@ func (r *OrderRepository) OrderCountByMonth(ctx context.Context, months int) ([]
 	if err := r.db.WithContext(ctx).
 		Model(&modelsOrder.Order{}).
 		Select("TO_CHAR(created_at, 'YYYY-MM') AS month, COUNT(*) AS count").
-		Where("created_at >= NOW() - INTERVAL '? months' AND status != 'cancelled'", months).
+		Where("created_at >= NOW() - (? * INTERVAL '1 month') AND status != 'cancelled'", months).
 		Group("month").
 		Order("month").
 		Scan(&rows).Error; err != nil {
@@ -535,7 +535,7 @@ func (r *OrderRepository) RevenueByDay(ctx context.Context, days int) ([]map[str
 	if err := r.db.WithContext(ctx).
 		Model(&modelsOrder.Order{}).
 		Select("DATE(created_at) AS date, COALESCE(SUM(total_amount), 0) AS revenue").
-		Where("created_at >= NOW() - INTERVAL '? days' AND status != 'cancelled'", days).
+		Where("created_at >= NOW() - (? * INTERVAL '1 day') AND status != 'cancelled'", days).
 		Group("date").
 		Order("date").
 		Scan(&rows).Error; err != nil {

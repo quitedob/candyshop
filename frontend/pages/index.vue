@@ -305,6 +305,13 @@ const config = useRuntimeConfig()
 const { isAuthenticated, isAdmin, isPending } = useAuth()
 const { getCategories, getFeaturedProducts } = useApi()
 
+// SEO — must be called before await to keep Vue setup context
+useSeo({
+  title: t('seo.home_title'),
+  description: t('seo.home_description'),
+  ogType: 'website',
+})
+
 const orderingCtaPath = computed(() => {
   if (isAuthenticated.value) {
     return localePath('/contact')
@@ -414,12 +421,6 @@ const toggleFaq = (index: number) => {
   openFaq.value = openFaq.value === index ? -1 : index
 }
 
-// SEO
-useSeo({
-  title: t('seo.home_title'),
-  description: t('seo.home_description'),
-  ogType: 'website',
-})
 </script>
 
 <style scoped>

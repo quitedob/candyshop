@@ -82,7 +82,7 @@
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-medium text-gray-900">{{ t('admin.analytics.inquiry_conversion') }}</h2>
             <div class="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
-              <Icon name="heroicons:inbox-in" class="h-5 w-5 text-amber-600" />
+              <Icon name="lucide:inbox" class="h-5 w-5 text-amber-600" />
             </div>
           </div>
           <div class="h-72 flex items-center justify-center">

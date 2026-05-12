@@ -37,7 +37,7 @@ const decodeJwtPayload = (token: string): JwtPayload | null => {
   }
 }
 
-const lazyT = () => {
+const lazyT = (): ((key: string) => string) => {
   try { return useI18n().t } catch { return (key: string) => key }
 }
 
@@ -273,7 +273,7 @@ export const useAuth = () => {
         method: 'POST'
       })
     } catch (error: any) {
-      throw new Error(error.data?.message || t('auth.errors.resend_failed'))
+      throw new Error(error.data?.message || lazyT()('auth.errors.resend_failed'))
     }
   }
 
@@ -285,7 +285,7 @@ export const useAuth = () => {
         body: { token }
       })
     } catch (error: any) {
-      throw new Error(error.data?.message || t('auth.errors.verify_failed'))
+      throw new Error(error.data?.message || lazyT()('auth.errors.verify_failed'))
     }
   }
 

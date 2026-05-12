@@ -58,7 +58,6 @@ export default defineNuxtConfig({
 
   // i18n Configuration
   i18n: {
-    restructureDir: false,
     locales: [
       {
         code: 'en',
@@ -107,6 +106,7 @@ export default defineNuxtConfig({
     ],
     lazy: false,
     langDir: 'i18n',
+    restructureDir: false,
     defaultLocale: 'zh',
     strategy: 'prefix_except_default',
     seo: false,
@@ -127,7 +127,8 @@ export default defineNuxtConfig({
     public: {
       apiBase: process.env.API_BASE_URL || '/api/v1',
       siteUrl: process.env.SITE_URL || 'https://candypro-oem.com',
-      whatsappNumber: process.env.WHATSAPP_NUMBER || '1234567890'
+      whatsappNumber: process.env.WHATSAPP_NUMBER || '1234567890',
+      googleMapsApiKey: process.env.NUXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
     },
     // Server-only: used during SSR so $fetch bypasses Nitro localFetch (which ignores devProxy)
     internalApiBase: 'http://localhost:8080/api/v1'
@@ -190,26 +191,7 @@ export default defineNuxtConfig({
     },
   },
 
-  // Hybrid rendering strategy
-  routeRules: {
-    // SSG — public content, max crawl budget
-    '/': { prerender: true },
-    '/about': { prerender: true },
-    '/faq': { prerender: true },
-    '/contact': { prerender: true },
-    '/factory-quality': { prerender: true },
-    '/oem-solutions': { prerender: true },
-    '/privacy': { prerender: true },
-    '/terms': { prerender: true },
-    '/blog/**': { prerender: true },
-    '/products/**': { prerender: true },
-    // CSR only — authenticated, zero SEO value
-    '/admin/**': { ssr: false },
-    '/customer/**': { ssr: false },
-    '/auth/**': { ssr: false },
-    // SSR + ISR — dynamic content refreshed hourly
-    '/cases-clients/**': { swr: 3600 },
-  },
+
 
   // Disable appManifest to fix Vite pre-transform error with #app-manifest import
   experimental: {

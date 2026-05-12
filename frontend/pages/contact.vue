@@ -101,11 +101,11 @@
             <!-- Map -->
             <div class="map-card">
               <iframe
-                src="https://www.google.com/maps/embed/v1/place?key=&q=No.88+Shipin+Road+Jinshan+District+Shanghai+China&zoom=15"
+                :src="mapSrc"
                 width="100%"
                 height="300"
                 style="border:0;"
-                allowfullscreen=""
+                allowfullscreen
                 loading="lazy"
                 referrerpolicy="no-referrer-when-downgrade"
                 :title="t('contact.factory_location')"
@@ -295,6 +295,15 @@ const toggleFaq = (index: number) => {
   openFaq.value = openFaq.value === index ? -1 : index
 }
 
+// Map URL (Google Maps with key if available, otherwise OpenStreetMap)
+const mapSrc = computed(() => {
+  const key = config.public.googleMapsApiKey
+  if (key) {
+    return `https://www.google.com/maps/embed/v1/place?key=${key}&q=No.88+Shipin+Road+Jinshan+District+Shanghai+China&zoom=15`
+  }
+  return 'https://www.openstreetmap.org/export/embed.html?bbox=121.22%2C30.68%2C121.46%2C30.92&layer=mapnik&marker=30.88%2C121.34'
+})
+
 // WhatsApp URL
 const whatsappUrl = computed(() => {
   const number = config.public.whatsappNumber
@@ -305,7 +314,7 @@ const whatsappUrl = computed(() => {
 // SEO
 useSeo({
   title: `${t('nav.contact')} | ${t('seo.default_title')}`,
-  description: 'Get in touch with us for inquiries, quotes, or to schedule a factory visit.',
+  description: t('seo.contact_description'),
   ogType: 'website'
 })
 </script>

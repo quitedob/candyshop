@@ -56,7 +56,7 @@
           <div class="relative bg-white pt-5 px-4 pb-12 sm:pt-6 sm:px-6 shadow rounded-lg overflow-hidden">
             <dt>
               <div class="absolute bg-orange-500 rounded-md p-3">
-                <Icon name="heroicons:inbox-in" class="h-6 w-6 text-white" />
+                <Icon name="lucide:inbox" class="h-6 w-6 text-white" />
               </div>
               <p class="ml-16 text-sm font-medium text-gray-500 truncate">{{ t('admin.dashboard.total_inquiries') }}</p>
             </dt>
@@ -165,7 +165,7 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       <span class="flex items-center">
                         <Icon v-if="activity.type === 'order'" name="heroicons:shopping-cart" class="mr-2 h-4 w-4 text-gray-400" />
-                        <Icon v-else-if="activity.type === 'inquiry'" name="heroicons:inbox-in" class="mr-2 h-4 w-4 text-gray-400" />
+                        <Icon v-else-if="activity.type === 'inquiry'" name="lucide:inbox" class="mr-2 h-4 w-4 text-gray-400" />
                         <Icon v-else-if="activity.type === 'user'" name="heroicons:user" class="mr-2 h-4 w-4 text-gray-400" />
                         {{ activity.message }}
                       </span>

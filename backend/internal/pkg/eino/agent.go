@@ -3,7 +3,6 @@ package eino
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -74,12 +73,16 @@ func NewTradeAgent(ctx context.Context, chatModel model.ToolCallingChatModel, pe
 		quoteReviewTool,
 	}
 
-	// RAG compliance lookup tool (optional — needs corpus directory)
+	// RAG compliance lookup tool is temporarily disabled (Phase 5).
+	// Keep buildRagComplianceTool() + rag package + corpus/ intact for Phase 5.
+	// Uncomment the block below to re-enable:
+	/*
 	if ragTool, ragErr := buildRagComplianceTool(); ragErr == nil {
 		tools = append(tools, ragTool)
 	} else {
 		log.Printf("Warning: RAG compliance lookup tool not available: %v", ragErr)
 	}
+	*/
 
 	a, err := adk.NewChatModelAgent(ctx, &adk.ChatModelAgentConfig{
 		Name:        "TradeAssistant",
@@ -102,6 +105,7 @@ func NewTradeAgent(ctx context.Context, chatModel model.ToolCallingChatModel, pe
 	return a, nil
 }
 
+// Deprecated: use rag.NewFromCorpus() instead.
 func buildRagComplianceTool() (tool.BaseTool, error) {
 	corpusDir, err := resolveComplianceCorpusDir()
 	if err != nil {

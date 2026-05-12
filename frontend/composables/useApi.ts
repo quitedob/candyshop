@@ -739,6 +739,7 @@ export const useApi = () => {
     exportTranslations,
 
     // Generic HTTP helpers
+    fetchApi,
     get: GET,
     post: POST,
     put: PUT,

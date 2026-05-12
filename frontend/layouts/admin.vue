@@ -193,7 +193,7 @@ const userInitials = computed(() => {
 // Main Navigation
 const mainNav = [
   { key: 'admin.nav.dashboard', href: '/admin', icon: 'heroicons:home' },
-  { key: 'admin.nav.inquiries', href: '/admin/inquiries', icon: 'heroicons:inbox-in' },
+  { key: 'admin.nav.inquiries', href: '/admin/inquiries', icon: 'lucide:inbox' },
   { key: 'admin.nav.orders', href: '/admin/orders', icon: 'heroicons:shopping-cart' },
 ]
 

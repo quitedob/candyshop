@@ -422,9 +422,62 @@ func seedDemoTradeDocuments(db *gorm.DB, tradeID uint, orderConfirmed modelsOrde
 	}
 	for _, doc := range docs {
 		var existing modelsTrade.TradeDocument
-		if err := db.Where("transaction_id = ? AND type = ?", doc.TransactionID, doc.Type).First(&existing).Error; errors.Is(err, gorm.ErrRecordNotFound) {
-			db.Create(&doc)
+		err := db.Where("transaction_id = ? AND type = ?", doc.TransactionID, doc.Type).First(&existing).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			if createErr := db.Create(&doc).Error; createErr != nil {
+				log.Printf("Seed: failed to create TradeDocument %s: %v", doc.Type, createErr)
+			}
+		} else if err != nil {
+			log.Printf("Seed: error querying TradeDocument %s: %v", doc.Type, err)
 		}
+	}
+
+	// Seed rich document records so their detail endpoints return data
+	signDate := now.AddDate(0, 0, -2)
+	validUntil := now.AddDate(0, 0, 30)
+	var existingSC modelsTrade.SalesContract
+	errSC := db.Where("transaction_id = ?", tradeID).First(&existingSC).Error
+	if errors.Is(errSC, gorm.ErrRecordNotFound) {
+		sc := &modelsTrade.SalesContract{
+			TransactionID:  tradeID,
+			ContractNo:     "SC-DEMO-2026-001",
+			BuyerName:      "Demo Global Sourcing Ltd",
+			SellerName:     "CandyPro Manufacturing",
+			Incoterms:      "CIF New York",
+			TermsOfPayment: "30% T/T advance, 70% before shipment",
+			TotalAmount:    totalAmt,
+			Currency:       currency,
+			SignDate:       &signDate,
+			ValidUntil:     &validUntil,
+			CreatedAt:      now.AddDate(0, 0, -2),
+			UpdatedAt:      now,
+		}
+		if createErr := db.Create(sc).Error; createErr != nil {
+			log.Printf("Seed: failed to create SalesContract: %v", createErr)
+		}
+	} else if errSC != nil {
+		log.Printf("Seed: error querying SalesContract: %v", errSC)
+	}
+
+	var existingPL modelsTrade.PackingList
+	errPL := db.Where("transaction_id = ?", tradeID).First(&existingPL).Error
+	if errors.Is(errPL, gorm.ErrRecordNotFound) {
+		pl := &modelsTrade.PackingList{
+			TransactionID:    tradeID,
+			PLNumber:         "PL-DEMO-2026-001",
+			TotalCartons:     400,
+			TotalGrossWeight: 3200,
+			TotalNetWeight:   3000,
+			TotalVolume:      12.5,
+			MarksAndNumbers:  "CANDYPRO / NEW YORK / C/NO. 1-400",
+			CreatedAt:        now.AddDate(0, 0, -1),
+			UpdatedAt:        now,
+		}
+		if createErr := db.Create(pl).Error; createErr != nil {
+			log.Printf("Seed: failed to create PackingList: %v", createErr)
+		}
+	} else if errPL != nil {
+		log.Printf("Seed: error querying PackingList: %v", errPL)
 	}
 }
 

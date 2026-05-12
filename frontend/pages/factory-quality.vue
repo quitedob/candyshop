@@ -413,7 +413,7 @@ const traceabilitySteps = computed(() => [
   },
   {
     id: 4,
-    icon: 'lucide:shipping-container',
+    icon: 'lucide:truck',
     title: t('factory.trace.ship_title'),
     description: t('factory.trace.ship_desc')
   }

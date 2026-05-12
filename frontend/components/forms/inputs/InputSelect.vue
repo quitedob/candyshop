@@ -11,6 +11,7 @@
         :value="modelValue"
         :disabled="disabled"
         :required="required"
+        :autocomplete="autocomplete"
         class="input-select__field"
         @change="handleChange"
         @blur="handleBlur"
@@ -62,6 +63,7 @@ interface Props {
   error?: string
   disabled?: boolean
   required?: boolean
+  autocomplete?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {

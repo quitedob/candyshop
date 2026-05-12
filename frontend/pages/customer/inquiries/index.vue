@@ -22,7 +22,7 @@
     </div>
 
     <div v-else-if="inquiries.length === 0" class="text-center py-10">
-      <Icon name="heroicons:inbox-in" class="mx-auto h-12 w-12 text-gray-400" />
+      <Icon name="lucide:inbox" class="mx-auto h-12 w-12 text-gray-400" />
       <h3 class="mt-2 text-sm font-medium text-gray-900">{{ t('customer.inquiries.no_inquiries') }}</h3>
       <p class="mt-1 text-sm text-gray-500">{{ t('customer.inquiries.no_inquiries_desc') }}</p>
       <div class="mt-6">

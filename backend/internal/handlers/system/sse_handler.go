@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"candypro/api/internal/pkg/eino"
+	"candypro/api/internal/pkg/eino/retry"
 
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/adk"
@@ -30,16 +31,22 @@ type SSEEvent struct {
 
 // InitAgent initializes the trade agent with the Graph Tool architecture.
 // The TradeService is wired as the document persister so generated docs are saved to DB.
+//
+// NOTE: This function directly instantiates the ChatModel, which is a bootstrap concern.
+// In a future refactor, this should be moved to a service factory (e.g. services.NewTradeAgent)
+// to keep the HTTP layer free of model initialization logic.
 func (h *Handler) InitAgent() error {
 	ctx := context.Background()
 
-	chatModel, modelErr := openai.NewChatModel(ctx, &openai.ChatModelConfig{
-		Model:  h.cfg.AI.OpenAIModel,
-		APIKey: h.cfg.AI.OpenAIAPIKey,
+	rawModel, modelErr := openai.NewChatModel(ctx, &openai.ChatModelConfig{
+		Model:   h.cfg.AI.OpenAIModel,
+		APIKey:  h.cfg.AI.OpenAIAPIKey,
+		BaseURL: h.cfg.AI.OpenAIBaseURL,
 	})
 	if modelErr != nil {
 		return fmt.Errorf("init chat model: %w", modelErr)
 	}
+	chatModel := retry.New(rawModel, h.cfg.AI.RetryMaxAttempts, h.cfg.AI.RetryIntervalSec)
 
 	if h.services != nil && h.services.Trade != nil {
 		a, err := eino.NewTradeAgent(ctx, chatModel, h.services.Trade)
@@ -73,8 +80,9 @@ func (h *Handler) HandleTradeChat(c *gin.Context) {
 	}
 	// N-06: Limit query length to prevent cost abuse
 	const maxQueryLen = 4000
-	if len(query) > maxQueryLen {
-		query = query[:maxQueryLen]
+	// Use rune slicing to avoid breaking multi-byte UTF-8 characters
+	if len([]rune(query)) > maxQueryLen {
+		query = string([]rune(query)[:maxQueryLen])
 	}
 
 	// Enrich query with trade context if tradeId is provided

@@ -37,6 +37,7 @@
           v-model="form.state.companyName"
           :label="$t('form.company_name')"
           :error="form.errors.companyName?.[0]"
+          autocomplete="organization"
           required
           @blur="form.validateAndUpdate('companyName')"
         />
@@ -46,6 +47,7 @@
           v-model="form.state.contactPerson"
           :label="$t('form.contact_person')"
           :error="form.errors.contactPerson?.[0]"
+          autocomplete="name"
           required
           @blur="form.validateAndUpdate('contactPerson')"
         />
@@ -56,6 +58,7 @@
           type="email"
           :label="$t('form.email')"
           :error="form.errors.email?.[0]"
+          autocomplete="email"
           required
           @blur="form.validateAndUpdate('email')"
         />
@@ -63,8 +66,10 @@
         <InputText
           id="whatsapp"
           v-model="form.state.whatsapp"
+          type="tel"
           :label="$t('form.whatsapp')"
           :error="form.errors.whatsapp?.[0]"
+          autocomplete="tel"
           placeholder="+86 123 4567 890"
         >
           <template #hint>
@@ -83,6 +88,7 @@
           :label="$t('form.target_country')"
           :options="countryOptions"
           :error="form.errors.targetCountry?.[0]"
+          autocomplete="country-name"
         />
 
         <InputSelect
@@ -100,7 +106,7 @@
           :placeholder="$t('product.inquire_now')"
         >
           <template #hint>
-            Separate multiple products with commas
+            {{ $t("form.interested_products_hint") }}
           </template>
         </InputText>
 

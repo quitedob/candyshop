@@ -1,6 +1,6 @@
 <template>
   <div class="input-file" :class="{ 'input-file--error': error, 'input-file--disabled': disabled }">
-    <label v-if="label" class="input-file__label">
+    <label v-if="label" :for="id" class="input-file__label">
       {{ label }}
       <span v-if="required" class="input-file__required">*</span>
     </label>

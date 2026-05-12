@@ -21,6 +21,7 @@ interface InquiryFormState {
   expectedDelivery: string
   message: string
   files: File[]
+  userId?: string
 }
 
 interface ValidationRule {
@@ -291,7 +292,7 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
         expectedDelivery: state.expectedDelivery || undefined,
         message: state.message || undefined,
         files: state.files,
-        userId: (state as any).userId || undefined
+        userId: state.userId || undefined
       })
 
       isSubmitted.value = true
