@@ -1,4 +1,4 @@
-import { localeCodes } from '#build/i18n.options.mjs'
+import { localeCodes } from '#build/i18n-options.mjs'
 
 /**
  * 去掉路径首段的 i18n 语言码（与 @nuxtjs/i18n 的 prefix_except_default 一致），

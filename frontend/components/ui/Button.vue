@@ -10,12 +10,12 @@
     @click="handleClick"
   >
     <!-- Loading spinner -->
-    <span v-if="loading" class="btn__spinner">
+    <span v-if="loading" class="btn__spinner" aria-hidden="true">
       <Icon name="lucide:loader-2" size="16" />
     </span>
 
     <!-- Icon before -->
-    <Icon v-if="icon && iconPosition === 'start'" :name="icon" :size="iconSize" />
+    <Icon v-if="icon && iconPosition === 'start'" :name="icon" :size="iconSize" aria-hidden="true" />
 
     <!-- Slot content -->
     <span v-if="$slots.default" :class="{'btn__text': true, 'btn__text--hidden': loading}">
@@ -26,7 +26,7 @@
     <span v-if="badge" class="btn__badge">{{ badge }}</span>
 
     <!-- Icon after -->
-    <Icon v-if="icon && iconPosition === 'end'" :name="icon" :size="iconSize" />
+    <Icon v-if="icon && iconPosition === 'end'" :name="icon" :size="iconSize" aria-hidden="true" />
   </component>
 </template>
 
@@ -217,8 +217,8 @@ const buttonClasses = computed(() => {
 }
 
 .btn--icon-only.btn--md {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
 }
 
 .btn--icon-only.btn--lg {

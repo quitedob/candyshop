@@ -7,7 +7,7 @@
       <div class="toast-content">
         <p class="toast-message">{{ message }}</p>
       </div>
-      <button type="button" @click="close" class="toast-close" :aria-label="$t('common.close')">
+      <button type="button" @click="close" class="toast-close" :aria-label="$t('close')">
         <Icon name="mdi:close" aria-hidden="true" />
       </button>
     </div>

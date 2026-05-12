@@ -147,7 +147,7 @@
     <!-- Create/Edit Modal -->
     <div v-if="showModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closeModal" :aria-label="t('common.close')"></button>
+        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closeModal" :aria-label="t('close')"></button>
         <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl sm:my-8 sm:max-w-2xl sm:align-middle">
           <div class="bg-gradient-to-r from-orange-500 to-amber-600 px-6 py-4">
             <h3 class="text-lg font-semibold text-white">{{ editingId ? t('admin.invoices.edit_invoice') : t('admin.invoices.create_invoice') }}</h3>
@@ -177,7 +177,7 @@
               </div>
               <div>
                 <label for="invoice-currency" class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.currency') }}</label>
-                <input id="invoice-currency" v-model="form.currency" name="currency" type="text" autocomplete="off" :placeholder="t('common.defaults.currency')" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 uppercase" />
+                <input id="invoice-currency" v-model="form.currency" name="currency" type="text" autocomplete="off" :placeholder="t('defaults.currency')" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 uppercase" />
               </div>
               <div>
                 <label for="invoice-totalAmount" class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.total_amount') }}</label>
@@ -228,7 +228,7 @@
     <!-- Invoice Preview Modal -->
     <div v-if="showPreviewModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="showPreviewModal = false" :aria-label="t('common.close')"></button>
+        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="showPreviewModal = false" :aria-label="t('close')"></button>
         <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl sm:my-8 sm:max-w-3xl sm:align-middle">
           <div class="bg-gradient-to-r from-gray-700 to-gray-900 px-6 py-4 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-white">{{ t('admin.invoices.invoice_preview') }}</h3>

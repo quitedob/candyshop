@@ -33,7 +33,7 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.currency') }}</label>
-              <input v-model="aiForm.currency" type="text" :placeholder="t('common.defaults.currency')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm uppercase focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
+              <input v-model="aiForm.currency" type="text" :placeholder="t('defaults.currency')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm uppercase focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.estimated_tax') }}</label>
@@ -225,7 +225,7 @@
         <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
           <div>
             <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.currency') }}</label>
-            <input v-model="manualForm.currency" type="text" :placeholder="t('common.defaults.currency')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm uppercase focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
+            <input v-model="manualForm.currency" type="text" :placeholder="t('defaults.currency')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm uppercase focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.tax_amount') }}</label>

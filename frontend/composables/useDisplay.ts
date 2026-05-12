@@ -17,9 +17,9 @@ export function useDisplay() {
     v != null && String(v).trim() !== '' ? String(v).trim() : 'FOB'
 
   const cell = (value?: string | number | null | undefined) => {
-    if (value === null || value === undefined) return t('common.display.em_dash')
+    if (value === null || value === undefined) return t('display.em_dash')
     const s = String(value).trim()
-    return s === '' ? t('common.display.em_dash') : s
+    return s === '' ? t('display.em_dash') : s
   }
 
   /**
@@ -29,9 +29,9 @@ export function useDisplay() {
   const enumLabel = (group: string, raw: string | null | undefined, defaultKey = 'unknown') => {
     const v0 = raw != null && String(raw).trim() !== '' ? String(raw) : defaultKey
     const v = v0.toLowerCase().replace(/[^a-z0-9_]/g, '_')
-    const key = `common.enum.${group}.${v}`
+    const key = `enum.${group}.${v}`
     if (te(key)) return t(key)
-    const unk = `common.enum.${group}.unknown`
+    const unk = `enum.${group}.unknown`
     return te(unk) ? t(unk) : String(raw ?? '')
   }
 

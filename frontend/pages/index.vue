@@ -428,7 +428,7 @@ useSeo({
   display: inline-block;
   padding: var(--spacing-xs) var(--spacing-md);
   background: rgba(var(--color-highlight-rgb), 0.08);
-  color: var(--color-highlight);
+  color: var(--color-highlight-hover);
   font-size: var(--text-sm);
   font-weight: 600;
   border-radius: var(--radius-full);

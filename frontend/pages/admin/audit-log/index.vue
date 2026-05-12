@@ -163,7 +163,7 @@ const actionBadgeClass = (action: string) => {
 }
 
 const formatAction = (action: string) => {
-  if (!action) return t('common.enum.order_status.unknown')
+  if (!action) return t('enum.order_status.unknown')
   return action.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 }
 

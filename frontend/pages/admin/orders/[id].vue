@@ -394,7 +394,7 @@ const createTrade = async () => {
   creatingTrade.value = true; tradeMessage.value = ''; tradeError.value = false
   try {
     const res = await api.post<any>(`/admin/orders/${route.params.id}/create-trade`, {
-      terms: t('common.defaults.incoterms'),
+      terms: t('defaults.incoterms'),
       currency: cur(order.value?.currency)
     })
     createdTradeId.value = res.trade?.id || null

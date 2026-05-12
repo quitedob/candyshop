@@ -57,7 +57,7 @@
           </div>
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-light">{{ t('customer.orders.total_amount') }}</dt>
-            <dd class="mt-1 text-sm font-bold text-highlight">{{ cur(order.currency) }} {{ order.totalAmount != null ? formatNumber(order.totalAmount) : t('common.display.zero') }}</dd>
+            <dd class="mt-1 text-sm font-bold text-highlight">{{ cur(order.currency) }} {{ order.totalAmount != null ? formatNumber(order.totalAmount) : t('display.zero') }}</dd>
           </div>
           <div class="sm:col-span-1 border-t border-border pt-4">
             <dt class="text-sm font-medium text-light">{{ t('customer.orders.shipping_address') }}</dt>

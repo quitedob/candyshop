@@ -98,19 +98,19 @@
 
             <!-- Social Links -->
             <div class="footer__social">
-              <a href="https://facebook.com/candypro" target="_blank" rel="noopener noreferrer" :aria-label="t('common.a11y.facebook')" class="footer__social-link footer__social-link--facebook">
+              <a href="https://facebook.com/candypro" target="_blank" rel="noopener noreferrer" :aria-label="t('a11y.facebook')" class="footer__social-link footer__social-link--facebook">
                 <Icon name="lucide:facebook" size="18" />
               </a>
-              <a href="https://linkedin.com/company/candypro" target="_blank" rel="noopener noreferrer" :aria-label="t('common.a11y.linkedin')" class="footer__social-link footer__social-link--linkedin">
+              <a href="https://linkedin.com/company/candypro" target="_blank" rel="noopener noreferrer" :aria-label="t('a11y.linkedin')" class="footer__social-link footer__social-link--linkedin">
                 <Icon name="lucide:linkedin" size="18" />
               </a>
-              <a href="https://instagram.com/candypro" target="_blank" rel="noopener noreferrer" :aria-label="t('common.a11y.instagram')" class="footer__social-link footer__social-link--instagram">
+              <a href="https://instagram.com/candypro" target="_blank" rel="noopener noreferrer" :aria-label="t('a11y.instagram')" class="footer__social-link footer__social-link--instagram">
                 <Icon name="lucide:instagram" size="18" />
               </a>
-              <a href="https://youtube.com/@candypro" target="_blank" rel="noopener noreferrer" :aria-label="t('common.a11y.youtube')" class="footer__social-link footer__social-link--youtube">
+              <a href="https://youtube.com/@candypro" target="_blank" rel="noopener noreferrer" :aria-label="t('a11y.youtube')" class="footer__social-link footer__social-link--youtube">
                 <Icon name="lucide:youtube" size="18" />
               </a>
-              <a href="https://twitter.com/candypro" target="_blank" rel="noopener noreferrer" :aria-label="t('common.a11y.twitter')" class="footer__social-link footer__social-link--twitter">
+              <a href="https://twitter.com/candypro" target="_blank" rel="noopener noreferrer" :aria-label="t('a11y.twitter')" class="footer__social-link footer__social-link--twitter">
                 <Icon name="lucide:twitter" size="18" />
               </a>
             </div>

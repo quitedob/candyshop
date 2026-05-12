@@ -286,12 +286,12 @@ const tabs = [
 
 // Spec rows
 const specRows = computed(() => [
-  { label: t('product.flavors'), value: product.value.flavors?.join(', ') || t('common.display.em_dash'), type: 'text' },
-  { label: t('product.shapes'), value: product.value.shapes?.join(', ') || t('common.display.em_dash'), type: 'text' },
-  { label: t('product.ingredients'), value: product.value.ingredients || t('common.display.em_dash'), type: 'text' },
-  { label: t('product.allergens'), value: product.value.allergens || t('common.display.em_dash'), type: 'text' },
-  { label: t('product.shelf_life'), value: product.value.shelfLife || t('common.display.em_dash'), type: 'text' },
-  { label: t('product.storage'), value: product.value.storage || t('common.display.em_dash'), type: 'text' }
+  { label: t('product.flavors'), value: product.value.flavors?.join(', ') || t('display.em_dash'), type: 'text' },
+  { label: t('product.shapes'), value: product.value.shapes?.join(', ') || t('display.em_dash'), type: 'text' },
+  { label: t('product.ingredients'), value: product.value.ingredients || t('display.em_dash'), type: 'text' },
+  { label: t('product.allergens'), value: product.value.allergens || t('display.em_dash'), type: 'text' },
+  { label: t('product.shelf_life'), value: product.value.shelfLife || t('display.em_dash'), type: 'text' },
+  { label: t('product.storage'), value: product.value.storage || t('display.em_dash'), type: 'text' }
 ])
 
 // Packaging options

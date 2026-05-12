@@ -107,7 +107,7 @@
 
     <div v-if="showModal" class="fixed inset-0 z-10 overflow-y-auto" role="dialog" aria-modal="true">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closeModal" :aria-label="t('common.close')"></button>
+        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closeModal" :aria-label="t('close')"></button>
         <span class="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
         <div class="inline-block w-full transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left align-bottom shadow-xl sm:my-8 sm:max-w-4xl sm:p-6 sm:align-middle">
           <h3 class="text-lg font-medium leading-6 text-gray-900">{{ editingId ? t('admin.orders.edit_order') : t('admin.orders.create_order') }}</h3>
@@ -195,7 +195,7 @@
                     <input :id="`order-item-spec-${idx}`" v-model="item.specifications" :name="`items[${idx}].specifications`" autocomplete="off" class="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 text-xs" />
                   </div>
                   <div class="col-span-1 flex justify-end">
-                    <button v-if="form.items.length > 1" type="button" @click="form.items.splice(idx, 1)" class="text-red-500 hover:text-red-700 text-xs" :aria-label="t('common.close')">✕</button>
+                    <button v-if="form.items.length > 1" type="button" @click="form.items.splice(idx, 1)" class="text-red-500 hover:text-red-700 text-xs" :aria-label="t('close')">✕</button>
                   </div>
                 </div>
               </div>

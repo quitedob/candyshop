@@ -125,6 +125,7 @@
 
         <InputRadioGroup
           id="oemNeeded"
+          name="oem_needed"
           v-model="form.state.oemNeeded"
           :label="$t('form.oem_needed')"
           :options="[

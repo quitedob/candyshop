@@ -52,7 +52,7 @@
         <tbody class="bg-white divide-y divide-gray-200">
           <tr v-for="trade in trades" :key="trade.id" class="hover:bg-gray-50">
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(trade.createdAt || trade.created_at) }}</td>
-            <td class="px-6 py-4 text-sm text-gray-900">{{ trade.incoterms || trade.terms || t('common.display.tbd') }}</td>
+            <td class="px-6 py-4 text-sm text-gray-900">{{ trade.incoterms || trade.terms || t('display.tbd') }}</td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span :class="[
                 trade.status === 'DRAFT' || trade.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
@@ -81,7 +81,7 @@
             </p>
           </div>
           <div>
-            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" :aria-label="t('common.pagination.nav_label')">
+            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" :aria-label="t('pagination.nav_label')">
               <button @click="prevPage" :disabled="page <= 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
                 <Icon name="heroicons:chevron-left" class="h-5 w-5" />
               </button>

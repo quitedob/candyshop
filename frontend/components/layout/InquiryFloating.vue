@@ -27,7 +27,7 @@
     <button
       v-show="showScrollTop"
       class="inquiry-floating__top"
-      :aria-label="t('common.a11y.scroll_to_top')"
+      :aria-label="t('a11y.scroll_to_top')"
       @click="scrollToTop"
     >
       <Icon name="lucide:chevron-up" size="20" />
@@ -47,7 +47,7 @@
             <button
               ref="closeBtnRef"
               class="inquiry-modal__close"
-              :aria-label="t('common.a11y.close')"
+              :aria-label="t('a11y.close')"
               @click="closeInquiry"
             >
               <Icon name="lucide:x" size="24" />

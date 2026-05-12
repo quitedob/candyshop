@@ -36,7 +36,7 @@
           </div>
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-gray-500">{{ t('admin.user_detail.company') }}</dt>
-            <dd class="mt-1 text-sm text-gray-900">{{ user.company ? user.company : t('common.display.na') }}</dd>
+            <dd class="mt-1 text-sm text-gray-900">{{ user.company ? user.company : t('display.na') }}</dd>
           </div>
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-gray-500">{{ t('admin.user_detail.role') }}</dt>

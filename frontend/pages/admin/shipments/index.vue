@@ -136,7 +136,7 @@
     <!-- Create/Edit Modal -->
     <div v-if="showModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closeModal" :aria-label="t('common.close')"></button>
+        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closeModal" :aria-label="t('close')"></button>
         <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl sm:my-8 sm:max-w-2xl sm:align-middle">
           <div class="bg-gradient-to-r from-orange-500 to-amber-600 px-6 py-4">
             <h3 class="text-lg font-semibold text-white">{{ editingId ? t('admin.shipments.edit_shipment') : t('admin.shipments.create_shipment') }}</h3>
@@ -209,7 +209,7 @@
     <!-- Details Modal -->
     <div v-if="showDetailsModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="showDetailsModal = false" :aria-label="t('common.close')"></button>
+        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="showDetailsModal = false" :aria-label="t('close')"></button>
         <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl sm:my-8 sm:max-w-3xl sm:align-middle">
           <div class="bg-gradient-to-r from-gray-700 to-gray-900 px-6 py-4 flex items-center justify-between">
             <div>
@@ -378,7 +378,7 @@ const statusBadgeClass = (status: string) => {
   return 'bg-gray-100 text-gray-800'
 }
 
-const formatStatus = (status: string) => status ? enumLabel('shipment_status', status) : t('common.enum.order_status.unknown')
+const formatStatus = (status: string) => status ? enumLabel('shipment_status', status) : t('enum.order_status.unknown')
 const prevPage = () => { if (page.value > 1) { page.value -= 1; fetchShipments() } }
 const nextPage = () => { if (pagination.value && page.value < pagination.value.totalPages) { page.value += 1; fetchShipments() } }
 

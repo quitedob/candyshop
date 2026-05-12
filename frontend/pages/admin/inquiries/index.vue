@@ -73,7 +73,7 @@
 
     <div v-if="showModal" class="modal-overlay" role="dialog" aria-modal="true">
       <div class="modal-container">
-        <button type="button" class="modal-backdrop w-full border-0 cursor-pointer" @click="closeModal" :aria-label="t('common.close')"></button>
+        <button type="button" class="modal-backdrop w-full border-0 cursor-pointer" @click="closeModal" :aria-label="t('close')"></button>
         <div class="modal-content">
           <h3 class="modal-title">{{ editingId ? t('admin.inquiries.edit_inquiry') : t('admin.inquiries.create_inquiry') }}</h3>
 

@@ -202,7 +202,7 @@
                 </div>
               </li>
               <li>
-                <Icon name="lucide:flask" size="20" />
+                <Icon name="lucide:flask-conical" size="20" />
                 <div>
                   <strong>{{ t('factory.labs.chem_title') }}</strong>
                   <p>{{ t('factory.labs.chem_desc') }}</p>

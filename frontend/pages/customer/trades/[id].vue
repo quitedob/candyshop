@@ -18,7 +18,7 @@
             </div>
             <div class="mt-2 flex items-center text-sm text-gray-500">
               <Icon name="heroicons:truck" class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
-              {{ t('customer.trades.incoterms_info') }}: {{ trade?.incoterms || trade?.terms || t('common.display.tbd') }}
+              {{ t('customer.trades.incoterms_info') }}: {{ trade?.incoterms || trade?.terms || t('display.tbd') }}
             </div>
           </div>
         </div>
@@ -195,7 +195,7 @@ const plData = ref<any>(null)
 const cooData = ref<any>(null)
 const hcData = ref<any>(null)
 
-const dash = () => t('common.display.em_dash')
+const dash = () => t('display.em_dash')
 const richDocs = computed(() => {
   const list: any[] = []
   if (piData.value) list.push({ key: 'pi', label: t('customer.trades.doc_pi'), number: piData.value.piNumber, status: piData.value.status, data: piData.value })

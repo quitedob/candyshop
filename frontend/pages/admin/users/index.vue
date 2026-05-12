@@ -90,7 +90,7 @@
                 </p>
               </div>
               <div>
-                <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" :aria-label="t('common.pagination.nav_label')">
+                <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" :aria-label="t('pagination.nav_label')">
                   <button @click="prevPage" :disabled="page <= 1" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
                     <span class="sr-only">{{ t('common.previous') }}</span>
                     <Icon name="heroicons:chevron-left" class="h-5 w-5" />
@@ -109,7 +109,7 @@
 
     <div v-if="showCreateModal" class="fixed inset-0 z-10 overflow-y-auto" role="dialog" aria-modal="true">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closeCreateModal" :aria-label="t('common.close')"></button>
+        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closeCreateModal" :aria-label="t('close')"></button>
         <span class="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
         <div class="inline-block w-full transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left align-bottom shadow-xl sm:my-8 sm:max-w-2xl sm:p-6 sm:align-middle">
           <h3 class="text-lg font-medium leading-6 text-gray-900">{{ t('admin.users.create_user') }}</h3>

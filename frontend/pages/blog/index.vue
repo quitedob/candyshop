@@ -230,6 +230,8 @@ const pagedPosts = computed(() => {
 
 const totalPages = computed(() => postsResponse.value?.pagination?.totalPages || 0)
 
+const filteredPosts = computed(() => (postsResponse.value?.data || []) as any[])
+
 const visiblePages = computed(() => {
   const pages: number[] = []
   const showPages = 5

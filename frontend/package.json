@@ -15,7 +15,7 @@
     "@iconify-json/logos": "^1.2.10",
     "@iconify-json/lucide": "^1.2.97",
     "@nuxt/icon": "^1.10.3",
-    "@nuxtjs/i18n": "^9.0.0",
+    "@nuxtjs/i18n": "^10.3.0",
     "@nuxtjs/seo": "^2.0.0",
     "@nuxtjs/sitemap": "^7.0.0",
     "@tiptap/extension-image": "^3.23.1",

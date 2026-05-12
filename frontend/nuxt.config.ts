@@ -4,6 +4,7 @@ import * as process from 'node:process'
 export default defineNuxtConfig({
   // R4-20: Devtools only in development
   devtools: { enabled: process.env.NODE_ENV !== 'production' },
+  ssr: false,
 
   // Modules
   modules: [
@@ -57,6 +58,7 @@ export default defineNuxtConfig({
 
   // i18n Configuration
   i18n: {
+    restructureDir: false,
     locales: [
       {
         code: 'en',

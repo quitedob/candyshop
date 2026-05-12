@@ -44,12 +44,13 @@ const lazyT = () => {
 export const useAuth = () => {
   const localePath = useLocalePath()
   const token = useCookie<string | null>('auth_token', {
-    maxAge: 60 * 60 * 24 * 7,
+    maxAge: 60 * 60 * 24 * 30,
     path: '/',
     httpOnly: false,
     secure: typeof window !== 'undefined' ? window.location.protocol === 'https:' : false,
     sameSite: 'lax',
-    watch: false
+    watch: false,
+    default: () => null
   })
   const refreshToken = useCookie<string | null>('refresh_token', {
     maxAge: 60 * 60 * 24 * 30,
@@ -57,7 +58,8 @@ export const useAuth = () => {
     httpOnly: false,
     secure: typeof window !== 'undefined' ? window.location.protocol === 'https:' : false,
     sameSite: 'lax',
-    watch: false
+    watch: false,
+    default: () => null
   })
   const user = useState<User | null>('auth_user', () => null)
   const initialized = useState<boolean>('auth_initialized', () => false)
@@ -200,12 +202,17 @@ export const useAuth = () => {
       token.value = response.access_token
       refreshToken.value = response.refresh_token
 
-      // If "Remember me" is NOT checked, make cookies session-only
+      // If "Remember me" is NOT checked, re-set as session-only (no expiry)
       if (!credentials.remember && typeof document !== 'undefined') {
-        // Overwrite with session cookies (no maxAge/expires)
         const secureFlag = window.location.protocol === 'https:' ? '; Secure' : ''
         document.cookie = `auth_token=${response.access_token}; path=/; SameSite=Lax${secureFlag}`
         document.cookie = `refresh_token=${response.refresh_token}; path=/; SameSite=Lax${secureFlag}`
+      }
+
+      // Sync useCookie defaults so they match the expiry we just set
+      if (!credentials.remember) {
+        token.value = response.access_token
+        refreshToken.value = response.refresh_token
       }
 
       const role =

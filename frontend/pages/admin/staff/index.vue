@@ -191,12 +191,12 @@ const actionBadgeClass = (action: string) => {
 }
 
 const formatRole = (role: string) => {
-  if (!role) return t('common.enum.order_status.unknown')
+  if (!role) return t('enum.order_status.unknown')
   return role.charAt(0).toUpperCase() + role.slice(1)
 }
 
 const formatStatus = (status: string) => {
-  if (!status) return t('common.enum.order_status.unknown')
+  if (!status) return t('enum.order_status.unknown')
   return status.charAt(0).toUpperCase() + status.slice(1)
 }
 

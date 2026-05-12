@@ -67,7 +67,7 @@
         <!-- Modal Header -->
         <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <h3 class="text-lg font-semibold text-gray-900">{{ editingId ? t('admin.content.edit_content') : t('admin.content.create_content') }}</h3>
-          <button type="button" class="text-gray-400 hover:text-gray-600" @click="closeModal" :aria-label="t('common.close')">
+          <button type="button" class="text-gray-400 hover:text-gray-600" @click="closeModal" :aria-label="t('close')">
             <Icon name="heroicons:x-mark" class="h-6 w-6" aria-hidden="true" />
           </button>
         </div>

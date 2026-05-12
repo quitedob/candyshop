@@ -1,5 +1,5 @@
 <template>
-  <nav class="breadcrumb" :aria-label="$t('common.a11y.breadcrumb')">
+  <nav class="breadcrumb" :aria-label="$t('a11y.breadcrumb')">
     <ol class="breadcrumb__list" itemscope itemtype="https://schema.org/BreadcrumbList">
       <!-- Home -->
       <li
@@ -13,7 +13,7 @@
           class="breadcrumb__link breadcrumb__link--home"
           itemprop="item"
         >
-          <Icon name="lucide:home" size="16" />
+          <Icon name="lucide:home" size="16" aria-hidden="true" />
           <span itemprop="name">{{ $t('nav.home') }}</span>
         </NuxtLink>
         <meta itemprop="position" :content="1" />

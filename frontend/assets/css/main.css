@@ -20,11 +20,11 @@
     --color-accent-light: #ffedd5;
 
     /* Colors - Highlight (brand CTA orange) */
-    --color-highlight: #ea580c;
-    --color-highlight-hover: #c2410c;
+    --color-highlight: #d2410c;
+    --color-highlight-hover: #be370a;
     --color-highlight-light: #fdba74;
     /* RGB tuple for rgba(..., opacity) across Vue/CSS */
-    --color-highlight-rgb: 234, 88, 12;
+    --color-highlight-rgb: 210, 65, 12;
 
     /* Colors - Background (clean white / warm off-white) */
     --color-bg: #ffffff;

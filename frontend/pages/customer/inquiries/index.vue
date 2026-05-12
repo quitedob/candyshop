@@ -79,7 +79,7 @@
             </p>
           </div>
           <div>
-            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" :aria-label="t('common.pagination.nav_label')">
+            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" :aria-label="t('pagination.nav_label')">
               <button @click="prevPage" :disabled="page <= 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
                 <Icon name="heroicons:chevron-left" class="h-5 w-5" />
               </button>

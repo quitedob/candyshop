@@ -348,7 +348,7 @@ const sampleSteps = computed(() => [
     duration: t('oem.durations.1_day')
   },
   {
-    icon: 'lucide:flask',
+    icon: 'lucide:flask-conical',
     title: t('oem.sample_process.production'),
     description: t('oem.sample_process.production_desc'),
     duration: t('oem.durations.3_7_days')

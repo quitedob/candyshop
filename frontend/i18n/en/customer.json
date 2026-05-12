@@ -471,6 +471,7 @@
       "hide": "Hide",
       "country": "Country",
       "city": "City",
+      "state": "State / Province",
       "street": "Street",
       "zip": "ZIP Code",
       "proceed_checkout": "Submit Order Request",

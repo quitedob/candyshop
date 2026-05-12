@@ -23,12 +23,12 @@ useSeo({ noindex: true })
   --color-text-lighter: #87867f;
   --color-border: #e8e6dc;
   --color-border-light: #f0eee6;
-  --color-highlight: #c96442;
-  --color-highlight-hover: #b25436;
+  --color-highlight: #b95130;
+  --color-highlight-hover: #a34425;
   --color-highlight-light: #d97757;
-  --color-highlight-rgb: 201, 100, 66;
+  --color-highlight-rgb: 185, 81, 48;
   --color-accent: #d97757;
-  --color-accent-dark: #c96442;
+  --color-accent-dark: #b95130;
   --color-error: #b53333;
 
   min-height: 100vh;

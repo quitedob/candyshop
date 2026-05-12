@@ -1,18 +1,18 @@
 <template>
   <div class="rte-wrapper" :class="{ 'rte--focused': focused }">
     <!-- Toolbar -->
-    <div v-if="editor" class="rte-toolbar" role="toolbar" :aria-label="t('common.rte.text_formatting')">
+    <div v-if="editor" class="rte-toolbar" role="toolbar" :aria-label="t('rte.text_formatting')">
       <div class="rte-toolbar__group">
-        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive('bold') }" :aria-label="t('common.rte.bold')" :title="t('common.rte.bold')" @click="editor.chain().focus().toggleBold().run()">
+        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive('bold') }" :aria-label="t('rte.bold')" :title="t('rte.bold')" @click="editor.chain().focus().toggleBold().run()">
           <Icon name="heroicons:bold" class="rte-btn__icon" aria-hidden="true" />
         </button>
-        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive('italic') }" :aria-label="t('common.rte.italic')" :title="t('common.rte.italic')" @click="editor.chain().focus().toggleItalic().run()">
+        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive('italic') }" :aria-label="t('rte.italic')" :title="t('rte.italic')" @click="editor.chain().focus().toggleItalic().run()">
           <Icon name="heroicons:italic" class="rte-btn__icon" aria-hidden="true" />
         </button>
-        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive('underline') }" :aria-label="t('common.rte.underline')" :title="t('common.rte.underline')" @click="editor.chain().focus().toggleUnderline().run()">
+        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive('underline') }" :aria-label="t('rte.underline')" :title="t('rte.underline')" @click="editor.chain().focus().toggleUnderline().run()">
           <Icon name="heroicons:underline" class="rte-btn__icon" aria-hidden="true" />
         </button>
-        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive('strike') }" :aria-label="t('common.rte.strikethrough')" :title="t('common.rte.strikethrough')" @click="editor.chain().focus().toggleStrike().run()">
+        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive('strike') }" :aria-label="t('rte.strikethrough')" :title="t('rte.strikethrough')" @click="editor.chain().focus().toggleStrike().run()">
           <Icon name="heroicons:strikethrough" class="rte-btn__icon" aria-hidden="true" />
         </button>
       </div>
@@ -20,22 +20,22 @@
       <span class="rte-toolbar__divider" />
 
       <div class="rte-toolbar__group">
-        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive('heading', { level: 1 }) }" :aria-label="t('common.rte.heading1')" :title="t('common.rte.heading1')" @click="editor.chain().focus().toggleHeading({ level: 1 }).run()">H1</button>
-        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive('heading', { level: 2 }) }" :aria-label="t('common.rte.heading2')" :title="t('common.rte.heading2')" @click="editor.chain().focus().toggleHeading({ level: 2 }).run()">H2</button>
-        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive('heading', { level: 3 }) }" :aria-label="t('common.rte.heading3')" :title="t('common.rte.heading3')" @click="editor.chain().focus().toggleHeading({ level: 3 }).run()">H3</button>
-        <button type="button" class="rte-btn" :aria-label="t('common.rte.paragraph')" :title="t('common.rte.paragraph')" @click="editor.chain().focus().setParagraph().run()">P</button>
+        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive('heading', { level: 1 }) }" :aria-label="t('rte.heading1')" :title="t('rte.heading1')" @click="editor.chain().focus().toggleHeading({ level: 1 }).run()">H1</button>
+        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive('heading', { level: 2 }) }" :aria-label="t('rte.heading2')" :title="t('rte.heading2')" @click="editor.chain().focus().toggleHeading({ level: 2 }).run()">H2</button>
+        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive('heading', { level: 3 }) }" :aria-label="t('rte.heading3')" :title="t('rte.heading3')" @click="editor.chain().focus().toggleHeading({ level: 3 }).run()">H3</button>
+        <button type="button" class="rte-btn" :aria-label="t('rte.paragraph')" :title="t('rte.paragraph')" @click="editor.chain().focus().setParagraph().run()">P</button>
       </div>
 
       <span class="rte-toolbar__divider" />
 
       <div class="rte-toolbar__group">
-        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive('bulletList') }" :aria-label="t('common.rte.bullet_list')" :title="t('common.rte.bullet_list')" @click="editor.chain().focus().toggleBulletList().run()">
+        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive('bulletList') }" :aria-label="t('rte.bullet_list')" :title="t('rte.bullet_list')" @click="editor.chain().focus().toggleBulletList().run()">
           <Icon name="heroicons:list-bullet" class="rte-btn__icon" aria-hidden="true" />
         </button>
-        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive('orderedList') }" :aria-label="t('common.rte.ordered_list')" :title="t('common.rte.ordered_list')" @click="editor.chain().focus().toggleOrderedList().run()">
+        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive('orderedList') }" :aria-label="t('rte.ordered_list')" :title="t('rte.ordered_list')" @click="editor.chain().focus().toggleOrderedList().run()">
           <Icon name="heroicons:queue-list" class="rte-btn__icon" aria-hidden="true" />
         </button>
-        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive('blockquote') }" :aria-label="t('common.rte.blockquote')" :title="t('common.rte.blockquote')" @click="editor.chain().focus().toggleBlockquote().run()">
+        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive('blockquote') }" :aria-label="t('rte.blockquote')" :title="t('rte.blockquote')" @click="editor.chain().focus().toggleBlockquote().run()">
           <Icon name="heroicons:chat-bubble-bottom-center-text" class="rte-btn__icon" aria-hidden="true" />
         </button>
       </div>
@@ -43,13 +43,13 @@
       <span class="rte-toolbar__divider" />
 
       <div class="rte-toolbar__group">
-        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive({ textAlign: 'left' }) }" :aria-label="t('common.rte.align_left')" :title="t('common.rte.align_left')" @click="editor.chain().focus().setTextAlign('left').run()">
+        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive({ textAlign: 'left' }) }" :aria-label="t('rte.align_left')" :title="t('rte.align_left')" @click="editor.chain().focus().setTextAlign('left').run()">
           <Icon name="heroicons:bars-3-bottom-left" class="rte-btn__icon" aria-hidden="true" />
         </button>
-        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive({ textAlign: 'center' }) }" :aria-label="t('common.rte.align_center')" :title="t('common.rte.align_center')" @click="editor.chain().focus().setTextAlign('center').run()">
+        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive({ textAlign: 'center' }) }" :aria-label="t('rte.align_center')" :title="t('rte.align_center')" @click="editor.chain().focus().setTextAlign('center').run()">
           <Icon name="heroicons:bars-3" class="rte-btn__icon" aria-hidden="true" />
         </button>
-        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive({ textAlign: 'right' }) }" :aria-label="t('common.rte.align_right')" :title="t('common.rte.align_right')" @click="editor.chain().focus().setTextAlign('right').run()">
+        <button type="button" class="rte-btn" :class="{ 'rte-btn--active': editor.isActive({ textAlign: 'right' }) }" :aria-label="t('rte.align_right')" :title="t('rte.align_right')" @click="editor.chain().focus().setTextAlign('right').run()">
           <Icon name="heroicons:bars-3-bottom-right" class="rte-btn__icon" aria-hidden="true" />
         </button>
       </div>
@@ -57,23 +57,23 @@
       <span class="rte-toolbar__divider" />
 
       <div class="rte-toolbar__group">
-        <button type="button" class="rte-btn" :aria-label="t('common.rte.insert_link')" :title="t('common.rte.insert_link')" @click="openLinkDialog">
+        <button type="button" class="rte-btn" :aria-label="t('rte.insert_link')" :title="t('rte.insert_link')" @click="openLinkDialog">
           <Icon name="heroicons:link" class="rte-btn__icon" aria-hidden="true" />
         </button>
-        <button type="button" class="rte-btn" :aria-label="t('common.rte.insert_image')" :title="t('common.rte.insert_image')" @click="triggerImageUpload">
+        <button type="button" class="rte-btn" :aria-label="t('rte.insert_image')" :title="t('rte.insert_image')" @click="triggerImageUpload">
           <Icon name="heroicons:photo" class="rte-btn__icon" aria-hidden="true" />
         </button>
-        <label class="sr-only" for="rte-image-upload">{{ t('common.rte.upload_image') }}</label>
+        <label class="sr-only" for="rte-image-upload">{{ t('rte.upload_image') }}</label>
         <input id="rte-image-upload" ref="imageInputRef" type="file" accept="image/*" class="rte-file-input" @change="handleImageFile" />
       </div>
 
       <span class="rte-toolbar__divider" />
 
       <div class="rte-toolbar__group">
-        <button type="button" class="rte-btn" :aria-label="t('common.rte.undo')" :title="t('common.rte.undo')" :disabled="!editor.can().undo()" @click="editor.chain().focus().undo().run()">
+        <button type="button" class="rte-btn" :aria-label="t('rte.undo')" :title="t('rte.undo')" :disabled="!editor.can().undo()" @click="editor.chain().focus().undo().run()">
           <Icon name="heroicons:arrow-uturn-left" class="rte-btn__icon" aria-hidden="true" />
         </button>
-        <button type="button" class="rte-btn" :aria-label="t('common.rte.redo')" :title="t('common.rte.redo')" :disabled="!editor.can().redo()" @click="editor.chain().focus().redo().run()">
+        <button type="button" class="rte-btn" :aria-label="t('rte.redo')" :title="t('rte.redo')" :disabled="!editor.can().redo()" @click="editor.chain().focus().redo().run()">
           <Icon name="heroicons:arrow-uturn-right" class="rte-btn__icon" aria-hidden="true" />
         </button>
       </div>
@@ -81,15 +81,15 @@
 
     <!-- Link Dialog -->
     <div v-if="linkDialogOpen" class="rte-link-dialog">
-      <label for="rte-link-input" class="sr-only">{{ t('common.rte.link_url') }}</label>
-      <input id="rte-link-input" ref="linkInputRef" v-model="linkUrl" type="url" :placeholder="t('common.rte.link_placeholder')" class="rte-link-dialog__input" @keydown.enter="setLink" @keydown.escape="linkDialogOpen = false" />
-      <button type="button" class="rte-link-dialog__btn" @click="setLink">{{ t('common.rte.set') }}</button>
-      <button type="button" class="rte-link-dialog__btn rte-link-dialog__btn--cancel" @click="removeLink">{{ t('common.rte.remove') }}</button>
+      <label for="rte-link-input" class="sr-only">{{ t('rte.link_url') }}</label>
+      <input id="rte-link-input" ref="linkInputRef" v-model="linkUrl" type="url" :placeholder="t('rte.link_placeholder')" class="rte-link-dialog__input" @keydown.enter="setLink" @keydown.escape="linkDialogOpen = false" />
+      <button type="button" class="rte-link-dialog__btn" @click="setLink">{{ t('rte.set') }}</button>
+      <button type="button" class="rte-link-dialog__btn rte-link-dialog__btn--cancel" @click="removeLink">{{ t('rte.remove') }}</button>
     </div>
 
     <!-- Image Upload Status -->
     <div v-if="imageUploading" class="rte-image-status">
-      <Icon name="heroicons:arrow-path" class="w-4 h-4 animate-spin" aria-hidden="true" /> {{ t('common.rte.uploading_image') }}
+      <Icon name="heroicons:arrow-path" class="w-4 h-4 animate-spin" aria-hidden="true" /> {{ t('rte.uploading_image') }}
     </div>
 
     <!-- Editor Content Area -->
@@ -123,7 +123,7 @@ const focused = ref(false)
 const linkDialogOpen = ref(false)
 const linkUrl = ref('')
 const { t } = useI18n()
-const defaultPlaceholder = t('common.rte.placeholder')
+const defaultPlaceholder = t('rte.placeholder')
 const imageUploading = ref(false)
 const imageInputRef = ref<HTMLInputElement>()
 const linkInputRef = ref<HTMLInputElement>()

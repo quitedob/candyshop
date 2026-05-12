@@ -6,7 +6,7 @@
         v-if="currentIndex > 0"
         class="product-gallery__nav product-gallery__nav--prev"
         @click="previousImage"
-        :aria-label="t('common.a11y.previous_image')"
+        :aria-label="t('a11y.previous_image')"
       >
         <Icon name="lucide:chevron-left" size="24" />
       </button>
@@ -24,7 +24,7 @@
         v-if="currentIndex < images.length - 1"
         class="product-gallery__nav product-gallery__nav--next"
         @click="nextImage"
-        :aria-label="t('common.a11y.next_image')"
+        :aria-label="t('a11y.next_image')"
       >
         <Icon name="lucide:chevron-right" size="24" />
       </button>
@@ -34,7 +34,7 @@
         v-if="allowZoom"
         class="product-gallery__zoom"
         @click="openLightbox"
-        :aria-label="t('common.a11y.zoom_image')"
+        :aria-label="t('a11y.zoom_image')"
       >
         <Icon name="lucide:zoom-in" size="18" />
       </button>
@@ -66,7 +66,7 @@
         <button
           class="product-gallery__lightbox-close"
           @click="closeLightbox"
-          :aria-label="t('common.a11y.close_lightbox')"
+          :aria-label="t('a11y.close_lightbox')"
         >
           <Icon name="lucide:x" size="24" />
         </button>
@@ -75,7 +75,7 @@
           v-if="currentIndex > 0"
           class="product-gallery__lightbox-nav product-gallery__lightbox-nav--prev"
           @click="previousImage"
-          :aria-label="t('common.a11y.previous_image')"
+          :aria-label="t('a11y.previous_image')"
         >
           <Icon name="lucide:chevron-left" size="32" />
         </button>
@@ -92,7 +92,7 @@
           v-if="currentIndex < images.length - 1"
           class="product-gallery__lightbox-nav product-gallery__lightbox-nav--next"
           @click="nextImage"
-          :aria-label="t('common.a11y.next_image')"
+          :aria-label="t('a11y.next_image')"
         >
           <Icon name="lucide:chevron-right" size="32" />
         </button>
