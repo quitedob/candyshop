@@ -573,6 +573,12 @@ onUnmounted(() => {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .customer-content__main {
+    animation: none;
+  }
+}
+
 /* Slide Transition */
 .slide-down-enter-active,
 .slide-down-leave-active {

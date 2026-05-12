@@ -40,9 +40,9 @@
           </button>
         </div>
       </div>
-      <div v-if="order.status === 'pending'" class="mx-6 mt-4 rounded-lg border border-blue-200 bg-orange-50 px-4 py-3">
+      <div v-if="order.status === 'pending'" class="mx-6 mt-4 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3">
         <div class="flex items-start gap-3">
-          <Icon name="heroicons:clock" class="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
+          <Icon name="heroicons:clock" class="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
           <div>
             <p class="text-sm font-medium text-orange-800">{{ t('customer.orders.pending_request_title') }}</p>
             <p class="mt-1 text-sm text-orange-700">{{ t('customer.orders.pending_request_body') }}</p>
@@ -117,12 +117,12 @@
       </div>
 
       <!-- Nudge Order -->
-      <div v-if="['pending', 'confirmed', 'production'].includes(order.status)" class="px-6 py-4 border-t border-border bg-blue-50">
+      <div v-if="['pending', 'confirmed', 'production'].includes(order.status)" class="px-6 py-4 border-t border-border bg-orange-50">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-blue-800">{{ t('customer.orders.nudge_description') }}</p>
+            <p class="text-sm font-medium text-orange-800">{{ t('customer.orders.nudge_description') }}</p>
           </div>
-          <button @click="nudgeOrder" :disabled="nudging" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+          <button @click="nudgeOrder" :disabled="nudging" class="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 disabled:opacity-50 transition-colors">
             <Icon name="heroicons:bell-alert" class="mr-1.5 h-4 w-4 inline" />
             {{ nudging ? t('customer.orders.nudging') : t('customer.orders.nudge_button') }}
           </button>

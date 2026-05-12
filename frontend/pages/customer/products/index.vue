@@ -33,7 +33,7 @@
             {{ t('customer.products.ai_select') }}
             <Icon :name="showAIPanel ? 'heroicons:chevron-up' : 'heroicons:chevron-down'" class="h-4 w-4" />
           </button>
-          <span class="text-blue-200 text-sm">{{ t('customer.products.ai_select_hint') }}</span>
+          <span class="text-orange-200 text-sm">{{ t('customer.products.ai_select_hint') }}</span>
         </div>
 
         <Transition name="slide-down">
@@ -78,7 +78,7 @@
 
             <!-- AI 推荐结果 -->
             <div v-if="aiResults.length" class="space-y-3">
-              <p class="text-blue-100 text-sm font-medium">{{ aiSummary }}</p>
+              <p class="text-orange-100 text-sm font-medium">{{ aiSummary }}</p>
               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <div v-for="item in aiResults" :key="item.id"
                   class="bg-white rounded-xl p-4 text-gray-900 flex flex-col gap-2">
@@ -229,12 +229,12 @@
 
             <!-- Product Grid -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              <div v-for="product in products" :key="product.id" class="group bg-white rounded-2xl shadow-sm border border-orange-100 overflow-hidden hover:shadow-xl hover:border-blue-200 transition-shadow duration-300">
+              <div v-for="product in products" :key="product.id" class="group bg-white rounded-2xl shadow-sm border border-orange-100 overflow-hidden hover:shadow-xl hover:border-orange-200 transition-shadow duration-300">
                 <!-- Product Image -->
                 <div class="relative h-48 bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden">
                   <img v-if="product.thumbnail" :src="product.thumbnail" :alt="product.name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   <div v-else class="w-full h-full flex items-center justify-center">
-                    <Icon name="heroicons:cube" class="h-16 w-16 text-blue-200" />
+                    <Icon name="heroicons:cube" class="h-16 w-16 text-orange-200" />
                   </div>
                   <!-- Badges -->
                   <div class="absolute top-3 left-3 flex flex-col gap-2">

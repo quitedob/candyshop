@@ -70,28 +70,28 @@
               class="share__button share__button--twitter"
             >
               <Icon name="lucide:twitter" size="20" />
-              Twitter
+              {{ t('blog_extra.share_twitter') }}
             </button>
             <button
               @click="shareOnSocial('linkedin', post.title, fullUrl)"
               class="share__button share__button--linkedin"
             >
               <Icon name="lucide:linkedin" size="20" />
-              LinkedIn
+              {{ t('blog_extra.share_linkedin') }}
             </button>
             <button
               @click="shareOnSocial('facebook', post.title, fullUrl)"
               class="share__button share__button--facebook"
             >
               <Icon name="lucide:facebook" size="20" />
-              Facebook
+              {{ t('blog_extra.share_facebook') }}
             </button>
             <button
               @click="copyLink"
               class="share__button share__button--copy"
             >
               <Icon name="lucide:link" size="20" />
-              {{ copied ? 'Copied!' : 'Copy Link' }}
+              {{ copied ? t('blog_extra.share_copied') : t('blog_extra.share_copy_link') }}
             </button>
           </div>
         </div>
@@ -143,8 +143,8 @@
     <section class="cta section bg-alt">
       <div class="container">
         <div class="cta__inner">
-          <h2>Learn More About Our Services</h2>
-          <p>Have questions about our candy manufacturing capabilities?</p>
+          <h2>{{ t('blog_extra.cta_heading') }}</h2>
+          <p>{{ t('blog_extra.cta_questions') }}</p>
           <div class="cta__actions">
             <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-highlight">
               <WhatsAppIcon size="20" />

@@ -37,6 +37,7 @@
     "download": "Download",
     "valid_until": "Valid until",
     "download_cert": "Download Certificate",
+    "verify": "Verify",
     "quality_stages": {
       "raw_title": "Raw Material Testing",
       "raw_desc": "All incoming materials are tested before use",

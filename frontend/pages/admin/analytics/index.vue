@@ -242,11 +242,11 @@ const revenueChartData = computed(() => {
     datasets: [{
       label: t('admin.analytics.revenue_label'),
       data: revenueData.value.data.map((d: any) => d.revenue || d.amount || 0),
-      borderColor: '#4F46E5',
-      backgroundColor: 'rgba(79, 70, 229, 0.1)',
+      borderColor: '#F97316',
+      backgroundColor: 'rgba(249, 115, 22, 0.1)',
       fill: true,
       tension: 0.3,
-      pointBackgroundColor: '#4F46E5',
+      pointBackgroundColor: '#F97316',
       pointBorderColor: '#fff',
       pointBorderWidth: 2,
       pointRadius: 4
@@ -278,8 +278,8 @@ const inquiryChartData = computed(() => {
 
   const colorMap: Record<string, string> = {
     pending: '#F59E0B',
-    reviewing: '#6366F1',
-    quoted: '#3B82F6',
+    reviewing: '#FB923C',
+    quoted: '#EA580C',
     accepted: '#10B981',
     rejected: '#EF4444',
     converted: '#059669',

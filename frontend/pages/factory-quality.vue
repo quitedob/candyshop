@@ -45,7 +45,7 @@
               <Icon name="heroicons:play" class="h-4 w-4" />
               {{ t('factory.audio_tour') }}
             </button>
-            <button @click="tts.playQualityAssurance()" class="px-3 py-1.5 text-sm bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors flex items-center gap-1">
+            <button @click="tts.playQualityAssurance()" class="px-3 py-1.5 text-sm bg-orange-100 text-orange-700 rounded-full hover:bg-orange-200 transition-colors flex items-center gap-1">
               <Icon name="heroicons:play" class="h-4 w-4" />
               {{ t('factory.quality_audio') }}
             </button>

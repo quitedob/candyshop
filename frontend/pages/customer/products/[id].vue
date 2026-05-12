@@ -7,7 +7,7 @@
       </NuxtLink>
 
       <div v-if="pending" class="flex items-center justify-center py-20">
-        <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600"></div>
+        <div class="animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-600"></div>
       </div>
 
       <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
@@ -23,7 +23,7 @@
           <div class="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50">
             <img v-if="selectedImage" :src="selectedImage" :alt="product.name" class="w-full h-full object-cover" />
             <div v-else class="w-full h-full flex items-center justify-center">
-              <Icon name="heroicons:cube" class="h-24 w-24 text-blue-200" />
+              <Icon name="heroicons:cube" class="h-24 w-24 text-orange-200" />
             </div>
             <!-- Badges -->
             <div class="absolute top-4 left-4 flex flex-col gap-2">

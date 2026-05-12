@@ -22,6 +22,14 @@
     "no_posts": "No posts found in this category.",
     "newsletter_invalid": "Please enter a valid email address.",
     "newsletter_redirect": "Opening the contact form…",
-    "cta_questions": "Have questions about our candy manufacturing capabilities?"
+    "cta_questions": "Have questions about our candy manufacturing capabilities?",
+    "cta_heading": "Learn More About Our Services",
+    "min_read": "min read",
+    "share_twitter": "Twitter",
+    "share_linkedin": "LinkedIn",
+    "share_facebook": "Facebook",
+    "share_copy_link": "Copy Link",
+    "share_copied": "Copied!",
+    "seo_description": "Industry insights, compliance knowledge, and product expertise for candy manufacturers."
   }
 }

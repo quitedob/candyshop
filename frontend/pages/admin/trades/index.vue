@@ -50,7 +50,7 @@
           <tr v-else-if="trades.length === 0">
             <td colspan="7" class="py-5 text-center text-sm text-gray-500">{{ t('admin.trades.no_data') }}</td>
           </tr>
-          <tr v-else v-for="trade in trades" :key="trade.id" class="hover:bg-gray-50 cursor-pointer" @click="navigateToDetail(trade.id)">
+          <tr v-else v-for="trade in trades" :key="trade.id" class="hover:bg-gray-50 cursor-pointer" role="button" tabindex="0" :aria-label="t('admin.trades.view_detail')" @click="navigateToDetail(trade.id)" @keydown.enter.prevent="navigateToDetail(trade.id)" @keydown.space.prevent="navigateToDetail(trade.id)">
             <td class="py-4 pl-4 pr-3 text-sm sm:pl-6">
               <div class="font-medium text-gray-900">{{ trade.transactionNumber || trade.id.substring(0, 8) }}</div>
             </td>

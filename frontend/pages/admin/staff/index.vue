@@ -33,7 +33,13 @@
             <template v-else v-for="user in staff" :key="user.id">
               <tr
                 class="hover:bg-gray-50 transition-colors cursor-pointer"
+                role="button"
+                tabindex="0"
+                :aria-expanded="expandedId === user.id"
+                :aria-label="t('admin.staff.expand_user')"
                 @click="toggleExpand(user.id)"
+                @keydown.enter.prevent="toggleExpand(user.id)"
+                @keydown.space.prevent="toggleExpand(user.id)"
               >
                 <td class="px-6 py-4">
                   <div class="flex items-center gap-3">

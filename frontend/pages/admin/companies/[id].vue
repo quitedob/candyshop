@@ -57,7 +57,7 @@
             <div v-if="company.businessLicenseUrl">
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.companies.business_license') }}</dt>
               <dd class="mt-1 text-sm">
-                <a :href="company.businessLicenseUrl" target="_blank" class="text-orange-600 hover:text-orange-900">{{ t('admin.companies.view_document') }}</a>
+                <a :href="company.businessLicenseUrl" target="_blank" rel="noopener noreferrer" class="text-orange-600 hover:text-orange-900">{{ t('admin.companies.view_document') }}</a>
               </dd>
             </div>
             <div v-if="company.kybVerifiedAt">

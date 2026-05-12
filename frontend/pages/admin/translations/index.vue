@@ -113,7 +113,7 @@ onMounted(() => loadTranslations())
           {{ t('admin.translations.export') }}
         </button>
         <button
-          class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          class="px-4 py-2 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700"
           @click="showCreateModal = true"
         >
           {{ t('admin.translations.add') }}
@@ -150,7 +150,7 @@ onMounted(() => loadTranslations())
         <option value="en">English</option>
       </select>
       <button
-        class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        class="px-4 py-2 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700"
         @click="loadTranslations(1)"
       >
         {{ t('admin.translations.filter') }}
@@ -211,7 +211,7 @@ onMounted(() => loadTranslations())
               </td>
             </template>
             <template v-else>
-              <td class="px-4 py-3 font-mono text-xs text-blue-600">{{ item.key }}</td>
+              <td class="px-4 py-3 font-mono text-xs text-orange-600">{{ item.key }}</td>
               <td class="px-4 py-3">
                 <span class="px-2 py-0.5 rounded text-xs bg-gray-100 dark:bg-gray-600">{{ item.locale }}</span>
               </td>
@@ -223,7 +223,7 @@ onMounted(() => loadTranslations())
                 </span>
               </td>
               <td class="px-4 py-3 text-right space-x-2">
-                <button class="text-blue-600 hover:text-blue-800 text-xs font-medium" @click="startEdit(item)">Edit</button>
+                <button class="text-orange-600 hover:text-orange-800 text-xs font-medium" @click="startEdit(item)">Edit</button>
                 <button class="text-red-500 hover:text-red-700 text-xs" @click="deleteItem(item.id)">Delete</button>
               </td>
             </template>
@@ -238,7 +238,7 @@ onMounted(() => loadTranslations())
         v-for="p in pagination.totalPages"
         :key="p"
         class="px-3 py-1 rounded text-sm"
-        :class="p === pagination.page ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200'"
+        :class="p === pagination.page ? 'bg-orange-600 text-white' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200'"
         @click="loadTranslations(p)"
       >
         {{ p }}
@@ -246,7 +246,8 @@ onMounted(() => loadTranslations())
     </div>
 
     <!-- Create Modal -->
-    <div v-if="showCreateModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showCreateModal = false">
+    <div v-if="showCreateModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog" aria-modal="true">
+      <button type="button" class="fixed inset-0 w-full h-full cursor-pointer border-0 bg-transparent" @click="showCreateModal = false" :aria-label="t('close')" />
       <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md shadow-xl">
         <h2 class="text-lg font-bold mb-4">{{ t('admin.translations.create') }}</h2>
         <div class="space-y-3">
@@ -278,7 +279,7 @@ onMounted(() => loadTranslations())
           <button class="px-4 py-2 text-sm rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-700" @click="showCreateModal = false">
             Cancel
           </button>
-          <button class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700" @click="createItem">
+          <button class="px-4 py-2 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700" @click="createItem">
             Create
           </button>
         </div>

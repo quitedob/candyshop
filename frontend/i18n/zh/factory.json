@@ -37,6 +37,7 @@
     "download": "下载",
     "valid_until": "有效期至",
     "download_cert": "下载证书",
+    "verify": "验证",
     "quality_stages": {
       "raw_title": "原材料检测",
       "raw_desc": "所有进厂材料在使用前均经过严格测试",

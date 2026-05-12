@@ -139,11 +139,11 @@
 
       <!-- Notes/Feedback -->
       <div v-if="project.adminNotes" class="bg-orange-50 shadow overflow-hidden sm:rounded-lg">
-        <div class="px-4 py-5 sm:px-6 bg-orange-100 border-b border-blue-200">
-          <h3 class="text-lg leading-6 font-medium text-blue-900">{{ t('customer.oemProjects.notes_from_team') }}</h3>
+        <div class="px-4 py-5 sm:px-6 bg-orange-100 border-b border-orange-200">
+          <h3 class="text-lg leading-6 font-medium text-orange-900">{{ t('customer.oemProjects.notes_from_team') }}</h3>
         </div>
         <div class="px-4 py-5 sm:p-6">
-          <p class="text-sm text-blue-900 whitespace-pre-line">{{ project.adminNotes }}</p>
+          <p class="text-sm text-orange-900 whitespace-pre-line">{{ project.adminNotes }}</p>
         </div>
       </div>
     </div>

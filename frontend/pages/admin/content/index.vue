@@ -62,8 +62,9 @@
     </div>
 
     <!-- Editor Modal -->
-    <div v-if="showModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-gray-500/75 p-4" role="dialog" aria-modal="true" @click.self="closeModal">
-      <div class="my-8 w-full max-w-6xl rounded-lg bg-white shadow-xl">
+    <div v-if="showModal" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4">
+      <button type="button" class="fixed inset-0 w-full h-full bg-gray-500/75 border-0 cursor-pointer" @click="closeModal" :aria-label="t('close')" />
+      <div class="relative my-8 w-full max-w-6xl rounded-lg bg-white shadow-xl" role="dialog" aria-modal="true">
         <!-- Modal Header -->
         <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <h3 class="text-lg font-semibold text-gray-900">{{ editingId ? t('admin.content.edit_content') : t('admin.content.create_content') }}</h3>

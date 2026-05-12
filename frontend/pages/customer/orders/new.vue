@@ -8,9 +8,9 @@
     </div>
 
     <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
-      <section class="rounded-lg border border-blue-200 bg-white shadow-sm">
+      <section class="rounded-lg border border-orange-200 bg-white shadow-sm">
         <div class="border-b border-orange-100 bg-orange-50 px-5 py-4">
-          <h2 class="text-lg font-semibold text-blue-900">{{ t('customer.orders_new.ai_title') }}</h2>
+          <h2 class="text-lg font-semibold text-orange-900">{{ t('customer.orders_new.ai_title') }}</h2>
           <p class="mt-1 text-sm text-orange-800">{{ t('customer.orders_new.ai_desc') }}</p>
         </div>
         <div class="space-y-4 px-5 py-5">

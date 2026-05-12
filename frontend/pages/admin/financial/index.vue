@@ -148,7 +148,7 @@ const loadData = async () => {
 }
 
 const paymentChartData = computed(() => {
-  const colors = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6']
+  const colors = ['#10B981', '#F97316', '#F59E0B', '#EF4444', '#78716C']
   return {
     labels: breakdown.value.map(b => b.status || b.Status),
     datasets: [{

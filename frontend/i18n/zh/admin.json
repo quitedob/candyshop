@@ -670,6 +670,7 @@
       "total_products": "产品总数",
       "low_stock": "低库存",
       "out_of_stock": "缺货",
+      "in_stock": "有库存",
       "total_value": "总价值",
       "search": "按产品名称或SKU搜索...",
       "filter_all": "全部库存",

@@ -119,7 +119,7 @@
                 <div class="flex items-center gap-3">
                   <div class="h-10 w-10 rounded-lg bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center overflow-hidden">
                     <img v-if="item.thumbnail" :src="item.thumbnail" class="h-full w-full object-cover" />
-                    <Icon v-else name="heroicons:cube" class="h-5 w-5 text-blue-300" />
+                    <Icon v-else name="heroicons:cube" class="h-5 w-5 text-orange-300" />
                   </div>
                   <div>
                     <div class="font-medium text-gray-900">{{ item.name }}</div>
@@ -176,7 +176,7 @@
         <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl sm:my-8 sm:max-w-lg sm:align-middle">
           <div class="bg-gradient-to-r from-orange-500 to-amber-600 px-6 py-4">
             <h3 class="text-lg font-semibold text-white">{{ t('admin.inventory.adjust_title') }}</h3>
-            <p class="text-sm text-blue-100 mt-0.5">{{ adjustmentProduct?.name }}</p>
+            <p class="text-sm text-orange-100 mt-0.5">{{ adjustmentProduct?.name }}</p>
           </div>
           <div class="p-6 space-y-4">
             <div class="grid grid-cols-2 gap-4">
@@ -239,7 +239,7 @@
     <!-- History Modal -->
     <div v-if="showHistoryModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showHistoryModal = false"></div>
+        <button type="button" class="fixed inset-0 w-full h-full bg-gray-500 bg-opacity-75 transition-opacity border-0 cursor-pointer" @click="showHistoryModal = false" :aria-label="t('close')" />
         <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl sm:my-8 sm:max-w-2xl sm:align-middle">
           <div class="bg-gradient-to-r from-gray-700 to-gray-900 px-6 py-4 flex items-center justify-between">
             <div>
@@ -369,7 +369,7 @@ const exportInventory = () => {
 
 const stockStatusClass = (qty: number, moq: number) => { if (!qty || qty <= 0) return 'text-red-600'; if (qty <= (moq || 10)) return 'text-orange-600'; return 'text-emerald-600' }
 const stockBadgeClass = (qty: number, moq: number) => { if (!qty || qty <= 0) return 'bg-red-100 text-red-800'; if (qty <= (moq || 10)) return 'bg-orange-100 text-orange-800'; return 'bg-emerald-100 text-emerald-800' }
-const stockStatusLabel = (qty: number, moq: number) => { if (!qty || qty <= 0) return 'Out of Stock'; if (qty <= (moq || 10)) return 'Low Stock'; return 'In Stock' }
+const stockStatusLabel = (qty: number, moq: number) => { if (!qty || qty <= 0) return t('admin.inventory.out_of_stock'); if (qty <= (moq || 10)) return t('admin.inventory.low_stock'); return t('admin.inventory.in_stock') }
 const prevPage = () => { if (page.value > 1) { page.value -= 1; fetchInventory() } }
 const nextPage = () => { if (pagination.value && page.value < pagination.value.totalPages) { page.value += 1; fetchInventory() } }
 

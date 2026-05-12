@@ -667,6 +667,12 @@ onUnmounted(() => {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .admin-content__main {
+    animation: none;
+  }
+}
+
 @media (max-width: 767px) {
   .admin-layout {
     flex-direction: column;

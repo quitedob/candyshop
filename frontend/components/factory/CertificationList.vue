@@ -54,7 +54,7 @@
           class="cert-item__verify"
         >
           <Icon name="lucide:external-link" size="16" />
-          Verify
+          {{ t('factory.verify') }}
         </button>
       </div>
     </div>

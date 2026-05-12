@@ -70,7 +70,7 @@
               </span>
               <span class="featured-post__read-time">
                 <Icon name="lucide:clock" size="14" />
-                {{ featuredPost.readTime }} min read
+                {{ featuredPost.readTime }} {{ t('blog_extra.min_read') }}
               </span>
             </div>
           </div>
@@ -272,7 +272,7 @@ watch(activeCategory, () => {
 // SEO
 useSeo({
   title: `${t('nav.blog')} | ${t('seo.default_title')}`,
-  description: 'Industry insights, compliance knowledge, and product expertise for candy manufacturers.',
+  description: t('blog_extra.seo_description'),
   ogType: 'website'
 })
 </script>
