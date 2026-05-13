@@ -29,7 +29,8 @@
       "staff": "Staff",
       "auditLog": "Audit Log",
       "settings": "Settings",
-      "translations": "Translations"
+      "translations": "Translations",
+      "ai": "AI Apps"
     },
     "dashboard": {
       "title": "Dashboard",
@@ -68,7 +69,13 @@
       "col_rank": "#",
       "months_3": "3M",
       "months_6": "6M",
-      "months_12": "12M"
+      "months_12": "12M",
+      "range_3m": "3 Months",
+      "range_6m": "6 Months",
+      "range_12m": "12 Months",
+      "inquiry_conversion": "Inquiry Conversion",
+      "revenue_label": "Revenue",
+      "orders_label": "Orders"
     },
     "financial": {
       "title": "Financial Overview",
@@ -774,6 +781,9 @@
       "status_overdue": "Overdue",
       "status_cancelled": "Cancelled",
       "status_unknown": "Unknown",
+      "date_from": "Date From",
+      "date_to": "Date To",
+      "filter_status": "Filter Status",
       "col_invoice": "Invoice",
       "col_order": "Order",
       "col_customer": "Customer",
@@ -816,6 +826,7 @@
       "title": "Staff Management",
       "description": "View and manage staff members, their roles, and activity.",
       "loading": "Loading staff...",
+      "expand_user": "Expand user details",
       "no_data": "No staff members found.",
       "col_name": "Name",
       "col_email": "Email",
@@ -968,7 +979,31 @@
     "all_locales": "All Locales",
     "filter": "Filter",
     "no_data": "No translations found",
-    "create": "Create Translation"
+    "create": "Create Translation",
+    "col_key": "Key",
+    "col_locale": "Locale",
+    "col_group": "Group",
+    "col_value": "Value",
+    "col_active": "Active",
+    "col_actions": "Actions",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "active": "Active",
+    "inactive": "Inactive",
+    "label_key": "Key",
+    "label_locale": "Locale",
+    "label_group": "Group",
+    "label_value": "Value",
+    "placeholder_key": "e.g. errors.my_new_code",
+    "create_title": "Create Translation"
   },
-  "confirm_delete": "Confirm delete?"
+  "confirm_delete": "Confirm delete?",
+  "ai": {
+    "title": "AI Applications",
+    "description": "AI-powered product recommendations, compliance checks, and intelligent search.",
+    "coming_soon": "AI features panel coming soon."
+  }
 }

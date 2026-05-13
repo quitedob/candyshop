@@ -291,7 +291,7 @@
 
             <!-- Notes -->
             <div v-if="previewInvoice.notes" class="text-sm text-gray-600">
-              <p class="font-medium text-gray-700 mb-1">Notes</p>
+              <p class="font-medium text-gray-700 mb-1">{{ t('admin.invoices.notes') }}</p>
               <p>{{ previewInvoice.notes }}</p>
             </div>
           </div>

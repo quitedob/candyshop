@@ -67,7 +67,7 @@
         <div class="admin-sidebar__group">
           <template v-for="item in mainNav" :key="item.key">
             <NuxtLink
-              :to="item.href"
+              :to="localePath(item.href)"
               class="admin-sidebar__link"
               :class="{ 'admin-sidebar__link--active': isActive(item.href) }"
               :title="!showNavLabels ? t(item.key) : ''"
@@ -86,7 +86,7 @@
         <div v-if="showNavLabels" class="admin-sidebar__group-label">{{ t('admin.nav.management') }}</div>
         <template v-for="item in managementNav" :key="item.key">
           <NuxtLink
-            :to="item.href"
+            :to="localePath(item.href)"
             class="admin-sidebar__link"
             :class="{ 'admin-sidebar__link--active': isActive(item.href) }"
             :title="!showNavLabels ? t(item.key) : ''"
@@ -105,7 +105,7 @@
           <div v-if="showNavLabels" class="admin-sidebar__group-label">{{ t('admin.nav.superadmin') }}</div>
           <template v-for="item in superAdminNav" :key="item.key">
             <NuxtLink
-              :to="item.href"
+              :to="localePath(item.href)"
               class="admin-sidebar__link"
               :class="{ 'admin-sidebar__link--active': isActive(item.href) }"
               :title="!showNavLabels ? t(item.key) : ''"
@@ -176,6 +176,7 @@ useSeo({ noindex: true })
 
 const { user, logout } = useAuth()
 const route = useRoute()
+const localePath = useLocalePath()
 const { t, locale, setLocale } = useI18n()
 
 const isCollapsed = ref(false)
@@ -209,6 +210,7 @@ const managementNav = [
   { key: 'admin.nav.companies', href: '/admin/companies', icon: 'heroicons:building-office' },
   { key: 'admin.nav.trades', href: '/admin/trades', icon: 'heroicons:currency-dollar' },
   { key: 'admin.nav.oemProjects', href: '/admin/oem-projects', icon: 'heroicons:sparkles' },
+  { key: 'admin.nav.ai', href: '/admin/ai', icon: 'heroicons:sparkles' },
 ]
 
 // Super Admin Navigation
@@ -224,10 +226,9 @@ const superAdminNav = [
 
 // Check if nav item is active
 const isActive = (href) => {
-  if (href === '/admin') {
-    return route.path === '/admin'
-  }
-  return route.path.startsWith(href)
+  const fullPath = localePath(href)
+  if (href === '/admin') return route.path === fullPath
+  return route.path.startsWith(fullPath)
 }
 
 const handleLogout = async () => {

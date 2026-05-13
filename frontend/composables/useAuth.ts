@@ -130,6 +130,18 @@ export const useAuth = () => {
 
   const initAuth = async () => {
     if (initialized.value && user.value) {
+      // Check if token is expired even when already initialized
+      const payload = decodeJwtPayload(token.value || '')
+      const now = Math.floor(Date.now() / 1000)
+      if (payload?.exp && payload.exp <= now) {
+        const refreshed = await refreshAccessToken()
+        if (!refreshed) {
+          clearAuthState()
+          initialized.value = false
+          await navigateTo(localePath('/auth/login'))
+          return
+        }
+      }
       return
     }
 

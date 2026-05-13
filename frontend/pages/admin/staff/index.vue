@@ -35,7 +35,7 @@
                 class="hover:bg-gray-50 transition-colors cursor-pointer"
                 role="button"
                 tabindex="0"
-                :aria-expanded="expandedId === user.id"
+                :aria-expanded="expandedUserId === user.id"
                 :aria-label="t('admin.staff.expand_user')"
                 @click="toggleExpand(user.id)"
                 @keydown.enter.prevent="toggleExpand(user.id)"
@@ -61,7 +61,7 @@
                   </span>
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-600">
-                  {{ user.lastLogin ? formatRelativeTime(user.lastLogin) : t('admin.staff.never') }}
+                  {{ user.lastLoginAt ? formatRelativeTime(user.lastLoginAt) : t('admin.staff.never') }}
                 </td>
               </tr>
               <!-- Expanded Activity Row -->
@@ -175,9 +175,10 @@ const toggleExpand = async (userId: string) => {
   }
 }
 
-const roleBadgeClass = (role: string) => {
-  if (role === 'superadmin') return 'bg-orange-100 text-orange-800'
-  if (role === 'admin') return 'bg-orange-100 text-orange-800'
+const roleBadgeClass = (role: any) => {
+  const name = typeof role === 'string' ? role : role?.name
+  if (name === 'superadmin') return 'bg-orange-100 text-orange-800'
+  if (name === 'admin') return 'bg-orange-100 text-orange-800'
   return 'bg-gray-100 text-gray-800'
 }
 
@@ -196,9 +197,11 @@ const actionBadgeClass = (action: string) => {
   return 'bg-gray-100 text-gray-800'
 }
 
-const formatRole = (role: string) => {
+const formatRole = (role: any) => {
   if (!role) return t('enum.order_status.unknown')
-  return role.charAt(0).toUpperCase() + role.slice(1)
+  const name = typeof role === 'string' ? role : role.name
+  if (!name) return t('enum.order_status.unknown')
+  return name.charAt(0).toUpperCase() + name.slice(1)
 }
 
 const formatStatus = (status: string) => {

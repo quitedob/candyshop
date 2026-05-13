@@ -31,7 +31,7 @@
                 {{ t('customer.products.halal_certified') }}
               </span>
               <span v-if="product.featured" class="px-3 py-1.5 bg-amber-400 text-amber-900 text-sm font-bold rounded-full">
-                Featured
+                {{ t('customer.products.featured') }}
               </span>
             </div>
           </div>

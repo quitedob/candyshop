@@ -88,8 +88,8 @@
                       <p class="text-xs text-gray-500">{{ item.category }}</p>
                     </div>
                     <div class="flex gap-1 flex-shrink-0">
-                      <span v-if="item.halalCertified" class="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded-full">Halal</span>
-                      <span v-if="item.oemAvailable" class="px-1.5 py-0.5 bg-orange-100 text-orange-700 text-xs rounded-full">OEM</span>
+                      <span v-if="item.halalCertified" class="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded-full">{{ t('customer.products.halal') }}</span>
+                      <span v-if="item.oemAvailable" class="px-1.5 py-0.5 bg-orange-100 text-orange-700 text-xs rounded-full">{{ t('customer.products.oem') }}</span>
                     </div>
                   </div>
                   <p class="text-xs text-gray-600 italic">{{ item.reason }}</p>
@@ -149,15 +149,15 @@
               <div class="space-y-2">
                 <label class="flex items-center gap-2 cursor-pointer">
                   <input v-model="filters.halal" type="checkbox" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500" />
-                  <span class="text-sm text-gray-600">Halal Certified</span>
+                  <span class="text-sm text-gray-600">{{ t('customer.products.halal_certified') }}</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
                   <input v-model="filters.oemOnly" type="checkbox" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500" />
-                  <span class="text-sm text-gray-600">OEM Available</span>
+                  <span class="text-sm text-gray-600">{{ t('customer.products.oem_available') }}</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
                   <input v-model="filters.featuredOnly" type="checkbox" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500" />
-                  <span class="text-sm text-gray-600">Featured</span>
+                  <span class="text-sm text-gray-600">{{ t('customer.products.featured') }}</span>
                 </label>
               </div>
             </div>
@@ -242,14 +242,14 @@
                       {{ t('customer.products.featured') }}
                     </span>
                     <span v-if="product.halalCertified" class="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
-                      Halal
+                      {{ t('customer.products.halal') }}
                     </span>
                   </div>
                   <!-- OEM Badge -->
                   <div v-if="product.oemAvailable" class="absolute top-3 right-3">
                     <span class="px-2 py-1 bg-orange-600 text-white text-xs font-medium rounded-full flex items-center gap-1">
                       <Icon name="heroicons:sparkles" class="h-3 w-3" />
-                      OEM
+                      {{ t('customer.products.oem') }}
                     </span>
                   </div>
                 </div>
@@ -281,7 +281,7 @@
                       {{ shape }}
                     </span>
                     <span v-if="(product.flavors?.length || 0) > 3 || (product.shapes?.length || 0) > 2" class="px-2 py-0.5 bg-gray-50 text-gray-400 text-xs rounded-full">
-                      + more
+                      {{ t('customer.products.more') }}
                     </span>
                   </div>
 

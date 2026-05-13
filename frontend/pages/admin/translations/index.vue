@@ -167,17 +167,17 @@ onMounted(() => loadTranslations())
       <table class="w-full text-sm">
         <thead class="bg-gray-50 dark:bg-gray-700 text-left">
           <tr>
-            <th class="px-4 py-3 font-medium">Key</th>
-            <th class="px-4 py-3 font-medium">Locale</th>
-            <th class="px-4 py-3 font-medium">Group</th>
-            <th class="px-4 py-3 font-medium">Value</th>
-            <th class="px-4 py-3 font-medium">Active</th>
-            <th class="px-4 py-3 font-medium text-right">Actions</th>
+            <th class="px-4 py-3 font-medium">{{ t('admin.translations.col_key') }}</th>
+            <th class="px-4 py-3 font-medium">{{ t('admin.translations.col_locale') }}</th>
+            <th class="px-4 py-3 font-medium">{{ t('admin.translations.col_group') }}</th>
+            <th class="px-4 py-3 font-medium">{{ t('admin.translations.col_value') }}</th>
+            <th class="px-4 py-3 font-medium">{{ t('admin.translations.col_active') }}</th>
+            <th class="px-4 py-3 font-medium text-right">{{ t('admin.translations.col_actions') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
           <tr v-if="loading">
-            <td colspan="6" class="px-4 py-8 text-center text-gray-500">Loading...</td>
+            <td colspan="6" class="px-4 py-8 text-center text-gray-500">{{ t('admin.translations.loading') }}</td>
           </tr>
           <tr v-else-if="translations.length === 0">
             <td colspan="6" class="px-4 py-8 text-center text-gray-500">
@@ -206,8 +206,8 @@ onMounted(() => loadTranslations())
                 <input v-model="editForm.isActive" type="checkbox" />
               </td>
               <td class="px-4 py-3 text-right space-x-2">
-                <button class="text-green-600 hover:text-green-800 text-xs font-medium" @click="saveEdit(item.id)">Save</button>
-                <button class="text-gray-500 hover:text-gray-700 text-xs" @click="cancelEdit">Cancel</button>
+                <button class="text-green-600 hover:text-green-800 text-xs font-medium" @click="saveEdit(item.id)">{{ t('admin.translations.save') }}</button>
+                <button class="text-gray-500 hover:text-gray-700 text-xs" @click="cancelEdit">{{ t('admin.translations.cancel') }}</button>
               </td>
             </template>
             <template v-else>
@@ -219,12 +219,12 @@ onMounted(() => loadTranslations())
               <td class="px-4 py-3 text-xs max-w-md truncate">{{ item.value }}</td>
               <td class="px-4 py-3">
                 <span :class="item.isActive ? 'text-green-600' : 'text-red-500'" class="text-xs">
-                  {{ item.isActive ? 'Active' : 'Inactive' }}
+                  {{ item.isActive ? t('admin.translations.active') : t('admin.translations.inactive') }}
                 </span>
               </td>
               <td class="px-4 py-3 text-right space-x-2">
-                <button class="text-orange-600 hover:text-orange-800 text-xs font-medium" @click="startEdit(item)">Edit</button>
-                <button class="text-red-500 hover:text-red-700 text-xs" @click="deleteItem(item.id)">Delete</button>
+                <button class="text-orange-600 hover:text-orange-800 text-xs font-medium" @click="startEdit(item)">{{ t('admin.translations.edit') }}</button>
+                <button class="text-red-500 hover:text-red-700 text-xs" @click="deleteItem(item.id)">{{ t('admin.translations.delete') }}</button>
               </td>
             </template>
           </tr>
@@ -252,18 +252,18 @@ onMounted(() => loadTranslations())
         <h2 class="text-lg font-bold mb-4">{{ t('admin.translations.create') }}</h2>
         <div class="space-y-3">
           <div>
-            <label class="text-sm font-medium">Key</label>
-            <input v-model="newForm.key" class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600" placeholder="e.g. errors.my_new_code" />
+            <label class="text-sm font-medium">{{ t('admin.translations.label_key') }}</label>
+            <input v-model="newForm.key" class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600" :placeholder="t('admin.translations.placeholder_key')" />
           </div>
           <div>
-            <label class="text-sm font-medium">Locale</label>
+            <label class="text-sm font-medium">{{ t('admin.translations.label_locale') }}</label>
             <select v-model="newForm.locale" class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600">
               <option value="zh">中文</option>
               <option value="en">English</option>
             </select>
           </div>
           <div>
-            <label class="text-sm font-medium">Group</label>
+            <label class="text-sm font-medium">{{ t('admin.translations.label_group') }}</label>
             <select v-model="newForm.group" class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600">
               <option value="errors">errors</option>
               <option value="validation">validation</option>
@@ -271,16 +271,16 @@ onMounted(() => loadTranslations())
             </select>
           </div>
           <div>
-            <label class="text-sm font-medium">Value</label>
+            <label class="text-sm font-medium">{{ t('admin.translations.label_value') }}</label>
             <textarea v-model="newForm.value" rows="3" class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600" />
           </div>
         </div>
         <div class="flex justify-end gap-3 mt-4">
           <button class="px-4 py-2 text-sm rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-700" @click="showCreateModal = false">
-            Cancel
+            {{ t('admin.translations.cancel') }}
           </button>
           <button class="px-4 py-2 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700" @click="createItem">
-            Create
+            {{ t('admin.translations.create') }}
           </button>
         </div>
       </div>

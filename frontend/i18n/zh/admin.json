@@ -29,7 +29,8 @@
       "staff": "员工管理",
       "auditLog": "操作日志",
       "settings": "系统设置",
-      "translations": "翻译管理"
+      "translations": "翻译管理",
+      "ai": "AI 应用"
     },
     "dashboard": {
       "title": "仪表盘",
@@ -68,7 +69,13 @@
       "col_rank": "#",
       "months_3": "3个月",
       "months_6": "6个月",
-      "months_12": "12个月"
+      "months_12": "12个月",
+      "range_3m": "近3个月",
+      "range_6m": "近6个月",
+      "range_12m": "近12个月",
+      "inquiry_conversion": "询价转化",
+      "revenue_label": "营收",
+      "orders_label": "订单量"
     },
     "financial": {
       "title": "财务概览",
@@ -774,6 +781,9 @@
       "status_overdue": "逾期",
       "status_cancelled": "已取消",
       "status_unknown": "未知",
+      "date_from": "开始日期",
+      "date_to": "结束日期",
+      "filter_status": "状态筛选",
       "col_invoice": "发票",
       "col_order": "订单",
       "col_customer": "客户",
@@ -816,6 +826,7 @@
       "title": "员工管理",
       "description": "查看和管理员工信息、角色及活动记录。",
       "loading": "正在加载员工列表...",
+      "expand_user": "展开用户详情",
       "no_data": "暂无员工记录。",
       "col_name": "姓名",
       "col_email": "邮箱",
@@ -968,7 +979,31 @@
     "all_locales": "全部语言",
     "filter": "筛选",
     "no_data": "暂无翻译数据",
-    "create": "新建翻译"
+    "create": "新建翻译",
+    "col_key": "键名",
+    "col_locale": "语言",
+    "col_group": "分组",
+    "col_value": "值",
+    "col_active": "状态",
+    "col_actions": "操作",
+    "loading": "加载中...",
+    "save": "保存",
+    "cancel": "取消",
+    "edit": "编辑",
+    "delete": "删除",
+    "active": "启用",
+    "inactive": "禁用",
+    "label_key": "键名",
+    "label_locale": "语言",
+    "label_group": "分组",
+    "label_value": "值",
+    "placeholder_key": "例如：errors.my_new_code",
+    "create_title": "新建翻译"
   },
-  "confirm_delete": "确认删除？"
+  "confirm_delete": "确认删除？",
+  "ai": {
+    "title": "AI 应用",
+    "description": "AI 驱动的产品推荐、合规检查与智能搜索。",
+    "coming_soon": "AI 功能面板即将上线，敬请期待。"
+  }
 }
