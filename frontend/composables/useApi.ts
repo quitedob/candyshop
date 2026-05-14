@@ -613,6 +613,21 @@ export const useApi = () => {
   const importTranslations = (data: any) => POST<any>('/admin/translations/import', data)
   const exportTranslations = () => GET<any[]>('/admin/translations/export')
 
+  // Admin - Certifications
+  const adminGetCertifications = (params?: Record<string, any>) => GET<PaginatedResponse<any>>('/admin/certifications', params)
+  const adminGetCertification = (id: string) => GET<any>(`/admin/certifications/${id}`)
+  const adminCreateCertification = (data: any) => POST<any>('/admin/certifications', data)
+  const adminUpdateCertification = (id: string, data: any) => PUT<any>(`/admin/certifications/${id}`, data)
+  const adminDeleteCertification = (id: string) => DELETE<any>(`/admin/certifications/${id}`)
+
+  // Admin - Content
+  const adminGetContent = (params?: Record<string, any>) => GET<PaginatedResponse<any>>('/admin/content', params)
+  const adminGetContentById = (id: string, type: string) => GET<any>(`/admin/content/${id}?type=${type}`)
+  const adminCreateContent = (data: any) => POST<any>('/admin/content', data)
+  const adminUpdateContent = (id: string, data: any) => PUT<any>(`/admin/content/${id}`, data)
+  const adminDeleteContent = (id: string, type: string) => DELETE<any>(`/admin/content/${id}?type=${type}`)
+  const adminAIGenerateContent = (data: { topic: string; type: string; language: string }) => POST<any>('/admin/content/ai-generate', data)
+
   return {
     // Products
     getCategories,
@@ -737,6 +752,21 @@ export const useApi = () => {
     getTranslationGroups,
     importTranslations,
     exportTranslations,
+
+    // Admin - Certifications
+    adminGetCertifications,
+    adminGetCertification,
+    adminCreateCertification,
+    adminUpdateCertification,
+    adminDeleteCertification,
+
+    // Admin - Content
+    adminGetContent,
+    adminGetContentById,
+    adminCreateContent,
+    adminUpdateContent,
+    adminDeleteContent,
+    adminAIGenerateContent,
 
     // Generic HTTP helpers
     fetchApi,

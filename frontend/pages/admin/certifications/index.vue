@@ -125,10 +125,8 @@ definePageMeta({
   middleware: ['auth']
 })
 
-const { token } = useAuth()
+const api = useApi()
 const { t } = useI18n()
-const config = useRuntimeConfig()
-const baseURL = config.public.apiBase || '/api/v1'
 
 const certifications = ref<any[]>([])
 const pending = ref(true)
@@ -174,12 +172,10 @@ const fetchCertifications = async () => {
   pending.value = true
   error.value = ''
   try {
-    const res = await $fetch<any>(`${baseURL}/admin/certifications`, {
-      headers: { Authorization: `Bearer ${token.value}` }
-    })
-    certifications.value = res.data || res || []
+    const res = await api.adminGetCertifications()
+    certifications.value = res.data || []
   } catch (err: any) {
-    error.value = err?.data?.message || err.message || t('errors.api.load_failed')
+    error.value = err?.message || t('errors.api.load_failed')
   } finally {
     pending.value = false
   }
@@ -222,24 +218,16 @@ const saveCertification = async () => {
 
   try {
     if (editingId.value) {
-      await $fetch(`${baseURL}/admin/certifications/${editingId.value}`, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${token.value}` },
-        body: form
-      })
+      await api.adminUpdateCertification(editingId.value, form)
       actionMessage.value = t('admin.certifications.updated_success')
     } else {
-      await $fetch(`${baseURL}/admin/certifications`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token.value}` },
-        body: form
-      })
+      await api.adminCreateCertification(form)
       actionMessage.value = t('admin.certifications.created_success')
     }
     closeModal()
     await fetchCertifications()
   } catch (err: any) {
-    formError.value = err?.data?.message || t('errors.api.save_failed')
+    formError.value = err?.message || t('errors.api.save_failed')
   } finally {
     saving.value = false
   }
@@ -251,15 +239,12 @@ const deleteCertification = async (id: string) => {
   actionMessage.value = ''
   actionError.value = false
   try {
-    await $fetch(`${baseURL}/admin/certifications/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token.value}` }
-    })
+    await api.adminDeleteCertification(id)
     actionMessage.value = t('admin.certifications.deleted_success')
     await fetchCertifications()
   } catch (err: any) {
     actionError.value = true
-    actionMessage.value = err?.data?.message || t('errors.api.delete_failed')
+    actionMessage.value = err?.message || t('errors.api.delete_failed')
   }
 }
 

@@ -20,7 +20,7 @@
       <div class="bg-white shadow overflow-hidden sm:rounded-lg">
         <div class="px-4 py-5 sm:px-6 flex justify-between items-center bg-gray-50 border-b border-gray-200">
           <div>
-            <h3 class="text-lg leading-6 font-medium text-gray-900">{{ t('admin.order_prefix') }}{{ order.orderNumber || order.id.substring(0, 8) }}</h3>
+            <h3 class="text-lg leading-6 font-medium text-gray-900">{{ t('admin.order_prefix') }}{{ order.orderNumber || String(order.id).substring(0, 8) }}</h3>
             <p class="mt-1 max-w-2xl text-sm text-gray-500">
               {{ t('admin.orders.placed_on') }} {{ formatDate(order.createdAt) }}
             </p>
@@ -197,7 +197,7 @@
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
                 <tr v-for="payment in payments" :key="payment.id">
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ payment.id.substring(0, 8) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ String(payment.id).substring(0, 8) }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ cur(order.currency) }} {{ formatNumber(payment.amount || 0) }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ cell(payment.method) }}</td>
                   <td class="px-6 py-4 whitespace-nowrap">

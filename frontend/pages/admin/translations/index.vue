@@ -88,7 +88,7 @@ async function exportAll() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'translations.json'
+    a.download = '翻译数据.json'
     a.click()
     URL.revokeObjectURL(url)
   } catch (err: any) {

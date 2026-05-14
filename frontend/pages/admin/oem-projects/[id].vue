@@ -20,7 +20,7 @@
       <div class="bg-white shadow overflow-hidden sm:rounded-lg">
         <div class="px-4 py-5 sm:px-6 flex justify-between items-center bg-gray-50 border-b border-gray-200">
           <div>
-            <h3 class="text-lg leading-6 font-medium text-gray-900">{{ t('admin.oemProjects.project') }} #{{ project.projectNumber || project.id.substring(0, 8) }}</h3>
+            <h3 class="text-lg leading-6 font-medium text-gray-900">{{ t('admin.oemProjects.project') }} #{{ project.projectNumber || String(project.id).substring(0, 8) }}</h3>
             <p class="mt-1 max-w-2xl text-sm text-gray-500">
               {{ t('admin.oemProjects.created_on') }} {{ formatDate(project.createdAt, { dateStyle: 'medium', timeStyle: 'short' }) }}
             </p>
@@ -137,7 +137,7 @@
                 <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">{{ t('admin.oemProjects.no_samples') }}</td>
               </tr>
               <tr v-else v-for="sample in project.samples" :key="sample.id">
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ sample.id.substring(0, 8) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ String(sample.id).substring(0, 8) }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                   <span :class="[sampleStatusClass(sample.status), 'inline-flex rounded-full px-2 text-xs font-semibold leading-5']">
                     {{ sample.status }}

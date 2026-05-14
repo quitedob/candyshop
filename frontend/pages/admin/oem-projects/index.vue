@@ -49,7 +49,7 @@
           </tr>
           <tr v-else v-for="project in projects" :key="project.id" class="hover:bg-gray-50 cursor-pointer" role="button" tabindex="0" :aria-label="t('admin.oemProjects.view_detail')" @click="navigateToDetail(project.id)" @keydown.enter.prevent="navigateToDetail(project.id)" @keydown.space.prevent="navigateToDetail(project.id)">
             <td class="py-4 pl-4 pr-3 text-sm sm:pl-6">
-              <div class="font-medium text-gray-900">{{ project.projectNumber || project.id.substring(0, 8) }}</div>
+              <div class="font-medium text-gray-900">{{ project.projectNumber || String(project.id).substring(0, 8) }}</div>
             </td>
             <td class="px-3 py-4 text-sm text-gray-500">
               <template v-if="project.user">

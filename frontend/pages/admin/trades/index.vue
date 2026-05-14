@@ -52,7 +52,7 @@
           </tr>
           <tr v-else v-for="trade in trades" :key="trade.id" class="hover:bg-gray-50 cursor-pointer" role="button" tabindex="0" :aria-label="t('admin.trades.view_detail')" @click="navigateToDetail(trade.id)" @keydown.enter.prevent="navigateToDetail(trade.id)" @keydown.space.prevent="navigateToDetail(trade.id)">
             <td class="py-4 pl-4 pr-3 text-sm sm:pl-6">
-              <div class="font-medium text-gray-900">{{ trade.transactionNumber || trade.id.substring(0, 8) }}</div>
+              <div class="font-medium text-gray-900">{{ trade.transactionNumber || String(trade.id).substring(0, 8) }}</div>
             </td>
             <td class="px-3 py-4 text-sm text-gray-500">
               <template v-if="trade.user">

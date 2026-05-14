@@ -362,9 +362,9 @@ const viewHistory = async (product: any) => {
 }
 
 const exportInventory = () => {
-  const csv = [['Name', 'Category', 'ID', 'Stock', 'MOQ', 'Unit Value', 'Total Value'].join(','), ...filteredItems.value.map(i => [`"${i.name}"`, `"${i.category || ''}"`, `"${i.id}"`, i.stockQuantity || 0, i.moq || 0, i.basePrice || 0, ((i.stockQuantity || 0) * (i.basePrice || 0)).toFixed(2)].join(','))].join('\n')
+  const csv = [['名称', '分类', '编号', '库存', '起订量', '单价', '总价'].join(','), ...filteredItems.value.map(i => [`"${i.name}"`, `"${i.category || ''}"`, `"${i.id}"`, i.stockQuantity || 0, i.moq || 0, i.basePrice || 0, ((i.stockQuantity || 0) * (i.basePrice || 0)).toFixed(2)].join(','))].join('\n')
   const blob = new Blob([csv], { type: 'text/csv' }); const url = URL.createObjectURL(blob)
-  const a = document.createElement('a'); a.href = url; a.download = `inventory-${new Date().toISOString().split('T')[0]}.csv`; a.click()
+  const a = document.createElement('a'); a.href = url; a.download = `库存-${new Date().toISOString().split('T')[0]}.csv`; a.click()
 }
 
 const stockStatusClass = (qty: number, moq: number) => { if (!qty || qty <= 0) return 'text-red-600'; if (qty <= (moq || 10)) return 'text-orange-600'; return 'text-emerald-600' }

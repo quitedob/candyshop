@@ -171,7 +171,7 @@
                 <select id="invoice-orderId" v-model="form.orderId" name="orderId" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
                   <option value="">{{ t('admin.invoices.select_order') }}</option>
                   <option v-for="order in orders" :key="order.id" :value="order.id">
-                    #{{ order.orderNumber || order.id.substring(0, 8) }}
+                    #{{ order.orderNumber || String(order.id).substring(0, 8) }}
                   </option>
                 </select>
               </div>
@@ -408,9 +408,10 @@ const printInvoice = () => {
 }
 
 const exportInvoices = () => {
-  const csv = [['Invoice #', 'Order', 'Customer', 'Amount', 'Paid', 'Status', 'Date', 'Due Date'].join(','), ...filteredInvoices.value.map(inv => [inv.invoiceNumber, inv.orderNumber || inv.orderId || '', `"${inv.customerName || ''}"`, inv.totalAmount || 0, inv.paidAmount || 0, inv.status, inv.invoiceDate || '', inv.dueDate || ''].join(','))].join('\n')
+  const statusMap: Record<string, string> = { draft: '草稿', sent: '已发送', paid: '已付款', overdue: '逾期', cancelled: '已取消' }
+  const csv = [['发票号', '订单', '客户', '金额', '已付', '状态', '日期', '到期日'].join(','), ...filteredInvoices.value.map(inv => [inv.invoiceNumber, inv.orderNumber || inv.orderId || '', `"${inv.customerName || ''}"`, inv.totalAmount || 0, inv.paidAmount || 0, statusMap[inv.status] || inv.status || '', inv.invoiceDate || '', inv.dueDate || ''].join(','))].join('\n')
   const blob = new Blob([csv], { type: 'text/csv' }); const url = URL.createObjectURL(blob)
-  const a = document.createElement('a'); a.href = url; a.download = `invoices-${new Date().toISOString().split('T')[0]}.csv`; a.click()
+  const a = document.createElement('a'); a.href = url; a.download = `发票-${new Date().toISOString().split('T')[0]}.csv`; a.click()
 }
 
 const statusBadgeClass = (status: string) => {

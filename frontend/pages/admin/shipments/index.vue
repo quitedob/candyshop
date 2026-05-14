@@ -148,7 +148,7 @@
                 <select id="shipment-orderId" v-model="form.orderId" name="orderId" required class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
                   <option value="">{{ t('admin.shipments.select_order') }}</option>
                   <option v-for="order in orders" :key="order.id" :value="order.id">
-                    #{{ order.orderNumber || order.id.substring(0, 8) }} - {{ order.user?.firstName }} {{ order.user?.lastName }}
+                    #{{ order.orderNumber || String(order.id).substring(0, 8) }} - {{ order.user?.firstName }} {{ order.user?.lastName }}
                   </option>
                 </select>
               </div>
@@ -356,18 +356,19 @@ const saveShipment = async () => {
 const viewDetails = (shipment: any) => { selectedShipment.value = shipment; showDetailsModal.value = true }
 
 const exportShipments = () => {
+  const shipmentStatusMap: Record<string, string> = { pending: '待处理', in_transit: '运输中', delivered: '已签收', cancelled: '已取消', delayed: '延误' }
   const csv = [
-    ['Tracking', 'Order', 'Carrier', 'Destination', 'Status', 'ETA', 'Delivered'].join(','),
+    ['运单号', '订单', '承运商', '目的地', '状态', '预计到货', '实际签收'].join(','),
     ...filteredShipments.value.map(s => [
-      s.trackingNumber, s.orderNumber || s.orderId, s.carrier || 'Standard',
-      `"${s.destination?.city || ''}, ${s.destination?.country || ''}"`, s.status,
+      s.trackingNumber, s.orderNumber || s.orderId, s.carrier || '标准物流',
+      `"${s.destination?.city || ''}, ${s.destination?.country || ''}"`, shipmentStatusMap[s.status] || s.status || '',
       s.estimatedDelivery || '', s.actualDelivery || ''
     ].join(','))
   ].join('\n')
   const blob = new Blob([csv], { type: 'text/csv' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a'); a.href = url
-  a.download = `shipments-${new Date().toISOString().split('T')[0]}.csv`; a.click()
+  a.download = `发货-${new Date().toISOString().split('T')[0]}.csv`; a.click()
 }
 
 const statusBadgeClass = (status: string) => {

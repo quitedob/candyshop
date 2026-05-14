@@ -252,6 +252,7 @@
       "ai_generate": "AI 生成",
       "ai_generating": "生成中...",
       "ai_topic_placeholder": "输入主题，让AI为您撰写文章...",
+      "ai_case_topic_placeholder": "描述案例，让AI为您生成内容...",
       "convert_to_md": "转为MD",
       "back": "返回订单列表",
       "loading_details": "正在加载订单详情...",

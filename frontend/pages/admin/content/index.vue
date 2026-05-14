@@ -155,10 +155,10 @@
             </div>
 
             <!-- AI Generate Bar -->
-            <div v-if="form.type === 'post'" class="flex items-center gap-3 rounded-lg bg-amber-50 border border-amber-200 p-3">
+            <div class="flex items-center gap-3 rounded-lg bg-amber-50 border border-amber-200 p-3">
               <Icon name="heroicons:sparkles" class="h-5 w-5 text-amber-600 flex-shrink-0" />
               <label for="content-aiTopic" class="sr-only">{{ t('admin.content.ai_topic_placeholder') }}</label>
-              <input id="content-aiTopic" v-model="aiTopic" name="aiTopic" type="text" :placeholder="t('admin.content.ai_topic_placeholder')" class="flex-1 rounded-md border border-amber-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" @keydown.enter.prevent="generateWithAI" />
+              <input id="content-aiTopic" v-model="aiTopic" name="aiTopic" type="text" :placeholder="form.type === 'post' ? t('admin.content.ai_topic_placeholder') : t('admin.content.ai_case_topic_placeholder')" class="flex-1 rounded-md border border-amber-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" @keydown.enter.prevent="generateWithAI" />
               <button type="button" :disabled="aiGenerating || !aiTopic.trim()" class="inline-flex items-center gap-1.5 rounded-md bg-orange-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50" @click="generateWithAI">
                 <Icon v-if="aiGenerating" name="heroicons:arrow-path" class="h-4 w-4 animate-spin" />
                 <Icon v-else name="heroicons:sparkles" class="h-4 w-4" />
@@ -213,11 +213,9 @@ import { marked } from 'marked'
 
 definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
-const { token } = useAuth()
+const api = useApi()
 const { t, locale } = useI18n()
 const { enumLabel, formatDate } = useDisplay()
-const config = useRuntimeConfig()
-const baseURL = config.public.apiBase || '/api/v1'
 
 const typeOptions = [{ value: 'post' }, { value: 'case' }] as const
 type ContentType = 'post' | 'case'
@@ -268,24 +266,56 @@ const generateWithAI = async () => {
   aiGenerating.value = true
   formError.value = ''
   try {
-    const res = await $fetch<any>(`${baseURL}/admin/content/ai-generate`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token.value}` },
-      body: { topic: aiTopic.value, type: form.type, language: locale.value }
-    })
-    const raw = res.content || ''
-    const lines = raw.split('\n')
-    const titleLine = lines.find((l: string) => l.startsWith('# '))
-    if (titleLine && !form.title) form.title = titleLine.replace(/^#\s+/, '')
-    // Extract tags line
-    const tagsLine = lines.find((l: string) => l.startsWith('Tags:'))
-    if (tagsLine && !form.tagsInput) form.tagsInput = tagsLine.replace(/^Tags:\s*/, '')
-    // Remove tags line, convert Markdown to HTML for the rich editor
-    const mdContent = lines.filter((l: string) => !l.startsWith('Tags:')).join('\n').trim()
-    form.content = marked.parse(mdContent) as string
-    // Extract first paragraph as excerpt
-    const contentLines = form.content.replace(/<[^>]+>/g, '').split('\n').filter((l: string) => l.trim())
-    if (contentLines.length && !form.excerpt) form.excerpt = contentLines[0].substring(0, 200)
+    const res = await api.adminAIGenerateContent({ topic: aiTopic.value, type: form.type, language: locale.value })
+    const data = res.content
+
+    // Fallback: if AI returned raw text (parse error on backend), try old markdown parsing
+    if (res.parseError || typeof data === 'string') {
+      const raw = typeof data === 'string' ? data : ''
+      const lines = raw.split('\n')
+      const titleLine = lines.find((l: string) => l.startsWith('# '))
+      if (titleLine && !form.title) form.title = titleLine.replace(/^#\s+/, '')
+      const tagsLine = lines.find((l: string) => l.startsWith('Tags:'))
+      if (tagsLine && !form.tagsInput) form.tagsInput = tagsLine.replace(/^Tags:\s*/, '')
+      const mdContent = lines.filter((l: string) => !l.startsWith('Tags:')).join('\n').trim()
+      if (form.type === 'post') {
+        form.content = marked.parse(mdContent) as string
+      } else {
+        form.content = mdContent
+      }
+      if (!form.excerpt) {
+        const plain = form.content.replace(/<[^>]+>/g, '')
+        form.excerpt = plain.substring(0, 200)
+      }
+    } else if (data && typeof data === 'object') {
+      // Structured response: fill all fields, respecting existing manual edits
+      if (data.title && !form.title) form.title = data.title
+      if (data.slug && !form.slug) form.slug = data.slug
+      if (data.content && !form.content) form.content = data.content
+      if (data.excerpt && !form.excerpt) form.excerpt = data.excerpt
+      if (data.category && !form.category) form.category = data.category
+      if (data.readTime && !form.readTime) form.readTime = data.readTime
+      if (data.tags && !form.tagsInput) form.tagsInput = data.tags.join(', ')
+      // Author fields (post only)
+      if (data.authorName && !form.authorName) form.authorName = data.authorName
+      if (data.authorTitle && !form.authorTitle) form.authorTitle = data.authorTitle
+      if (data.authorBio && !form.authorBio) form.authorBio = data.authorBio
+      // Case-specific fields
+      if (data.client && !form.client) form.client = data.client
+      if (data.industry && !form.industry) form.industry = data.industry
+      if (data.location && !form.location) form.location = data.location
+      if (data.timeline && !form.timeline) form.timeline = data.timeline
+      if (data.challenge && !form.challenge) form.challenge = data.challenge
+      if (data.solution && !form.solution) form.solution = data.solution
+      if (data.result && !form.result) form.result = data.result
+      if (data.services && !form.servicesInput) form.servicesInput = data.services.join(', ')
+
+      // Auto-calculate readTime from content length if AI didn't provide it
+      if (!form.readTime && form.content) {
+        const wordCount = form.content.replace(/<[^>]+>/g, '').split(/\s+/).filter(Boolean).length
+        form.readTime = Math.max(1, Math.ceil(wordCount / 200))
+      }
+    }
   } catch (err: any) {
     formError.value = err?.data?.message || err.message || t('admin.content.ai_generate_failed')
   } finally { aiGenerating.value = false }
@@ -295,12 +325,10 @@ const generateWithAI = async () => {
 const fetchContent = async () => {
   pending.value = true; error.value = ''
   try {
-    const res = await $fetch<any>(`${baseURL}/admin/content?type=${selectedType.value}&page=${page.value}&limit=${pageSize}`, {
-      headers: { Authorization: `Bearer ${token.value}` }
-    })
+    const res = await api.adminGetContent({ type: selectedType.value, page: page.value, limit: pageSize })
     contentList.value = (res.data || []).map((item: any) => ({ ...item, type: selectedType.value }))
     pagination.value = res.pagination
-  } catch (err: any) { error.value = err?.data?.message || err.message || t('admin.content.load_failed') }
+  } catch (err: any) { error.value = err?.message || t('admin.content.load_failed') }
   finally { pending.value = false }
 }
 
@@ -316,9 +344,7 @@ const openCreateModal = () => {
 const openEditModal = async (item: any) => {
   editingId.value = item.id; formError.value = ''
   try {
-    const res = await $fetch<any>(`${baseURL}/admin/content/${item.id}?type=${item.type}`, {
-      headers: { Authorization: `Bearer ${token.value}` }
-    })
+    const res = await api.adminGetContentById(item.id, item.type)
     const c = res.content || item
     form.type = item.type; form.title = c.title || ''; form.slug = c.slug || ''
     form.thumbnail = c.thumbnail || ''; form.category = c.category || ''
@@ -333,7 +359,7 @@ const openEditModal = async (item: any) => {
     form.imagesInput = Array.isArray(c.images) ? c.images.join(', ') : ''
     form.challenge = c.challenge || ''; form.solution = c.solution || ''; form.result = c.result || ''
     showModal.value = true
-  } catch (err: any) { actionError.value = true; actionMessage.value = err?.data?.message || 'Load failed' }
+  } catch (err: any) { actionError.value = true; actionMessage.value = err?.message || t('admin.content.load_failed') }
 }
 
 const closeModal = () => { showModal.value = false; saving.value = false; formError.value = '' }
@@ -350,26 +376,26 @@ const saveContent = async () => {
   saving.value = true; formError.value = ''
   try {
     if (editingId.value) {
-      await $fetch(`${baseURL}/admin/content/${editingId.value}`, { method: 'PUT', headers: { Authorization: `Bearer ${token.value}` }, body: buildPayload() })
+      await api.adminUpdateContent(editingId.value, buildPayload())
       actionMessage.value = t('admin.content.updated_success')
     } else {
-      await $fetch(`${baseURL}/admin/content`, { method: 'POST', headers: { Authorization: `Bearer ${token.value}` }, body: buildPayload() })
+      await api.adminCreateContent(buildPayload())
       actionMessage.value = t('admin.content.created_success')
     }
     closeModal(); await fetchContent()
     // Invalidate public blog cache so changes appear immediately
     refreshNuxtData('blog-posts-all')
-  } catch (err: any) { formError.value = err?.data?.message || err.message || t('admin.content.save_failed') }
+  } catch (err: any) { formError.value = err?.message || t('admin.content.save_failed') }
   finally { saving.value = false }
 }
 
 const deleteContent = async (item: any) => {
   if (!confirm(t('admin.content.confirm_delete'))) return
   try {
-    await $fetch(`${baseURL}/admin/content/${item.id}?type=${item.type}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token.value}` } })
+    await api.adminDeleteContent(item.id, item.type)
     actionMessage.value = t('admin.content.deleted_success'); await fetchContent()
     refreshNuxtData('blog-posts-all')
-  } catch (err: any) { actionError.value = true; actionMessage.value = err?.data?.message || t('admin.content.delete_failed') }
+  } catch (err: any) { actionError.value = true; actionMessage.value = err?.message || t('admin.content.delete_failed') }
 }
 
 watch([selectedType, page], fetchContent)

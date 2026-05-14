@@ -20,7 +20,7 @@
       <div class="bg-white shadow overflow-hidden sm:rounded-lg">
         <div class="px-4 py-5 sm:px-6 flex justify-between items-center bg-gray-50 border-b border-gray-200">
           <div>
-            <h3 class="text-lg leading-6 font-medium text-gray-900">Inquiry #{{ inquiry.id.substring(0, 8) }}</h3>
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Inquiry #{{ String(inquiry.id).substring(0, 8) }}</h3>
             <p class="mt-1 max-w-2xl text-sm text-gray-500">
               {{ t('admin.inquiryDetail.submitted_on') }} {{ formatDate(inquiry.createdAt, { dateStyle: 'medium', timeStyle: 'short' }) }}
             </p>

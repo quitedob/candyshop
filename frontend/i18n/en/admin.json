@@ -252,6 +252,7 @@
       "ai_generate": "AI Generate",
       "ai_generating": "Generating...",
       "ai_topic_placeholder": "Enter a topic for AI to write about...",
+      "ai_case_topic_placeholder": "Describe the case study for AI to draft...",
       "convert_to_md": "Convert to MD",
       "back": "Back to Orders",
       "loading_details": "Loading order details...",
