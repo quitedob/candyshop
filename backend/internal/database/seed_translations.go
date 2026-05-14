@@ -16,7 +16,7 @@ import (
 // Skips if translations already exist (idempotent).
 func SeedTranslations(db *gorm.DB, localesDir string) error {
 	var count int64
-	db.Model(&modelsCommon.Translation{}).Count(&count)
+	db.Session(&gorm.Session{}).Model(&modelsCommon.Translation{}).Count(&count)
 	if count > 0 {
 		return nil
 	}

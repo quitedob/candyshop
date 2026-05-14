@@ -19,7 +19,7 @@ var (
 // Init loads all active translations from the database into the in-memory cache.
 func Init(db *gorm.DB) error {
 	var records []modelsCommon.Translation
-	if err := db.Where("is_active = ?", true).Find(&records).Error; err != nil {
+	if err := db.Session(&gorm.Session{}).Where("is_active = ?", true).Find(&records).Error; err != nil {
 		return err
 	}
 

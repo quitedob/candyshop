@@ -35,7 +35,7 @@ async function loadTranslations(page = 1) {
     translations.value = res.data || []
     pagination.value = res.pagination || pagination.value
   } catch (err: any) {
-    error.value = err?.message || 'Failed to load translations'
+    error.value = err?.message || t('admin.translations.load_failed')
   } finally {
     loading.value = false
   }
@@ -56,7 +56,7 @@ async function saveEdit(id: number) {
     editingId.value = null
     await loadTranslations(pagination.value.page)
   } catch (err: any) {
-    error.value = err?.message || 'Failed to update'
+    error.value = err?.message || t('admin.translations.update_failed')
   }
 }
 
@@ -66,7 +66,7 @@ async function deleteItem(id: number) {
     await api.deleteTranslation(String(id))
     await loadTranslations(pagination.value.page)
   } catch (err: any) {
-    error.value = err?.message || 'Failed to delete'
+    error.value = err?.message || t('admin.translations.delete_failed')
   }
 }
 
@@ -77,7 +77,7 @@ async function createItem() {
     newForm.value = { key: '', locale: 'en', value: '', group: 'errors' }
     await loadTranslations(1)
   } catch (err: any) {
-    error.value = err?.message || 'Failed to create'
+    error.value = err?.message || t('admin.translations.create_failed')
   }
 }
 
@@ -92,7 +92,7 @@ async function exportAll() {
     a.click()
     URL.revokeObjectURL(url)
   } catch (err: any) {
-    error.value = err?.message || 'Export failed'
+    error.value = err?.message || t('admin.translations.export_failed')
   }
 }
 

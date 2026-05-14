@@ -351,7 +351,6 @@ errors:
   certification_name_required: "name is required"
   dashboard_activity_fetch_failed: "Failed to load recent activity"
   oem_project_fetch_failed: "Failed to fetch OEM projects"
-  oem_project_update_failed: "Failed to update OEM project"
   oem_status_update_failed: "Failed to update OEM status"
 
   # Additional logistics/cross-border codes
@@ -384,7 +383,6 @@ errors:
   dispatch_failed: "Failed to dispatch shipment"
   event_add_failed: "Failed to add tracking event"
   delivery_confirm_failed: "Failed to confirm delivery"
-  timeline_fetch_failed: "Failed to fetch timeline"
 
   # Additional AI codes
   ai_disabled: "AI service not available"

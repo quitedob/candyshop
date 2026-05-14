@@ -351,7 +351,6 @@ errors:
   certification_name_required: "名称为必填项"
   dashboard_activity_fetch_failed: "加载近期活动失败"
   oem_project_fetch_failed: "获取 OEM 项目失败"
-  oem_project_update_failed: "更新 OEM 项目失败"
   oem_status_update_failed: "更新 OEM 状态失败"
 
   # 附加物流/跨境错误码
@@ -384,7 +383,6 @@ errors:
   dispatch_failed: "发货失败"
   event_add_failed: "添加追踪事件失败"
   delivery_confirm_failed: "确认签收失败"
-  timeline_fetch_failed: "获取时间线失败"
 
   # 附加 AI 错误码
   ai_disabled: "AI 服务不可用"
