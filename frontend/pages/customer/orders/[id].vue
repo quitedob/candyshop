@@ -2,7 +2,7 @@
   <div>
     <div class="mb-6">
       <NuxtLink :to="localePath('/customer/orders')" class="flex items-center text-sm font-medium text-highlight hover:text-highlight-hover">
-        <Icon name="heroicons:arrow-left" class="mr-1 h-4 w-4" />
+        <Icon name="heroicons:arrow-left" class="mr-1 h-4 w-4" aria-hidden="true" />
         {{ t('customer.orders.back') }}
       </NuxtLink>
     </div>
@@ -35,14 +35,14 @@
             </div>
           </div>
           <button :disabled="confirming || (!order.complianceOfficialEvidence && !complianceAck)" @click="confirmOrder" class="btn btn-warning">
-            <Icon name="heroicons:check-circle" class="mr-1.5 h-4 w-4" />
+            <Icon name="heroicons:check-circle" class="mr-1.5 h-4 w-4" aria-hidden="true" />
             {{ confirming ? t('customer.orders.confirming') : t('customer.orders.confirm_order') }}
           </button>
         </div>
       </div>
       <div v-if="order.status === 'pending'" class="mx-6 mt-4 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3">
         <div class="flex items-start gap-3">
-          <Icon name="heroicons:clock" class="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
+          <Icon name="heroicons:clock" class="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
           <div>
             <p class="text-sm font-medium text-orange-800">{{ t('customer.orders.pending_request_title') }}</p>
             <p class="mt-1 text-sm text-orange-700">{{ t('customer.orders.pending_request_body') }}</p>
@@ -123,7 +123,7 @@
             <p class="text-sm font-medium text-orange-800">{{ t('customer.orders.nudge_description') }}</p>
           </div>
           <button @click="nudgeOrder" :disabled="nudging" class="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 disabled:opacity-50 transition-colors">
-            <Icon name="heroicons:bell-alert" class="mr-1.5 h-4 w-4 inline" />
+            <Icon name="heroicons:bell-alert" class="mr-1.5 h-4 w-4 inline" aria-hidden="true" />
             {{ nudging ? t('customer.orders.nudging') : t('customer.orders.nudge_button') }}
           </button>
         </div>
@@ -193,7 +193,7 @@
             class="flex-1 form-input" :disabled="sending" />
           <button @click="sendMessage" :disabled="sending || !newMessage.trim()"
             class="btn btn-highlight px-4">
-            <Icon name="heroicons:paper-airplane" class="h-4 w-4" />
+            <Icon name="heroicons:paper-airplane" class="h-4 w-4" aria-hidden="true" />
             {{ sending ? '...' : t('customer.orders.send_message') }}
           </button>
         </div>

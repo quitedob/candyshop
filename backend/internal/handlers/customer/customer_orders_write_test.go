@@ -13,6 +13,7 @@ import (
 	modelsCommon "candypro/api/internal/models/common"
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
+	orderRepo "candypro/api/internal/repository/order"
 	modelsUser "candypro/api/internal/models/user"
 	servicesCommon "candypro/api/internal/services/common"
 	inquiryService "candypro/api/internal/services/inquiry"
@@ -270,6 +271,12 @@ func (f *fakeOrderRepo) ReleaseStockForOrder(ctx context.Context, order *modelsO
 	f.createdOrder = &cp
 	return nil
 }
+func (f *fakeOrderRepo) ReserveStockForOrder(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error {
+		cp := *order
+		cp.StockReserved = true
+		f.createdOrder = &cp
+		return nil
+	}
 func (f *fakeOrderRepo) DeleteWithStockRestore(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error {
 	f.createdOrder = nil
 	return nil
@@ -343,6 +350,24 @@ func (f *fakeOrderRepo) DistinctOrderingUsers(ctx context.Context, since time.Ti
 
 func (f *fakeOrderRepo) RevenueByDay(ctx context.Context, days int) ([]map[string]interface{}, error) {
 	return []map[string]interface{}{}, nil
+}
+func (f *fakeOrderRepo) SalesVelocity(ctx context.Context, months int) ([]orderRepo.SalesVelocityResult, error) {
+	return nil, nil
+}
+func (f *fakeOrderRepo) RFMAnalysis(ctx context.Context) ([]orderRepo.RFMRecord, error) {
+	return nil, nil
+}
+func (f *fakeOrderRepo) CustomerChurn(ctx context.Context, dormantDays int) ([]orderRepo.CustomerChurnResult, error) {
+	return nil, nil
+}
+func (f *fakeOrderRepo) InventoryHealth(ctx context.Context, salesWindowDays int) ([]orderRepo.InventoryHealthResult, error) {
+	return nil, nil
+}
+func (f *fakeOrderRepo) ProfitLossByPeriod(ctx context.Context, groupBy string, periods int) ([]orderRepo.ProfitLossResult, error) {
+	return nil, nil
+}
+func (f *fakeOrderRepo) ReplenishmentSuggestions(ctx context.Context, cycleDays int, salesWindowDays int) ([]orderRepo.ReplenishmentItem, error) {
+	return nil, nil
 }
 
 func TestCustomerCreateOrder_ComplianceViolation(t *testing.T) {
@@ -438,8 +463,8 @@ func TestCustomerCreateOrder_CompliancePass(t *testing.T) {
 	if orderRepo.createdOrder.UserID != "u-200" {
 		t.Fatalf("expected created order userID=u-200, got %s", orderRepo.createdOrder.UserID)
 	}
-	if !orderRepo.createdOrder.StockReserved {
-		t.Fatalf("expected created order StockReserved=true")
+	if orderRepo.createdOrder.StockReserved {
+		t.Fatalf("expected created order StockReserved=false (deferred to admin confirmation)")
 	}
 }
 

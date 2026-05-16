@@ -3,6 +3,7 @@ package eino
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -24,6 +25,7 @@ import (
 //
 //	Agent (LLM decision center)
 //	├── generate_trade_documents (Graph Tool: deterministic doc pipeline)
+//	├── translate_content (AI translation to multiple locales)
 //	├── check_compliance (rule-based country check)
 //	├── compliance_lookup (RAG corpus search)
 //	├── validate_lc_documents (L/C document verification)
@@ -32,7 +34,8 @@ import (
 //
 // chatModel is injected by the caller so both agent and AIService share one model config.
 // persister may be nil for chat-only deployments.
-func NewTradeAgent(ctx context.Context, chatModel model.ToolCallingChatModel, persister einotool.DocumentPersister) (adk.Agent, error) {
+// translateFn may be nil to skip the translate_content tool.
+func NewTradeAgent(ctx context.Context, chatModel model.ToolCallingChatModel, persister einotool.DocumentPersister, translateFn einotool.TranslateFunc) (adk.Agent, error) {
 	// ── Graph Tool: deterministic document generation pipeline ──
 	// Per Eino official guide: "Encapsulating Graph as Agent's Tool achieves 1+1 > 2"
 	docGraph, err := graph.NewDocumentPipelineGraph(ctx, persister)
@@ -73,20 +76,30 @@ func NewTradeAgent(ctx context.Context, chatModel model.ToolCallingChatModel, pe
 		quoteReviewTool,
 	}
 
+	// translate_content tool — AI-powered batch translation to multiple locales
+	if translateFn != nil {
+		translateTool, translateErr := einotool.NewTranslateContentTool(ctx, translateFn)
+		if translateErr != nil {
+			log.Printf("Warning: translate_content tool not available: %v", translateErr)
+		} else {
+			tools = append(tools, translateTool)
+		}
+	}
+
 	// RAG compliance lookup tool is temporarily disabled (Phase 5).
 	// Keep buildRagComplianceTool() + rag package + corpus/ intact for Phase 5.
 	// Uncomment the block below to re-enable:
 	/*
-	if ragTool, ragErr := buildRagComplianceTool(); ragErr == nil {
-		tools = append(tools, ragTool)
-	} else {
-		log.Printf("Warning: RAG compliance lookup tool not available: %v", ragErr)
-	}
+		if ragTool, ragErr := buildRagComplianceTool(); ragErr == nil {
+			tools = append(tools, ragTool)
+		} else {
+			log.Printf("Warning: RAG compliance lookup tool not available: %v", ragErr)
+		}
 	*/
 
 	a, err := adk.NewChatModelAgent(ctx, &adk.ChatModelAgentConfig{
 		Name:        "TradeAssistant",
-		Description: "AI trade coordinator for CandyPro OEM. Generates trade documents, checks compliance, validates L/C, tracks shipments, and queues quotations for human review.",
+		Description: "AI trade coordinator for CandyPro OEM. Generates trade documents, translates content to multiple languages, checks compliance, validates L/C, tracks shipments, and queues quotations for human review.",
 		Instruction: agent.TradeAgentInstruction,
 		Model:       chatModel,
 		ToolsConfig: adk.ToolsConfig{

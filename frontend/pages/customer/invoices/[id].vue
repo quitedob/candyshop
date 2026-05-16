@@ -13,9 +13,9 @@
       <div class="flex items-start justify-between">
         <div>
           <h2 class="text-xl font-bold text-gray-900">{{ invoice.invoiceNumber || invoice.id }}</h2>
-          <p class="text-sm text-gray-500 mt-1">{{ invoice.invoiceType || invoice.type }}</p>
+          <p class="text-sm text-gray-500 mt-1">{{ enumLabel('invoice_type', invoice.invoiceType || invoice.type) }}</p>
         </div>
-        <span :class="statusClass(invoice.status)" class="px-3 py-1 text-sm font-medium rounded-full">{{ invoice.status }}</span>
+        <span :class="statusClass(invoice.status)" class="px-3 py-1 text-sm font-medium rounded-full">{{ enumLabel('invoice_status', invoice.status) }}</span>
       </div>
       <div class="grid grid-cols-2 gap-4 text-sm">
         <div>
@@ -47,7 +47,7 @@
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const { t } = useI18n()
-const { formatNumber, formatDate } = useDisplay()
+const { enumLabel, formatNumber, formatDate } = useDisplay()
 const localePath = useLocalePath()
 const route = useRoute()
 const api = useApi()

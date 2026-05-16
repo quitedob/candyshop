@@ -31,7 +31,7 @@
               <p class="text-2xl font-semibold text-gray-900">{{ stats.totalUsers }}</p>
               <p class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
                 <Icon name="heroicons:arrow-up" class="self-center flex-shrink-0 h-5 w-5 text-green-500" />
-                {{ stats.newUsersThisWeek }} {{ t('admin.dashboard.this_week') }}
+                {{ t('admin.dashboard.new_users_this_week', { count: stats.newUsersThisWeek }) }}
               </p>
             </dd>
           </div>
@@ -227,6 +227,24 @@ const sparklineOptions = {
     }
   },
   scales: {
+    x: {
+      display: true,
+      title: {
+        display: true,
+        text: t('admin.dashboard.date'),
+        color: '#6B7280',
+        font: { size: 12 }
+      },
+      ticks: {
+        display: true,
+        maxTicksLimit: 10,
+        autoSkip: true,
+        maxRotation: 45,
+        color: '#6B7280',
+        font: { size: 11 }
+      },
+      grid: { display: false }
+    },
     y: {
       beginAtZero: true,
       ticks: { callback: (v: any) => cur() + ' ' + formatNumber(v) }

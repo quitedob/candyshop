@@ -5,6 +5,7 @@ import (
 
 	"candypro/api/internal/config"
 	"candypro/api/internal/pkg/storage"
+	productRepo "candypro/api/internal/repository/product"
 	servicesCommon "candypro/api/internal/services/common"
 	orderSvc "candypro/api/internal/services/order"
 	tradeSvc "candypro/api/internal/services/trade"
@@ -41,6 +42,14 @@ func NewHandler(cfg *config.Config, svcs *servicesCommon.AdminPortalServices, po
 		}
 	}
 	return h
+}
+
+// SupplierRepo returns the supplier repository for middleware wiring.
+func (h *Handler) SupplierRepo() *productRepo.SupplierRepository {
+	if h.services == nil {
+		return nil
+	}
+	return h.services.Supplier
 }
 
 // AttachTradeAgent wires the 13-tool TradeAgent into the admin AI service and stores it for SSE use.

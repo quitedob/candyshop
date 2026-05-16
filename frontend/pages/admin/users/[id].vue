@@ -20,7 +20,7 @@
             user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800',
             'inline-flex rounded-full px-3 py-1 text-sm font-semibold leading-5'
           ]">
-            {{ user.status }}
+            {{ enumLabel('user_status', user.status) }}
           </span>
         </div>
       </div>
@@ -133,6 +133,7 @@ definePageMeta({
 const route = useRoute()
 const { token, user: authUser } = useAuth()
 const { t, te } = useI18n()
+const { enumLabel } = useDisplay()
 const localePath = useLocalePath()
 
 // Guard: only superadmin can access user management

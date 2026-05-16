@@ -37,8 +37,20 @@
               <span v-if="product.halalCertified" class="badge badge-success">
                 {{ $t('factory.halal') }}
               </span>
-              <span v-if="product.organic" class="badge badge-accent">
+              <span v-if="product.isOrganic" class="badge badge-accent">
                 {{ $t('filters.organic') }}
+              </span>
+              <span v-if="product.isVegan" class="badge badge-success">
+                {{ $t('filters.vegan') }}
+              </span>
+              <span v-if="product.isGlutenFree" class="badge badge-info">
+                {{ $t('filters.gluten_free') }}
+              </span>
+              <span v-if="product.isSugarFree" class="badge badge-info">
+                {{ $t('filters.sugar_free') }}
+              </span>
+              <span v-if="product.isKosher" class="badge badge-accent">
+                {{ $t('filters.kosher') }}
               </span>
             </div>
 
@@ -61,9 +73,9 @@
                 <Icon name="lucide:clock" size="18" />
                 <span>{{ $t('oem.lead_time') }}: <strong>{{ product.leadTime }}</strong></span>
               </div>
-              <div v-if="product.port" class="product-header__spec">
-                <Icon name="lucide:anchor" size="18" />
-                <span>{{ $t('factory.port') }}: <strong>{{ product.port }}</strong></span>
+              <div v-if="product.gtin" class="product-header__spec">
+                <Icon name="lucide:barcode" size="18" />
+                <span>GTIN: <strong>{{ product.gtin }}</strong></span>
               </div>
             </div>
 
@@ -139,7 +151,7 @@
                 <div class="packaging-card__info">
                   <h4>{{ pkg.name }}</h4>
                   <p>{{ pkg.description }}</p>
-                  <span class="packaging-card__moq">MOQ: {{ pkg.moq }}</span>
+                  <span class="packaging-card__moq">{{ $t('product.moq_prefix') }}{{ pkg.moq }}</span>
                 </div>
               </div>
             </div>
@@ -285,14 +297,58 @@ const tabs = [
 ]
 
 // Spec rows
-const specRows = computed(() => [
-  { label: t('product.flavors'), value: product.value.flavors?.join(', ') || t('display.em_dash'), type: 'text' },
-  { label: t('product.shapes'), value: product.value.shapes?.join(', ') || t('display.em_dash'), type: 'text' },
-  { label: t('product.ingredients'), value: product.value.ingredients || t('display.em_dash'), type: 'text' },
-  { label: t('product.allergens'), value: product.value.allergens || t('display.em_dash'), type: 'text' },
-  { label: t('product.shelf_life'), value: product.value.shelfLife || t('display.em_dash'), type: 'text' },
-  { label: t('product.storage'), value: product.value.storage || t('display.em_dash'), type: 'text' }
-])
+const noVal = () => t('display.em_dash')
+const specRows = computed(() => {
+  const p = product.value
+  return [
+    // Basic
+    { label: t('product.flavors'), value: p.flavors?.join(', ') || noVal(), type: 'text' },
+    { label: t('product.shapes'), value: p.shapes?.join(', ') || noVal(), type: 'text' },
+    // Weight & Dimensions
+    { label: t('product.net_weight_per_piece'), value: p.netWeightPerPiece ? `${p.netWeightPerPiece}g` : noVal(), type: 'text' },
+    { label: t('product.net_weight_per_pack'), value: p.netWeightPerPack ? `${p.netWeightPerPack}g` : noVal(), type: 'text' },
+    { label: t('product.gross_weight_per_carton'), value: p.grossWeightPerCarton ? `${p.grossWeightPerCarton}kg` : noVal(), type: 'text' },
+    { label: t('product.pieces_per_pack'), value: p.piecesPerPack || noVal(), type: 'text' },
+    { label: t('product.packs_per_carton'), value: p.packsPerCarton || noVal(), type: 'text' },
+    { label: t('product.product_length'), value: p.productLengthMM ? `${p.productLengthMM}mm` : noVal(), type: 'text' },
+    { label: t('product.product_width'), value: p.productWidthMM ? `${p.productWidthMM}mm` : noVal(), type: 'text' },
+    { label: t('product.product_height'), value: p.productHeightMM ? `${p.productHeightMM}mm` : noVal(), type: 'text' },
+    // Ingredients
+    { label: t('product.ingredients'), value: p.ingredients || noVal(), type: 'text' },
+    { label: t('product.allergens'), value: p.allergens || noVal(), type: 'text' },
+    // Nutrition (per 100g)
+    { label: t('product.energy_kj'), value: p.energyKj ? `${p.energyKj}kJ` : noVal(), type: 'text' },
+    { label: t('product.energy_kcal'), value: p.energyKcal ? `${p.energyKcal}kcal` : noVal(), type: 'text' },
+    { label: t('product.total_fat'), value: p.totalFatG != null ? `${p.totalFatG}g` : noVal(), type: 'text' },
+    { label: t('product.saturated_fat'), value: p.saturatedFatG != null ? `${p.saturatedFatG}g` : noVal(), type: 'text' },
+    { label: t('product.carbohydrates'), value: p.carbohydratesG != null ? `${p.carbohydratesG}g` : noVal(), type: 'text' },
+    { label: t('product.sugars'), value: p.sugarsG != null ? `${p.sugarsG}g` : noVal(), type: 'text' },
+    { label: t('product.protein'), value: p.proteinG != null ? `${p.proteinG}g` : noVal(), type: 'text' },
+    { label: t('product.salt'), value: p.saltG != null ? `${p.saltG}g` : noVal(), type: 'text' },
+    { label: t('product.fiber'), value: p.fiberG != null ? `${p.fiberG}g` : noVal(), type: 'text' },
+    // Ingredient Compliance
+    { label: t('product.additives'), value: p.additives?.join(', ') || noVal(), type: 'text' },
+    { label: t('product.sweetener_type'), value: p.sweetenerType || noVal(), type: 'text' },
+    { label: t('product.cocoa_solids'), value: p.cocoaSolidsPct != null ? `${p.cocoaSolidsPct}%` : noVal(), type: 'text' },
+    { label: t('product.milk_solids'), value: p.milkSolidsPct != null ? `${p.milkSolidsPct}%` : noVal(), type: 'text' },
+    { label: t('product.gmo_status'), value: p.gmoStatus || noVal(), type: 'text' },
+    { label: t('product.may_contain'), value: p.mayContain?.join(', ') || noVal(), type: 'text' },
+    { label: t('product.water_activity'), value: p.waterActivity != null ? String(p.waterActivity) : noVal(), type: 'text' },
+    // Trade
+    { label: t('product.gtin'), value: p.gtin || noVal(), type: 'text' },
+    { label: t('product.hs_code'), value: p.hsCode || noVal(), type: 'text' },
+    { label: t('product.primary_packaging'), value: p.primaryPackaging || noVal(), type: 'text' },
+    { label: t('product.inner_pack_config'), value: p.innerPackConfig || noVal(), type: 'text' },
+    { label: t('product.pallet_config'), value: p.palletConfig || noVal(), type: 'text' },
+    // Storage
+    { label: t('product.shelf_life'), value: p.shelfLife || noVal(), type: 'text' },
+    { label: t('product.storage'), value: p.storage || noVal(), type: 'text' },
+    // Sample Specs
+    { label: t('product.sample_moq'), value: p.sampleMOQ || noVal(), type: 'text' },
+    { label: t('product.sample_lead_time'), value: p.sampleLeadTime || noVal(), type: 'text' },
+    { label: t('product.sample_price'), value: p.samplePrice ? `$${p.samplePrice}` : noVal(), type: 'text' },
+  ]
+})
 
 // Packaging options
 const packagingOptions = [

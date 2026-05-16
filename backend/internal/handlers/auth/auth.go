@@ -103,7 +103,9 @@ func (h *Handler) Register(c *gin.Context) {
 		verifyURL := frontendURL + "/auth/verify-email?token=" + verifyToken
 		subject := "Verify your CandyPro OEM account"
 		body := "Dear " + user.FirstName + ",\n\nPlease verify your email by clicking the link below:\n\n" + verifyURL + "\n\nThis link expires in 24 hours.\n\nBest regards,\nCandyPro OEM Team"
-		_ = emailSvc.SendEmail(context.Background(), user.Email, subject, body)
+		if e := emailSvc.SendEmail(context.Background(), user.Email, subject, body); e != nil {
+			log.Printf("auth: verification email failed for %s: %v", user.Email, e)
+		}
 	}()
 
 	c.JSON(http.StatusCreated, gin.H{
@@ -265,7 +267,9 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 	}
 
 	// H10: Rotate refresh token — revoke old, issue new
-	_ = h.services.Auth.RevokeRefreshToken(c.Request.Context(), req.RefreshToken)
+	if e := h.services.Auth.RevokeRefreshToken(c.Request.Context(), req.RefreshToken); e != nil {
+		log.Printf("auth: RevokeRefreshToken failed: %v", e)
+	}
 	newRefreshToken, err := h.services.JWT.GenerateRefreshToken(c.Request.Context(), user, c.ClientIP(), c.Request.UserAgent())
 	if err != nil {
 		// Non-fatal: return access token without new refresh token
@@ -306,7 +310,9 @@ func (h *Handler) Logout(c *gin.Context) {
 		return
 	}
 
-	_ = h.services.Auth.Logout(c.Request.Context(), req.RefreshToken)
+	if e := h.services.Auth.Logout(c.Request.Context(), req.RefreshToken); e != nil {
+		log.Printf("auth: Logout failed: %v", e)
+	}
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }
 
@@ -633,7 +639,9 @@ func (h *Handler) ChangePassword(c *gin.Context) {
 
 	// SEC-8: Revoke all refresh tokens after password change
 	if h.services.Auth != nil {
-		_ = h.services.Auth.RevokeAllUserTokens(c.Request.Context(), userID)
+		if e := h.services.Auth.RevokeAllUserTokens(c.Request.Context(), userID); e != nil {
+			log.Printf("auth: RevokeAllUserTokens failed for %s: %v", userID, e)
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -701,7 +709,9 @@ func (h *Handler) ResendVerificationEmail(c *gin.Context) {
 		verifyURL := frontendURL + "/auth/verify-email?token=" + verifyToken
 		subject := "Verify your CandyPro OEM account"
 		body := "Dear " + user.FirstName + ",\n\nPlease verify your email by clicking the link below:\n\n" + verifyURL + "\n\nThis link expires in 24 hours.\n\nBest regards,\nCandyPro OEM Team"
-		_ = emailSvc.SendEmail(context.Background(), user.Email, subject, body)
+		if e := emailSvc.SendEmail(context.Background(), user.Email, subject, body); e != nil {
+			log.Printf("auth: verification email failed for %s: %v", user.Email, e)
+		}
 	}()
 
 	c.JSON(http.StatusOK, gin.H{

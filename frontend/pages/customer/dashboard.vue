@@ -7,7 +7,7 @@
     <div v-else-if="error" class="bg-red-50 p-4 rounded-md">
       <div class="flex">
         <div class="flex-shrink-0">
-          <Icon name="heroicons:x-circle" class="h-5 w-5 text-red-400" />
+          <Icon name="heroicons:x-circle" class="h-5 w-5 text-red-400" aria-hidden="true" />
         </div>
         <div class="ml-3">
           <h3 class="text-sm font-medium text-red-800">{{ t('customer.dashboard.error') }}</h3>
@@ -22,22 +22,22 @@
       <!-- Pending Approval Card -->
       <div v-if="isPending" class="pending-card">
         <div class="pending-card__icon">
-          <Icon name="heroicons:clock" class="h-8 w-8" />
+          <Icon name="heroicons:clock" class="h-8 w-8" aria-hidden="true" />
         </div>
         <div class="pending-card__content">
           <h3 class="pending-card__title">{{ t('customer.pending.dashboard_title') }}</h3>
           <p class="pending-card__message">{{ t('customer.pending.dashboard_message') }}</p>
           <div class="pending-card__steps">
             <div class="pending-card__step">
-              <Icon name="heroicons:eye" class="h-5 w-5" />
+              <Icon name="heroicons:eye" class="h-5 w-5" aria-hidden="true" />
               <span>{{ t('customer.pending.step_browse') }}</span>
             </div>
             <div class="pending-card__step">
-              <Icon name="heroicons:shield-check" class="h-5 w-5" />
+              <Icon name="heroicons:shield-check" class="h-5 w-5" aria-hidden="true" />
               <span>{{ t('customer.pending.step_review') }}</span>
             </div>
             <div class="pending-card__step">
-              <Icon name="heroicons:shopping-bag" class="h-5 w-5" />
+              <Icon name="heroicons:shopping-bag" class="h-5 w-5" aria-hidden="true" />
               <span>{{ t('customer.pending.step_order') }}</span>
             </div>
           </div>
@@ -67,7 +67,7 @@
           <div class="p-5">
             <div class="flex items-center">
               <div class="flex-shrink-0">
-                <Icon name="heroicons:shopping-bag" class="h-6 w-6 text-gray-400" />
+                <Icon name="heroicons:shopping-bag" class="h-6 w-6 text-gray-400" aria-hidden="true" />
               </div>
               <div class="ml-5 w-0 flex-1">
                 <dl>
@@ -92,7 +92,7 @@
           <div class="p-5">
             <div class="flex items-center">
               <div class="flex-shrink-0">
-                <Icon name="heroicons:user" class="h-6 w-6 text-gray-400" />
+                <Icon name="heroicons:user" class="h-6 w-6 text-gray-400" aria-hidden="true" />
               </div>
               <div class="ml-5 w-0 flex-1">
                 <dl>
@@ -127,19 +127,19 @@
                     <p class="text-sm font-medium text-orange-600 truncate">Order #{{ order.orderNumber || order.id.substring(0,8) }}</p>
                     <div class="ml-2 flex-shrink-0 flex">
                       <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                        {{ order.status }}
+                        {{ enumLabel('order_status', order.status) }}
                       </p>
                     </div>
                   </div>
                   <div class="mt-2 sm:flex sm:justify-between">
                     <div class="sm:flex">
                       <p class="flex items-center text-sm text-gray-500">
-                        <Icon name="heroicons:currency-dollar" class="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
+                        <Icon name="heroicons:currency-dollar" class="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" aria-hidden="true" />
                         {{ formatNumber(order.totalAmount) }}
                       </p>
                     </div>
                     <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                      <Icon name="heroicons:calendar" class="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
+                      <Icon name="heroicons:calendar" class="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" aria-hidden="true" />
                       <p>{{ t('customer.dashboard.placed_on') }} <time :datetime="order.createdAt">{{ formatDate(order.createdAt) }}</time></p>
                     </div>
                   </div>
@@ -162,7 +162,7 @@ import { ref, onMounted } from 'vue'
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const { t } = useI18n()
-const { formatNumber, formatDate } = useDisplay()
+const { enumLabel, formatNumber, formatDate } = useDisplay()
 const localePath = useLocalePath()
 const { user, isPending } = useAuth()
 const api = useApi()
@@ -190,8 +190,8 @@ onMounted(async () => {
   gap: 1.5rem;
   padding: 1.5rem;
   margin-bottom: 2rem;
-  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-  border: 1px solid #f59e0b;
+  background: linear-gradient(135deg, rgba(var(--color-warning-rgb), 0.08) 0%, rgba(var(--color-warning-rgb), 0.18) 100%);
+  border: 1px solid var(--color-warning);
   border-radius: 0.75rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
@@ -203,7 +203,7 @@ onMounted(async () => {
   justify-content: center;
   width: 3rem;
   height: 3rem;
-  background: #f59e0b;
+  background: var(--color-warning);
   color: white;
   border-radius: 9999px;
 }
@@ -211,13 +211,13 @@ onMounted(async () => {
 .pending-card__title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #92400e;
+  color: var(--color-text);
   margin-bottom: 0.25rem;
 }
 
 .pending-card__message {
   font-size: 0.875rem;
-  color: #a16207;
+  color: var(--color-text-light);
   margin-bottom: 1rem;
 }
 
@@ -233,11 +233,11 @@ onMounted(async () => {
   gap: 0.375rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #92400e;
+  color: var(--color-text);
 }
 
 .pending-card__step svg {
-  color: #f59e0b;
+  color: var(--color-warning);
 }
 
 @media (max-width: 640px) {

@@ -53,7 +53,9 @@ func (s *OrderService) ProcessPendingTradeOutbox(ctx context.Context, trade *tra
 			OrderID string `json:"orderId"`
 		}
 		if e := json.Unmarshal(row.Payload, &p); e != nil {
-			_ = s.repo.UpdateOutboxResult(ctx, row.ID, modelsOrder.OutboxStatusFailed, e.Error(), &now)
+			if ue := s.repo.UpdateOutboxResult(ctx, row.ID, modelsOrder.OutboxStatusFailed, e.Error(), &now); ue != nil {
+				log.Printf("event_outbox: UpdateOutboxResult failed for event %d: %v", row.ID, ue)
+			}
 			continue
 		}
 		if err := s.repo.IncrementOutboxAttempt(ctx, row.ID); err != nil {
@@ -64,7 +66,9 @@ func (s *OrderService) ProcessPendingTradeOutbox(ctx context.Context, trade *tra
 
 		order, e := s.repo.FindByID(ctx, p.OrderID)
 		if e != nil || order == nil {
-			_ = s.repo.UpdateOutboxResult(ctx, row.ID, modelsOrder.OutboxStatusFailed, "order not found", &now)
+			if ue := s.repo.UpdateOutboxResult(ctx, row.ID, modelsOrder.OutboxStatusFailed, "order not found", &now); ue != nil {
+				log.Printf("event_outbox: UpdateOutboxResult failed for event %d: %v", row.ID, ue)
+			}
 			continue
 		}
 
@@ -73,7 +77,9 @@ func (s *OrderService) ProcessPendingTradeOutbox(ctx context.Context, trade *tra
 			continue
 		}
 		if has {
-			_ = s.repo.UpdateOutboxResult(ctx, row.ID, modelsOrder.OutboxStatusProcessed, "", &now)
+			if ue := s.repo.UpdateOutboxResult(ctx, row.ID, modelsOrder.OutboxStatusProcessed, "", &now); ue != nil {
+				log.Printf("event_outbox: UpdateOutboxResult failed for event %d: %v", row.ID, ue)
+			}
 			processed++
 			continue
 		}
@@ -90,11 +96,15 @@ func (s *OrderService) ProcessPendingTradeOutbox(ctx context.Context, trade *tra
 		trans := BuildTradeTransactionFromOrderWithHints(order, inc, notes)
 		if e := trade.CreateTransaction(ctx, trans); e != nil {
 			if attempt >= 5 {
-				_ = s.repo.UpdateOutboxResult(ctx, row.ID, modelsOrder.OutboxStatusFailed, e.Error(), &now)
+				if ue := s.repo.UpdateOutboxResult(ctx, row.ID, modelsOrder.OutboxStatusFailed, e.Error(), &now); ue != nil {
+				log.Printf("event_outbox: UpdateOutboxResult failed for event %d: %v", row.ID, ue)
+			}
 			}
 			continue
 		}
-		_ = s.repo.UpdateOutboxResult(ctx, row.ID, modelsOrder.OutboxStatusProcessed, "", &now)
+		if ue := s.repo.UpdateOutboxResult(ctx, row.ID, modelsOrder.OutboxStatusProcessed, "", &now); ue != nil {
+			log.Printf("event_outbox: UpdateOutboxResult failed for event %d: %v", row.ID, ue)
+		}
 		processed++
 	}
 	return processed, nil

@@ -124,7 +124,7 @@ func (h *Handler) AdminCreateOrder(c *gin.Context) {
 		Status:         status,
 		PaymentStatus:  paymentStatus,
 		Items:          items,
-		StockReserved:  len(items) > 0,
+		StockReserved:  len(items) > 0 && requiresPaidBeforeExecution(status),
 		Subtotal:       subtotal,
 		TaxAmount:      req.TaxAmount,
 		ShippingAmount: req.ShippingAmount,
@@ -317,6 +317,18 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 		c.JSON(http.StatusOK, order)
 		return
 	}
+	// Reserve stock when confirming an order that was created without stock deduction
+	if currentStatus == modelsOrder.OrderStatusConfirmed && !order.StockReserved && len(order.Items) > 0 {
+		order.UpdatedAt = time.Now()
+		if err := h.services.Order.ReserveOrderStock(c.Request.Context(), order); err != nil {
+			if errors.Is(err, modelsOrder.ErrInsufficientStock) {
+				response.ErrorResp(c, http.StatusUnprocessableEntity, "inventory_violation")
+				return
+			}
+			response.ErrorResp(c, http.StatusInternalServerError, "order_stock_reserve_failed")
+			return
+		}
+	}
 
 	now := time.Now()
 	order.UpdatedAt = now
@@ -348,7 +360,27 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 		h.services.Order.SendOrderStatusEmail(order, order.User.Email,
 			order.User.FirstName+" "+order.User.LastName, currentStatus)
 	}
+	h.dispatchOrderWebhook(c, order, previousStatus, currentStatus)
 	c.JSON(http.StatusOK, order)
+}
+
+// dispatchOrderWebhook fires outgoing webhooks for order status transitions.
+func (h *Handler) dispatchOrderWebhook(c *gin.Context, order *modelsOrder.Order, prevStatus, newStatus string) {
+	if h.services == nil || h.services.Webhook == nil || prevStatus == newStatus {
+		return
+	}
+	var eventType string
+	switch newStatus {
+	case modelsOrder.OrderStatusConfirmed:
+		eventType = modelsOrder.WebhookEventOrderConfirmed
+	case modelsOrder.OrderStatusShipped:
+		eventType = modelsOrder.WebhookEventOrderShipped
+	case modelsOrder.OrderStatusDelivered:
+		eventType = modelsOrder.WebhookEventOrderDelivered
+	default:
+		return
+	}
+	h.services.Webhook.Dispatch(c.Request.Context(), eventType, order.ID, order)
 }
 
 // syncOrderFinancialSideEffects 订单金额变更后同步贸易主单并写审计

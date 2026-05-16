@@ -42,6 +42,20 @@ func normalizeLocale(s string) string {
 		return "zh"
 	case "en", "en-us", "en-gb", "us", "gb":
 		return "en"
+	case "ko", "ko-kr":
+		return "ko"
+	case "ar", "ar-sa", "ar-ae", "ar-eg":
+		return "ar"
+	case "ja", "ja-jp":
+		return "ja"
+	case "th", "th-th":
+		return "th"
+	case "vi", "vi-vn":
+		return "vi"
+	case "id", "id-id":
+		return "id"
+	case "ms", "ms-my":
+		return "ms"
 	default:
 		if len(s) >= 2 {
 			candidate := s[:2]

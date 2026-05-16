@@ -36,7 +36,7 @@
           </div>
 
           <div class="factory-hero__image">
-            <img src="/images/factory-hero.jpg" alt="Factory" />
+            <img src="/images/factory-hero.jpg" :alt="$t('factory.alt_hero')" width="600" height="400" loading="lazy" />
           </div>
 
           <!-- Audio Tour Buttons -->
@@ -78,10 +78,10 @@
           </p>
 
           <div class="about__gallery">
-            <img src="/images/factory-1.jpg" alt="Production line" />
-            <img src="/images/factory-2.jpg" alt="Quality control" />
-            <img src="/images/factory-3.jpg" alt="Packaging area" />
-            <img src="/images/factory-4.jpg" alt="Warehouse" />
+            <img src="/images/factory-1.jpg" :alt="$t('factory.alt_production')" width="400" height="300" loading="lazy" />
+            <img src="/images/factory-2.jpg" :alt="$t('factory.alt_quality')" width="400" height="300" loading="lazy" />
+            <img src="/images/factory-3.jpg" :alt="$t('factory.alt_packaging')" width="400" height="300" loading="lazy" />
+            <img src="/images/factory-4.jpg" :alt="$t('factory.alt_warehouse')" width="400" height="300" loading="lazy" />
           </div>
         </div>
       </div>
@@ -104,7 +104,7 @@
             <p class="cert-card__description">{{ cert.description }}</p>
             <div class="cert-card__details">
               <span class="cert-card__issuer">{{ cert.issuer }}</span>
-              <span class="cert-card__valid">Valid until {{ cert.validUntil }}</span>
+              <span class="cert-card__valid">{{ $t('factory.cert_valid_until', { date: cert.validUntil }) }}</span>
             </div>
             <button v-if="cert.downloadUrl" class="cert-card__download">
               <Icon name="lucide:download" size="16" />
@@ -226,7 +226,7 @@
           </div>
 
           <div class="laboratory__image">
-            <img src="/images/laboratory.jpg" alt="Quality Laboratory" />
+            <img src="/images/laboratory.jpg" :alt="$t('factory.alt_laboratory')" width="600" height="400" loading="lazy" />
           </div>
         </div>
       </div>
@@ -316,7 +316,7 @@ const certifications = [
   {
     id: 1,
     name: t('factory.haccp'),
-    description: 'Hazard Analysis Critical Control Point - Food Safety Management System',
+    description: t('factory.cert_haccp_desc'),
     issuer: 'SGS',
     validUntil: '2027',
     icon: 'lucide:shield-check',
@@ -325,7 +325,7 @@ const certifications = [
   {
     id: 2,
     name: t('factory.iso'),
-    description: 'Food Safety Management System Standard',
+    description: t('factory.cert_iso_desc'),
     issuer: 'BSI',
     validUntil: '2027',
     icon: 'lucide:check-circle-2',
@@ -334,7 +334,7 @@ const certifications = [
   {
     id: 3,
     name: t('factory.brc'),
-    description: 'British Retail Consortium Global Standard for Food Safety - Grade A',
+    description: t('factory.cert_brc_desc'),
     issuer: 'BRC',
     validUntil: '2026',
     icon: 'lucide:award',
@@ -343,7 +343,7 @@ const certifications = [
   {
     id: 4,
     name: t('factory.halal'),
-    description: 'Halal Certification for Islamic Market Compliance',
+    description: t('factory.cert_halal_desc'),
     issuer: 'IFRC',
     validUntil: '2027',
     icon: 'lucide:star',

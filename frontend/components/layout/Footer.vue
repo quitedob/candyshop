@@ -10,7 +10,7 @@
           </div>
           <div class="footer__newsletter-actions">
             <NuxtLink :to="localePath('/contact')" class="footer__newsletter-btn footer__newsletter-btn--inquiry">
-              <Icon name="lucide:mail" size="20" />
+              <Icon name="lucide:mail" size="20" aria-hidden="true" />
               {{ $t('contact.send_inquiry') }}
             </NuxtLink>
             <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="footer__newsletter-btn footer__newsletter-btn--whatsapp">
@@ -75,23 +75,23 @@
             <h4 class="footer__title">{{ $t('contact.title') }}</h4>
             <ul class="footer__contact">
               <li class="footer__contact-item">
-                <Icon name="lucide:map-pin" size="16" />
+                <Icon name="lucide:map-pin" size="16" aria-hidden="true" />
                 <span>No. 88 Shipin Road, Jinshan District, Shanghai 201500, China</span>
               </li>
               <li class="footer__contact-item">
-                <Icon name="lucide:phone" size="16" />
+                <Icon name="lucide:phone" size="16" aria-hidden="true" />
                 <a href="tel:+862167310088">+86 21 6731 0088</a>
               </li>
               <li class="footer__contact-item">
-                <Icon name="lucide:mail" size="16" />
+                <Icon name="lucide:mail" size="16" aria-hidden="true" />
                 <a href="mailto:sales@candypro.com">sales@candypro.com</a>
               </li>
               <li class="footer__contact-item">
-                <Icon name="lucide:message-circle" size="16" />
+                <Icon name="lucide:message-circle" size="16" aria-hidden="true" />
                 <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer">WhatsApp: +86 21 6731 0088</a>
               </li>
               <li class="footer__contact-item">
-                <Icon name="lucide:clock" size="16" />
+                <Icon name="lucide:clock" size="16" aria-hidden="true" />
                 <span>{{ $t('contact.working_hours') }}</span>
               </li>
             </ul>
@@ -99,19 +99,19 @@
             <!-- Social Links -->
             <div class="footer__social">
               <a href="https://facebook.com/candypro" target="_blank" rel="noopener noreferrer" :aria-label="t('a11y.facebook')" class="footer__social-link footer__social-link--facebook">
-                <Icon name="lucide:facebook" size="18" />
+                <Icon name="lucide:facebook" size="18" aria-hidden="true" />
               </a>
               <a href="https://linkedin.com/company/candypro" target="_blank" rel="noopener noreferrer" :aria-label="t('a11y.linkedin')" class="footer__social-link footer__social-link--linkedin">
-                <Icon name="lucide:linkedin" size="18" />
+                <Icon name="lucide:linkedin" size="18" aria-hidden="true" />
               </a>
               <a href="https://instagram.com/candypro" target="_blank" rel="noopener noreferrer" :aria-label="t('a11y.instagram')" class="footer__social-link footer__social-link--instagram">
-                <Icon name="lucide:instagram" size="18" />
+                <Icon name="lucide:instagram" size="18" aria-hidden="true" />
               </a>
               <a href="https://youtube.com/@candypro" target="_blank" rel="noopener noreferrer" :aria-label="t('a11y.youtube')" class="footer__social-link footer__social-link--youtube">
-                <Icon name="lucide:youtube" size="18" />
+                <Icon name="lucide:youtube" size="18" aria-hidden="true" />
               </a>
               <a href="https://twitter.com/candypro" target="_blank" rel="noopener noreferrer" :aria-label="t('a11y.twitter')" class="footer__social-link footer__social-link--twitter">
-                <Icon name="lucide:twitter" size="18" />
+                <Icon name="lucide:twitter" size="18" aria-hidden="true" />
               </a>
             </div>
           </div>
@@ -137,7 +137,7 @@
               :class="['footer__lang-btn', { 'footer__lang-btn--active': loc.code === currentLocale }]"
               @click="switchLocale(loc.code)"
             >
-              {{ loc.code === 'en' ? $t('languages.en_short') : $t('languages.zh') }}
+              {{ $t(`languages.${loc.code}_short`) }}
             </button>
           </div>
         </div>
@@ -150,7 +150,7 @@
 import { computed } from 'vue'
 import { useI18n, useLocalePath } from '#i18n'
 
-const { t, locale, setLocale } = useI18n()
+const { t, locale, setLocale, availableLocales } = useI18n()
 const localePath = useLocalePath()
 const config = useRuntimeConfig()
 const { isAuthenticated, isAdmin } = useAuth()
@@ -158,11 +158,6 @@ const { isAuthenticated, isAdmin } = useAuth()
 const currentYear = computed(() => new Date().getFullYear())
 const certifications = ['HACCP', 'ISO22000', 'BRC', 'HALAL', 'FDA']
 const hydrated = ref(false)
-
-const availableLocales = [
-  { code: 'en', name: 'English' },
-  { code: 'zh', name: '中文' }
-]
 
 const currentLocale = computed(() => locale.value)
 

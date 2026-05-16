@@ -18,7 +18,7 @@
           :aria-expanded="expandedIndex === index"
         >
           <div class="oem-option__icon">
-            <Icon :name="option.icon" size="24" />
+            <Icon :name="option.icon" size="24" aria-hidden="true" />
           </div>
           <div class="oem-option__info">
             <h4 class="oem-option__title">{{ option.title }}</h4>
@@ -29,6 +29,7 @@
             size="20"
             class="oem-option__chevron"
             :class="{ 'oem-option__chevron--open': expandedIndex === index }"
+            aria-hidden="true"
           />
         </button>
 
@@ -53,12 +54,12 @@
                     loading="lazy"
                   />
                   <div v-else class="oem-choice__placeholder">
-                    <Icon name="lucide:image" size="32" />
+                    <Icon name="lucide:image" size="32" aria-hidden="true" />
                   </div>
                 </div>
                 <span class="oem-choice__label">{{ choice.label }}</span>
                 <div v-if="selectedChoices[index] === choice.id" class="oem-choice__check">
-                  <Icon name="lucide:check" size="16" />
+                  <Icon name="lucide:check" size="16" aria-hidden="true" />
                 </div>
               </div>
             </div>

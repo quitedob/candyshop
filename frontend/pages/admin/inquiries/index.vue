@@ -20,7 +20,7 @@
             <th>{{ t('admin.inquiries.col_company_contact') }}</th>
             <th>{{ t('admin.inquiries.col_products') }}</th>
             <th>{{ t('admin.inquiries.col_status') }}</th>
-            <th><span class="sr-only">Actions</span></th>
+            <th class="text-sm font-semibold text-gray-900">{{ $t('common.actions') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -44,7 +44,7 @@
             <td>{{ formatProducts(inquiry.interestedProducts) }}</td>
             <td>
               <span class="badge" :class="statusClass(inquiry.status)">
-                {{ inquiry.status }}
+                {{ enumLabel('inquiry_status', inquiry.status) }}
               </span>
             </td>
             <td class="text-right">
@@ -281,7 +281,8 @@ const statusClass = (status: string) => {
   if (status === 'pending') return 'badge-warning'
   if (status === 'contacted' || status === 'quoted') return 'badge-info'
   if (status === 'negotiating') return 'badge-primary'
-  if (status === 'won') return 'badge-success'
+  if (status === 'won' || status === 'converted') return 'badge-success'
+  if (status === 'lost') return 'badge-error'
   return 'badge-default'
 }
 
@@ -655,7 +656,7 @@ onMounted(fetchInquiries)
 }
 
 .link-danger:hover {
-  color: #dc2626;
+  color: var(--color-error);
 }
 
 .form-grid {

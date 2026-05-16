@@ -31,6 +31,7 @@ type Repositories struct {
 	Role               *auth.RoleRepository
 	Factory            *oem.FactoryRepository
 	Project            *oem.ProjectRepository
+	OEM                *oem.OEMRepository
 	Trade              trade.TradeRepository
 	Shipment           *trade.ShipmentRepository
 	ShipmentEvent      *trade.ShipmentEventRepository
@@ -40,7 +41,23 @@ type Repositories struct {
 	StockTransaction   *order.StockTransactionRepository
 	Translation        *translation.TranslationRepository
 	OrderMessage       *order.OrderMessageRepository
+	Negotiation        *order.NegotiationRepository
+	Shipping           *order.ShippingRepository
+	Tax                *order.TaxRepository
 	Notification       *notificationrepo.NotificationRepository
+	StockTransfer      *order.StockTransferRepository
+	Fulfillment        *order.FulfillmentRepository
+	Return             *order.ReturnRepository
+	Coupon             *order.CouponRepository
+	Supplier           *product.SupplierRepository
+	Channel            *product.ChannelRepository
+	Webhook            *order.WebhookRepository
+		Event              *order.EventRepository
+		HookConfig         *order.HookRepository
+		HookExecution      *order.HookExecutionRepository
+	BuyerOrg           *order.BuyerOrgRepository
+	OrgMember          *order.OrgMemberRepository
+	ApprovalAction     *order.ApprovalActionRepository
 }
 
 func New(db *gorm.DB) *Repositories {
@@ -58,6 +75,7 @@ func New(db *gorm.DB) *Repositories {
 		Role:               auth.NewRoleRepository(db),
 		Factory:            oem.NewFactoryRepository(db),
 		Project:            oem.NewProjectRepository(db),
+		OEM:                oem.NewOEMRepository(db),
 		Trade:              trade.NewTradeRepository(db),
 		Shipment:           trade.NewShipmentRepository(db),
 		ShipmentEvent:      trade.NewShipmentEventRepository(db),
@@ -67,6 +85,22 @@ func New(db *gorm.DB) *Repositories {
 		StockTransaction:   order.NewStockTransactionRepository(db),
 		Translation:        translation.New(db),
 		OrderMessage:       order.NewOrderMessageRepository(db),
+		Negotiation:        order.NewNegotiationRepository(db),
+		Shipping:           order.NewShippingRepository(db),
+			Tax:                order.NewTaxRepository(db),
 		Notification:       notificationrepo.NewNotificationRepository(db),
+		StockTransfer:      order.NewStockTransferRepository(db),
+		Fulfillment:        order.NewFulfillmentRepository(db),
+		Return:             order.NewReturnRepository(db),
+		Coupon:             order.NewCouponRepository(db),
+		Supplier:           product.NewSupplierRepository(db),
+		Channel:            product.NewChannelRepository(db),
+		Webhook:            order.NewWebhookRepository(db),
+			Event:              order.NewEventRepository(db),
+			HookConfig:         order.NewHookRepository(db),
+			HookExecution:      order.NewHookExecutionRepository(db),
+		BuyerOrg:           order.NewBuyerOrgRepository(db),
+		OrgMember:          order.NewOrgMemberRepository(db),
+		ApprovalAction:     order.NewApprovalActionRepository(db),
 	}
 }

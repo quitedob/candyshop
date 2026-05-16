@@ -293,7 +293,7 @@ useSeo({
   font-size: var(--text-sm);
   font-weight: 500;
   color: var(--color-success);
-  background-color: #dcfce7;
+  background-color: rgba(var(--color-success-rgb), 0.15);
   border-radius: var(--radius-sm);
 }
 

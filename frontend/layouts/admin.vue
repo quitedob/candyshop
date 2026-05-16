@@ -10,7 +10,7 @@
         :aria-label="t('admin.a11y.openNav')"
         @click="isMobileNavOpen = !isMobileNavOpen"
       >
-        <Icon name="heroicons:bars-3" class="admin-mobile-topbar__icon" />
+        <Icon name="heroicons:bars-3" class="admin-mobile-topbar__icon" aria-hidden="true" />
       </button>
       <span class="admin-mobile-topbar__brand">{{ t('admin.brand') }}</span>
     </header>
@@ -48,7 +48,7 @@
           :aria-label="t('admin.a11y.closeNav')"
           @click="isMobileNavOpen = false"
         >
-          <Icon name="heroicons:x-mark" class="admin-sidebar__close-icon" />
+          <Icon name="heroicons:x-mark" class="admin-sidebar__close-icon" aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -57,7 +57,7 @@
           :aria-label="t('admin.a11y.toggleSidebar')"
           @click="isCollapsed = !isCollapsed"
         >
-          <Icon :name="isCollapsed ? 'heroicons:chevron-right' : 'heroicons:chevron-left'" class="admin-sidebar__toggle-icon" />
+          <Icon :name="isCollapsed ? 'heroicons:chevron-right' : 'heroicons:chevron-left'" class="admin-sidebar__toggle-icon" aria-hidden="true" />
         </button>
       </div>
 
@@ -73,7 +73,7 @@
               :title="!showNavLabels ? t(item.key) : ''"
               @click="isMobileNavOpen = false"
             >
-              <Icon :name="item.icon" class="admin-sidebar__link-icon" />
+              <Icon :name="item.icon" class="admin-sidebar__link-icon" aria-hidden="true" />
               <span v-if="showNavLabels" class="admin-sidebar__link-text">{{ t(item.key) }}</span>
             </NuxtLink>
           </template>
@@ -111,7 +111,7 @@
               :title="!showNavLabels ? t(item.key) : ''"
               @click="isMobileNavOpen = false"
             >
-              <Icon :name="item.icon" class="admin-sidebar__link-icon" />
+              <Icon :name="item.icon" class="admin-sidebar__link-icon" aria-hidden="true" />
               <span v-if="showNavLabels" class="admin-sidebar__link-text">{{ t(item.key) }}</span>
             </NuxtLink>
           </template>
@@ -122,15 +122,12 @@
       <div class="admin-sidebar__footer">
         <div v-if="showNavLabels" class="admin-sidebar__lang">
           <button
+            v-for="loc in availableLocales"
+            :key="loc.code"
             type="button"
-            :class="['admin-sidebar__lang-btn', { 'admin-sidebar__lang-btn--active': locale === 'zh' }]"
-            @click="switchLocale('zh')"
-          >{{ t('languages.zh') }}</button>
-          <button
-            type="button"
-            :class="['admin-sidebar__lang-btn', { 'admin-sidebar__lang-btn--active': locale === 'en' }]"
-            @click="switchLocale('en')"
-          >{{ t('languages.en_short') }}</button>
+            :class="['admin-sidebar__lang-btn', { 'admin-sidebar__lang-btn--active': locale === loc.code }]"
+            @click="switchLocale(loc.code)"
+          >{{ t(`languages.${loc.code}`) }}</button>
         </div>
         <div class="admin-sidebar__user" :class="{ 'admin-sidebar__user--collapsed': !showNavLabels }">
           <div class="admin-sidebar__user-avatar">{{ userInitials }}</div>
@@ -141,20 +138,16 @@
         </div>
         <div v-if="!showNavLabels" class="admin-sidebar__lang admin-sidebar__lang--icon">
           <button
+            v-for="loc in availableLocales"
+            :key="loc.code"
             type="button"
-            :class="['admin-sidebar__lang-btn', { 'admin-sidebar__lang-btn--active': locale === 'zh' }]"
-            :title="t('languages.zh')"
-            @click="switchLocale('zh')"
-          >{{ t('languages.zh_short') }}</button>
-          <button
-            type="button"
-            :class="['admin-sidebar__lang-btn', { 'admin-sidebar__lang-btn--active': locale === 'en' }]"
-            :title="t('languages.en')"
-            @click="switchLocale('en')"
-          >{{ t('languages.en_short') }}</button>
+            :class="['admin-sidebar__lang-btn', { 'admin-sidebar__lang-btn--active': locale === loc.code }]"
+            :title="t(`languages.${loc.code}`)"
+            @click="switchLocale(loc.code)"
+          >{{ t(`languages.${loc.code}_short`) }}</button>
         </div>
         <button type="button" class="admin-sidebar__logout" :title="!showNavLabels ? t('admin.logout') : ''" @click="handleLogout">
-          <Icon name="heroicons:arrow-right-on-rectangle" class="admin-sidebar__logout-icon" />
+          <Icon name="heroicons:arrow-right-on-rectangle" class="admin-sidebar__logout-icon" aria-hidden="true" />
           <span v-if="showNavLabels" class="admin-sidebar__logout-text">{{ t('admin.logout') }}</span>
         </button>
       </div>
@@ -177,7 +170,7 @@ useSeo({ noindex: true })
 const { user, logout } = useAuth()
 const route = useRoute()
 const localePath = useLocalePath()
-const { t, locale, setLocale } = useI18n()
+const { t, locale, setLocale, availableLocales } = useI18n()
 
 const isCollapsed = ref(false)
 const isMobileNavOpen = ref(false)
@@ -209,7 +202,7 @@ const managementNav = [
   { key: 'admin.nav.pricing', href: '/admin/pricing', icon: 'heroicons:tag' },
   { key: 'admin.nav.companies', href: '/admin/companies', icon: 'heroicons:building-office' },
   { key: 'admin.nav.trades', href: '/admin/trades', icon: 'heroicons:currency-dollar' },
-  { key: 'admin.nav.oemProjects', href: '/admin/oem-projects', icon: 'heroicons:sparkles' },
+  { key: 'admin.nav.oemProjects', href: '/admin/oem', icon: 'heroicons:sparkles' },
   { key: 'admin.nav.ai', href: '/admin/ai', icon: 'heroicons:sparkles' },
 ]
 
@@ -237,6 +230,7 @@ const handleLogout = async () => {
 }
 
 const switchLocale = (code) => {
+  if (import.meta.client) localStorage.setItem('user-locale', code)
   setLocale(code)
 }
 
@@ -625,7 +619,7 @@ onUnmounted(() => {
 
 .admin-sidebar__logout:hover {
   background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .admin-sidebar__logout-icon {
@@ -653,6 +647,7 @@ onUnmounted(() => {
 
 .admin-main__content {
   flex: 1;
+  min-width: 0;
   padding: var(--spacing-xl);
   animation: fadeInUp 0.4s ease forwards;
 }
@@ -669,7 +664,7 @@ onUnmounted(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .admin-content__main {
+  .admin-main__content {
     animation: none;
   }
 }

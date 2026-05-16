@@ -11,7 +11,7 @@
             <p class="mt-1 text-sm text-gray-600">{{ t('customer.cart.subtitle') }}</p>
           </div>
           <NuxtLink :to="localePath('/customer/products')" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors">
-            <Icon name="heroicons:arrow-left" class="h-4 w-4" />
+            <Icon name="heroicons:arrow-left" class="h-4 w-4" aria-hidden="true" />
             {{ t('customer.cart.continue_shopping') }}
           </NuxtLink>
         </div>
@@ -27,7 +27,7 @@
       </div>
 
       <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-        <Icon name="heroicons:exclamation-triangle" class="h-12 w-12 text-red-400 mx-auto mb-3" />
+        <Icon name="heroicons:exclamation-triangle" class="h-12 w-12 text-red-400 mx-auto mb-3" aria-hidden="true" />
         <p class="text-red-700 font-medium">{{ error }}</p>
         <button @click="fetchCart" class="mt-4 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors">
           {{ t('customer.cart.retry') }}
@@ -36,12 +36,12 @@
 
       <div v-else-if="cartItems.length === 0" class="text-center py-20">
         <div class="w-32 h-32 mx-auto mb-6 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center">
-          <Icon name="heroicons:shopping-bag" class="h-16 w-16 text-orange-400" />
+          <Icon name="heroicons:shopping-bag" class="h-16 w-16 text-orange-400" aria-hidden="true" />
         </div>
         <h2 class="text-2xl font-semibold text-gray-900 mb-2">{{ t('customer.cart.empty_title') }}</h2>
         <p class="text-gray-600 mb-6">{{ t('customer.cart.empty_desc') }}</p>
         <NuxtLink :to="localePath('/customer/products')" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-medium rounded-xl hover:from-orange-600 hover:to-amber-600 shadow-lg shadow-orange-200">
-          <Icon name="heroicons:sparkles" class="h-5 w-5" />
+          <Icon name="heroicons:sparkles" class="h-5 w-5" aria-hidden="true" />
           {{ t('customer.cart.browse_products') }}
         </NuxtLink>
       </div>
@@ -55,7 +55,7 @@
                 <!-- Product Image -->
                 <div class="flex-shrink-0 w-24 h-24 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
                   <img v-if="item.thumbnail" :src="item.thumbnail" :alt="item.name" class="w-full h-full object-cover" />
-                  <Icon v-else name="heroicons:cube" class="h-10 w-10 text-gray-300" />
+                  <Icon v-else name="heroicons:cube" class="h-10 w-10 text-gray-300" aria-hidden="true" />
                 </div>
 
                 <!-- Product Details -->
@@ -66,31 +66,31 @@
                       <p class="text-sm text-gray-500 mt-0.5">{{ item.category || t('customer.cart.default_category') }}</p>
                       <div class="flex items-center gap-2 mt-2">
                         <span v-if="item.halalCertified" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">
-                          <Icon name="heroicons:check-badge" class="h-3 w-3" />
+                          <Icon name="heroicons:check-badge" class="h-3 w-3" aria-hidden="true" />
                           {{ t('customer.cart.badge_halal') }}
                         </span>
                         <span v-if="item.oemAvailable" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 text-xs font-medium">
-                          <Icon name="heroicons:sparkles" class="h-3 w-3" />
+                          <Icon name="heroicons:sparkles" class="h-3 w-3" aria-hidden="true" />
                           {{ t('customer.cart.badge_oem') }}
                         </span>
                       </div>
                     </div>
-                    <button @click="removeItem(item.id)" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                      <Icon name="heroicons:trash" class="h-5 w-5" />
+                    <button @click="removeItem(item.id)" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" :aria-label="t('customer.cart.remove_item')">
+                      <Icon name="heroicons:trash" class="h-5 w-5" aria-hidden="true" />
                     </button>
                   </div>
 
                   <!-- Quantity & Price -->
                   <div class="flex items-end justify-between mt-4">
                     <div class="flex items-center gap-3">
-                      <button @click="updateQuantity(item.id, item.quantity - 1)" :disabled="item.quantity <= 1" class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                        <Icon name="heroicons:minus" class="h-4 w-4" />
+                      <button @click="updateQuantity(item.id, item.quantity - 1)" :disabled="item.quantity <= 1" class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" :aria-label="t('customer.cart.decrease_quantity')">
+                        <Icon name="heroicons:minus" class="h-4 w-4" aria-hidden="true" />
                       </button>
                       <input v-model.number="item.quantity" type="number" min="1" :max="item.maxQuantity || 9999" @change="updateQuantity(item.id, item.quantity)" class="w-16 h-9 text-center border border-gray-200 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-orange-500" />
-                      <button @click="updateQuantity(item.id, item.quantity + 1)" class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                        <Icon name="heroicons:plus" class="h-4 w-4" />
+                      <button @click="updateQuantity(item.id, item.quantity + 1)" class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors" :aria-label="t('customer.cart.increase_quantity')">
+                        <Icon name="heroicons:plus" class="h-4 w-4" aria-hidden="true" />
                       </button>
-                      <span class="text-sm text-gray-500">MOQ: {{ item.moq || 1 }}</span>
+                      <span class="text-sm text-gray-500">{{ $t('product.moq_prefix') }}{{ item.moq || 1 }}</span>
                     </div>
                     <div class="text-right">
                       <p class="text-lg font-bold text-orange-600">{{ cur(item.currency) }} {{ formatNumber((item.unitPrice || 0) * item.quantity) }}</p>
@@ -110,7 +110,7 @@
           <!-- Clear Cart -->
           <div class="flex justify-end">
             <button @click="clearCart" class="inline-flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors">
-              <Icon name="heroicons:trash" class="h-4 w-4" />
+              <Icon name="heroicons:trash" class="h-4 w-4" aria-hidden="true" />
               {{ t('customer.cart.clear_cart') }}
             </button>
           </div>
@@ -133,16 +133,18 @@
               </div>
               <div class="flex justify-between text-sm">
                 <span class="text-gray-600">{{ t('customer.cart.estimated_tax') }}</span>
-                <span class="font-medium text-gray-500 italic">{{ t('customer.cart.tbd') }}</span>
+                <span v-if="summary.taxAmount != null" class="font-medium text-gray-900">{{ cur(summary.currency) }} {{ formatNumber(summary.taxAmount) }}</span>
+                <span v-else class="font-medium text-gray-400 italic">{{ t('customer.cart.tbd_by_sales') }}</span>
               </div>
               <div class="flex justify-between text-sm">
                 <span class="text-gray-600">{{ t('customer.cart.estimated_shipping') }}</span>
-                <span class="font-medium text-gray-500 italic">{{ t('customer.cart.tbd') }}</span>
+                <span v-if="summary.shippingAmount != null" class="font-medium text-gray-900">{{ cur(summary.currency) }} {{ formatNumber(summary.shippingAmount) }}</span>
+                <span v-else class="font-medium text-gray-400 italic">{{ t('customer.cart.tbd_by_sales') }}</span>
               </div>
               <div class="pt-4 border-t border-gray-100">
                 <div class="flex justify-between">
-                  <span class="text-base font-semibold text-gray-900">{{ t('customer.cart.subtotal_label') }}</span>
-                  <span class="text-xl font-bold text-orange-600">{{ cur(summary.currency) }} {{ formatNumber(summary.subtotal || 0) }}</span>
+                  <span class="text-base font-semibold text-gray-900">{{ t('customer.cart.total') }}</span>
+                  <span class="text-xl font-bold text-orange-600">{{ cur(summary.currency) }} {{ formatNumber(summary.totalAmount || summary.subtotal || 0) }}</span>
                 </div>
                 <p class="text-xs text-gray-400 mt-1">{{ t('customer.cart.tax_shipping_note') }}</p>
               </div>
@@ -172,12 +174,12 @@
               <!-- Action Buttons -->
               <div class="pt-4 space-y-3">
                 <button @click="proceedToCheckout" :disabled="checkingOut" class="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-amber-600 shadow-lg shadow-orange-200 disabled:opacity-50 flex items-center justify-center gap-2">
-                  <Icon v-if="checkingOut" name="heroicons:arrow-path" class="h-5 w-5 animate-spin" />
-                  <Icon v-else name="heroicons:credit-card" class="h-5 w-5" />
+                  <Icon v-if="checkingOut" name="heroicons:arrow-path" class="h-5 w-5 animate-spin" aria-hidden="true" />
+                  <Icon v-else name="heroicons:credit-card" class="h-5 w-5" aria-hidden="true" />
                   {{ checkingOut ? t('customer.cart.processing') : t('customer.cart.proceed_checkout') }}
                 </button>
                 <NuxtLink :to="localePath('/customer/orders/new')" class="w-full py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2">
-                  <Icon name="heroicons:sparkles" class="h-5 w-5" />
+                  <Icon name="heroicons:sparkles" class="h-5 w-5" aria-hidden="true" />
                   {{ t('customer.cart.ai_assist') }}
                 </NuxtLink>
               </div>
@@ -252,7 +254,7 @@
         :class="toastIsError ? 'bg-red-600' : 'bg-emerald-600'"
         class="fixed bottom-6 right-6 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 z-50"
       >
-        <Icon :name="toastIsError ? 'heroicons:exclamation-circle' : 'heroicons:check-circle'" class="h-5 w-5" />
+        <Icon :name="toastIsError ? 'heroicons:exclamation-circle' : 'heroicons:check-circle'" class="h-5 w-5" aria-hidden="true" />
         {{ toastMessage }}
       </div>
     </Transition>
@@ -274,6 +276,7 @@ const api = useApi()
 const tts = useTTS()
 
 const cartItems = ref<any[]>([])
+const cartSummary = ref<{ taxAmount?: number; shippingAmount?: number } | null>(null)
 const pending = ref(true)
 const error = ref('')
 const checkingOut = ref(false)
@@ -298,13 +301,14 @@ const tempAddress = reactive({
 
 const summary = computed(() => {
   const subtotal = cartItems.value.reduce((sum, item) => sum + ((item.unitPrice || 0) * item.quantity), 0)
-  // Tax and shipping are determined by admin/sales team after order review.
-  // We show subtotal only; final amounts will be confirmed in the proforma invoice.
+  // Tax and shipping may be provided by the backend or left for sales team review.
+  const tax = cartSummary.value?.taxAmount ?? null
+  const shipping = cartSummary.value?.shippingAmount ?? null
   return {
     subtotal,
-    taxAmount: null as number | null,   // TBD by sales team
-    shippingAmount: null as number | null, // TBD by incoterms
-    totalAmount: subtotal,
+    taxAmount: tax,
+    shippingAmount: shipping,
+    totalAmount: subtotal + (tax ?? 0) + (shipping ?? 0),
     currency: cur(cartItems.value[0]?.currency)
   }
 })
@@ -316,12 +320,12 @@ const fetchCart = async () => {
     const res = await api.getCart()
     cartItems.value = res.items || []
     shippingAddress.value = res.shippingAddress || null
+    cartSummary.value = res.summary || null
     // Play TTS based on cart state
-    const isZh = locale.value === 'zh'
     if (cartItems.value.length === 0) {
-      tts.playCartEmpty(isZh)
+      tts.playCartEmpty()
     } else {
-      tts.playCartWelcome(isZh)
+      tts.playCartWelcome()
     }
   } catch (err: any) {
     error.value = err?.message || t('customer.cart.fetch_error')

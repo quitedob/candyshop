@@ -26,7 +26,7 @@ func (r *OrderRepository) UpdateWithOutbox(ctx context.Context, order *modelsOrd
 // ListPendingOutbox 拉取待处理发件箱记录供 Relay 消费
 func (r *OrderRepository) ListPendingOutbox(ctx context.Context, eventType string, limit int) ([]modelsOrder.EventOutbox, error) {
 	var rows []modelsOrder.EventOutbox
-	q := r.db.WithContext(ctx).
+	q := r.db.WithContext(ctx).Model(&modelsOrder.EventOutbox{}).
 		Where("status = ? AND event_type = ?", modelsOrder.OutboxStatusPending, eventType).
 		Order("id ASC")
 	if limit > 0 {

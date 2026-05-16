@@ -11,13 +11,19 @@ import (
 
 // Order Statuses
 const (
-	OrderStatusPending        = "pending"
-	OrderStatusPendingConfirm = "pending_confirmation"
-	OrderStatusConfirmed      = "confirmed"
-	OrderStatusProduction     = "production"
-	OrderStatusShipped        = "shipped"
-	OrderStatusDelivered      = "delivered"
-	OrderStatusCancelled      = "cancelled"
+	OrderStatusPending            = "pending"
+	OrderStatusPendingConfirm     = "pending_confirmation"
+	OrderStatusPendingApproval    = "pending_approval"
+	OrderStatusConfirmed          = "confirmed"
+	OrderStatusProduction         = "production"
+	OrderStatusShipped            = "shipped"
+	OrderStatusPartiallyShipped   = "partially_shipped"
+	OrderStatusDelivered          = "delivered"
+	OrderStatusPartiallyDelivered = "partially_delivered"
+	OrderStatusPartiallyReturned  = "partially_returned"
+	OrderStatusReturned           = "returned"
+	OrderStatusCancelled          = "cancelled"
+	OrderStatusExpired            = "expired"
 )
 
 // Payment Statuses
@@ -30,13 +36,17 @@ const (
 
 // ValidOrderStatusTransitions defines the allowed order status flow.
 var ValidOrderStatusTransitions = map[string]map[string]bool{
-	OrderStatusPending:        {OrderStatusConfirmed: true, OrderStatusCancelled: true},
-	OrderStatusPendingConfirm: {OrderStatusPending: true, OrderStatusConfirmed: true, OrderStatusCancelled: true},
-	OrderStatusConfirmed:      {OrderStatusProduction: true, OrderStatusCancelled: true},
-	OrderStatusProduction:     {OrderStatusShipped: true, OrderStatusCancelled: true},
-	OrderStatusShipped:        {OrderStatusDelivered: true},
-	OrderStatusDelivered:      {},
-	OrderStatusCancelled:      {},
+	OrderStatusPending:            {OrderStatusConfirmed: true, OrderStatusCancelled: true},
+	OrderStatusPendingConfirm:     {OrderStatusPending: true, OrderStatusConfirmed: true, OrderStatusCancelled: true, OrderStatusExpired: true},
+	OrderStatusPendingApproval:    {OrderStatusPendingConfirm: true, OrderStatusCancelled: true},
+	OrderStatusConfirmed:          {OrderStatusProduction: true, OrderStatusCancelled: true},
+	OrderStatusProduction:         {OrderStatusShipped: true, OrderStatusCancelled: true},
+	OrderStatusShipped:            {OrderStatusDelivered: true, OrderStatusPartiallyReturned: true, OrderStatusReturned: true},
+	OrderStatusDelivered:          {OrderStatusReturned: true},
+	OrderStatusPartiallyReturned:  {},
+	OrderStatusReturned:           {},
+	OrderStatusCancelled:          {},
+	OrderStatusExpired:            {},
 }
 
 // ValidateOrderStatusTransition checks whether moving from current to target is allowed.
@@ -58,10 +68,12 @@ func ValidateOrderStatusTransition(current, target string) error {
 
 // OrderItem represents a single product in an order
 type OrderItem struct {
-	ProductID      string  `json:"productId"`
-	Quantity       int     `json:"quantity"`
-	UnitPrice      float64 `json:"unitPrice"`
-	Specifications string  `json:"specifications,omitempty"`
+	ProductID         string  `json:"productId"`
+	Quantity          int     `json:"quantity"`
+	UnitPrice         float64 `json:"unitPrice"`
+	FulfilledQuantity int     `json:"fulfilledQuantity,omitempty"`
+	ShippedQuantity   int     `json:"shippedQuantity,omitempty"`
+	Specifications    string  `json:"specifications,omitempty"`
 }
 
 // OrderItemArray is a custom type for storing OrderItem arrays in PostgreSQL as JSON
@@ -152,11 +164,13 @@ type Order struct {
 	Status                     string                `json:"status" gorm:"default:'pending'"`
 	PaymentStatus              string                `json:"paymentStatus" gorm:"default:'unpaid'"`
 	Items                      OrderItemArray        `json:"items" gorm:"type:jsonb;not null"`
+	WarehouseID                *string               `json:"warehouseId"`
 	StockReserved              bool                  `json:"stockReserved" gorm:"default:false"`
 	ComplianceOfficialEvidence bool                  `json:"complianceOfficialEvidence" gorm:"default:false"`
 	Subtotal                   float64               `json:"subtotal"`
 	TaxAmount                  float64               `json:"taxAmount" gorm:"default:0"`
 	ShippingAmount             float64               `json:"shippingAmount" gorm:"default:0"`
+	COGS                       float64               `json:"cogs" gorm:"default:0"`
 	TotalAmount                float64               `json:"totalAmount"`
 	Currency                   string                `json:"currency" gorm:"default:'USD'"`
 	ProductionStartDate        *time.Time            `json:"productionStartDate"`

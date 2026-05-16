@@ -14,13 +14,14 @@
             <p class="oem-hero__subtitle">{{ t('oem.subtitle') }}</p>
 
             <div class="oem-hero__actions">
-              <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-highlight btn-lg">
+              <button class="btn btn-highlight btn-lg" @click="startOemProject">
+                <Icon name="lucide:rocket" size="20" />
+                {{ isAuthenticated ? t('oem.start_project') : t('auth.register') }}
+              </button>
+              <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-lg">
                 <WhatsAppIcon size="20" />
                 {{ t('whatsapp.us') }}
               </a>
-              <NuxtLink :to="localePath('/contact')" class="btn btn-outline btn-lg">
-                {{ t('form.submit') }}
-              </NuxtLink>
             </div>
           </div>
 
@@ -93,9 +94,9 @@
               </div>
             </div>
 
-            <NuxtLink :to="localePath('/contact')" class="btn btn-primary">
+            <button class="btn btn-primary" @click="startOemProject">
               {{ t('oem.start_odm') }}
-            </NuxtLink>
+            </button>
           </div>
 
           <!-- Full OEM -->
@@ -144,9 +145,9 @@
               </div>
             </div>
 
-            <NuxtLink :to="localePath('/contact')" class="btn btn-outline">
+            <button class="btn btn-outline" @click="startOemProject">
               {{ t('oem.start_oem') }}
-            </NuxtLink>
+            </button>
           </div>
         </div>
       </div>
@@ -165,7 +166,7 @@
             <div class="solution-card__image">
               <img :src="solution.image" :alt="solution.title" />
               <div class="solution-card__overlay">
-                <span class="solution-card__moq">MOQ: {{ solution.moq }}</span>
+                <span class="solution-card__moq">{{ $t('product.moq_prefix') }}{{ solution.moq }}</span>
               </div>
             </div>
             <div class="solution-card__content">
@@ -272,126 +273,173 @@
           <h2>{{ t('oem.cta_title') }}</h2>
           <p>{{ t('oem.cta_subtitle') }}</p>
           <div class="cta__actions">
-            <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-highlight btn-lg">
+            <button class="btn btn-highlight btn-lg" @click="startOemProject">
+              <Icon name="lucide:rocket" size="20" />
+              {{ isAuthenticated ? t('oem.start_project') : t('auth.register') }}
+            </button>
+            <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-lg">
               <WhatsAppIcon size="20" />
               {{ t('whatsapp.us') }}
             </a>
-            <NuxtLink :to="localePath('/contact')" class="btn btn-outline btn-lg">
-              {{ t('form.submit') }}
-            </NuxtLink>
           </div>
         </div>
       </div>
     </section>
+    <!-- OEM Project Modal -->
+    <Teleport to="body">
+      <div v-if="showOemModal" class="oem-modal-overlay" @click.self="showOemModal = false">
+        <div class="oem-modal">
+          <div class="oem-modal__header">
+            <h3>{{ t('oem.start_project') }}</h3>
+            <button class="oem-modal__close" @click="showOemModal = false" :aria-label="t('common.close')">&times;</button>
+          </div>
+          <div class="oem-modal__body">
+            <div class="form-group">
+              <label>{{ t('oem.product_name') }} *</label>
+              <input v-model="oemForm.productName" class="form-input" :placeholder="t('oem.product_name_placeholder')" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('oem.flavor') }}</label>
+              <input v-model="oemForm.requirements.flavor" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('oem.shape') }}</label>
+              <input v-model="oemForm.requirements.shape" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('oem.packaging') }}</label>
+              <input v-model="oemForm.requirements.packaging" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('oem.target_market') }}</label>
+              <input v-model="oemForm.requirements.targetMarket" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label>{{ t('oem.notes') }}</label>
+              <textarea v-model="oemForm.notes" class="form-input" rows="3"></textarea>
+            </div>
+            <p v-if="oemError" class="oem-error">{{ oemError }}</p>
+          </div>
+          <div class="oem-modal__footer">
+            <button class="btn btn-outline" @click="showOemModal = false" :disabled="oemSubmitting">{{ t('common.cancel') }}</button>
+            <button class="btn btn-primary" @click="submitOemProject" :disabled="oemSubmitting || !oemForm.productName.trim()">
+              {{ oemSubmitting ? t('common.submitting') : t('form.submit') }}
+            </button>
+          </div>
+        </div>
+      </div>
+      <button v-if="oemSuccess" class="oem-toast oem-toast--success" @click="oemSuccess = ''">{{ oemSuccess }}</button>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useI18n, useLocalePath } from '#i18n'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const localePath = useLocalePath()
 const config = useRuntimeConfig()
-const route = useRoute()
+const { getOEMFlows, getOEMSolutions, customerCreateOemProject } = useApi()
+const { isAuthenticated, user } = useAuth()
 
-// Process steps
-const processSteps = computed(() => [
-  { title: t('oem.steps.consultation'), description: t('oem.steps.consultation_desc') },
-  { title: t('oem.steps.proposal'), description: t('oem.steps.proposal_desc') },
-  { title: t('oem.steps.sampling'), description: t('oem.steps.sampling_desc') },
-  { title: t('oem.steps.production'), description: t('oem.steps.production_desc') },
-  { title: t('oem.steps.delivery'), description: t('oem.steps.delivery_desc') }
-])
+// Dynamic data from API
+const apiFlows = ref<any[]>([])
+const apiSolutions = ref<any[]>([])
+const flowsLoading = ref(true)
+const solutionsLoading = ref(true)
+const showOemModal = ref(false)
+const oemForm = ref({ productName: '', notes: '', requirements: { flavor: '', shape: '', packaging: '', targetMarket: '', certifications: [] as string[], moq: 500 } })
+const oemSubmitting = ref(false)
+const oemSuccess = ref('')
+const oemError = ref('')
 
-// Solutions
-const solutions = computed(() => [
-  {
-    id: 1,
-    title: t('oem.sols.gift_sets'),
-    description: t('oem.sols.gift_sets_desc'),
-    image: '/images/oem/gift-sets.jpg',
-    moq: '500 sets',
-    applications: [t('oem.apps.holiday_gifts'), t('oem.apps.corporate_gifts'), t('oem.apps.wedding_favors')]
-  },
-  {
-    id: 2,
-    title: t('oem.sols.toy_candies'),
-    description: t('oem.sols.toy_candies_desc'),
-    image: '/images/oem/toy-candies.jpg',
-    moq: '3,000 pcs',
-    applications: [t('oem.apps.supermarkets'), t('oem.apps.toy_stores'), t('oem.apps.amusement_parks')]
-  },
-  {
-    id: 3,
-    title: t('oem.sols.mixed_buckets'),
-    description: t('oem.sols.mixed_buckets_desc'),
-    image: '/images/oem/mixed-buckets.jpg',
-    moq: '1,000 pcs',
-    applications: [t('oem.apps.cinema'), t('oem.apps.convenience_stores'), t('oem.apps.vending')]
-  },
-  {
-    id: 4,
-    title: t('oem.sols.functional'),
-    description: t('oem.sols.functional_desc'),
-    image: '/images/oem/functional.jpg',
-    moq: '5,000 pcs',
-    applications: [t('oem.apps.health_stores'), t('oem.apps.pharmacies'), t('oem.apps.online_retail')]
-  }
-])
+onMounted(async () => {
+  try { apiFlows.value = await getOEMFlows() } catch {}
+  flowsLoading.value = false
+  try { apiSolutions.value = await getOEMSolutions() } catch {}
+  solutionsLoading.value = false
+})
+
+// Process steps: prefer API, fallback to i18n
+const processSteps = computed(() => {
+  const steps = apiFlows.value.flatMap((f: any) => f.steps || [])
+  if (steps.length > 0) return steps.map((s: any) => ({ title: s.title, description: s.description }))
+  return [
+    { title: t('oem.steps.consultation'), description: t('oem.steps.consultation_desc') },
+    { title: t('oem.steps.proposal'), description: t('oem.steps.proposal_desc') },
+    { title: t('oem.steps.sampling'), description: t('oem.steps.sampling_desc') },
+    { title: t('oem.steps.production'), description: t('oem.steps.production_desc') },
+    { title: t('oem.steps.delivery'), description: t('oem.steps.delivery_desc') }
+  ]
+})
+
+// Solutions: prefer API, fallback to i18n
+const solutions = computed(() => {
+  if (apiSolutions.value.length > 0) return apiSolutions.value.map((s: any) => ({
+    id: s.id || s.slug,
+    title: s.title,
+    description: s.description,
+    image: s.thumbnail || '/images/oem/gift-sets.jpg',
+    moq: s.moq ? `${s.moq.toLocaleString()} pcs` : '—',
+    applications: s.applications || [],
+  }))
+  return [
+    { id: 1, title: t('oem.sols.gift_sets'), description: t('oem.sols.gift_sets_desc'), image: '/images/oem/gift-sets.jpg', moq: '500 sets', applications: [t('oem.apps.holiday_gifts'), t('oem.apps.corporate_gifts'), t('oem.apps.wedding_favors')] },
+    { id: 2, title: t('oem.sols.toy_candies'), description: t('oem.sols.toy_candies_desc'), image: '/images/oem/toy-candies.jpg', moq: '3,000 pcs', applications: [t('oem.apps.supermarkets'), t('oem.apps.toy_stores'), t('oem.apps.amusement_parks')] },
+    { id: 3, title: t('oem.sols.mixed_buckets'), description: t('oem.sols.mixed_buckets_desc'), image: '/images/oem/mixed-buckets.jpg', moq: '1,000 pcs', applications: [t('oem.apps.cinema'), t('oem.apps.convenience_stores'), t('oem.apps.vending')] },
+    { id: 4, title: t('oem.sols.functional'), description: t('oem.sols.functional_desc'), image: '/images/oem/functional.jpg', moq: '5,000 pcs', applications: [t('oem.apps.health_stores'), t('oem.apps.pharmacies'), t('oem.apps.online_retail')] }
+  ]
+})
 
 // Sample process steps
 const sampleSteps = computed(() => [
-  {
-    icon: 'lucide:message-circle',
-    title: t('oem.sample_process.request'),
-    description: t('oem.sample_process.request_desc'),
-    duration: t('oem.durations.1_day')
-  },
-  {
-    icon: 'lucide:flask-conical',
-    title: t('oem.sample_process.production'),
-    description: t('oem.sample_process.production_desc'),
-    duration: t('oem.durations.3_7_days')
-  },
-  {
-    icon: 'lucide:package',
-    title: t('oem.sample_process.delivery'),
-    description: t('oem.sample_process.delivery_desc'),
-    duration: t('oem.durations.3_5_days')
-  },
-  {
-    icon: 'lucide:check-circle',
-    title: t('oem.sample_process.approval'),
-    description: t('oem.sample_process.approval_desc'),
-    duration: t('oem.durations.1_3_days')
-  },
-  {
-    icon: 'lucide:rocket',
-    title: t('oem.sample_process.bulk'),
-    description: t('oem.sample_process.bulk_desc'),
-    duration: t('oem.durations.based_on_order')
-  }
+  { icon: 'lucide:message-circle', title: t('oem.sample_process.request'), description: t('oem.sample_process.request_desc'), duration: t('oem.durations.1_day') },
+  { icon: 'lucide:flask-conical', title: t('oem.sample_process.production'), description: t('oem.sample_process.production_desc'), duration: t('oem.durations.3_7_days') },
+  { icon: 'lucide:package', title: t('oem.sample_process.delivery'), description: t('oem.sample_process.delivery_desc'), duration: t('oem.durations.3_5_days') },
+  { icon: 'lucide:check-circle', title: t('oem.sample_process.approval'), description: t('oem.sample_process.approval_desc'), duration: t('oem.durations.1_3_days') },
+  { icon: 'lucide:rocket', title: t('oem.sample_process.bulk'), description: t('oem.sample_process.bulk_desc'), duration: t('oem.durations.based_on_order') }
 ])
 
-const inquireAbout = (solution: typeof solutions[0]) => {
-  // Navigate to contact page with pre-filled info
-  navigateTo({
-    path: localePath('/contact'),
-    query: {
-      product: solution.title,
-      category: 'OEM Solutions'
-    }
-  })
+const startOemProject = () => {
+  if (isAuthenticated.value) {
+    showOemModal.value = true
+  } else {
+    navigateTo({ path: localePath('/auth/login'), query: { redirect: '/oem-solutions' } })
+  }
 }
 
-// WhatsApp URL
+const submitOemProject = async () => {
+  oemSubmitting.value = true
+  oemError.value = ''
+  try {
+    await customerCreateOemProject(oemForm.value)
+    oemSuccess.value = t('form.success') || 'OEM project created successfully'
+    showOemModal.value = false
+    oemForm.value = { productName: '', notes: '', requirements: { flavor: '', shape: '', packaging: '', targetMarket: '', certifications: [], moq: 500 } }
+  } catch (e: any) {
+    oemError.value = e?.message || t('form.error')
+  }
+  oemSubmitting.value = false
+}
+
+const inquireAbout = (solution: any) => {
+  if (isAuthenticated.value) {
+    oemForm.value.productName = solution.title
+    showOemModal.value = true
+  } else {
+    navigateTo({
+      path: localePath('/contact'),
+      query: { product: solution.title, category: 'OEM Solutions' }
+    })
+  }
+}
+
 const whatsappUrl = computed(() => {
   const number = config.public.whatsappNumber
   const message = encodeURIComponent(t('whatsapp.message'))
   return `https://wa.me/${number}?text=${message}`
 })
 
-// SEO
 useSeo({
   title: `${t('nav.oem')} | ${t('seo.default_title')}`,
   description: t('oem.subtitle'),
@@ -771,4 +819,66 @@ useSeo({
   gap: var(--spacing-md);
   flex-wrap: wrap;
 }
+
+/* OEM Modal */
+.oem-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-md);
+}
+.oem-modal {
+  background: white;
+  border-radius: var(--radius-xl);
+  max-width: 520px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.oem-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-bottom: 1px solid var(--color-border-light);
+}
+.oem-modal__header h3 { margin: 0; font-size: var(--text-lg); }
+.oem-modal__close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--color-text-light);
+  padding: 0;
+}
+.oem-modal__body { padding: var(--spacing-xl); }
+.oem-modal__body .form-group { margin-bottom: var(--spacing-md); }
+.oem-modal__body label { display: block; font-size: var(--text-sm); font-weight: 500; margin-bottom: var(--spacing-xs); }
+.oem-modal__body .form-input { width: 100%; padding: var(--spacing-sm) var(--spacing-md); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--text-base); }
+.oem-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-top: 1px solid var(--color-border-light);
+}
+.oem-error { color: var(--color-danger); font-size: var(--text-sm); margin-top: var(--spacing-sm); }
+.oem-toast {
+  position: fixed;
+  bottom: var(--spacing-2xl);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: var(--radius-md);
+  color: white;
+  font-weight: 500;
+  z-index: 1001;
+  cursor: pointer;
+}
+.oem-toast--success { background: var(--color-success); }
 </style>

@@ -1,6 +1,9 @@
 package product
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -9,6 +12,19 @@ import (
 	"github.com/pgvector/pgvector-go"
 	"gorm.io/gorm"
 )
+
+// CertificationDetail stores structured certification information (issuer, number, validity, document URL).
+type CertificationDetail struct {
+	Name        string `json:"name"`
+	Abbrev      string `json:"abbrev"`
+	IssuedBy    string `json:"issuedBy"`
+	CertNumber  string `json:"certNumber"`
+	ValidUntil  string `json:"validUntil"`
+	DocURL      string `json:"docUrl"`
+}
+
+// CertificationDetailArray stores certification details in JSONB.
+type CertificationDetailArray []CertificationDetail
 
 // Product represents a candy product
 type Product struct {
@@ -26,6 +42,7 @@ type Product struct {
 	Certifications common.StringArray `json:"certifications" gorm:"type:jsonb"`
 	MOQ            int                `json:"moq"`
 	StockQuantity  int                `json:"stockQuantity" gorm:"default:0"`
+	SafetyStock    int                `json:"safetyStock" gorm:"default:0"`
 	LeadTime       string             `json:"leadTime"`
 	Featured       bool               `json:"featured" gorm:"index"`
 	Flavors        common.StringArray `json:"flavors" gorm:"type:jsonb"`
@@ -34,15 +51,94 @@ type Product struct {
 	Allergens      string             `json:"allergens"`
 	ShelfLife      string             `json:"shelfLife"`
 	Storage        string             `json:"storage"`
+	Translations   common.JSONMap     `json:"translations" gorm:"type:jsonb"`
 	HSCode         string             `json:"hsCode" gorm:"type:varchar(20)"` // Harmonized System code for customs
-	CreatedBy      *string            `json:"createdBy" gorm:"index"`         // Audit field: user ID that created the record
-	UpdatedBy      *string            `json:"updatedBy" gorm:"index"`         // Audit field: user ID that last updated the record
-	Status         string             `json:"status" gorm:"default:'active'"` // draft, active, inactive
-	BasePrice      float64            `json:"basePrice" gorm:"default:0"`     // Base unit price for server-side price resolution
-	ViewCount      int                `json:"viewCount" gorm:"default:0"`
-	CreatedAt      time.Time          `json:"createdAt"`
-	UpdatedAt      time.Time          `json:"updatedAt"`
-	DeletedAt      gorm.DeletedAt     `json:"-" gorm:"index"`
+
+	// Weight & Measurement
+	NetWeightPerPiece    float64 `json:"netWeightPerPiece" gorm:"default:0"`    // g — single candy piece
+	NetWeightPerPack     float64 `json:"netWeightPerPack" gorm:"default:0"`     // g — per retail pack
+	GrossWeightPerCarton float64 `json:"grossWeightPerCarton" gorm:"default:0"` // kg — incl. packaging
+	PiecesPerPack        int     `json:"piecesPerPack" gorm:"default:0"`        // pieces per retail pack
+	PacksPerCarton       int     `json:"packsPerCarton" gorm:"default:0"`       // retail packs per carton
+
+	// Product Dimensions (mm)
+	ProductLengthMM float64 `json:"productLengthMM" gorm:"default:0"`
+	ProductWidthMM  float64 `json:"productWidthMM" gorm:"default:0"`
+	ProductHeightMM float64 `json:"productHeightMM" gorm:"default:0"`
+
+	// Nutrition (per 100g)
+	EnergyKj       float64 `json:"energyKj" gorm:"default:0"`
+	EnergyKcal     float64 `json:"energyKcal" gorm:"default:0"`
+	TotalFatG      float64 `json:"totalFatG" gorm:"default:0"`
+	SaturatedFatG  float64 `json:"saturatedFatG" gorm:"default:0"`
+	CarbohydratesG float64 `json:"carbohydratesG" gorm:"default:0"`
+	SugarsG        float64 `json:"sugarsG" gorm:"default:0"`
+	ProteinG       float64 `json:"proteinG" gorm:"default:0"`
+	SaltG          float64 `json:"saltG" gorm:"default:0"`
+	FiberG         float64 `json:"fiberG" gorm:"default:0"`
+
+	// Ingredient Compliance
+	Additives      common.StringArray `json:"additives" gorm:"type:jsonb"`   // E-numbers / INS codes
+	SweetenerType  string             `json:"sweetenerType" gorm:"type:varchar(100)"`
+	CocoaSolidsPct float64            `json:"cocoaSolidsPct" gorm:"default:0"` // chocolate products
+	MilkSolidsPct  float64            `json:"milkSolidsPct" gorm:"default:0"`  // milk chocolate
+	GMOStatus       string             `json:"gmoStatus" gorm:"type:varchar(50)"` // "GMO", "Non-GMO", "GMO-Free Certified"
+	MayContain     common.StringArray `json:"mayContain" gorm:"type:jsonb"`   // cross-contamination allergen risks
+	WaterActivity  float64            `json:"waterActivity" gorm:"default:0"` // aʷ — shelf-life determinant
+
+	// Trade & Barcode
+	GTIN string `json:"gtin" gorm:"type:varchar(20);index"` // EAN/UPC/GTIN-14
+
+	// Packaging
+	PrimaryPackaging string `json:"primaryPackaging" gorm:"type:varchar(100)"` // flow-wrap, foil, box, bag, jar
+	InnerPackConfig  string `json:"innerPackConfig" gorm:"type:varchar(100)"`  // e.g. "12 units per display box"
+	PalletConfig     string `json:"palletConfig" gorm:"type:varchar(100)"`     // e.g. "48 cases/layer × 5 layers"
+
+	// Dietary Labels
+	IsVegan      bool `json:"isVegan"`
+	IsGlutenFree bool `json:"isGlutenFree"`
+	IsSugarFree  bool `json:"isSugarFree"`
+	IsKosher     bool `json:"isKosher"`
+	IsOrganic    bool `json:"isOrganic"`
+
+	// Certification Details (structured)
+	CertificationDetails CertificationDetailArray `json:"certificationDetails" gorm:"type:jsonb"`
+
+	// Sample Specs
+	SampleMOQ       int     `json:"sampleMOQ" gorm:"default:0"`
+	SampleLeadTime  string  `json:"sampleLeadTime" gorm:"type:varchar(50)"`
+	SamplePrice     float64 `json:"samplePrice" gorm:"default:0"`
+
+	// Existing audit / meta
+	CreatedBy   *string        `json:"createdBy" gorm:"index"`
+	UpdatedBy   *string        `json:"updatedBy" gorm:"index"`
+	Status      string         `json:"status" gorm:"default:'active'"`
+	BasePrice   float64        `json:"basePrice" gorm:"default:0"`
+	ViewCount   int            `json:"viewCount" gorm:"default:0"`
+	CreatedAt   time.Time      `json:"createdAt"`
+	UpdatedAt   time.Time      `json:"updatedAt"`
+	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
+// Value implements driver.Valuer.
+func (c CertificationDetailArray) Value() (driver.Value, error) {
+	if c == nil {
+		return nil, nil
+	}
+	return json.Marshal(c)
+}
+
+// Scan implements sql.Scanner.
+func (c *CertificationDetailArray) Scan(value interface{}) error {
+	if value == nil {
+		*c = nil
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New("failed to scan CertificationDetailArray: expected []byte")
+	}
+	return json.Unmarshal(bytes, c)
 }
 
 // Product status constants
@@ -140,8 +236,17 @@ type Inquiry struct {
 	Incoterms string `json:"incoterms" gorm:"type:varchar(50)"`
 	// NegotiatedPaymentTerms 议定付款方式（如 30% T/T 预付），写入 Trade.CommercialNotes
 	NegotiatedPaymentTerms string    `json:"negotiatedPaymentTerms" gorm:"type:varchar(255)"`
-	CreatedAt              time.Time `json:"createdAt"`
-	UpdatedAt              time.Time `json:"updatedAt"`
+	// Packaging/standards confirmation flow
+	PackagingType     string     `json:"packagingType" gorm:"type:varchar(100)"`
+	PackagingWeight   float64    `json:"packagingWeight"`
+	PackagingSize     string     `json:"packagingSize" gorm:"type:varchar(100)"`
+	QualityStandard   string     `json:"qualityStandard" gorm:"type:varchar(255)"`
+	CustomerConfirmed bool       `json:"customerConfirmed"`
+	AdminConfirmed    bool       `json:"adminConfirmed"`
+	ConfirmationNotes string     `json:"confirmationNotes" gorm:"type:text"`
+	ConfirmedAt       *time.Time  `json:"confirmedAt"`
+	CreatedAt         time.Time  `json:"createdAt"`
+	UpdatedAt         time.Time  `json:"updatedAt"`
 }
 
 // Use shared common model types to avoid cross-package duplication and reduce cycle risk.
@@ -246,6 +351,7 @@ type BlogPost struct {
 	Thumbnail    string             `json:"thumbnail"`
 	ReadTime     int                `json:"readTime"` // in minutes
 	Tags         common.StringArray `json:"tags" gorm:"type:jsonb"`
+	Translations common.JSONMap     `json:"translations" gorm:"type:jsonb"`
 	CreatedAt    time.Time          `json:"createdAt"`
 	UpdatedAt    time.Time          `json:"updatedAt"`
 }
@@ -297,9 +403,10 @@ type CaseStudy struct {
 	Solution  string             `json:"solution" gorm:"type:text"`
 	Result    string             `json:"result" gorm:"type:text"`
 	Timeline  string             `json:"timeline"`
-	Services  common.StringArray `json:"services" gorm:"type:jsonb"`
-	CreatedAt time.Time          `json:"createdAt"`
-	UpdatedAt time.Time          `json:"updatedAt"`
+	Services     common.StringArray `json:"services" gorm:"type:jsonb"`
+	Translations common.JSONMap     `json:"translations" gorm:"type:jsonb"`
+	CreatedAt    time.Time          `json:"createdAt"`
+	UpdatedAt    time.Time          `json:"updatedAt"`
 }
 
 // SearchResponse represents a search response

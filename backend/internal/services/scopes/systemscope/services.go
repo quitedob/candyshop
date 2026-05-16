@@ -18,6 +18,7 @@ type Services struct {
 	Search  *search.SearchService
 	Trade   *trade.TradeService
 	User    *user.UserService
+	Payment *order.PaymentService
 }
 
 func New(repos *repositoryCommon.SystemRepositories, cfg *config.Config, searchSvc *search.SearchService) *Services {
@@ -32,5 +33,6 @@ func New(repos *repositoryCommon.SystemRepositories, cfg *config.Config, searchS
 		Search:  searchSvc,
 		Trade:   trade.NewTradeService(repos.Trade),
 		User:    user.NewUserService(repos.User),
+		Payment: order.NewPaymentService(repos.Payment, repos.Order),
 	}
 }

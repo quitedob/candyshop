@@ -48,7 +48,7 @@
                 <template v-for="(step, idx) in steps.slice(0, getStepIndex(project.status) + 1)" :key="idx">
                   <span :class="[stepClass(project.status, step.key), 'w-2 h-2 rounded-full']"></span>
                 </template>
-                <span class="ml-1 text-xs text-gray-500">{{ project.status }}</span>
+                <span class="ml-1 text-xs text-gray-500">{{ enumLabel('oem_status', project.status) }}</span>
               </div>
             </td>
             <td class="px-3 py-4 text-sm text-gray-500">{{ formatDate(project.createdAt) }}</td>
@@ -83,7 +83,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
-const { formatDate } = useDisplay()
+const { enumLabel, formatDate } = useDisplay()
 const localePath = useLocalePath()
 
 const projects = ref<any[]>([])

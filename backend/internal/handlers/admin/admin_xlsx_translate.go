@@ -82,7 +82,7 @@ func (h *Handler) AdminTranslateXLSX(c *gin.Context) {
 					continue // skip single chars
 				}
 
-				translated, transErr := translateXLSXCell(c, h, trimmed, sourceLang, targetLang)
+				translated, transErr := h.aiService.TranslateSingleText(c.Request.Context(), trimmed, sourceLang, targetLang)
 				if transErr != nil || translated == "" || translated == trimmed {
 					continue
 				}
@@ -183,7 +183,7 @@ func (h *Handler) AdminBatchTranslateXLSX(c *gin.Context) {
 	for _, lang := range targetLangs {
 		result := langResult{lang: lang, cells: make(map[string]string, len(cells))}
 		for _, cell := range cells {
-			translated, tErr := translateXLSXCell(c, h, cell.value, sourceLang, lang)
+			translated, tErr := h.aiService.TranslateSingleText(c.Request.Context(), cell.value, sourceLang, lang)
 			if tErr == nil && translated != "" && translated != cell.value {
 				result.cells[cell.ref] = translated
 			}
@@ -225,26 +225,6 @@ func (h *Handler) AdminBatchTranslateXLSX(c *gin.Context) {
 }
 
 // ── helpers ──
-
-func translateXLSXCell(c *gin.Context, h *Handler, text, sourceLang, targetLang string) (string, error) {
-	if h.aiService == nil || !h.aiService.IsEnabled() {
-		return "", fmt.Errorf("ai not configured")
-	}
-
-	translationPrompt := fmt.Sprintf(
-		"Translate the following text from %s to %s. Return ONLY the translated text, no explanations, no quotation marks, no additional formatting:\n\n%s",
-		sourceLangOrDefault(sourceLang), targetLang, text,
-	)
-
-	return h.aiService.Generate(c.Request.Context(), translationPrompt)
-}
-
-func sourceLangOrDefault(lang string) string {
-	if lang == "" {
-		return "auto"
-	}
-	return lang
-}
 
 func isNumericOrDate(s string) bool {
 	s = strings.TrimSpace(s)

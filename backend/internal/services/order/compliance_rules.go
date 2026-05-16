@@ -5,6 +5,7 @@ import (
 	modelsProduct "candypro/api/internal/models/product"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -216,7 +217,9 @@ func mergeProductMarketProfiles(result *ComplianceValidationResult, canon string
 				continue
 			}
 			var blocked []string
-			_ = json.Unmarshal(prof.BlockedIngredientPatterns, &blocked)
+			if ue := json.Unmarshal(prof.BlockedIngredientPatterns, &blocked); ue != nil {
+				log.Printf("compliance_rules: unmarshal BlockedIngredientPatterns failed for product %s: %v", prof.ProductID, ue)
+			}
 			for _, pat := range blocked {
 				pt := strings.ToLower(strings.TrimSpace(pat))
 				if pt != "" && strings.Contains(ingredients, pt) {
@@ -224,7 +227,9 @@ func mergeProductMarketProfiles(result *ComplianceValidationResult, canon string
 				}
 			}
 			var req []string
-			_ = json.Unmarshal(prof.RequiredCertKeywords, &req)
+			if ue := json.Unmarshal(prof.RequiredCertKeywords, &req); ue != nil {
+				log.Printf("compliance_rules: unmarshal RequiredCertKeywords failed for product %s: %v", prof.ProductID, ue)
+			}
 			for _, kw := range req {
 				k := strings.ToLower(strings.TrimSpace(kw))
 				if k != "" && !strings.Contains(certText, k) {

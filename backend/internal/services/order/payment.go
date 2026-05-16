@@ -12,6 +12,7 @@ import (
 type paymentRepository interface {
 	FindByOrderID(ctx context.Context, orderID string) ([]modelsOrder.Payment, error)
 	FindByID(ctx context.Context, id string) (*modelsOrder.Payment, error)
+	FindByGatewayTransactionID(ctx context.Context, txID string) (*modelsOrder.Payment, error)
 	Create(ctx context.Context, payment *modelsOrder.Payment) error
 	CreateWithBalanceCheck(ctx context.Context, orderTotalAmount float64, payment *modelsOrder.Payment) error
 	Update(ctx context.Context, payment *modelsOrder.Payment) error
@@ -136,6 +137,35 @@ func (s *PaymentService) updateOrderPaymentStatus(ctx context.Context, orderID s
 		return s.orderRepo.Update(ctx, order)
 	}
 	return nil
+}
+
+// AuthorizePayment transitions a payment from pending to authorized (Stripe manual-capture flow).
+func (s *PaymentService) AuthorizePayment(ctx context.Context, paymentID string) error {
+	payment, err := s.repo.FindByID(ctx, paymentID)
+	if err != nil {
+		return fmt.Errorf("payment not found: %w", err)
+	}
+	if payment.Status != modelsOrder.PaymentRecordStatusPending {
+		return fmt.Errorf("cannot authorize payment with status '%s'", payment.Status)
+	}
+	return s.repo.UpdateStatus(ctx, paymentID, payment.Status, modelsOrder.PaymentRecordStatusAuthorized)
+}
+
+// FailPayment transitions a payment from pending/authorized to failed.
+func (s *PaymentService) FailPayment(ctx context.Context, paymentID string) error {
+	payment, err := s.repo.FindByID(ctx, paymentID)
+	if err != nil {
+		return fmt.Errorf("payment not found: %w", err)
+	}
+	if payment.Status != modelsOrder.PaymentRecordStatusPending && payment.Status != modelsOrder.PaymentRecordStatusAuthorized {
+		return fmt.Errorf("cannot fail payment with status '%s'", payment.Status)
+	}
+	return s.repo.UpdateStatus(ctx, paymentID, payment.Status, modelsOrder.PaymentRecordStatusFailed)
+}
+
+// FindByGatewayTransactionID looks up a payment by its Stripe/PayPal transaction ID.
+func (s *PaymentService) FindByGatewayTransactionID(ctx context.Context, txID string) (*modelsOrder.Payment, error) {
+	return s.repo.FindByGatewayTransactionID(ctx, txID)
 }
 
 // CountByStatus returns count of payments with given status.

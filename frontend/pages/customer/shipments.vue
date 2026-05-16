@@ -27,7 +27,7 @@
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <div>
             <h3 class="font-semibold text-gray-900">{{ $t('customer.shipments.trade_label') }} #{{ trade.id }}</h3>
-            <p class="text-sm text-gray-500">{{ trade.status }} · {{ trade.incoterms || trade.terms }}</p>
+            <p class="text-sm text-gray-500">{{ enumLabel('trade_status', trade.status) }} · {{ trade.incoterms || trade.terms }}</p>
           </div>
           <NuxtLink :to="localePath(`/customer/trades/${trade.id}`)" class="text-sm text-orange-600 hover:text-orange-800">
             {{ $t('customer.shipments.view_trade') }}
@@ -39,7 +39,7 @@
               <div class="flex-shrink-0 w-2 h-2 mt-1.5 rounded-full bg-orange-400"></div>
               <div>
                 <p class="font-medium text-gray-900">{{ s.carrier }} · {{ s.trackingNumber }}</p>
-                <p class="text-gray-500">{{ s.status }} — {{ formatDate(s.updatedAt) }}</p>
+                <p class="text-gray-500">{{ enumLabel('shipment_status', s.status) }} — {{ formatDate(s.updatedAt) }}</p>
                 <p v-if="s.estimatedDelivery" class="text-gray-400 text-xs">ETA: {{ formatDate(s.estimatedDelivery) }}</p>
               </div>
             </div>
@@ -56,7 +56,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
-const { formatDate } = useDisplay()
+const { enumLabel, formatDate } = useDisplay()
 const localePath = useLocalePath()
 const trades = ref<any[]>([])
 const shipmentMap = ref<Record<string, any[]>>({})

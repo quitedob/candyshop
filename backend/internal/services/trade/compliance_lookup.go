@@ -22,7 +22,7 @@ type ComplianceLookupResult struct {
 
 // LookupCompliance 从本地语料检索合规参考片段（非法律依据，不得单独作为放行条件）。
 func (s *AIService) LookupCompliance(country, query string, topK int) *ComplianceLookupResult {
-	if s == nil || s.complianceRetriever == nil {
+	if s == nil || s.ComplianceRetriever() == nil {
 		return nil
 	}
 
@@ -31,7 +31,7 @@ func (s *AIService) LookupCompliance(country, query string, topK int) *Complianc
 		normalizedQuery = "food labeling allergens additives import registration certifications packaging traceability"
 	}
 
-	matches := s.complianceRetriever.Search(country, normalizedQuery, topK)
+	matches := s.ComplianceRetriever().Search(country, normalizedQuery, topK)
 	references := make([]ComplianceReference, 0, len(matches))
 	for _, match := range matches {
 		references = append(references, ComplianceReference{
@@ -45,7 +45,7 @@ func (s *AIService) LookupCompliance(country, query string, topK int) *Complianc
 	}
 
 	return &ComplianceLookupResult{
-		Answer:     s.complianceRetriever.FormatAnswer(country, normalizedQuery, matches),
+		Answer:     s.ComplianceRetriever().FormatAnswer(country, normalizedQuery, matches),
 		References: references,
 	}
 }

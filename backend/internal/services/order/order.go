@@ -4,6 +4,7 @@ import (
 	"candypro/api/internal/config"
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
+	orderRepo "candypro/api/internal/repository/order"
 	emailsvc "candypro/api/internal/services/content"
 	"context"
 	"fmt"
@@ -28,6 +29,7 @@ type orderRepository interface {
 	Delete(ctx context.Context, id string) error
 	ReleaseStockForOrder(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error
 	DeleteWithStockRestore(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error
+	ReserveStockForOrder(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error
 	ConfirmPendingOrder(ctx context.Context, id string, confirmedAt time.Time) error
 	ConfirmAndReserveStock(ctx context.Context, id string, stockDeltas map[string]int, confirmedAt time.Time) error
 	ReleaseExpiredPendingConfirmationOrders(ctx context.Context, olderThan time.Time, limit int) (int, error)
@@ -41,6 +43,12 @@ type orderRepository interface {
 	TopProductsByRevenue(ctx context.Context, limit int) ([]map[string]interface{}, error)
 	DistinctOrderingUsers(ctx context.Context, since time.Time) (int64, error)
 	RevenueByDay(ctx context.Context, days int) ([]map[string]interface{}, error)
+	SalesVelocity(ctx context.Context, months int) ([]orderRepo.SalesVelocityResult, error)
+	RFMAnalysis(ctx context.Context) ([]orderRepo.RFMRecord, error)
+	CustomerChurn(ctx context.Context, dormantDays int) ([]orderRepo.CustomerChurnResult, error)
+	InventoryHealth(ctx context.Context, salesWindowDays int) ([]orderRepo.InventoryHealthResult, error)
+	ProfitLossByPeriod(ctx context.Context, groupBy string, periods int) ([]orderRepo.ProfitLossResult, error)
+	ReplenishmentSuggestions(ctx context.Context, cycleDays int, salesWindowDays int) ([]orderRepo.ReplenishmentItem, error)
 }
 
 // OrderService handles order business logic.
@@ -142,6 +150,12 @@ func (s *OrderService) UpdateOrderWithStockAdjustment(ctx context.Context, order
 // DeleteOrder deletes an order by ID.
 func (s *OrderService) DeleteOrder(ctx context.Context, id string) error {
 	return s.repo.Delete(ctx, id)
+}
+
+// ReserveOrderStock deducts stock for an existing order and marks it as reserved.
+func (s *OrderService) ReserveOrderStock(ctx context.Context, order *modelsOrder.Order) error {
+	stockDeltas := buildOrderStockDeltas(order.Items)
+	return s.repo.ReserveStockForOrder(ctx, order, stockDeltas)
 }
 
 // ReleaseOrderStock restores reserved stock for an order and marks reservation released.
@@ -383,4 +397,36 @@ func (s *OrderService) GetDistinctOrderingUsers(ctx context.Context, since time.
 // GetRevenueByDay returns daily revenue for the last N days.
 func (s *OrderService) GetRevenueByDay(ctx context.Context, days int) ([]map[string]interface{}, error) {
 	return s.repo.RevenueByDay(ctx, days)
+}
+
+// ── Analytics ──
+
+// SalesVelocity returns per-product sales velocity for the last N months.
+func (s *OrderService) SalesVelocity(ctx context.Context, months int) ([]orderRepo.SalesVelocityResult, error) {
+	return s.repo.SalesVelocity(ctx, months)
+}
+
+// RFMAnalysis returns RFM values for all ordering users.
+func (s *OrderService) RFMAnalysis(ctx context.Context) ([]orderRepo.RFMRecord, error) {
+	return s.repo.RFMAnalysis(ctx)
+}
+
+// CustomerChurn finds customers at risk of churning.
+func (s *OrderService) CustomerChurn(ctx context.Context, dormantDays int) ([]orderRepo.CustomerChurnResult, error) {
+	return s.repo.CustomerChurn(ctx, dormantDays)
+}
+
+// InventoryHealth computes inventory health metrics for all products.
+func (s *OrderService) InventoryHealth(ctx context.Context, salesWindowDays int) ([]orderRepo.InventoryHealthResult, error) {
+	return s.repo.InventoryHealth(ctx, salesWindowDays)
+}
+
+// ProfitLossByPeriod returns P&L grouped by period.
+func (s *OrderService) ProfitLossByPeriod(ctx context.Context, groupBy string, periods int) ([]orderRepo.ProfitLossResult, error) {
+	return s.repo.ProfitLossByPeriod(ctx, groupBy, periods)
+}
+
+// ReplenishmentSuggestions computes smart replenishment for all products.
+func (s *OrderService) ReplenishmentSuggestions(ctx context.Context, cycleDays int, salesWindowDays int) ([]orderRepo.ReplenishmentItem, error) {
+	return s.repo.ReplenishmentSuggestions(ctx, cycleDays, salesWindowDays)
 }

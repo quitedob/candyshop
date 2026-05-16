@@ -317,10 +317,11 @@ const products = computed(() => {
   return all.filter(p => {
     return activeFilters.value.every(filter => {
       if (filter === 'halal') return p.halalCertified
-      if (filter === 'sugar-free') {
-        const text = `${p.name} ${p.summary || ''} ${p.description || ''}`.toLowerCase()
-        return text.includes('sugar-free') || text.includes('sugar free') || text.includes('无糖')
-      }
+      if (filter === 'sugar-free') return p.isSugarFree
+      if (filter === 'vegan') return p.isVegan
+      if (filter === 'gluten-free') return p.isGlutenFree
+      if (filter === 'organic') return p.isOrganic
+      if (filter === 'kosher') return p.isKosher
       if (filter === '4d') {
         const text = `${p.name} ${p.summary || ''}`.toLowerCase()
         return text.includes('4d') || text.includes('4-d')
@@ -349,7 +350,11 @@ const breadcrumbItems = computed(() => [
 // Filter tags
 const filterTags = [
   { id: 'sugar-free', label: t('filters.sugar_free'), icon: 'lucide:leaf' },
-  { id: 'halal', label: t('filters.halal'), icon: 'lucide:star' },
+  { id: 'vegan', label: t('filters.vegan'), icon: 'lucide:heart' },
+  { id: 'gluten-free', label: t('filters.gluten_free'), icon: 'lucide:shield-check' },
+  { id: 'organic', label: t('filters.organic'), icon: 'lucide:sprout' },
+  { id: 'kosher', label: t('filters.kosher'), icon: 'lucide:star' },
+  { id: 'halal', label: t('filters.halal'), icon: 'lucide:moon-star' },
   { id: 'filled', label: t('filters.filled'), icon: 'lucide:circle' },
   { id: '4d', label: t('filters.4d'), icon: 'lucide:box' },
   { id: 'vitamin', label: t('filters.vitamin'), icon: 'lucide:pill' }

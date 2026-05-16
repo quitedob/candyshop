@@ -9,6 +9,7 @@
       <input
         :id="id"
         ref="inputRef"
+        :name="name"
         :type="type"
         :value="modelValue"
         :placeholder="placeholder"
@@ -30,10 +31,10 @@
         v-if="clearable && modelValue"
         type="button"
         class="input-text__clear"
-        aria-label="Clear input"
+        :aria-label="$t('common.clear')"
         @click="handleClear"
       >
-        <Icon name="lucide:x" size="14" />
+        <Icon name="lucide:x" size="14" aria-hidden="true" />
       </button>
     </div>
 
@@ -42,7 +43,7 @@
     </div>
 
     <div v-if="error" class="input-text__error">
-      <Icon name="lucide:alert-circle" size="12" />
+      <Icon name="lucide:alert-circle" size="12" aria-hidden="true" />
       <span>{{ error }}</span>
     </div>
   </div>
@@ -54,6 +55,7 @@ import { ref } from 'vue'
 interface Props {
   id: string
   modelValue: string
+  name?: string
   type?: string
   label?: string
   placeholder?: string
@@ -207,6 +209,6 @@ defineExpose({
 }
 
 .input-text--error .input-text__field:focus {
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  box-shadow: 0 0 0 3px rgba(var(--color-error-rgb), 0.1);
 }
 </style>

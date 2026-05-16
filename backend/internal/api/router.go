@@ -19,6 +19,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/gorm"
@@ -82,6 +83,9 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 	rateLimitHandler, limiter := middleware.RateLimit(&cfg.Security)
 	router.Use(rateLimitHandler)
 
+	// Prometheus metrics middleware
+	router.Use(middleware.PrometheusMetrics())
+
 	// Request logging
 	router.Use(gin.Logger())
 
@@ -128,19 +132,51 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
 
-	// Health check
+	// Health check — lightweight liveness probe (no dependency checks).
 	router.GET("/health", func(c *gin.Context) {
-		aiReady := false
-		if h.System != nil {
-			aiReady = h.System.IsAgentReady()
-		}
 		c.JSON(http.StatusOK, gin.H{
-			"status":   "ok",
-			"service":  "candypro-api",
-			"version":  "1.0.0",
-			"ai_agent": aiReady,
+			"status":  "ok",
+			"service": "candypro-api",
+			"version": "1.0.0",
 		})
 	})
+
+	// Readiness check — verifies critical dependencies before serving traffic.
+	router.GET("/ready", func(c *gin.Context) {
+		failures := make([]string, 0)
+
+		if db != nil {
+			sqlDB, err := db.DB()
+			if err != nil {
+				failures = append(failures, "db_connection_pool")
+			} else if err := sqlDB.Ping(); err != nil {
+				failures = append(failures, "db_ping")
+			}
+		} else {
+			failures = append(failures, "db_not_initialized")
+		}
+
+		if h.System != nil && !h.System.IsAgentReady() {
+			failures = append(failures, "ai_agent_not_ready")
+		}
+
+		if len(failures) > 0 {
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"status":   "not_ready",
+				"failures": failures,
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "ready",
+			"service": "candypro-api",
+			"version": "1.0.0",
+		})
+	})
+
+		// Prometheus metrics endpoint
+		router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	// 404 handler
 	router.NoRoute(func(c *gin.Context) {

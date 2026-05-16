@@ -15,38 +15,38 @@
         </div>
         <div class="space-y-4 px-5 py-5">
           <div>
-            <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.order_intention') }}</label>
-            <textarea v-model="aiForm.prompt" rows="4" :placeholder="t('customer.orders_new.order_intention_placeholder')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
+            <label for="order-ai-prompt" class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.order_intention') }}</label>
+            <textarea id="order-ai-prompt" v-model="aiForm.prompt" name="aiPrompt" rows="4" :placeholder="t('customer.orders_new.order_intention_placeholder')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
           </div>
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.target_country') }}</label>
-              <input v-model="aiForm.targetCountry" type="text" :placeholder="t('customer.orders_new.target_country_placeholder')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
+              <label for="order-ai-targetCountry" class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.target_country') }}</label>
+              <input id="order-ai-targetCountry" v-model="aiForm.targetCountry" name="targetCountry" type="text" :placeholder="t('customer.orders_new.target_country_placeholder')" autocomplete="country-name" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.requested_quantity') }}</label>
-              <input v-model.number="aiForm.quantity" type="number" min="1" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
+              <label for="order-ai-quantity" class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.requested_quantity') }}</label>
+              <input id="order-ai-quantity" v-model.number="aiForm.quantity" name="quantity" type="number" min="1" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.budget') }}</label>
-              <input v-model.number="aiForm.budget" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
+              <label for="order-ai-budget" class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.budget') }}</label>
+              <input id="order-ai-budget" v-model.number="aiForm.budget" name="budget" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.currency') }}</label>
-              <input v-model="aiForm.currency" type="text" :placeholder="t('defaults.currency')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm uppercase focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
+              <label for="order-ai-currency" class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.currency') }}</label>
+              <input id="order-ai-currency" v-model="aiForm.currency" name="currency" type="text" :placeholder="t('defaults.currency')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm uppercase focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.estimated_tax') }}</label>
-              <input v-model.number="aiForm.taxAmount" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
+              <label for="order-ai-taxAmount" class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.estimated_tax') }}</label>
+              <input id="order-ai-taxAmount" v-model.number="aiForm.taxAmount" name="taxAmount" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.estimated_shipping') }}</label>
-              <input v-model.number="aiForm.shippingAmount" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
+              <label for="order-ai-shippingAmount" class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.estimated_shipping') }}</label>
+              <input id="order-ai-shippingAmount" v-model.number="aiForm.shippingAmount" name="shippingAmount" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
             </div>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.additional_requirements') }}</label>
-            <textarea v-model="aiForm.additionalRequirements" rows="3" :placeholder="t('customer.orders_new.additional_requirements_placeholder')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
+            <label for="order-ai-additionalRequirements" class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.additional_requirements') }}</label>
+            <textarea id="order-ai-additionalRequirements" v-model="aiForm.additionalRequirements" name="additionalRequirements" rows="3" :placeholder="t('customer.orders_new.additional_requirements_placeholder')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
           </div>
           <button :disabled="aiSubmitting" @click="submitAIDraft" class="inline-flex items-center rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-60">
             <Icon name="heroicons:sparkles" class="mr-1.5 h-4 w-4" />

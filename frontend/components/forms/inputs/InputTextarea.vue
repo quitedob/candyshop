@@ -8,6 +8,7 @@
     <textarea
       :id="id"
       ref="textareaRef"
+      :name="name"
       :value="modelValue"
       :placeholder="placeholder"
       :disabled="disabled"
@@ -16,6 +17,7 @@
       :rows="rows"
       :maxlength="maxlength"
       :minlength="minlength"
+      :autocomplete="autocomplete"
       class="input-textarea__field"
       @input="handleInput"
       @blur="handleBlur"
@@ -27,7 +29,7 @@
     </div>
 
     <div v-if="error" class="input-textarea__error">
-      <Icon name="lucide:alert-circle" size="12" />
+      <Icon name="lucide:alert-circle" size="12" aria-hidden="true" />
       <span>{{ error }}</span>
     </div>
   </div>
@@ -39,6 +41,7 @@ import { ref, computed } from 'vue'
 interface Props {
   id: string
   modelValue: string
+  name?: string
   label?: string
   placeholder?: string
   error?: string
@@ -48,6 +51,7 @@ interface Props {
   rows?: number
   maxlength?: number
   minlength?: number
+  autocomplete?: string
   autoResize?: boolean
 }
 
@@ -124,7 +128,7 @@ defineExpose({
   font-family: inherit;
   line-height: 1.6;
   color: var(--color-text);
-  background-color: white;
+  background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   resize: vertical;
@@ -175,6 +179,6 @@ defineExpose({
 }
 
 .input-textarea--error .input-textarea__field:focus {
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  box-shadow: 0 0 0 3px rgba(var(--color-error-rgb), 0.1);
 }
 </style>

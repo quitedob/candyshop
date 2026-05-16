@@ -1,0 +1,394 @@
+{
+  "skip_to_content": "Skip to main content",
+  "loading": "Loading…",
+  "close": "Close",
+  "whatsapp": {
+    "us": "WhatsApp Us",
+    "message": "Hi, I'm interested in your OEM candy services. Can you provide more information?",
+    "product_inquiry": "Hi, I'm interested in \"{product}\"{categoryPart}. Can you provide more information?",
+    "category_part": " from {name} category",
+    "inquiry_intro": "Hi, I'd like to inquire about your OEM candy services.\n\n",
+    "inquiry_followup": "Please provide more information about pricing and lead times.",
+    "field_name": "Name",
+    "field_company": "Company",
+    "field_email": "Email",
+    "field_country": "Country",
+    "field_product": "Product",
+    "field_quantity": "Quantity"
+  },
+  "pagination": {
+    "prev": "Previous",
+    "next": "Next",
+    "page": "Page {current} of {total}",
+    "showing": "Showing {from} to {to} of {total} products",
+    "nav_label": "Pagination"
+  },
+  "errors": {
+    "403": {
+      "title": "Access Denied",
+      "description": "You do not have permission to access this page."
+    },
+    "404": {
+      "title": "Page Not Found",
+      "description": "Sorry, the page you are looking for doesn't exist.",
+      "back_home": "Back to Home"
+    },
+    "500": {
+      "title": "Server Error",
+      "description": "Something went wrong on our end. Please try again later.",
+      "refresh": "Refresh Page"
+    },
+    "default": "An error occurred",
+    "forbidden_insufficient_role": "You do not have permission to access this resource.",
+    "boundary": "Something went wrong",
+    "goHome": "Go to Home",
+    "tryAgain": "Try Again",
+    "retry": "Try again",
+    "api": {
+      "generic_failed": "Something went wrong. Please try again.",
+      "load_failed": "Could not load data. Please try again.",
+      "save_failed": "Could not save. Please try again.",
+      "delete_failed": "Could not delete. Please try again.",
+      "upload_failed": "Could not upload. Please try again.",
+      "cancel_failed": "Could not cancel. Please try again.",
+      "confirm_failed": "Could not confirm. Please try again.",
+      "assign_failed": "Could not assign. Please try again.",
+      "analyze_failed": "Could not analyze. Please try again.",
+      "quote_failed": "Could not submit quote. Please try again.",
+      "ai_draft_failed": "Could not generate draft order. Please try again.",
+      "ai_confirm_failed": "Could not confirm draft. Please try again.",
+      "manual_order_failed": "Could not create order. Please try again.",
+      "trade_load_failed": "Could not load trade details.",
+      "status_failed": "Could not update status.",
+      "document_confirm_failed": "Could not confirm document.",
+      "document_save_failed": "Could not save document.",
+      "user_create_failed": "Could not create user.",
+      "send_failed": "Could not send. Please try again.",
+      "cart_submit_failed": "Could not submit order request. Please try again.",
+      "product_load_failed": "Could not load product.",
+      "trade_create_failed": "Could not create trade.",
+      "trade_start_failed": "Could not start trade.",
+      "refund_failed": "Could not process refund.",
+      "stock_adjust_failed": "Could not adjust stock.",
+      "company_verify_failed": "Could not verify company.",
+      "inquiry_convert_failed": "Could not convert inquiry.",
+      "payment_confirm_failed": "Could not confirm payment.",
+      "fetch_payments_failed": "Could not load payments.",
+      "product_price_required": "Base price must be greater than zero.",
+      "product_status_transition_invalid": "Invalid status transition. Allowed: draft → active, active ↔ inactive.",
+      "product_activation_no_stock": "Cannot activate a product with zero stock. Please add stock first.",
+      "product_moq_min_1": "Minimum order quantity must be at least 1.",
+      "shipping_street_required": "Shipping street address is required.",
+      "shipping_city_required": "Shipping city is required.",
+      "target_country_required": "Target country is required."
+    }
+  },
+  "validation": {
+    "required": {
+      "companyName": "Company Name is required",
+      "contactPerson": "Contact Person is required",
+      "email": "Email is required",
+      "default": "{field} is required"
+    },
+    "email": "Invalid email format",
+    "phone": "Invalid phone format",
+    "minLength": {
+      "companyName": "Company Name must be at least {min} characters",
+      "contactPerson": "Contact Person must be at least {min} characters",
+      "default": "Must be at least {min} characters"
+    },
+    "pattern": {
+      "default": "Invalid format"
+    },
+    "invalid": {
+      "default": "Invalid input"
+    }
+  },
+  "roles": {
+    "customer": "Customer",
+    "admin": "Admin",
+    "superadmin": "Super Admin"
+  },
+  "display": {
+    "na": "N/A",
+    "em_dash": "—",
+    "tbd": "TBD",
+    "zero": "0"
+  },
+  "defaults": {
+    "currency": "USD",
+    "incoterms": "FOB",
+    "target_country_global": "global"
+  },
+  "enum": {
+    "order_status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "production": "Production",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled",
+      "processing": "Processing",
+      "pending_confirmation": "Pending confirmation",
+      "pending_approval": "Pending approval",
+      "partially_shipped": "Partially shipped",
+      "partially_delivered": "Partially delivered",
+      "partially_returned": "Partially returned",
+      "returned": "Returned",
+      "expired": "Expired",
+      "unknown": "Unknown"
+    },
+    "payment_status": {
+      "unpaid": "Unpaid",
+      "paid": "Paid",
+      "partial": "Partial",
+      "refunded": "Refunded",
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "unknown": "Unknown"
+    },
+    "product_status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "draft": "Draft",
+      "unknown": "Unknown"
+    },
+    "company_status": {
+      "pending": "Pending",
+      "verified": "Verified",
+      "rejected": "Rejected",
+      "active": "Active",
+      "suspended": "Suspended",
+      "inactive": "Inactive",
+      "unknown": "Unknown"
+    },
+    "kyb_status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "unknown": "Unknown"
+    },
+    "inquiry_status": {
+      "pending": "Pending",
+      "contacted": "Contacted",
+      "quoted": "Quoted",
+      "negotiating": "Negotiating",
+      "won": "Won",
+      "lost": "Lost",
+      "open": "Open",
+      "closed": "Closed",
+      "converted": "Converted",
+      "unknown": "Unknown"
+    },
+    "inquiry_priority": {
+      "normal": "Normal",
+      "high": "High",
+      "low": "Low",
+      "urgent": "Urgent",
+      "unknown": "Unknown"
+    },
+    "trade_status": {
+      "draft": "Draft",
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "in_progress": "In progress",
+      "paid": "Paid",
+      "shipped": "Shipped",
+      "active": "Active",
+      "completed": "Completed",
+      "closed": "Closed",
+      "cancelled": "Cancelled",
+      "unknown": "Unknown"
+    },
+    "shipment_status": {
+      "pending": "Pending",
+      "in_transit": "In transit",
+      "delivered": "Delivered",
+      "exception": "Exception",
+      "unknown": "Unknown"
+    },
+    "carrier": {
+      "standard": "Standard",
+      "dhl": "DHL",
+      "fedex": "FedEx",
+      "ups": "UPS",
+      "usps": "USPS",
+      "ems": "EMS",
+      "sea": "Sea Freight",
+      "air": "Air Freight",
+      "sea_freight": "Sea Freight",
+      "air_freight": "Air Freight",
+      "unknown": "Unknown"
+    },
+    "tracking_provider": {
+      "standard": "Standard",
+      "unknown": "Unknown"
+    },
+    "invoice_type": {
+      "invoice": "Invoice",
+      "proforma": "Proforma",
+      "credit_note": "Credit Note",
+      "unknown": "Unknown"
+    },
+    "content_type": {
+      "post": "Post",
+      "case": "Case",
+      "unknown": "Unknown"
+    },
+    "oem_status": {
+      "inquiry": "Inquiry",
+      "sampling": "Sampling",
+      "formulation": "Formulation",
+      "quotation": "Quotation",
+      "contract": "Contract",
+      "production": "Production",
+      "delivery": "Delivery",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "unknown": "Unknown"
+    },
+    "sample_status": {
+      "requested": "Requested",
+      "shipped": "Shipped",
+      "received": "Received",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "unknown": "Unknown"
+    },
+    "document_status": {
+      "draft": "Draft",
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled",
+      "completed": "Completed",
+      "unknown": "Unknown"
+    },
+    "document_type": {
+      "quotation": "Quotation",
+      "proforma_invoice": "Proforma Invoice",
+      "sales_contract": "Sales Contract",
+      "commercial_invoice": "Commercial Invoice",
+      "packing_list": "Packing List",
+      "bill_of_lading": "Bill of Lading",
+      "health_certificate": "Health Certificate",
+      "origin_certificate": "Origin Certificate",
+      "unknown": "Unknown"
+    },
+    "negotiation_status": {
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "expired": "Expired",
+      "unknown": "Unknown"
+    },
+    "invoice_status": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "paid": "Paid",
+      "overdue": "Overdue",
+      "voided": "Voided",
+      "cancelled": "Cancelled",
+      "unknown": "Unknown"
+    },
+    "user_status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "suspended": "Suspended",
+      "pending": "Pending",
+      "deleted": "Deleted",
+      "unknown": "Unknown"
+    },
+    "tool_status": {
+      "success": "Success",
+      "error": "Error",
+      "running": "Running",
+      "unknown": "Unknown"
+    },
+    "compliance_status": {
+      "passed": "Passed",
+      "failed": "Failed",
+      "warnings": "Warnings",
+      "pending": "Pending",
+      "unknown": "Unknown"
+    }
+  },
+  "rte": {
+    "placeholder": "Write something…",
+    "link_url": "Link URL",
+    "link_placeholder": "https://example.com",
+    "set": "Set",
+    "remove": "Remove",
+    "uploading_image": "Uploading image…",
+    "text_formatting": "Text formatting",
+    "bold": "Bold",
+    "italic": "Italic",
+    "underline": "Underline",
+    "strikethrough": "Strikethrough",
+    "heading1": "Heading 1",
+    "heading2": "Heading 2",
+    "heading3": "Heading 3",
+    "paragraph": "Paragraph",
+    "bullet_list": "Bullet List",
+    "ordered_list": "Ordered List",
+    "blockquote": "Blockquote",
+    "align_left": "Align Left",
+    "align_center": "Align Center",
+    "align_right": "Align Right",
+    "insert_link": "Insert Link",
+    "insert_image": "Insert Image",
+    "upload_image": "Upload image",
+    "undo": "Undo",
+    "redo": "Redo"
+  },
+  "a11y": {
+    "breadcrumb": "Breadcrumb",
+    "previous_image": "Previous image",
+    "next_image": "Next image",
+    "zoom_image": "Zoom image",
+    "close_lightbox": "Close lightbox",
+    "go_to_homepage": "Go to homepage",
+    "main_navigation": "Main navigation",
+    "language": "Language",
+    "contact_whatsapp": "Contact us on WhatsApp",
+    "toggle_menu": "Toggle menu",
+    "mobile_navigation": "Mobile navigation",
+    "close_menu": "Close menu",
+    "scroll_to_top": "Scroll to top",
+    "close": "Close",
+    "facebook": "Facebook",
+    "linkedin": "LinkedIn",
+    "instagram": "Instagram",
+    "youtube": "YouTube",
+    "twitter": "Twitter"
+  },
+  "offline_message": "Please check your internet connection and try again.",
+  "languages": {
+    "en": "English",
+    "zh": "中文",
+    "en_short": "EN",
+    "zh_short": "中",
+    "ko": "한국어",
+    "ar": "العربية",
+    "ja": "日本語",
+    "th": "ไทย",
+    "vi": "Tiếng Việt",
+    "id": "Bahasa Indonesia",
+    "ms": "Bahasa Melayu",
+    "ko_short": "한",
+    "ar_short": "ع",
+    "ja_short": "日",
+    "th_short": "ท",
+    "vi_short": "V",
+    "id_short": "ID",
+    "ms_short": "MS"
+  },
+  "common": {
+    "previous": "Previous",
+    "next": "Next",
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "loading": "Loading..."
+  }
+}

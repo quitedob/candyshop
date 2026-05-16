@@ -111,8 +111,19 @@ func main() {
 		}
 		log.Println("Trade AI agent initialized successfully (13 tools)")
 	}
+	// Initialize B2B DeepAgent coordinator (ProductExpert, PricingExpert, LogisticsExpert)
+	if initErr := h.System.InitDeepAgent(); initErr != nil {
+		log.Printf("Warning: B2B coordinator DeepAgent initialization failed: %v", initErr)
+	} else if h.System.IsB2BCoordinatorReady() {
+		log.Println("B2B Coordinator DeepAgent initialized successfully")
+	}
 
-	// Background jobs (linked to process lifecycle)
+	// Initialize Plan-Execute-Replan agent for structured order processing
+	if initErr := h.System.InitOrderProcessingAgent(); initErr != nil {
+		log.Printf("Warning: Order Processing P-E-R agent initialization failed: %v", initErr)
+	} else if h.System.IsOrderProcessingReady() {
+		log.Println("Order Processing P-E-R agent initialized successfully")
+	}
 	backgroundCtx, stopBackground := context.WithCancel(context.Background())
 	defer stopBackground()
 	stopOrderDraftCleanup := startOrderDraftCleanup(backgroundCtx, svcs)

@@ -13,6 +13,10 @@ const (
 	StockReasonManualAdjustment = "manual_adjustment"
 	StockReasonDispatched       = "dispatched"
 	StockReasonGoodsIssued      = "goods_issued"
+	StockReasonStockReserved    = "stock_reserved"
+	StockReasonStockReleased    = "stock_released"
+	StockReasonStockDeducted    = "stock_deducted"
+	StockReasonStockTransfer    = "stock_transfer"
 )
 
 // StockTransaction records every stock quantity change for audit and traceability.

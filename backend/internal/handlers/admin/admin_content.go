@@ -43,6 +43,7 @@ type adminContentCreateRequest struct {
 	Thumbnail   string                   `json:"thumbnail"`
 	ReadTime    int                      `json:"readTime"`
 	Tags        []string                 `json:"tags"`
+	Translations *modelsCommon.JSONMap   `json:"translations"`
 
 	Client    string   `json:"client"`
 	Industry  string   `json:"industry"`
@@ -65,8 +66,9 @@ type adminContentUpdateRequest struct {
 	Author      *adminContentAuthorPatch `json:"author"`
 	PublishedAt *time.Time               `json:"publishedAt"`
 	Thumbnail   *string                  `json:"thumbnail"`
-	ReadTime    *int                     `json:"readTime"`
-	Tags        *[]string                `json:"tags"`
+	ReadTime     *int                    `json:"readTime"`
+	Tags         *[]string               `json:"tags"`
+	Translations *modelsCommon.JSONMap   `json:"translations"`
 
 	Client    *string   `json:"client"`
 	Industry  *string   `json:"industry"`
@@ -448,6 +450,9 @@ func buildPostFromCreateRequest(req adminContentCreateRequest) *modelsProduct.Bl
 		post.AuthorTitle = strings.TrimSpace(req.Author.Title)
 		post.AuthorBio = strings.TrimSpace(req.Author.Bio)
 	}
+	if req.Translations != nil {
+		post.Translations = *req.Translations
+	}
 
 	return post
 }
@@ -469,7 +474,7 @@ func buildCaseFromCreateRequest(req adminContentCreateRequest) *modelsProduct.Ca
 		slug = buildProductSlug(base)
 	}
 
-	return &modelsProduct.CaseStudy{
+	cs := &modelsProduct.CaseStudy{
 		ID:        id,
 		Slug:      slug,
 		Title:     title,
@@ -486,6 +491,10 @@ func buildCaseFromCreateRequest(req adminContentCreateRequest) *modelsProduct.Ca
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
+	if req.Translations != nil {
+		cs.Translations = *req.Translations
+	}
+	return cs
 }
 
 func applyPostPatch(post *modelsProduct.BlogPost, req adminContentUpdateRequest) {
@@ -512,6 +521,9 @@ func applyPostPatch(post *modelsProduct.BlogPost, req adminContentUpdateRequest)
 	}
 	if req.Tags != nil {
 		post.Tags = modelsCommon.StringArray(*req.Tags)
+	}
+	if req.Translations != nil {
+		post.Translations = *req.Translations
 	}
 	if req.PublishedAt != nil && !req.PublishedAt.IsZero() {
 		post.PublishedAt = *req.PublishedAt
@@ -571,6 +583,9 @@ func applyCasePatch(caseStudy *modelsProduct.CaseStudy, req adminContentUpdateRe
 	}
 	if req.Services != nil {
 		caseStudy.Services = modelsCommon.StringArray(*req.Services)
+	}
+	if req.Translations != nil {
+		caseStudy.Translations = *req.Translations
 	}
 	if caseStudy.Slug == "" {
 		base := caseStudy.Title

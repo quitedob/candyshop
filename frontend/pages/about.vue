@@ -26,7 +26,7 @@
             <p>{{ t('about.story_p3') }}</p>
           </div>
           <div class="story__image">
-            <img src="/images/about-story.jpg" alt="Our Factory" />
+            <img src="/images/about-story.jpg" :alt="$t('about.alt_our_factory')" />
           </div>
         </div>
       </div>

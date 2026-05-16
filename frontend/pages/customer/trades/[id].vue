@@ -9,15 +9,15 @@
           </h2>
           <div class="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
             <div class="mt-2 flex items-center text-sm text-gray-500">
-              <Icon name="heroicons:tag" class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
+              <Icon name="heroicons:tag" class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" aria-hidden="true" />
               {{ t('customer.trades.status_label') }}: {{ trade?.status || t('customer.trades.loading') }}
             </div>
             <div class="mt-2 flex items-center text-sm text-gray-500">
-              <Icon name="heroicons:currency-dollar" class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
+              <Icon name="heroicons:currency-dollar" class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" aria-hidden="true" />
               {{ t('customer.trades.currency_label') }}: {{ trade?.currency }}
             </div>
             <div class="mt-2 flex items-center text-sm text-gray-500">
-              <Icon name="heroicons:truck" class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
+              <Icon name="heroicons:truck" class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" aria-hidden="true" />
               {{ t('customer.trades.incoterms_info') }}: {{ trade?.incoterms || trade?.terms || t('display.tbd') }}
             </div>
           </div>
@@ -73,8 +73,8 @@
               <h3 class="text-lg leading-6 font-medium text-gray-900">{{ t('customer.trades.documents_title') }}</h3>
               <p class="mt-1 text-sm text-gray-500">{{ t('customer.trades.documents_subtitle') }}</p>
             </div>
-            <button @click="refreshDocs" class="text-xs text-orange-600 hover:text-orange-800">
-              <Icon name="heroicons:arrow-path" class="h-4 w-4" />
+            <button @click="refreshDocs" class="text-xs text-orange-600 hover:text-orange-800" :aria-label="t('customer.trades.refresh')">
+              <Icon name="heroicons:arrow-path" class="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
           <div class="p-4">
@@ -86,10 +86,10 @@
               <!-- Rich structured documents -->
               <li v-for="doc in richDocs" :key="doc.key" class="py-3 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                  <Icon name="heroicons:document-text" class="h-5 w-5 text-orange-400" />
+                  <Icon name="heroicons:document-text" class="h-5 w-5 text-orange-400" aria-hidden="true" />
                   <div>
                     <p class="text-sm font-medium text-gray-900">{{ doc.label }}</p>
-                    <p class="text-xs text-gray-500">{{ doc.number }} · {{ doc.status }}</p>
+                    <p class="text-xs text-gray-500">{{ doc.number }} · {{ enumLabel('document_status', doc.status) }}</p>
                   </div>
                 </div>
                 <button @click="viewDoc(doc)" class="text-orange-600 hover:text-orange-900 text-sm font-medium">
@@ -99,10 +99,10 @@
               <!-- Generic trade documents -->
               <li v-for="doc in documents" :key="doc.id" class="py-3 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                  <Icon name="heroicons:document" class="h-5 w-5 text-gray-400" />
+                  <Icon name="heroicons:document" class="h-5 w-5 text-gray-400" aria-hidden="true" />
                   <div>
-                    <p class="text-sm font-medium text-gray-900">{{ doc.docType || doc.type }}</p>
-                    <p class="text-xs text-gray-500">{{ doc.docNumber }} · {{ doc.status }}</p>
+                    <p class="text-sm font-medium text-gray-900">{{ enumLabel('document_type', doc.docType || doc.type) }}</p>
+                    <p class="text-xs text-gray-500">{{ doc.docNumber }} · {{ enumLabel('document_status', doc.status) }}</p>
                   </div>
                 </div>
               </li>
@@ -114,8 +114,8 @@
         <div v-if="selectedDoc" class="bg-white shadow sm:rounded-lg border border-orange-100">
           <div class="px-4 py-4 border-b border-gray-200 flex items-center justify-between bg-orange-50">
             <h4 class="font-semibold text-gray-900">{{ selectedDoc.label }}</h4>
-            <button @click="selectedDoc = null" class="text-gray-400 hover:text-gray-600">
-              <Icon name="heroicons:x-mark" class="h-5 w-5" />
+            <button @click="selectedDoc = null" class="text-gray-400 hover:text-gray-600" :aria-label="t('close')">
+              <Icon name="heroicons:x-mark" class="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
           <div class="p-4">
@@ -143,7 +143,7 @@
                   <p class="text-sm font-medium text-gray-900">{{ c.countryCode }}</p>
                   <p class="text-xs text-gray-500">{{ c.language }}</p>
                 </div>
-                <span :class="complianceStatusClass(c.status)" class="px-2 py-0.5 text-xs font-medium rounded-full">{{ c.status }}</span>
+                <span :class="complianceStatusClass(c.status)" class="px-2 py-0.5 text-xs font-medium rounded-full">{{ enumLabel('compliance_status', c.status) }}</span>
               </li>
             </ul>
           </div>
@@ -161,7 +161,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 const route = useRoute()
 const { token } = useAuth()
 const { t } = useI18n()
-const { formatDate } = useDisplay()
+const { enumLabel, formatDate } = useDisplay()
 const api = useApi()
 const config = useRuntimeConfig()
 const baseURL = config.public.apiBase || '/api/v1'

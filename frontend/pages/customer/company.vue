@@ -35,25 +35,25 @@
 
       <form v-else @submit.prevent="saveCompany" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('customer.company.phone') }}</label>
-          <input v-model="form.phone" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+          <label for="company-phone" class="block text-sm font-medium text-gray-700 mb-1">{{ $t('customer.company.phone') }}</label>
+          <input id="company-phone" v-model="form.phone" name="phone" type="text" autocomplete="tel" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('customer.company.website') }}</label>
-          <input v-model="form.website" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+          <label for="company-website" class="block text-sm font-medium text-gray-700 mb-1">{{ $t('customer.company.website') }}</label>
+          <input id="company-website" v-model="form.website" name="website" type="text" autocomplete="url" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('customer.company.street') }}</label>
-          <input v-model="form.address.street" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+          <label for="company-street" class="block text-sm font-medium text-gray-700 mb-1">{{ $t('customer.company.street') }}</label>
+          <input id="company-street" v-model="form.address.street" name="street" type="text" autocomplete="street-address" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('customer.company.city') }}</label>
-            <input v-model="form.address.city" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+            <label for="company-city" class="block text-sm font-medium text-gray-700 mb-1">{{ $t('customer.company.city') }}</label>
+            <input id="company-city" v-model="form.address.city" name="city" type="text" autocomplete="address-level2" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('customer.company.country') }}</label>
-            <input v-model="form.address.country" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+            <label for="company-country" class="block text-sm font-medium text-gray-700 mb-1">{{ $t('customer.company.country') }}</label>
+            <input id="company-country" v-model="form.address.country" name="country" type="text" autocomplete="country-name" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </div>
         </div>
         <div class="flex gap-3 pt-2">

@@ -29,7 +29,7 @@
                 :class="['header__nav-link', { 'header__nav-link--active': isActive(item.to) }]"
               >
                 {{ $t(item.key) }}
-                <svg v-if="item.children" class="header__nav-arrow" width="8" height="5" viewBox="0 0 8 5" fill="none">
+                <svg v-if="item.children" class="header__nav-arrow" width="8" height="5" viewBox="0 0 8 5" fill="none" aria-hidden="true">
                   <path d="M1 1L4 4L7 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </NuxtLink>
@@ -71,7 +71,7 @@
             class="header__whatsapp hide-mobile"
             :aria-label="t('a11y.contact_whatsapp')"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
             </svg>
           </a>
@@ -139,7 +139,7 @@
         <div class="header__drawer-head">
           <span class="header__drawer-title">{{ $t('nav.home') }}</span>
           <button class="header__drawer-close" :aria-label="t('a11y.close_menu')" @click="closeMenu">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
               <line x1="4" y1="4" x2="16" y2="16"/><line x1="16" y1="4" x2="4" y2="16"/>
             </svg>
           </button>
@@ -153,7 +153,7 @@
                 @click="openMobileSub = openMobileSub === item.key ? null : item.key"
               >
                 {{ $t(item.key) }}
-                <svg class="header__drawer-chevron" width="10" height="6" viewBox="0 0 10 6" fill="none">
+                <svg class="header__drawer-chevron" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true">
                   <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </button>
@@ -222,13 +222,13 @@
 <script setup lang="ts">
 const LOCALE_KEY = 'user-locale'
 
-const { t, locale, setLocale } = useI18n()
+const { t, locale, setLocale, availableLocales } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
 const config = useRuntimeConfig()
 const { isAuthenticated, isAdmin, initAuth } = useAuth()
 
-const locales = ['en', 'zh'] as const
+const locales = computed(() => availableLocales.value.map(l => l.code))
 const isScrolled = ref(false)
 const isMenuOpen = ref(false)
 const openMobileSub = ref<string | null>(null)
@@ -268,7 +268,7 @@ const isActive = (to: string): boolean => {
 
 const switchLocale = async (code: string) => {
   if (import.meta.client) localStorage.setItem(LOCALE_KEY, code)
-  await setLocale(code as 'en' | 'zh')
+  await setLocale(code)
 }
 
 const handleScroll = () => { isScrolled.value = window.scrollY > 50 }
@@ -288,7 +288,7 @@ const closeMenu = () => {
 onMounted(() => {
   initAuth()
   const saved = import.meta.client && localStorage.getItem(LOCALE_KEY)
-  if (saved && saved !== locale.value) setLocale(saved as 'en' | 'zh')
+  if (saved && saved !== locale.value) setLocale(saved)
   window.addEventListener('scroll', handleScroll, { passive: true })
 })
 

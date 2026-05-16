@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	tradeModels "candypro/api/internal/models/trade"
 
@@ -59,7 +60,9 @@ func NewGenerateCITool(ctx context.Context, persister DocumentPersister) (tool.B
 					LineageSource: "ai_draft",
 				}
 				contentJSON, _ := json.Marshal(contentStr)
-				_ = json.Unmarshal(contentJSON, &doc.Content)
+				if ue := json.Unmarshal(contentJSON, &doc.Content); ue != nil {
+				log.Printf("eino tool: unmarshal doc content failed: %v", ue)
+			}
 				if err := persister.AddDocument(ctx, doc); err != nil {
 					return resp, fmt.Errorf("persist failed: %w", err)
 				}

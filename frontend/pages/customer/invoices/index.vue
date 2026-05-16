@@ -23,10 +23,10 @@
         <tbody class="bg-white divide-y divide-gray-200">
           <tr v-for="inv in invoices" :key="inv.id">
             <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ inv.invoiceNumber || inv.id }}</td>
-            <td class="px-6 py-4 text-sm text-gray-500">{{ inv.invoiceType || inv.type }}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">{{ enumLabel('invoice_type', inv.invoiceType || inv.type) }}</td>
             <td class="px-6 py-4 text-sm text-gray-900">{{ inv.currency }} {{ formatNumber(inv.totalAmount || 0) }}</td>
             <td class="px-6 py-4">
-              <span :class="statusClass(inv.status)" class="px-2 py-1 text-xs font-medium rounded-full">{{ inv.status }}</span>
+              <span :class="statusClass(inv.status)" class="px-2 py-1 text-xs font-medium rounded-full">{{ enumLabel('invoice_status', inv.status) }}</span>
             </td>
             <td class="px-6 py-4 text-sm text-gray-500">{{ formatDate(inv.createdAt) }}</td>
             <td class="px-6 py-4 text-right">
@@ -45,7 +45,7 @@
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const { t } = useI18n()
-const { formatNumber, formatDate } = useDisplay()
+const { enumLabel, formatNumber, formatDate } = useDisplay()
 const localePath = useLocalePath()
 const api = useApi()
 const invoices = ref<any[]>([])

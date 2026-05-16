@@ -35,6 +35,72 @@ interface Product {
   allergens?: string
   shelfLife?: string
   storage?: string
+  translations?: Record<string, Record<string, string>>
+  // Weight & Measurement
+  netWeightPerPiece?: number
+  netWeightPerPack?: number
+  grossWeightPerCarton?: number
+  piecesPerPack?: number
+  packsPerCarton?: number
+  // Dimensions
+  productLengthMM?: number
+  productWidthMM?: number
+  productHeightMM?: number
+  // Nutrition (per 100g)
+  energyKj?: number
+  energyKcal?: number
+  totalFatG?: number
+  saturatedFatG?: number
+  carbohydratesG?: number
+  sugarsG?: number
+  proteinG?: number
+  saltG?: number
+  fiberG?: number
+  // Ingredient Compliance
+  additives?: string[]
+  sweetenerType?: string
+  cocoaSolidsPct?: number
+  milkSolidsPct?: number
+  gmoStatus?: string
+  mayContain?: string[]
+  waterActivity?: number
+  // Trade & Barcode
+  gtin?: string
+  hsCode?: string
+  // Packaging
+  primaryPackaging?: string
+  innerPackConfig?: string
+  palletConfig?: string
+  // Dietary
+  isVegan?: boolean
+  isGlutenFree?: boolean
+  isSugarFree?: boolean
+  isKosher?: boolean
+  isOrganic?: boolean
+  // Certification Details
+  certificationDetails?: CertificationDetail[]
+  // Sample Specs
+  sampleMOQ?: number
+  sampleLeadTime?: string
+  samplePrice?: number
+  // Meta
+  status?: string
+  basePrice?: number
+  stockQuantity?: number
+  viewCount?: number
+  createdBy?: string
+  updatedBy?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+interface CertificationDetail {
+  name: string
+  abbrev?: string
+  issuedBy?: string
+  certNumber?: string
+  validUntil?: string
+  docUrl?: string
 }
 
 interface Category {
@@ -199,6 +265,7 @@ export const useApi = () => {
     : config.public.apiBase || '/api/v1'
   const publicBaseURL = `${baseURL}/public`
   const { t, locale } = useI18n()
+  const authToken = useCookie<string | null>('auth_token')
 
   /**
    * Generic fetch wrapper with error handling
@@ -208,15 +275,14 @@ export const useApi = () => {
     options?: Record<string, unknown>
   ): Promise<T> => {
     try {
-      const token = useCookie('auth_token')
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         'Accept-Language': locale.value,
         ...(options?.headers as Record<string, string> ?? {})
       }
 
-      if (token.value) {
-        headers['Authorization'] = `Bearer ${token.value}`
+      if (authToken.value) {
+        headers['Authorization'] = `Bearer ${authToken.value}`
       }
 
       const response = await $fetch<T>(`${baseURL}${endpoint}`, {
@@ -435,11 +501,10 @@ export const useApi = () => {
         formData.append(key, String(value))
       }
     })
-    const token = useCookie('auth_token')
     return $fetch<InquiryResponse>(`${baseURL}/user/inquiries`, {
       method: 'POST',
       body: formData,
-      headers: token.value ? { Authorization: `Bearer ${token.value}` } : {}
+      headers: authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}
     })
   }
 
@@ -550,6 +615,20 @@ export const useApi = () => {
   const adminUpdateOemProject = (id: string, data: any) => PUT<any>(`/admin/oem-projects/${id}`, data)
   const adminUpdateOemStatus = (id: string, data: any) => PUT<any>(`/admin/oem-projects/${id}/status`, data)
 
+  // Admin - OEM Flows
+  const adminGetOemFlows = () => GET<any[]>('/admin/oem-flows')
+  const adminGetOemFlow = (id: string) => GET<any>(`/admin/oem-flows/${id}`)
+  const adminCreateOemFlow = (data: any) => POST<any>('/admin/oem-flows', data)
+  const adminUpdateOemFlow = (id: string, data: any) => PUT<any>(`/admin/oem-flows/${id}`, data)
+  const adminDeleteOemFlow = (id: string) => DELETE<any>(`/admin/oem-flows/${id}`)
+
+  // Admin - OEM Solutions
+  const adminGetOemSolutions = () => GET<any[]>('/admin/oem-solutions')
+  const adminGetOemSolution = (id: string) => GET<any>(`/admin/oem-solutions/${id}`)
+  const adminCreateOemSolution = (data: any) => POST<any>('/admin/oem-solutions', data)
+  const adminUpdateOemSolution = (id: string, data: any) => PUT<any>(`/admin/oem-solutions/${id}`, data)
+  const adminDeleteOemSolution = (id: string) => DELETE<any>(`/admin/oem-solutions/${id}`)
+
   // Admin - Price Lists
   const adminGetPriceLists = (params?: Record<string, any>) => GET<PaginatedResponse<any>>('/admin/price-lists', params)
   const adminCreatePriceList = (data: any) => POST<any>('/admin/price-lists', data)
@@ -561,6 +640,17 @@ export const useApi = () => {
   // Admin - Inquiries
   const adminGetInquiry = (id: string) => GET<any>(`/admin/inquiries/${id}`)
   const adminConvertInquiryToOrder = (id: string) => POST<any>(`/admin/inquiries/${id}/convert-to-order`)
+  const adminConfirmInquiry = (id: string, data: any) => PUT<any>(`/admin/inquiries/${id}/confirm`, data)
+
+  // Customer - Inquiries
+  const customerUploadInquiryAttachment = (inquiryId: string, formData: FormData) => {
+    return $fetch<any>(`${baseURL}/user/inquiries/${inquiryId}/attachments`, {
+      method: 'POST',
+      body: formData,
+      headers: authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}
+    })
+  }
+  const customerConfirmInquiry = (inquiryId: string, data: any) => POST<any>(`/user/inquiries/${inquiryId}/confirm`, data)
 
   // Customer - OEM Projects
   const customerGetOemProjects = (params?: Record<string, any>) => GET<PaginatedResponse<any>>('/user/oem-projects', params)
@@ -569,11 +659,10 @@ export const useApi = () => {
 
   // Customer - Payments
   const customerUploadPaymentProof = (orderId: string, formData: FormData) => {
-    const token = useCookie('auth_token')
     return $fetch<any>(`${baseURL}/user/orders/${orderId}/payments`, {
       method: 'POST',
       body: formData,
-      headers: token.value ? { Authorization: `Bearer ${token.value}` } : {}
+      headers: authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}
     })
   }
 
@@ -592,6 +681,36 @@ export const useApi = () => {
   // Admin - Inventory
   const getInventory = (params?: Record<string, any>) => GET<PaginatedResponse<any>>('/admin/inventory', params)
   const updateInventory = (productId: string, data: { stockQuantity: number; reason?: string; notes?: string }) => PUT<any>(`/admin/inventory/${productId}`, data)
+  const exportInventoryXlsx = (ids: string[]) => {
+    return fetchApi<Blob>('/admin/inventory/export-xlsx', { method: 'POST', body: JSON.stringify({ ids }) }).then(async (_res) => {
+      // Actually fetch as blob for download
+      const resp = await $fetch<Blob>(`${baseURL}/admin/inventory/export-xlsx`, {
+        method: 'POST',
+        body: { ids },
+        headers: authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {},
+        responseType: 'blob'
+      })
+      return resp
+    })
+  }
+  const importInventoryXlsx = (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return $fetch<any>(`${baseURL}/admin/inventory/import-xlsx`, {
+      method: 'POST',
+      body: formData,
+      headers: authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}
+    })
+  }
+  const applyInventoryImport = (data: { rows: any[]; imageColumns: string[] }) => {
+    return fetchApi<any>('/admin/inventory/import-xlsx/apply', { method: 'POST', body: JSON.stringify(data) })
+  }
+  const batchUpdateInventory = (ids: string[], updates: Record<string, any>) => {
+    return fetchApi<any>('/admin/inventory/batch-update', { method: 'POST', body: JSON.stringify({ ids, updates }) })
+  }
+  const batchDeleteInventory = (ids: string[]) => {
+    return fetchApi<any>('/admin/inventory/batch-delete', { method: 'POST', body: JSON.stringify({ ids }) })
+  }
 
   // Admin - Shipments
   const getShipments = (params?: Record<string, any>) => GET<PaginatedResponse<any>>('/admin/shipments', params)
@@ -697,6 +816,20 @@ export const useApi = () => {
     adminUpdateOemProject,
     adminUpdateOemStatus,
 
+    // Admin - OEM Flows
+    adminGetOemFlows,
+    adminGetOemFlow,
+    adminCreateOemFlow,
+    adminUpdateOemFlow,
+    adminDeleteOemFlow,
+
+    // Admin - OEM Solutions
+    adminGetOemSolutions,
+    adminGetOemSolution,
+    adminCreateOemSolution,
+    adminUpdateOemSolution,
+    adminDeleteOemSolution,
+
     // Admin - Price Lists
     adminGetPriceLists,
     adminCreatePriceList,
@@ -708,6 +841,9 @@ export const useApi = () => {
     // Admin - Inquiries
     adminGetInquiry,
     adminConvertInquiryToOrder,
+    adminConfirmInquiry,
+    customerUploadInquiryAttachment,
+    customerConfirmInquiry,
 
     // Customer - OEM Projects
     customerGetOemProjects,
@@ -732,6 +868,11 @@ export const useApi = () => {
     // Admin - Inventory
     getInventory,
     updateInventory,
+    exportInventoryXlsx,
+    importInventoryXlsx,
+    applyInventoryImport,
+    batchUpdateInventory,
+    batchDeleteInventory,
 
     // Admin - Shipments
     getShipments,

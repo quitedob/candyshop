@@ -16,29 +16,86 @@ import (
 )
 
 type adminProductUpdateRequest struct {
-	Slug           *string   `json:"slug"`
-	Name           *string   `json:"name"`
-	Summary        *string   `json:"summary"`
-	Description    *string   `json:"description"`
-	Category       *string   `json:"category"`
-	CategorySlug   *string   `json:"categorySlug"`
-	Thumbnail      *string   `json:"thumbnail"`
-	Images         *[]string `json:"images"`
-	OEMAvailable   *bool     `json:"oemAvailable"`
-	HalalCertified *bool     `json:"halalCertified"`
-	Certifications *[]string `json:"certifications"`
-	MOQ            *int      `json:"moq"`
-	StockQuantity  *int      `json:"stockQuantity"`
-	LeadTime       *string   `json:"leadTime"`
-	Featured       *bool     `json:"featured"`
-	Flavors        *[]string `json:"flavors"`
-	Shapes         *[]string `json:"shapes"`
-	Ingredients    *string   `json:"ingredients"`
-	Allergens      *string   `json:"allergens"`
-	ShelfLife      *string   `json:"shelfLife"`
-	Storage        *string   `json:"storage"`
-	Status         *string   `json:"status"`
-	BasePrice      *float64  `json:"basePrice"`
+	Slug           *string              `json:"slug"`
+	Name           *string              `json:"name"`
+	Summary        *string              `json:"summary"`
+	Description    *string              `json:"description"`
+	Category       *string              `json:"category"`
+	CategorySlug   *string              `json:"categorySlug"`
+	Thumbnail      *string              `json:"thumbnail"`
+	Images         *[]string            `json:"images"`
+	OEMAvailable   *bool                `json:"oemAvailable"`
+	HalalCertified *bool                `json:"halalCertified"`
+	Certifications *[]string            `json:"certifications"`
+	MOQ            *int                 `json:"moq"`
+	StockQuantity  *int                 `json:"stockQuantity"`
+	LeadTime       *string              `json:"leadTime"`
+	Featured       *bool                `json:"featured"`
+	Flavors        *[]string            `json:"flavors"`
+	Shapes         *[]string            `json:"shapes"`
+	Ingredients    *string              `json:"ingredients"`
+	Allergens      *string              `json:"allergens"`
+	ShelfLife      *string              `json:"shelfLife"`
+	Storage        *string              `json:"storage"`
+	Status         *string              `json:"status"`
+	BasePrice      *float64             `json:"basePrice"`
+	Translations   *modelsCommon.JSONMap `json:"translations"`
+
+	// Weight & Measurement
+	NetWeightPerPiece    *float64 `json:"netWeightPerPiece"`
+	NetWeightPerPack     *float64 `json:"netWeightPerPack"`
+	GrossWeightPerCarton *float64 `json:"grossWeightPerCarton"`
+	PiecesPerPack        *int     `json:"piecesPerPack"`
+	PacksPerCarton       *int     `json:"packsPerCarton"`
+
+	// Dimensions
+	ProductLengthMM *float64 `json:"productLengthMM"`
+	ProductWidthMM  *float64 `json:"productWidthMM"`
+	ProductHeightMM *float64 `json:"productHeightMM"`
+
+	// Nutrition
+	EnergyKj       *float64 `json:"energyKj"`
+	EnergyKcal     *float64 `json:"energyKcal"`
+	TotalFatG      *float64 `json:"totalFatG"`
+	SaturatedFatG  *float64 `json:"saturatedFatG"`
+	CarbohydratesG *float64 `json:"carbohydratesG"`
+	SugarsG        *float64 `json:"sugarsG"`
+	ProteinG       *float64 `json:"proteinG"`
+	SaltG          *float64 `json:"saltG"`
+	FiberG         *float64 `json:"fiberG"`
+
+	// Ingredient Compliance
+	Additives      *[]string `json:"additives"`
+	SweetenerType  *string   `json:"sweetenerType"`
+	CocoaSolidsPct *float64  `json:"cocoaSolidsPct"`
+	MilkSolidsPct  *float64  `json:"milkSolidsPct"`
+	GMOStatus       *string   `json:"gmoStatus"`
+	MayContain     *[]string `json:"mayContain"`
+	WaterActivity  *float64  `json:"waterActivity"`
+
+	// Trade & Barcode
+	GTIN  *string `json:"gtin"`
+	HSCode *string `json:"hsCode"`
+
+	// Packaging
+	PrimaryPackaging *string `json:"primaryPackaging"`
+	InnerPackConfig  *string `json:"innerPackConfig"`
+	PalletConfig     *string `json:"palletConfig"`
+
+	// Dietary
+	IsVegan      *bool `json:"isVegan"`
+	IsGlutenFree *bool `json:"isGlutenFree"`
+	IsSugarFree  *bool `json:"isSugarFree"`
+	IsKosher     *bool `json:"isKosher"`
+	IsOrganic    *bool `json:"isOrganic"`
+
+	// Certification Details
+	CertificationDetails *modelsProduct.CertificationDetailArray `json:"certificationDetails"`
+
+	// Sample Specs
+	SampleMOQ       *int     `json:"sampleMOQ"`
+	SampleLeadTime  *string  `json:"sampleLeadTime"`
+	SamplePrice     *float64 `json:"samplePrice"`
 }
 
 // AdminCreateProduct creates a new product
@@ -300,6 +357,141 @@ func applyProductPatch(product *modelsProduct.Product, req adminProductUpdateReq
 	}
 	if req.BasePrice != nil {
 		product.BasePrice = *req.BasePrice
+	}
+	if req.Translations != nil {
+		product.Translations = *req.Translations
+	}
+
+	// Weight & Measurement
+	if req.NetWeightPerPiece != nil {
+		product.NetWeightPerPiece = *req.NetWeightPerPiece
+	}
+	if req.NetWeightPerPack != nil {
+		product.NetWeightPerPack = *req.NetWeightPerPack
+	}
+	if req.GrossWeightPerCarton != nil {
+		product.GrossWeightPerCarton = *req.GrossWeightPerCarton
+	}
+	if req.PiecesPerPack != nil {
+		product.PiecesPerPack = *req.PiecesPerPack
+	}
+	if req.PacksPerCarton != nil {
+		product.PacksPerCarton = *req.PacksPerCarton
+	}
+
+	// Dimensions
+	if req.ProductLengthMM != nil {
+		product.ProductLengthMM = *req.ProductLengthMM
+	}
+	if req.ProductWidthMM != nil {
+		product.ProductWidthMM = *req.ProductWidthMM
+	}
+	if req.ProductHeightMM != nil {
+		product.ProductHeightMM = *req.ProductHeightMM
+	}
+
+	// Nutrition
+	if req.EnergyKj != nil {
+		product.EnergyKj = *req.EnergyKj
+	}
+	if req.EnergyKcal != nil {
+		product.EnergyKcal = *req.EnergyKcal
+	}
+	if req.TotalFatG != nil {
+		product.TotalFatG = *req.TotalFatG
+	}
+	if req.SaturatedFatG != nil {
+		product.SaturatedFatG = *req.SaturatedFatG
+	}
+	if req.CarbohydratesG != nil {
+		product.CarbohydratesG = *req.CarbohydratesG
+	}
+	if req.SugarsG != nil {
+		product.SugarsG = *req.SugarsG
+	}
+	if req.ProteinG != nil {
+		product.ProteinG = *req.ProteinG
+	}
+	if req.SaltG != nil {
+		product.SaltG = *req.SaltG
+	}
+	if req.FiberG != nil {
+		product.FiberG = *req.FiberG
+	}
+
+	// Ingredient Compliance
+	if req.Additives != nil {
+		product.Additives = modelsCommon.StringArray(*req.Additives)
+	}
+	if req.SweetenerType != nil {
+		product.SweetenerType = strings.TrimSpace(*req.SweetenerType)
+	}
+	if req.CocoaSolidsPct != nil {
+		product.CocoaSolidsPct = *req.CocoaSolidsPct
+	}
+	if req.MilkSolidsPct != nil {
+		product.MilkSolidsPct = *req.MilkSolidsPct
+	}
+	if req.GMOStatus != nil {
+		product.GMOStatus = strings.TrimSpace(*req.GMOStatus)
+	}
+	if req.MayContain != nil {
+		product.MayContain = modelsCommon.StringArray(*req.MayContain)
+	}
+	if req.WaterActivity != nil {
+		product.WaterActivity = *req.WaterActivity
+	}
+
+	// Trade & Barcode
+	if req.GTIN != nil {
+		product.GTIN = strings.TrimSpace(*req.GTIN)
+	}
+	if req.HSCode != nil {
+		product.HSCode = strings.TrimSpace(*req.HSCode)
+	}
+
+	// Packaging
+	if req.PrimaryPackaging != nil {
+		product.PrimaryPackaging = strings.TrimSpace(*req.PrimaryPackaging)
+	}
+	if req.InnerPackConfig != nil {
+		product.InnerPackConfig = strings.TrimSpace(*req.InnerPackConfig)
+	}
+	if req.PalletConfig != nil {
+		product.PalletConfig = strings.TrimSpace(*req.PalletConfig)
+	}
+
+	// Dietary
+	if req.IsVegan != nil {
+		product.IsVegan = *req.IsVegan
+	}
+	if req.IsGlutenFree != nil {
+		product.IsGlutenFree = *req.IsGlutenFree
+	}
+	if req.IsSugarFree != nil {
+		product.IsSugarFree = *req.IsSugarFree
+	}
+	if req.IsKosher != nil {
+		product.IsKosher = *req.IsKosher
+	}
+	if req.IsOrganic != nil {
+		product.IsOrganic = *req.IsOrganic
+	}
+
+	// Certification Details
+	if req.CertificationDetails != nil {
+		product.CertificationDetails = *req.CertificationDetails
+	}
+
+	// Sample Specs
+	if req.SampleMOQ != nil {
+		product.SampleMOQ = *req.SampleMOQ
+	}
+	if req.SampleLeadTime != nil {
+		product.SampleLeadTime = strings.TrimSpace(*req.SampleLeadTime)
+	}
+	if req.SamplePrice != nil {
+		product.SamplePrice = *req.SamplePrice
 	}
 
 	if product.CategorySlug == "" && product.Category != "" {

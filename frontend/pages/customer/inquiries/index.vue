@@ -52,11 +52,14 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span :class="[
-                inquiry.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                inquiry.status === 'contacted' ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-800',
+                inquiry.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                inquiry.status === 'contacted' || inquiry.status === 'quoted' ? 'bg-blue-100 text-blue-800' :
+                inquiry.status === 'negotiating' ? 'bg-indigo-100 text-indigo-800' :
+                inquiry.status === 'won' || inquiry.status === 'converted' ? 'bg-green-100 text-green-800' :
+                inquiry.status === 'lost' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800',
                 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium'
               ]">
-                {{ inquiry.status }}
+                {{ enumLabel('inquiry_status', inquiry.status) }}
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -101,7 +104,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
-const { formatDate } = useDisplay()
+const { enumLabel, formatDate } = useDisplay()
 const localePath = useLocalePath()
 
 const inquiries = ref<any[]>([])

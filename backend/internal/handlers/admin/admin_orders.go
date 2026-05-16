@@ -8,6 +8,7 @@ import (
 	"candypro/api/internal/pkg/dberror"
 	"candypro/api/internal/pkg/pagination"
 	"candypro/api/internal/pkg/response"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -126,6 +127,18 @@ func (h *Handler) AdminUpdateOrderStatus(c *gin.Context) {
 		}
 	}
 
+	// Reserve stock when admin confirms a pending order (stock not yet deducted)
+	if targetStatus == modelsOrder.OrderStatusConfirmed && !order.StockReserved && len(order.Items) > 0 {
+		if err := h.services.Order.ReserveOrderStock(c.Request.Context(), order); err != nil {
+			if errors.Is(err, modelsOrder.ErrInsufficientStock) {
+				response.ErrorResp(c, http.StatusUnprocessableEntity, "inventory_violation")
+				return
+			}
+			response.ErrorResp(c, http.StatusInternalServerError, "order_stock_reserve_failed")
+			return
+		}
+	}
+
 	if previousStatus != "cancelled" && targetStatus == "cancelled" && order.StockReserved {
 		if err := h.services.Order.ReleaseOrderStock(c.Request.Context(), order); err != nil {
 			response.ErrorResp(c, http.StatusInternalServerError, "order_stock_release_failed")
@@ -138,10 +151,10 @@ func (h *Handler) AdminUpdateOrderStatus(c *gin.Context) {
 	if targetStatus == "confirmed" && order.ConfirmedAt == nil {
 		order.ConfirmedAt = &now
 	}
-	if targetStatus == "shipped" && order.ShippedAt == nil {
+	if targetStatus == modelsOrder.OrderStatusShipped && order.ShippedAt == nil {
 		order.ShippedAt = &now
 	}
-	if targetStatus == "delivered" && order.DeliveredAt == nil {
+	if targetStatus == modelsOrder.OrderStatusDelivered && order.DeliveredAt == nil {
 		order.DeliveredAt = &now
 	}
 
@@ -219,7 +232,9 @@ func (h *Handler) AdminCreateTradeFromOrder(c *gin.Context) {
 		Terms    string `json:"terms"`
 		Currency string `json:"currency"`
 	}
-	_ = c.ShouldBindJSON(&req)
+	if !response.BindJSONOrInvalid(c, &req) {
+		return
+	}
 
 	terms := strings.TrimSpace(req.Terms)
 	if terms == "" {

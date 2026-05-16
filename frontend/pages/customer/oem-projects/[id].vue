@@ -26,7 +26,7 @@
             </p>
           </div>
           <span :class="[statusBadgeClass(project.status), 'inline-flex rounded-full px-3 py-1 text-sm font-semibold leading-5']">
-            {{ project.status }}
+            {{ enumLabel('oem_status', project.status) }}
           </span>
         </div>
 
@@ -126,7 +126,7 @@
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ sample.id.substring(0, 8) }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                   <span :class="[sampleStatusClass(sample.status), 'inline-flex rounded-full px-2 text-xs font-semibold leading-5']">
-                    {{ sample.status }}
+                    {{ enumLabel('sample_status', sample.status) }}
                   </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(sample.requestedAt) }}</td>
@@ -158,7 +158,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 const route = useRoute()
 const api = useApi()
 const { t } = useI18n()
-const { formatDate } = useDisplay()
+const { enumLabel, formatDate } = useDisplay()
 const localePath = useLocalePath()
 
 const project = ref<any>(null)

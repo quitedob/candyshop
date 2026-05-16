@@ -266,7 +266,7 @@
               <div class="flex items-start">
                 <div class="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-gray-400"></div>
                 <div class="ml-3">
-                  <p class="text-sm text-gray-900">{{ entry.status }} {{ entry.note ? `- ${entry.note}` : '' }}</p>
+                  <p class="text-sm text-gray-900">{{ enumLabel('order_status', entry.status) }} {{ entry.note ? `- ${entry.note}` : '' }}</p>
                   <p class="text-xs text-gray-500">{{ formatDate(entry.timestamp) }}</p>
                 </div>
               </div>
@@ -407,7 +407,8 @@ const createTrade = async () => {
 
 const statusClass = (status: string) => {
   if (status === 'pending') return 'bg-yellow-100 text-yellow-800'
-  if (status === 'confirmed' || status === 'production') return 'bg-orange-100 text-orange-800'
+  if (status === 'confirmed') return 'bg-blue-100 text-blue-800'
+  if (status === 'production') return 'bg-orange-100 text-orange-800'
   if (status === 'shipped') return 'bg-amber-100 text-amber-800'
   if (status === 'delivered') return 'bg-green-100 text-green-800'
   if (status === 'cancelled') return 'bg-red-100 text-red-800'

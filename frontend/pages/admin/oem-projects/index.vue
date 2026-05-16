@@ -34,7 +34,7 @@
             <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ t('admin.oemProjects.col_status') }}</th>
             <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ t('admin.oemProjects.col_assigned') }}</th>
             <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ t('admin.oemProjects.col_created') }}</th>
-            <th class="relative py-3.5 pl-3 pr-4 sm:pr-6"><span class="sr-only">{{ t('admin.oemProjects.actions') }}</span></th>
+            <th class="relative py-3.5 pl-3 pr-4 text-sm font-semibold text-gray-900 sm:pr-6">{{ t('admin.oemProjects.actions') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200 bg-white">
@@ -64,7 +64,7 @@
                 <template v-for="(step, idx) in steps.slice(0, getStepIndex(project.status) + 1)" :key="idx">
                   <span :class="[stepClass(project.status, step.key), 'w-2 h-2 rounded-full']"></span>
                 </template>
-                <span class="ml-1 text-xs text-gray-500">{{ project.status }}</span>
+                <span class="ml-1 text-xs text-gray-500">{{ enumLabel('oem_status', project.status) }}</span>
               </div>
             </td>
             <td class="px-3 py-4 text-sm text-gray-500">{{ project.assignedTo || '-' }}</td>
@@ -100,7 +100,7 @@ definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
-const { formatDate } = useDisplay()
+const { enumLabel, formatDate } = useDisplay()
 const localePath = useLocalePath()
 const router = useRouter()
 

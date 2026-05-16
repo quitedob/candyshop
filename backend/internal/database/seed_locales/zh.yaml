@@ -26,6 +26,8 @@ errors:
   registration_failed: "注册失败"
   registration_token_failed: "注册成功，但验证令牌生成失败"
   account_status: "账号状态为 {{.status}}"
+  trade_ai_not_configured: "贸易AI服务未配置"
+  query_param_required: "缺少查询参数"
   token_generation_failed: "令牌生成失败"
   refresh_token_failed: "刷新令牌生成失败"
   refresh_token_invalid: "刷新令牌无效或已过期"

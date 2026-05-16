@@ -33,6 +33,8 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 	group.GET("/trades", h.UserPortal.CustomerListTradeTransactions)
 	group.GET("/trades/:id", h.UserPortal.CustomerGetTradeTransaction)
 	group.GET("/ai/stream", h.System.HandleTradeChat)
+	group.GET("/ai/b2b-coordinator", h.System.HandleB2BCoordinatorChat)
+	group.GET("/ai/order-processing", h.System.HandleOrderProcessingChat)
 	group.POST("/ai/recommend", h.System.CustomerAIRecommendForCart)
 	group.GET("/oem-projects", h.UserPortal.CustomerGetOEMProjects)
 	group.GET("/oem-projects/:id", h.UserPortal.CustomerGetOEMProject)
@@ -45,8 +47,16 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 	group.POST("/orders/:id/nudge", h.UserPortal.CustomerNudgeOrder)
 	group.GET("/orders/:id/messages", h.UserPortal.CustomerGetOrderMessages)
 	group.POST("/orders/:id/messages", h.UserPortal.CustomerSendOrderMessage)
+		// Returns
+		group.POST("/orders/:id/returns", h.UserPortal.CustomerCreateReturn)
+		group.GET("/returns", h.UserPortal.CustomerListReturns)
+		group.GET("/returns/:id", h.UserPortal.CustomerGetReturn)
 	group.GET("/orders/:id/payments/:paymentId/file", h.UserPortal.CustomerDownloadPaymentProofFile)
-	group.POST("/cart/items", h.UserPortal.CustomerAddToCart)
+			// Coupons
+		group.POST("/cart/coupon", h.UserPortal.CustomerApplyCoupon)
+		group.DELETE("/cart/coupon", h.UserPortal.CustomerRemoveCoupon)
+
+		group.POST("/cart/items", h.UserPortal.CustomerAddToCart)
 	group.PUT("/cart/items/:itemId", h.UserPortal.CustomerUpdateCartItem)
 	group.DELETE("/cart/items/:itemId", h.UserPortal.CustomerRemoveCartItem)
 	group.DELETE("/cart", h.UserPortal.CustomerClearCart)
@@ -65,6 +75,10 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 	group.GET("/price-list", h.UserPortal.CustomerGetMyPriceList)
 	group.GET("/products/:id/price", h.UserPortal.CustomerGetProductPrice)
 
+	// Shipping rates
+	group.GET("/shipping-rates", h.UserPortal.CustomerGetShippingRates)
+	group.GET("/shipping-estimate", h.UserPortal.CustomerGetShippingEstimate)
+
 	// Trade documents (read-only for customer)
 	group.GET("/trades/:id/documents", h.UserPortal.CustomerGetTradeDocuments)
 	group.GET("/trades/:id/sales-contract", h.UserPortal.CustomerGetTradeSalesContract)
@@ -80,6 +94,10 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 	group.GET("/trades/:id/shipments/:shipmentId/timeline", h.UserPortal.CustomerGetShipmentTimeline)
 	group.GET("/trades/:id/timeline", h.UserPortal.CustomerGetTradeTimeline)
 
+	// Requisition lists (read)
+	group.GET("/requisition-lists", h.UserPortal.CustomerListRequisitionLists)
+	group.GET("/requisition-lists/:id", h.UserPortal.CustomerGetRequisitionList)
+
 	// Write operations require active user status (KYB gate)
 	activeGuard := group.Group("")
 	activeGuard.Use(middleware.RequireActiveUser(db))
@@ -87,8 +105,21 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 		activeGuard.POST("/orders/:id/payments", h.UserPortal.CustomerUploadPaymentProof)
 		activeGuard.POST("/inquiries", h.UserPortal.CustomerCreateInquiry)
 		activeGuard.PUT("/inquiries/:id", h.UserPortal.CustomerUpdateInquiry)
+		activeGuard.POST("/inquiries/:id/attachments", h.UserPortal.CustomerUploadInquiryAttachment)
+		activeGuard.POST("/inquiries/:id/confirm", h.UserPortal.CustomerConfirmInquiry)
+		activeGuard.GET("/inquiries/:id/negotiations", h.UserPortal.CustomerGetNegotiationOffers)
+		activeGuard.POST("/inquiries/:id/negotiations", h.UserPortal.CustomerCreateNegotiationOffer)
+		activeGuard.POST("/inquiries/:id/negotiations/:offerId/accept", h.UserPortal.CustomerAcceptNegotiationOffer)
+		activeGuard.POST("/inquiries/:id/negotiations/:offerId/reject", h.UserPortal.CustomerRejectNegotiationOffer)
 		activeGuard.POST("/trades", h.UserPortal.CustomerCreateTradeTransaction)
 		activeGuard.POST("/oem-projects", h.UserPortal.CustomerCreateOEMProject)
+
+		// Bulk orders & requisition lists
+		activeGuard.POST("/orders/bulk", h.UserPortal.CustomerCreateBulkOrder)
+		activeGuard.POST("/orders/:id/reorder", h.UserPortal.CustomerReorderFromHistory)
+		activeGuard.POST("/requisition-lists", h.UserPortal.CustomerCreateRequisitionList)
+		activeGuard.DELETE("/requisition-lists/:id", h.UserPortal.CustomerDeleteRequisitionList)
+		activeGuard.POST("/requisition-lists/:id/convert", h.UserPortal.CustomerConvertRequisitionToOrder)
 
 		// KYB document upload
 		activeGuard.POST("/company/kyb-document", h.UserPortal.CustomerUploadKYBDocument)

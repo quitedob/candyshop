@@ -3,8 +3,8 @@ package system
 import (
 	modelsProduct "candypro/api/internal/models/product"
 	"candypro/api/internal/pkg/response"
+	tradeSvc "candypro/api/internal/services/trade"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -17,20 +17,6 @@ type cartRecommendRequest struct {
 	Quantity      int     `json:"quantity"`
 	Budget        float64 `json:"budget"`
 	Currency      string  `json:"currency"`
-}
-
-type cartRecommendItem struct {
-	ProductID      string  `json:"productId"`
-	Quantity       int     `json:"quantity"`
-	UnitPrice      float64 `json:"unitPrice"`
-	Specifications string  `json:"specifications"`
-	Reason         string  `json:"reason"`
-}
-
-type cartRecommendDraft struct {
-	RecommendedProducts []cartRecommendItem `json:"recommendedProducts"`
-	Summary             string              `json:"summary"`
-	Warnings            []string            `json:"warnings"`
 }
 
 // CustomerAIRecommendForCart returns AI product recommendations as JSON without creating an order.
@@ -75,67 +61,17 @@ func (h *Handler) CustomerAIRecommendForCart(c *gin.Context) {
 
 	candidateJSON, _ := json.Marshal(buildCandidatePayload(searchRes.Products))
 
-	aiPrompt := fmt.Sprintf(`You are a B2B candy product selection assistant.
-Select the best matching products from the candidates and return STRICT JSON only. No markdown, no explanation outside JSON.
-
-User request:
-- prompt: %s
-- targetCountry: %s
-- requestedQuantity: %d
-- budget: %.2f %s
-
-Candidate products:
-%s
-
-Output JSON schema:
-{
-  "recommendedProducts": [
-    {
-      "productId": "string",
-      "quantity": 1,
-      "unitPrice": 0,
-      "specifications": "string",
-      "reason": "one sentence why this product fits"
-    }
-  ],
-  "summary": "brief overall recommendation summary",
-  "warnings": ["optional warnings"]
-}
-
-Rules:
-- Only use productId values from the candidates list.
-- quantity must be >= 1 and respect MOQ.
-- unitPrice is your best estimate; 0 if unknown.
-- Select 1-5 most relevant products.`,
-		strings.TrimSpace(req.Prompt),
-		targetCountry,
-		quantity,
-		req.Budget,
-		currency,
-		string(candidateJSON),
-	)
-
-	// Use GenerateJSON for guaranteed JSON output (response_format=json_object)
-	aiResponse, err := h.aiService.GenerateJSON(c.Request.Context(), aiPrompt)
+	draft, err := h.aiService.CartRecommend(c.Request.Context(), tradeSvc.CartRecommendParams{
+		Prompt:        req.Prompt,
+		TargetCountry: targetCountry,
+		Quantity:      quantity,
+		Budget:        req.Budget,
+		Currency:      currency,
+		CandidateJSON: string(candidateJSON),
+	})
 	if err != nil {
-		// Fallback to regular Generate if JSON mode unavailable
-		aiResponse, err = h.aiService.Generate(c.Request.Context(), aiPrompt)
-		if err != nil {
-			response.ErrorResp(c, http.StatusInternalServerError, "ai_recommendation_failed")
-			return
-		}
-	}
-
-	// Parse AI JSON response
-	var draft cartRecommendDraft
-	text := strings.TrimSpace(aiResponse)
-	if jsonErr := json.Unmarshal([]byte(text), &draft); jsonErr != nil {
-		// Try to extract JSON block
-		start := strings.Index(text, "{")
-		end := strings.LastIndex(text, "}")
-		if start >= 0 && end > start {
-			_ = json.Unmarshal([]byte(text[start:end+1]), &draft)
-		}
+		response.ErrorResp(c, http.StatusInternalServerError, "ai_recommendation_failed")
+		return
 	}
 
 	// Build enriched result with full product info

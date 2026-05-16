@@ -196,9 +196,9 @@ func getFormValue(form *multipart.Form, key string) string {
 func getFormValues(form *multipart.Form, key string) []string {
 	if values, ok := form.Value[key]; ok {
 		result := make([]string, 0, len(values))
-		for _, v := range values {
-			if v = strings.TrimSpace(v); v != "" {
-				result = append(result, v)
+		for _, item := range values {
+			if item = strings.TrimSpace(item); item != "" {
+				result = append(result, item)
 			}
 		}
 		return result

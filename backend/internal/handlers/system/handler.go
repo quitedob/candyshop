@@ -1,21 +1,34 @@
 package system
 
 import (
+	"context"
+	"fmt"
 	"log"
 
 	"candypro/api/internal/config"
+	"candypro/api/internal/pkg/eino"
+	"candypro/api/internal/pkg/eino/retry"
+	einotool "candypro/api/internal/pkg/eino/tool"
+	stripeAdapter "candypro/api/internal/pkg/payment/stripe"
 	servicesCommon "candypro/api/internal/services/common"
 	tradeService "candypro/api/internal/services/trade"
 
+	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/adk"
+	"gorm.io/gorm"
 )
 
 type Handler struct {
-	cfg        *config.Config
-	services   *servicesCommon.SystemServices
-	aiService  *tradeService.AIService
-	tradeAgent adk.Agent
-	agentReady bool
+	cfg                   *config.Config
+	services              *servicesCommon.SystemServices
+	aiService             *tradeService.AIService
+	tradeAgent            adk.Agent
+	agentReady            bool
+	b2bCoordinatorAgent   adk.Agent
+	b2bCoordinatorReady   bool
+	orderProcessingAgent  adk.Agent
+	orderProcessingReady  bool
+	stripeAdapter         *stripeAdapter.Adapter
 }
 
 func NewHandler(cfg *config.Config, svcs *servicesCommon.SystemServices) *Handler {
@@ -31,6 +44,7 @@ func NewHandler(cfg *config.Config, svcs *servicesCommon.SystemServices) *Handle
 		} else {
 			h.aiService = aiSvc
 		}
+		h.stripeAdapter = stripeAdapter.New(cfg.Stripe.SecretKey, cfg.Stripe.WebhookSecret)
 	}
 
 	return h
@@ -42,10 +56,95 @@ func (h *Handler) IsAgentReady() bool { return h.agentReady }
 // TradeAgent returns the 13-tool TradeAgent for cross-handler wiring.
 func (h *Handler) TradeAgent() adk.Agent { return h.tradeAgent }
 
+// IsB2BCoordinatorReady reports whether the B2B DeepAgent initialized successfully.
+func (h *Handler) IsB2BCoordinatorReady() bool { return h.b2bCoordinatorReady }
+
+// B2BCoordinatorAgent returns the DeepAgent for cross-handler wiring.
+func (h *Handler) B2BCoordinatorAgent() adk.Agent { return h.b2bCoordinatorAgent }
+
+// IsOrderProcessingReady reports whether the P-E-R agent initialized successfully.
+func (h *Handler) IsOrderProcessingReady() bool { return h.orderProcessingReady }
+
+// OrderProcessingAgent returns the P-E-R agent for cross-handler wiring.
+func (h *Handler) OrderProcessingAgent() adk.Agent { return h.orderProcessingAgent }
+
 // AttachAgentToAIService wires the TradeAgent into the AIService so Generate() calls
 // benefit from the full 13-tool agent instead of the single-tool legacy agent.
 func (h *Handler) AttachAgentToAIService(agent adk.Agent) {
 	if h.aiService != nil {
 		h.aiService.AttachAgent(agent)
 	}
+}
+
+// translateFunc returns a TranslateFunc for wiring into Eino agents, or nil if AI is disabled.
+func (h *Handler) translateFunc() einotool.TranslateFunc {
+	if h.aiService == nil {
+		return nil
+	}
+	return h.aiService.BatchTranslateFields
+}
+
+// InitCheckPointStore creates a PostgreSQL-backed checkpoint store and sets it on the AI service.
+func (h *Handler) InitCheckPointStore(db *gorm.DB) {
+	if db == nil || h.aiService == nil {
+		return
+	}
+	store := eino.NewPostgresCheckPointStore(db)
+	h.aiService.SetCheckPointStore(store)
+}
+
+// InitDeepAgent initializes the B2B DeepAgent coordinator (ProductExpert, PricingExpert, LogisticsExpert).
+func (h *Handler) InitDeepAgent() error {
+	ctx := context.Background()
+
+	rawModel, modelErr := openai.NewChatModel(ctx, &openai.ChatModelConfig{
+		Model:   h.cfg.AI.OpenAIModel,
+		APIKey:  h.cfg.AI.OpenAIAPIKey,
+		BaseURL: h.cfg.AI.OpenAIBaseURL,
+	})
+	if modelErr != nil {
+		return fmt.Errorf("init deep agent chat model: %w", modelErr)
+	}
+	chatModel := retry.New(rawModel, h.cfg.AI.RetryMaxAttempts, h.cfg.AI.RetryIntervalSec)
+
+	var persister einotool.DocumentPersister
+	if h.services != nil && h.services.Trade != nil {
+		persister = h.services.Trade
+	}
+
+	a, err := eino.NewB2BCoordinatorAgent(ctx, chatModel, persister)
+	if err != nil {
+		return err
+	}
+	h.b2bCoordinatorAgent = a
+	h.b2bCoordinatorReady = true
+	return nil
+}
+
+// InitOrderProcessingAgent initializes the Plan-Execute-Replan agent for structured order processing.
+func (h *Handler) InitOrderProcessingAgent() error {
+	ctx := context.Background()
+
+	rawModel, modelErr := openai.NewChatModel(ctx, &openai.ChatModelConfig{
+		Model:   h.cfg.AI.OpenAIModel,
+		APIKey:  h.cfg.AI.OpenAIAPIKey,
+		BaseURL: h.cfg.AI.OpenAIBaseURL,
+	})
+	if modelErr != nil {
+		return fmt.Errorf("init order processing agent chat model: %w", modelErr)
+	}
+	chatModel := retry.New(rawModel, h.cfg.AI.RetryMaxAttempts, h.cfg.AI.RetryIntervalSec)
+
+	var persister einotool.DocumentPersister
+	if h.services != nil && h.services.Trade != nil {
+		persister = h.services.Trade
+	}
+
+	a, err := eino.NewOrderProcessingAgent(ctx, chatModel, persister)
+	if err != nil {
+		return err
+	}
+	h.orderProcessingAgent = a
+	h.orderProcessingReady = true
+	return nil
 }

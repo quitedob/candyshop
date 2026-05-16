@@ -36,11 +36,23 @@ var allowedImageTypes = map[string]bool{
 	"image/png":  true,
 	"image/webp": true,
 	"image/gif":  true,
+	"image/svg+xml": true,
 }
 
 // Allowed document content types
 var allowedDocTypes = map[string]bool{
 	"application/pdf": true,
+	"application/msword": true,
+	"application/vnd.openxmlformats-officedocument.wordprocessingml.document": true,
+}
+
+// Allowed media content types (for inquiry attachments)
+var allowedMediaTypes = map[string]bool{
+	"text/plain":        true,
+	"video/x-matroska":  true,
+	"video/mp4":         true,
+	"audio/mpeg":        true,
+	"audio/mp3":         true,
 }
 
 // Whitelisted folder names
@@ -54,6 +66,8 @@ var allowedFolders = map[string]bool{
 var allowedExtensions = map[string]bool{
 	".jpg": true, ".jpeg": true, ".png": true,
 	".webp": true, ".gif": true, ".pdf": true,
+	".docx": true, ".doc": true, ".txt": true,
+	".svg": true, ".mkv": true, ".mp4": true, ".mp3": true,
 }
 
 // Upload stores a file on the local filesystem and returns the public URL path.
@@ -79,7 +93,11 @@ func (s *LocalStorageService) Upload(ctx context.Context, reader io.Reader, opts
 	}
 	magicBuf = magicBuf[:n]
 	detectedType := http.DetectContentType(magicBuf)
-	if !allowedImageTypes[detectedType] && !allowedDocTypes[detectedType] {
+	// Strip charset suffix for comparison (e.g. "text/plain; charset=utf-8" → "text/plain")
+	if idx := strings.Index(detectedType, ";"); idx != -1 {
+		detectedType = strings.TrimSpace(detectedType[:idx])
+	}
+	if !allowedImageTypes[detectedType] && !allowedDocTypes[detectedType] && !allowedMediaTypes[detectedType] {
 		return "", fmt.Errorf("file content type %s is not allowed", detectedType)
 	}
 

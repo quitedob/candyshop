@@ -23,7 +23,7 @@
 
     <!-- Loading State -->
     <div v-if="pending" class="mt-8 text-center py-10">
-      <Icon name="heroicons:arrow-path" class="h-8 w-8 text-gray-400 animate-spin mx-auto" />
+      <Icon name="heroicons:arrow-path" class="h-8 w-8 text-gray-400 animate-spin mx-auto" aria-hidden="true" />
       <p class="mt-2 text-sm text-gray-500">{{ t('admin.analytics.loading') }}</p>
     </div>
 
@@ -31,7 +31,7 @@
     <div v-else-if="error" class="mt-8 bg-red-50 p-4 rounded-md">
       <div class="flex">
         <div class="flex-shrink-0">
-          <Icon name="heroicons:x-circle" class="h-5 w-5 text-red-400" />
+          <Icon name="heroicons:x-circle" class="h-5 w-5 text-red-400" aria-hidden="true" />
         </div>
         <div class="ml-3">
           <h3 class="text-sm font-medium text-red-800">{{ t('admin.analytics.error') }}</h3>
@@ -50,7 +50,7 @@
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-medium text-gray-900">{{ t('admin.analytics.revenue_trends') }}</h2>
             <div class="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
-              <Icon name="heroicons:currency-dollar" class="h-5 w-5 text-orange-600" />
+              <Icon name="heroicons:currency-dollar" class="h-5 w-5 text-orange-600" aria-hidden="true" />
             </div>
           </div>
           <div class="h-72">
@@ -66,7 +66,7 @@
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-medium text-gray-900">{{ t('admin.analytics.order_trends') }}</h2>
             <div class="h-10 w-10 rounded-lg bg-emerald-50 flex items-center justify-center">
-              <Icon name="heroicons:shopping-cart" class="h-5 w-5 text-emerald-600" />
+              <Icon name="heroicons:shopping-cart" class="h-5 w-5 text-emerald-600" aria-hidden="true" />
             </div>
           </div>
           <div class="h-72">
@@ -82,7 +82,7 @@
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-medium text-gray-900">{{ t('admin.analytics.inquiry_conversion') }}</h2>
             <div class="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
-              <Icon name="lucide:inbox" class="h-5 w-5 text-amber-600" />
+              <Icon name="lucide:inbox" class="h-5 w-5 text-amber-600" aria-hidden="true" />
             </div>
           </div>
           <div class="h-72 flex items-center justify-center">
@@ -98,7 +98,7 @@
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-medium text-gray-900">{{ t('admin.analytics.top_products') }}</h2>
             <div class="h-10 w-10 rounded-lg bg-orange-50 flex items-center justify-center">
-              <Icon name="heroicons:trophy" class="h-5 w-5 text-orange-600" />
+              <Icon name="heroicons:trophy" class="h-5 w-5 text-orange-600" aria-hidden="true" />
             </div>
           </div>
           <div class="overflow-hidden overflow-x-auto">
@@ -194,6 +194,16 @@ const lineChartOptions = {
     }
   },
   scales: {
+    x: {
+      display: true,
+      ticks: {
+        display: true,
+        maxRotation: 45,
+        color: '#6B7280',
+        font: { size: 11 }
+      },
+      grid: { display: false }
+    },
     y: {
       beginAtZero: true,
       ticks: {
@@ -210,6 +220,16 @@ const barChartOptions = {
     legend: { display: false }
   },
   scales: {
+    x: {
+      display: true,
+      ticks: {
+        display: true,
+        maxRotation: 45,
+        color: '#6B7280',
+        font: { size: 11 }
+      },
+      grid: { display: false }
+    },
     y: {
       beginAtZero: true,
       ticks: {

@@ -8,6 +8,7 @@
     <div class="input-select__wrapper">
       <select
         :id="id"
+        :name="name"
         :value="modelValue"
         :disabled="disabled"
         :required="required"
@@ -31,7 +32,7 @@
       </select>
 
       <div class="input-select__icon">
-        <Icon name="lucide:chevron-down" size="16" />
+        <Icon name="lucide:chevron-down" size="16" aria-hidden="true" />
       </div>
     </div>
 
@@ -40,7 +41,7 @@
     </div>
 
     <div v-if="error" class="input-select__error">
-      <Icon name="lucide:alert-circle" size="12" />
+      <Icon name="lucide:alert-circle" size="12" aria-hidden="true" />
       <span>{{ error }}</span>
     </div>
   </div>
@@ -57,6 +58,7 @@ interface Props {
   id: string
   modelValue: string | number | boolean | undefined
   options: SelectOption[]
+  name?: string
   label?: string
   placeholder?: string
   hint?: string
@@ -180,6 +182,6 @@ const handleFocus = () => {
 }
 
 .input-select--error .input-select__field:focus {
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  box-shadow: 0 0 0 3px rgba(var(--color-error-rgb), 0.1);
 }
 </style>

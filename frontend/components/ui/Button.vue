@@ -6,6 +6,7 @@
     :target="target"
     :type="tag === 'button' ? nativeType : undefined"
     :disabled="disabled || loading"
+    :aria-label="ariaLabel"
     :class="buttonClasses"
     @click="handleClick"
   >
@@ -49,6 +50,7 @@ interface Props {
   iconPosition?: 'start' | 'end'
   iconSize?: number
   badge?: string | number
+  ariaLabel?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -154,7 +156,7 @@ const buttonClasses = computed(() => {
   line-height: 18px;
   text-align: center;
   background-color: var(--color-highlight);
-  color: white;
+  color: var(--color-text-on-primary);
   border-radius: var(--radius-full);
   box-shadow: var(--shadow-sm);
 }

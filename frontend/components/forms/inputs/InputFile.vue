@@ -10,6 +10,7 @@
         ref="inputRef"
         type="file"
         :id="id"
+        :name="name"
         :accept="accept"
         :multiple="maxFiles > 1"
         :disabled="disabled"
@@ -23,7 +24,7 @@
 
       <label :for="id" class="input-file__label-content">
         <div class="input-file__icon">
-          <Icon name="lucide:upload-cloud" size="32" />
+          <Icon name="lucide:upload-cloud" size="32" aria-hidden="true" />
         </div>
 
         <div class="input-file__text">
@@ -38,7 +39,7 @@
     </div>
 
     <div v-if="error" class="input-file__error">
-      <Icon name="lucide:alert-circle" size="12" />
+      <Icon name="lucide:alert-circle" size="12" aria-hidden="true" />
       <span>{{ error }}</span>
     </div>
   </div>
@@ -49,6 +50,7 @@ import { ref, computed } from 'vue'
 
 interface Props {
   id: string
+  name?: string
   label?: string
   error?: string
   disabled?: boolean
@@ -208,7 +210,7 @@ defineExpose({
   height: 48px;
   margin-bottom: var(--spacing-md);
   color: var(--color-text-light);
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-full);
   transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }

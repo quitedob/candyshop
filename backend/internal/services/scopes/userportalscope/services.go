@@ -3,6 +3,7 @@ package userportalscope
 import (
 	"candypro/api/internal/config"
 	repositoryCommon "candypro/api/internal/repository/common"
+	orderRepo "candypro/api/internal/repository/order"
 	inquiry "candypro/api/internal/services/inquiry"
 	notificationsvc "candypro/api/internal/services/notification"
 	oem "candypro/api/internal/services/oem"
@@ -30,7 +31,14 @@ type Services struct {
 	Logistics      *trade.LogisticsService
 	TradeDocDetail *trade.TradeDocumentDetailService
 	OrderMessage   *order.OrderMessageService
+	Negotiation    *order.NegotiationService
+	Shipping       *order.ShippingService
+	Tax            *order.TaxService
 	Notification   *notificationsvc.NotificationService
+	Return          *orderRepo.ReturnRepository
+	Coupon          *orderRepo.CouponRepository
+	RequisitionList *orderRepo.RequisitionListRepository
+	Webhook         *order.WebhookService
 }
 
 func New(repos *repositoryCommon.UserPortalRepositories, cfg *config.Config, db *gorm.DB) *Services {
@@ -56,6 +64,13 @@ func New(repos *repositoryCommon.UserPortalRepositories, cfg *config.Config, db 
 		Logistics:      trade.NewLogisticsService(repos.Shipment, repos.ShipmentEvent, repos.Order, repos.Trade, db),
 		TradeDocDetail: trade.NewTradeDocumentDetailService(repos.TradeDocDetail),
 		OrderMessage:   order.NewOrderMessageService(repos.OrderMessage),
+		Negotiation:    order.NewNegotiationService(repos.Negotiation),
+		Shipping:       order.NewShippingService(repos.Shipping),
+			Tax:            order.NewTaxService(repos.Tax),
 		Notification:   notificationsvc.NewNotificationService(repos.Notification),
+		Return:          repos.Return,
+		Coupon:          repos.Coupon,
+		RequisitionList: repos.RequisitionList,
+		Webhook:         order.NewWebhookService(repos.Webhook),
 	}
 }

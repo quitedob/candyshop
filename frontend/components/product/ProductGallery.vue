@@ -8,13 +8,13 @@
         @click="previousImage"
         :aria-label="t('a11y.previous_image')"
       >
-        <Icon name="lucide:chevron-left" size="24" />
+        <Icon name="lucide:chevron-left" size="24" aria-hidden="true" />
       </button>
 
       <div class="product-gallery__image-wrapper">
         <img
           :src="currentImage"
-          :alt="`${alt} - Image ${currentIndex + 1}`"
+          :alt="$t('product.gallery_image_alt', { alt, n: currentIndex + 1 })"
           class="product-gallery__image"
           @click="openLightbox"
         />
@@ -26,7 +26,7 @@
         @click="nextImage"
         :aria-label="t('a11y.next_image')"
       >
-        <Icon name="lucide:chevron-right" size="24" />
+        <Icon name="lucide:chevron-right" size="24" aria-hidden="true" />
       </button>
 
       <!-- Zoom indicator -->
@@ -36,7 +36,7 @@
         @click="openLightbox"
         :aria-label="t('a11y.zoom_image')"
       >
-        <Icon name="lucide:zoom-in" size="18" />
+        <Icon name="lucide:zoom-in" size="18" aria-hidden="true" />
       </button>
     </div>
 
@@ -48,10 +48,10 @@
         class="product-gallery__thumbnail"
         :class="{ 'product-gallery__thumbnail--active': index === currentIndex }"
         @click="goToImage(index)"
-        :aria-label="`View image ${index + 1}`"
+        :aria-label="$t('product.gallery_view_image', { n: index + 1 })"
         :aria-current="index === currentIndex ? 'true' : undefined"
       >
-        <img :src="image" :alt="`${alt} - Thumbnail ${index + 1}`" loading="lazy" />
+        <img :src="image" :alt="$t('product.gallery_thumbnail_alt', { alt, n: index + 1 })" loading="lazy" />
       </button>
     </div>
 
@@ -68,7 +68,7 @@
           @click="closeLightbox"
           :aria-label="t('a11y.close_lightbox')"
         >
-          <Icon name="lucide:x" size="24" />
+          <Icon name="lucide:x" size="24" aria-hidden="true" />
         </button>
 
         <button
@@ -77,13 +77,13 @@
           @click="previousImage"
           :aria-label="t('a11y.previous_image')"
         >
-          <Icon name="lucide:chevron-left" size="32" />
+          <Icon name="lucide:chevron-left" size="32" aria-hidden="true" />
         </button>
 
         <div class="product-gallery__lightbox-content">
           <img
             :src="currentImage"
-            :alt="`${alt} - Image ${currentIndex + 1}`"
+            :alt="$t('product.gallery_image_alt', { alt, n: currentIndex + 1 })"
             class="product-gallery__lightbox-image"
           />
         </div>
@@ -94,7 +94,7 @@
           @click="nextImage"
           :aria-label="t('a11y.next_image')"
         >
-          <Icon name="lucide:chevron-right" size="32" />
+          <Icon name="lucide:chevron-right" size="32" aria-hidden="true" />
         </button>
 
         <!-- Counter -->

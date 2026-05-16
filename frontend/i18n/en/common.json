@@ -130,6 +130,12 @@
       "cancelled": "Cancelled",
       "processing": "Processing",
       "pending_confirmation": "Pending confirmation",
+      "pending_approval": "Pending approval",
+      "partially_shipped": "Partially shipped",
+      "partially_delivered": "Partially delivered",
+      "partially_returned": "Partially returned",
+      "returned": "Returned",
+      "expired": "Expired",
       "unknown": "Unknown"
     },
     "payment_status": {
@@ -228,6 +234,82 @@
       "post": "Post",
       "case": "Case",
       "unknown": "Unknown"
+    },
+    "oem_status": {
+      "inquiry": "Inquiry",
+      "sampling": "Sampling",
+      "formulation": "Formulation",
+      "quotation": "Quotation",
+      "contract": "Contract",
+      "production": "Production",
+      "delivery": "Delivery",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "unknown": "Unknown"
+    },
+    "sample_status": {
+      "requested": "Requested",
+      "shipped": "Shipped",
+      "received": "Received",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "unknown": "Unknown"
+    },
+    "document_status": {
+      "draft": "Draft",
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled",
+      "completed": "Completed",
+      "unknown": "Unknown"
+    },
+    "document_type": {
+      "quotation": "Quotation",
+      "proforma_invoice": "Proforma Invoice",
+      "sales_contract": "Sales Contract",
+      "commercial_invoice": "Commercial Invoice",
+      "packing_list": "Packing List",
+      "bill_of_lading": "Bill of Lading",
+      "health_certificate": "Health Certificate",
+      "origin_certificate": "Origin Certificate",
+      "unknown": "Unknown"
+    },
+    "negotiation_status": {
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "expired": "Expired",
+      "unknown": "Unknown"
+    },
+    "invoice_status": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "paid": "Paid",
+      "overdue": "Overdue",
+      "voided": "Voided",
+      "cancelled": "Cancelled",
+      "unknown": "Unknown"
+    },
+    "user_status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "suspended": "Suspended",
+      "pending": "Pending",
+      "deleted": "Deleted",
+      "unknown": "Unknown"
+    },
+    "tool_status": {
+      "success": "Success",
+      "error": "Error",
+      "running": "Running",
+      "unknown": "Unknown"
+    },
+    "compliance_status": {
+      "passed": "Passed",
+      "failed": "Failed",
+      "warnings": "Warnings",
+      "pending": "Pending",
+      "unknown": "Unknown"
     }
   },
   "rte": {
@@ -283,8 +365,22 @@
   "languages": {
     "en": "English",
     "zh": "中文",
+    "ko": "한국어",
+    "ar": "العربية",
+    "ja": "日本語",
+    "th": "ไทย",
+    "vi": "Tiếng Việt",
+    "id": "Bahasa Indonesia",
+    "ms": "Bahasa Melayu",
     "en_short": "EN",
-    "zh_short": "中"
+    "zh_short": "中",
+    "ko_short": "한",
+    "ar_short": "ع",
+    "ja_short": "日",
+    "th_short": "ท",
+    "vi_short": "V",
+    "id_short": "ID",
+    "ms_short": "MS"
   },
   "common": {
     "previous": "Previous",
@@ -293,6 +389,41 @@
     "save": "Save",
     "edit": "Edit",
     "delete": "Delete",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "actions": "Actions",
+    "close": "Close",
+    "clear": "Clear input"
+  },
+  "product": {
+    "moq_prefix": "MOQ: ",
+    "gallery_image_alt": "{alt} - Image {n}",
+    "gallery_view_image": "View image {n}",
+    "gallery_thumbnail_alt": "{alt} - Thumbnail {n}"
+  },
+  "factory": {
+    "alt_hero": "Factory",
+    "alt_production": "Production line",
+    "alt_quality": "Quality control",
+    "alt_packaging": "Packaging area",
+    "alt_warehouse": "Warehouse",
+    "alt_laboratory": "Quality Laboratory",
+    "cert_valid_until": "Valid until {date}",
+    "cert_haccp_desc": "Hazard Analysis Critical Control Point - Food Safety Management System",
+    "cert_iso_desc": "Food Safety Management System Standard",
+    "cert_brc_desc": "British Retail Consortium Global Standard for Food Safety - Grade A",
+    "cert_halal_desc": "Halal Certification for Islamic Market Compliance"
+  },
+  "about": {
+    "alt_our_factory": "Our Factory"
+  },
+  "inventory": {
+    "image_column": "Image column"
+  },
+  "invoices": {
+    "company_name": "CandyPro OEM",
+    "company_tagline": "B2B Candy Manufacturing"
+  },
+  "form": {
+    "phone_placeholder": "+86 123 4567 890"
   }
 }

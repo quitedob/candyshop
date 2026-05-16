@@ -211,11 +211,11 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 		Status:         "pending",
 		PaymentStatus:  "unpaid",
 		Items:          items,
-		StockReserved:  true,
+		StockReserved:  false,
 		Subtotal:       subtotal,
-		TaxAmount:      0,
-		ShippingAmount: 0,
-		TotalAmount:    subtotal,
+		TaxAmount:      req.TaxAmount,
+		ShippingAmount: req.ShippingAmount,
+		TotalAmount:    totalAmount,
 		Currency:       currency,
 		ShippingAddress: modelsOrder.Address{
 			Street:  strings.TrimSpace(req.ShippingAddress.Street),
@@ -228,19 +228,18 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 		UpdatedAt: now,
 	}
 
-	if err := h.services.Order.CreateOrderWithStockReservation(c.Request.Context(), order); err != nil {
+	if err := h.services.Order.CreateOrder(c.Request.Context(), order); err != nil {
 		if dberror.IsDuplicateKeyError(err) {
 			response.ErrorResp(c, http.StatusConflict, "conflict")
 			return
 		}
-		if errors.Is(err, modelsOrder.ErrInsufficientStock) {
-			response.ErrorRespDetail(c, http.StatusUnprocessableEntity, "inventory_violation", gin.H{
-				"message": "Inventory changed while creating order. Please retry with latest stock.",
-			})
-			return
-		}
 		response.ErrorResp(c, http.StatusInternalServerError, "order_create_failed")
 		return
+	}
+
+	// Fire outgoing webhook for order.created event
+	if h.services.Webhook != nil {
+		h.services.Webhook.Dispatch(c.Request.Context(), modelsOrder.WebhookEventOrderCreated, order.ID, order)
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
@@ -331,8 +330,11 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 		}
 	}
 
-	// Parse compliance acknowledgement only — no item/price edits allowed.
-	var complianceAck bool
+	// Parse compliance acknowledgement and optional item edits.
+	var parsedReq struct {
+		ComplianceAck bool                     `json:"complianceAck"`
+		Items         []modelsOrder.OrderItem  `json:"items"`
+	}
 	if c.Request.Body != nil {
 		rawBody, readErr := io.ReadAll(c.Request.Body)
 		c.Request.Body = io.NopCloser(bytes.NewReader(rawBody))
@@ -342,18 +344,14 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 		}
 		trimmedBody := bytes.TrimSpace(rawBody)
 		if len(trimmedBody) > 0 {
-			var parsed struct {
-				ComplianceAck bool `json:"complianceAck"`
-			}
-			if err := json.Unmarshal(trimmedBody, &parsed); err != nil {
+			if err := json.Unmarshal(trimmedBody, &parsedReq); err != nil {
 				response.InvalidResp(c, "invalid_request")
 				return
 			}
-			complianceAck = parsed.ComplianceAck
 		}
 	}
 
-	if !order.ComplianceOfficialEvidence && !complianceAck {
+	if !order.ComplianceOfficialEvidence && !parsedReq.ComplianceAck {
 		c.JSON(http.StatusConflict, modelsCommon.ErrorResponse{
 			Error:   "compliance_ack_required",
 			Message: i18n.T(c, "errors.compliance_ack_required"),
@@ -369,7 +367,11 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 	}
 
 	now := time.Now()
-	if err := h.services.Order.ConfirmAndReserveOrder(c.Request.Context(), orderID, order.Items, now); err != nil {
+	itemsToConfirm := order.Items
+	if len(parsedReq.Items) > 0 {
+		itemsToConfirm = parsedReq.Items
+	}
+	if err := h.services.Order.ConfirmAndReserveOrder(c.Request.Context(), orderID, itemsToConfirm, now); err != nil {
 		if errors.Is(err, modelsOrder.ErrInsufficientStock) {
 			response.ErrorResp(c, http.StatusUnprocessableEntity, "insufficient_stock")
 			return

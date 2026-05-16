@@ -158,22 +158,12 @@ func (h *Handler) GenerateQuotation(c *gin.Context) {
 		currency = "USD"
 	}
 
-	prompt := strings.TrimSpace(req.Prompt)
-	if prompt == "" {
-		if strings.TrimSpace(req.CustomerRequirements) == "" {
-			response.ErrorResp(c, http.StatusBadRequest, "prompt_or_requirements_required")
-			return
-		}
-		prompt = fmt.Sprintf(
-			"Generate a B2B candy OEM quotation draft in %s for inquiry %s. Target country: %s. Requirements: %s. Include pricing assumptions, MOQ, lead time, payment terms, validity and exclusions.",
-			currency,
-			strings.TrimSpace(req.InquiryID),
-			strings.TrimSpace(req.TargetCountry),
-			strings.TrimSpace(req.CustomerRequirements),
-		)
+	if strings.TrimSpace(req.Prompt) == "" && strings.TrimSpace(req.CustomerRequirements) == "" {
+		response.ErrorResp(c, http.StatusBadRequest, "prompt_or_requirements_required")
+		return
 	}
 
-	// 可选：注入目的国/市场成本栈摘要，供模型起草参考（非对外报价承诺）
+	// Fetch product cost stacks for AI drafting reference (non-binding)
 	marketCode := strings.TrimSpace(req.MarketCode)
 	if marketCode == "" {
 		marketCode = strings.TrimSpace(req.TargetCountry)
@@ -182,6 +172,7 @@ func (h *Handler) GenerateQuotation(c *gin.Context) {
 		marketCode = "GLOBAL"
 	}
 	var costInject []gin.H
+	var costStackInjection string
 	if h.services != nil && h.services.Product != nil {
 		ids := append([]string{}, req.ProductIDs...)
 		if pid := strings.TrimSpace(req.ProductID); pid != "" {
@@ -197,17 +188,25 @@ func (h *Handler) GenerateQuotation(c *gin.Context) {
 				continue
 			}
 			seen[pid] = struct{}{}
-			j, err := h.services.Product.BuildPricingCostContextJSON(c.Request.Context(), pid, marketCode)
-			if err != nil || j == "" || j == "{}" {
+			costJSON, costErr := h.services.Product.BuildPricingCostContextJSON(c.Request.Context(), pid, marketCode)
+			if costErr != nil || costJSON == "" || costJSON == "{}" {
 				continue
 			}
-			costInject = append(costInject, gin.H{"productId": pid, "costStackJSON": j})
-			prompt += "\n\n---\nCost stack reference for product " + pid +
-				" (read-only internal data, not a binding quote; drafting guidance only):\n" + j
+			costInject = append(costInject, gin.H{"productId": pid, "costStackJSON": costJSON})
+			costStackInjection += "\n\n---\nCost stack reference for product " + pid +
+				" (read-only internal data, not a binding quote; drafting guidance only):\n" + costJSON
 		}
 	}
 
-	quotation, err := h.aiService.Generate(c.Request.Context(), prompt)
+	quotation, err := h.aiService.GenerateQuotationText(
+		c.Request.Context(),
+		strings.TrimSpace(req.Prompt),
+		currency,
+		strings.TrimSpace(req.InquiryID),
+		strings.TrimSpace(req.TargetCountry),
+		strings.TrimSpace(req.CustomerRequirements),
+		costStackInjection,
+	)
 	if err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "ai_quotation_failed")
 		return
@@ -245,19 +244,12 @@ func (h *Handler) Translate(c *gin.Context) {
 		return
 	}
 
-	sourceLang := strings.TrimSpace(req.SourceLang)
-	if sourceLang == "" {
-		sourceLang = "auto"
-	}
-
-	translationPrompt := fmt.Sprintf(
-		"Translate the following text from %s to %s. Return only the translated content without explanations:\n\n%s",
-		sourceLang,
-		strings.TrimSpace(req.TargetLang),
+	translated, err := h.aiService.TranslateSingleText(
+		c.Request.Context(),
 		strings.TrimSpace(req.Text),
+		strings.TrimSpace(req.SourceLang),
+		strings.TrimSpace(req.TargetLang),
 	)
-
-	translated, err := h.aiService.Generate(c.Request.Context(), translationPrompt)
 	if err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "ai_translate_failed")
 		return

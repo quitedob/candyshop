@@ -15,14 +15,14 @@
 
     <!-- Error Alert -->
     <div v-if="form.errors._form && form.errors._form.length > 0" class="inquiry-form__alert inquiry-form__alert--error">
-      <Icon name="lucide:alert-circle" size="20" />
+      <Icon name="lucide:alert-circle" size="20" aria-hidden="true" />
       <span>{{ form.errors._form[0] }}</span>
     </div>
 
     <!-- Success Message -->
     <div v-if="form.isSubmitted" class="inquiry-form__success">
       <div class="inquiry-form__success-icon">
-        <Icon name="lucide:check-circle" size="48" />
+        <Icon name="lucide:check-circle" size="48" aria-hidden="true" />
       </div>
       <h3>{{ $t('form.success').split('.')[0] }}</h3>
       <p>{{ $t('form.success') }}</p>
@@ -70,7 +70,7 @@
           :label="$t('form.whatsapp')"
           :error="form.errors.whatsapp?.[0]"
           autocomplete="tel"
-          placeholder="+86 123 4567 890"
+          :placeholder="$t('form.phone_placeholder')"
         >
           <template #hint>
             {{ $t('whatsapp.us') }}
@@ -178,14 +178,15 @@
             :key="index"
             class="inquiry-form__file"
           >
-            <Icon name="lucide:file" size="16" />
+            <Icon name="lucide:file" size="16" aria-hidden="true" />
             <span class="inquiry-form__file-name">{{ file.name }}</span>
             <button
               type="button"
               class="inquiry-form__file-remove"
+              :aria-label="t('form.remove_file')"
               @click="form.removeFile(index)"
             >
-              <Icon name="lucide:x" size="14" />
+              <Icon name="lucide:x" size="14" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -204,7 +205,7 @@
         </Button>
 
         <p class="inquiry-form__privacy">
-          <Icon name="lucide:shield-check" size="14" />
+          <Icon name="lucide:shield-check" size="14" aria-hidden="true" />
           {{ t('form.privacy_note') }}
         </p>
       </div>
@@ -409,9 +410,9 @@ defineExpose({
 }
 
 .inquiry-form__alert--error {
-  background-color: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
+  background-color: rgba(var(--color-error-rgb), 0.08);
+  color: var(--color-error);
+  border: 1px solid rgba(var(--color-error-rgb), 0.22);
 }
 
 /* Success */
@@ -448,7 +449,7 @@ defineExpose({
   height: 80px;
   margin-bottom: var(--spacing-lg);
   color: var(--color-success);
-  background-color: #f0fdf4;
+  background-color: rgba(var(--color-success-rgb), 0.1);
   border-radius: var(--radius-full);
 }
 
@@ -500,7 +501,7 @@ defineExpose({
 
 .inquiry-form__file-remove:hover {
   color: var(--color-error);
-  background-color: #fef2f2;
+  background-color: rgba(var(--color-error-rgb), 0.08);
 }
 
 /* Actions */

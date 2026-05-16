@@ -1139,7 +1139,7 @@ const toggleFaq = (index: number) => {
 .cta-banner__bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #1c1917 0%, #292524 50%, #1c1917 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 50%, var(--color-primary) 100%);
 }
 
 .cta-banner__bg::before {

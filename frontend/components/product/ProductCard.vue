@@ -34,14 +34,14 @@
             :aria-label="$t('product.inquire_now')"
             @click.prevent="openInquiry"
           >
-            <Icon name="lucide:message-circle" size="18" />
+            <Icon name="lucide:message-circle" size="18" aria-hidden="true" />
           </button>
           <button
             class="product-card__action"
             :aria-label="$t('product.request_sample')"
             @click.prevent="requestSample"
           >
-            <Icon name="lucide:package" size="18" />
+            <Icon name="lucide:package" size="18" aria-hidden="true" />
           </button>
         </div>
 

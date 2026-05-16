@@ -162,7 +162,31 @@ func AutoMigrate(db *gorm.DB) error {
 		&modelsOrder.OrderMessage{},
 		&modelsOrder.CountryPaymentPolicy{},
 		&modelsOrder.DocumentAdjustment{},
+		&modelsOrder.NegotiationOffer{},
+		&modelsOrder.ShippingRate{},
+		&modelsOrder.TaxRate{},
+		&modelsOrder.BuyerOrganization{},
+		&modelsOrder.StockTransfer{},
+		&modelsOrder.StockTransferItem{},
+		&modelsOrder.Fulfillment{},
+		&modelsOrder.FulfillmentItem{},
+		&modelsOrder.ReturnRequest{},
+		&modelsOrder.ReturnItem{},
+		&modelsOrder.RequisitionList{},
+		&modelsOrder.RequisitionListItem{},
+		&modelsOrder.Coupon{},
+		&modelsOrder.GiftCard{},
+		&modelsOrder.OrderDiscount{},
+		&modelsProduct.Supplier{},
+		&modelsProduct.PurchaseOrder{},
+		&modelsProduct.PurchaseOrderItem{},
 		&modelsTrade.ShipmentEvent{},
+		&modelsOrder.WebhookConfig{},
+			&modelsOrder.WebhookDelivery{},
+			&modelsOrder.Event{},
+			&modelsOrder.HookConfig{},
+			&modelsOrder.HookExecution{},
+			&modelsProduct.Channel{},
 	}
 	for _, model := range phase1 {
 		if err := db.AutoMigrate(model); err != nil {
@@ -202,6 +226,8 @@ func AutoMigrate(db *gorm.DB) error {
 		&modelsTrade.ProformaInvoice{},
 		&modelsTrade.CommercialInvoice{},
 		&modelsTrade.BillOfLading{},
+		&modelsOrder.OrgMember{},
+		&modelsOrder.ApprovalAction{},
 	}
 	for _, model := range phase2 {
 		if err := db.AutoMigrate(model); err != nil {

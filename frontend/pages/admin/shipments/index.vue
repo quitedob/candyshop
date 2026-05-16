@@ -7,11 +7,11 @@
       </div>
       <div class="mt-4 sm:mt-0 flex items-center gap-3">
         <button @click="exportShipments" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-          <Icon name="heroicons:arrow-down-tray" class="h-4 w-4" />
+          <Icon name="heroicons:arrow-down-tray" class="h-4 w-4" aria-hidden="true" />
           {{ t('admin.shipments.export') }}
         </button>
         <button @click="openCreateModal" class="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors">
-          <Icon name="heroicons:plus" class="h-4 w-4" />
+          <Icon name="heroicons:plus" class="h-4 w-4" aria-hidden="true" />
           {{ t('admin.shipments.new_shipment') }}
         </button>
       </div>
@@ -26,7 +26,7 @@
             <p class="mt-1 text-2xl font-bold" :class="stat.color">{{ stat.value }}</p>
           </div>
           <div :class="`h-12 w-12 rounded-lg ${stat.bgColor} flex items-center justify-center`">
-            <Icon :name="stat.icon" class="h-6 w-6" :class="stat.color" />
+            <Icon :name="stat.icon" class="h-6 w-6" :class="stat.color" aria-hidden="true" />
           </div>
         </div>
       </div>
@@ -38,7 +38,7 @@
         <div class="flex-1 min-w-[200px]">
           <div class="relative">
             <label for="shipment-search" class="sr-only">{{ t('admin.shipments.search') }}</label>
-            <Icon name="heroicons:magnifying-glass" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Icon name="heroicons:magnifying-glass" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" aria-hidden="true" />
             <input id="shipment-search" v-model="searchQuery" name="search" type="text" :placeholder="t('admin.shipments.search')" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </div>
         </div>
@@ -197,7 +197,7 @@
                 {{ t('admin.shipments.cancel') }}
               </button>
               <button type="submit" :disabled="saving" class="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50 flex items-center gap-2">
-                <Icon v-if="saving" name="heroicons:arrow-path" class="h-4 w-4 animate-spin" />
+                <Icon v-if="saving" name="heroicons:arrow-path" class="h-4 w-4 animate-spin" aria-hidden="true" />
                 {{ t('admin.shipments.save') }}
               </button>
             </div>
@@ -216,8 +216,8 @@
               <h3 class="text-lg font-semibold text-white">{{ t('admin.shipments.shipment_details') }}</h3>
               <p class="text-sm text-gray-300 mt-0.5">{{ selectedShipment?.trackingNumber }}</p>
             </div>
-            <button @click="showDetailsModal = false" class="text-gray-300 hover:text-white">
-              <Icon name="heroicons:x-mark" class="h-5 w-5" />
+            <button @click="showDetailsModal = false" class="text-gray-300 hover:text-white" :aria-label="t('close')">
+              <Icon name="heroicons:x-mark" class="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
           <div v-if="selectedShipment" class="p-6">
@@ -230,7 +230,7 @@
                   <div v-for="(event, idx) in selectedShipment.events || []" :key="idx" class="relative flex items-start gap-4 pl-10">
                     <div class="absolute left-2.5 w-3 h-3 rounded-full bg-orange-600 border-2 border-white"></div>
                     <div>
-                      <p class="font-medium text-gray-900">{{ event.status }}</p>
+                      <p class="font-medium text-gray-900">{{ enumLabel('shipment_status', event.status) }}</p>
                       <p class="text-sm text-gray-500">{{ event.location }}</p>
                       <p class="text-xs text-gray-400 mt-1">{{ formatDate(event.timestamp, { dateStyle: 'medium', timeStyle: 'short' }) }}</p>
                     </div>
@@ -356,11 +356,16 @@ const saveShipment = async () => {
 const viewDetails = (shipment: any) => { selectedShipment.value = shipment; showDetailsModal.value = true }
 
 const exportShipments = () => {
-  const shipmentStatusMap: Record<string, string> = { pending: '待处理', in_transit: '运输中', delivered: '已签收', cancelled: '已取消', delayed: '延误' }
+  const shipmentStatusMap: Record<string, string> = {
+    pending: t('enum.shipment_status.pending'), in_transit: t('enum.shipment_status.in_transit'),
+    delivered: t('enum.shipment_status.delivered')
+  }
+  const headers = t('admin.shipments.csv_headers').split(',')
+  const defaultCarrier = t('admin.shipments.carrier_default')
   const csv = [
-    ['运单号', '订单', '承运商', '目的地', '状态', '预计到货', '实际签收'].join(','),
+    headers.join(','),
     ...filteredShipments.value.map(s => [
-      s.trackingNumber, s.orderNumber || s.orderId, s.carrier || '标准物流',
+      s.trackingNumber, s.orderNumber || s.orderId, s.carrier || defaultCarrier,
       `"${s.destination?.city || ''}, ${s.destination?.country || ''}"`, shipmentStatusMap[s.status] || s.status || '',
       s.estimatedDelivery || '', s.actualDelivery || ''
     ].join(','))
@@ -368,7 +373,7 @@ const exportShipments = () => {
   const blob = new Blob([csv], { type: 'text/csv' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a'); a.href = url
-  a.download = `发货-${new Date().toISOString().split('T')[0]}.csv`; a.click()
+  a.download = `${t('admin.shipments.export_filename')}-${new Date().toISOString().split('T')[0]}.csv`; a.click()
 }
 
 const statusBadgeClass = (status: string) => {

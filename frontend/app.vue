@@ -9,7 +9,7 @@
     <Header v-if="showMarketingChrome" />
 
     <!-- Main content -->
-    <main id="main-content">
+    <main id="main-content" :class="{ 'main--with-header': showMarketingChrome }">
       <NuxtErrorBoundary>
         <NuxtLayout>
           <NuxtPage />
@@ -47,7 +47,7 @@
 import { computed } from 'vue'
 
 const route = useRoute()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const titleTemplate = computed(() => t('seo.title_template'))
 const toast = useToast()
 const authLegacyRoutes = ['/login', '/register', '/forgot-password', '/reset-password']
@@ -60,9 +60,13 @@ const showMarketingChrome = computed(() => {
   return !(isAppRoute || isLegacyAuth)
 })
 
-// Set page title template
+// Set page title template + RTL direction
 useHead({
-  titleTemplate
+  titleTemplate,
+  htmlAttrs: {
+    dir: computed(() => locale.value === 'ar' ? 'rtl' : 'ltr'),
+    lang: computed(() => locale.value)
+  }
 })
 
 // Render Organization + LocalBusiness JSON-LD globally (server-side)
@@ -93,6 +97,11 @@ useGlobalSchema()
   width: auto;
   height: auto;
   overflow: visible;
+}
+
+/* Offset main content below fixed header */
+.main--with-header {
+  padding-top: var(--header-height);
 }
 
 /* Error boundary */

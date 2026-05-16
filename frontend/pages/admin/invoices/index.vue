@@ -7,11 +7,11 @@
       </div>
       <div class="mt-4 sm:mt-0 flex items-center gap-3">
         <button @click="exportInvoices" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-          <Icon name="heroicons:arrow-down-tray" class="h-4 w-4" />
+          <Icon name="heroicons:arrow-down-tray" class="h-4 w-4" aria-hidden="true" />
           {{ t('admin.invoices.export') }}
         </button>
         <button @click="openCreateModal" class="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors">
-          <Icon name="heroicons:plus" class="h-4 w-4" />
+          <Icon name="heroicons:plus" class="h-4 w-4" aria-hidden="true" />
           {{ t('admin.invoices.create_invoice') }}
         </button>
       </div>
@@ -26,7 +26,7 @@
             <p class="mt-1 text-2xl font-bold" :class="stat.color">{{ stat.value }}</p>
           </div>
           <div :class="`h-12 w-12 rounded-lg ${stat.bgColor} flex items-center justify-center`">
-            <Icon :name="stat.icon" class="h-6 w-6" :class="stat.color" />
+            <Icon :name="stat.icon" class="h-6 w-6" :class="stat.color" aria-hidden="true" />
           </div>
         </div>
       </div>
@@ -38,7 +38,7 @@
         <div class="flex-1 min-w-[200px]">
           <div class="relative">
             <label for="invoice-search" class="sr-only">{{ t('admin.invoices.search') }}</label>
-            <Icon name="heroicons:magnifying-glass" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Icon name="heroicons:magnifying-glass" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" aria-hidden="true" />
             <input id="invoice-search" v-model="searchQuery" name="search" type="text" :placeholder="t('admin.invoices.search')" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </div>
         </div>
@@ -88,7 +88,7 @@
               <td class="px-6 py-4">
                 <div>
                   <span class="font-mono font-medium text-gray-900">{{ invoice.invoiceNumber }}</span>
-                  <p v-if="invoice.type" class="text-xs text-gray-500 mt-0.5 uppercase">{{ invoice.type }}</p>
+                  <p v-if="invoice.type" class="text-xs text-gray-500 mt-0.5 uppercase">{{ enumLabel('invoice_type', invoice.type) }}</p>
                 </div>
               </td>
               <td class="px-6 py-4 text-sm">
@@ -216,7 +216,7 @@
                 {{ t('admin.invoices.cancel') }}
               </button>
               <button type="submit" :disabled="saving" class="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50 flex items-center gap-2">
-                <Icon v-if="saving" name="heroicons:arrow-path" class="h-4 w-4 animate-spin" />
+                <Icon v-if="saving" name="heroicons:arrow-path" class="h-4 w-4 animate-spin" aria-hidden="true" />
                 {{ t('admin.invoices.save') }}
               </button>
             </div>
@@ -234,11 +234,11 @@
             <h3 class="text-lg font-semibold text-white">{{ t('admin.invoices.invoice_preview') }}</h3>
             <div class="flex items-center gap-2">
               <button @click="printInvoice" class="px-3 py-1.5 bg-white/10 text-white text-sm rounded-lg hover:bg-white/20 transition-colors flex items-center gap-1">
-                <Icon name="heroicons:printer" class="h-4 w-4" />
+                <Icon name="heroicons:printer" class="h-4 w-4" aria-hidden="true" />
                 {{ t('admin.invoices.print') }}
               </button>
-              <button @click="showPreviewModal = false" class="text-gray-300 hover:text-white">
-                <Icon name="heroicons:x-mark" class="h-5 w-5" />
+              <button @click="showPreviewModal = false" class="text-gray-300 hover:text-white" :aria-label="t('close')">
+                <Icon name="heroicons:x-mark" class="h-5 w-5" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -253,8 +253,8 @@
                 </p>
               </div>
               <div class="text-right">
-                <h2 class="text-xl font-bold text-orange-600">CandyPro OEM</h2>
-                <p class="text-sm text-gray-500">B2B Candy Manufacturing</p>
+                <h2 class="text-xl font-bold text-orange-600">{{ $t('invoices.company_name') }}</h2>
+                <p class="text-sm text-gray-500">{{ $t('invoices.company_tagline') }}</p>
               </div>
             </div>
 
@@ -408,10 +408,15 @@ const printInvoice = () => {
 }
 
 const exportInvoices = () => {
-  const statusMap: Record<string, string> = { draft: '草稿', sent: '已发送', paid: '已付款', overdue: '逾期', cancelled: '已取消' }
-  const csv = [['发票号', '订单', '客户', '金额', '已付', '状态', '日期', '到期日'].join(','), ...filteredInvoices.value.map(inv => [inv.invoiceNumber, inv.orderNumber || inv.orderId || '', `"${inv.customerName || ''}"`, inv.totalAmount || 0, inv.paidAmount || 0, statusMap[inv.status] || inv.status || '', inv.invoiceDate || '', inv.dueDate || ''].join(','))].join('\n')
+  const statusMap: Record<string, string> = {
+    draft: t('enum.invoice_status.draft'), sent: t('enum.invoice_status.sent'),
+    paid: t('enum.invoice_status.paid'), overdue: t('enum.invoice_status.overdue'),
+    cancelled: t('enum.invoice_status.cancelled')
+  }
+  const headers = t('admin.invoices.csv_headers').split(',')
+  const csv = [headers.join(','), ...filteredInvoices.value.map(inv => [inv.invoiceNumber, inv.orderNumber || inv.orderId || '', `"${inv.customerName || ''}"`, inv.totalAmount || 0, inv.paidAmount || 0, statusMap[inv.status] || inv.status || '', inv.invoiceDate || '', inv.dueDate || ''].join(','))].join('\n')
   const blob = new Blob([csv], { type: 'text/csv' }); const url = URL.createObjectURL(blob)
-  const a = document.createElement('a'); a.href = url; a.download = `发票-${new Date().toISOString().split('T')[0]}.csv`; a.click()
+  const a = document.createElement('a'); a.href = url; a.download = `${t('admin.invoices.export_filename')}-${new Date().toISOString().split('T')[0]}.csv`; a.click()
 }
 
 const statusBadgeClass = (status: string) => {

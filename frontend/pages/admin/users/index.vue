@@ -23,12 +23,8 @@
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ t('admin.users.col_company') }}</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ t('admin.users.col_role') }}</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ t('admin.users.col_status') }}</th>
-                  <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                    <span class="sr-only">{{ t('admin.users.edit') }}</span>
-                  </th>
-                  <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                    <span class="sr-only">{{ t('admin.users.delete') }}</span>
-                  </th>
+                  <th scope="col" class="relative py-3.5 pl-3 pr-4 text-sm font-semibold text-gray-900 sm:pr-6">{{ t('admin.users.edit') }}</th>
+                  <th scope="col" class="relative py-3.5 pl-3 pr-4 text-sm font-semibold text-gray-900 sm:pr-6">{{ t('admin.users.delete') }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200 bg-white">
@@ -63,7 +59,7 @@
                       user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800',
                       'inline-flex rounded-full px-2 text-xs font-semibold leading-5'
                     ]">
-                      {{ user.status }}
+                      {{ enumLabel('user_status', user.status) }}
                     </span>
                   </td>
                   <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
@@ -93,11 +89,11 @@
                 <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" :aria-label="t('pagination.nav_label')">
                   <button @click="prevPage" :disabled="page <= 1" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
                     <span class="sr-only">{{ t('common.previous') }}</span>
-                    <Icon name="heroicons:chevron-left" class="h-5 w-5" />
+                    <Icon name="heroicons:chevron-left" class="h-5 w-5" aria-hidden="true" />
                   </button>
                   <button @click="nextPage" :disabled="page >= pagination.totalPages" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
                     <span class="sr-only">{{ t('common.next') }}</span>
-                    <Icon name="heroicons:chevron-right" class="h-5 w-5" />
+                    <Icon name="heroicons:chevron-right" class="h-5 w-5" aria-hidden="true" />
                   </button>
                 </nav>
               </div>
@@ -178,6 +174,7 @@ definePageMeta({
 
 const { token, user: authUser } = useAuth()
 const { t } = useI18n()
+const { enumLabel } = useDisplay()
 const localePath = useLocalePath()
 
 // Guard: only superadmin can access user management

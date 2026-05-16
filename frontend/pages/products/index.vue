@@ -312,10 +312,10 @@ useSeo({
   gap: var(--spacing-sm);
   margin-top: var(--spacing-md);
   padding: var(--spacing-md) var(--spacing-lg);
-  background-color: #fef3c7;
-  border: 1px solid #f59e0b;
+  background-color: var(--color-warning-rgb-subtle, #fef3c7);
+  border: 1px solid var(--color-warning);
   border-radius: var(--radius-md);
-  color: #92400e;
+  color: var(--color-warning-text, #92400e);
   font-size: var(--text-sm);
 }
 </style>

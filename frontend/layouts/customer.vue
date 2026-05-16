@@ -4,7 +4,7 @@
     <div v-if="isPending" class="pending-banner">
       <div class="container">
         <div class="pending-banner__inner">
-          <Icon name="heroicons:clock" class="pending-banner__icon" />
+          <Icon name="heroicons:clock" class="pending-banner__icon" aria-hidden="true" />
           <span>{{ t('customer.pending.banner') }}</span>
         </div>
       </div>
@@ -275,8 +275,8 @@ onUnmounted(() => {
   position: sticky;
   top: 0;
   z-index: calc(var(--z-sticky) + 1);
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  border-bottom: 1px solid #f59e0b;
+  background: linear-gradient(135deg, var(--color-warning-rgb-subtle, #fef3c7) 0%, var(--color-warning-rgb, #fde68a) 100%);
+  border-bottom: 1px solid var(--color-warning);
 }
 
 .pending-banner__inner {
@@ -287,7 +287,7 @@ onUnmounted(() => {
   padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--text-sm);
   font-weight: 500;
-  color: #92400e;
+  color: var(--color-warning-text, #92400e);
 }
 
 .pending-banner__icon {

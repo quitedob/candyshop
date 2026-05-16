@@ -120,7 +120,7 @@ defineProps<Props>()
   justify-content: center;
   width: 20px;
   height: 20px;
-  background-color: white;
+  background-color: var(--color-bg);
   border: 2px solid var(--color-accent);
   border-radius: var(--radius-full);
   color: var(--color-accent);
@@ -144,7 +144,7 @@ defineProps<Props>()
   width: 100%;
   height: 100%;
   background-color: var(--color-primary);
-  color: white;
+  color: var(--color-text-on-primary);
   border-radius: var(--radius-full);
 }
 
@@ -161,7 +161,7 @@ defineProps<Props>()
 .process-step__content {
   flex: 1;
   padding: var(--spacing-lg);
-  background-color: white;
+  background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
 }
@@ -219,13 +219,13 @@ defineProps<Props>()
 }
 
 .process-step__status-badge--in-progress {
-  background-color: #fef3c7;
-  color: #92400e;
+  background-color: rgba(var(--color-warning-rgb), 0.1);
+  color: var(--color-warning);
 }
 
 .process-step__status-badge--completed {
-  background-color: #dcfce7;
-  color: #166534;
+  background-color: rgba(var(--color-success-rgb), 0.1);
+  color: var(--color-success);
 }
 
 /* Horizontal variant */

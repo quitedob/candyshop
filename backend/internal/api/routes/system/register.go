@@ -18,11 +18,14 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 	pub.POST("/chatbot", h.System.Chatbot)
 	pub.POST("/recommend-products", h.System.RecommendProducts)
 	pub.POST("/search", h.System.AISearch)
+	pub.POST("/stripe-webhook", h.System.HandleStripeWebhook)
 
 	systemProtected := group.Group("")
 	systemProtected.Use(middleware.AuthMiddleware(cfg))
 	{
-		systemProtected.POST("/analyze-inquiry", h.System.AnalyzeInquiry)
+		systemProtected.GET("/ai/b2b-coordinator", h.System.HandleB2BCoordinatorChat)
+			systemProtected.GET("/ai/order-processing", h.System.HandleOrderProcessingChat)
+			systemProtected.POST("/analyze-inquiry", h.System.AnalyzeInquiry)
 		systemProtected.POST("/generate-quotation", h.System.GenerateQuotation)
 		systemProtected.POST("/translate", h.System.Translate)
 		systemProtected.GET("/conversations/:id", h.System.GetConversation)

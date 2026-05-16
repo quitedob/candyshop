@@ -15,6 +15,7 @@
         size="14"
         class="lang-switcher__chevron"
         :class="{ 'lang-switcher__chevron--open': isOpen }"
+        aria-hidden="true"
       />
     </button>
 
@@ -45,6 +46,7 @@
                 name="lucide:check"
                 size="16"
                 class="lang-switcher__check"
+                aria-hidden="true"
               />
             </button>
           </li>
@@ -74,13 +76,29 @@ const props = withDefaults(defineProps<Props>(), {
   ]
 })
 
-const { locale, setLocale } = useI18n()
+const { locale, setLocale, availableLocales: i18nLocales } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
 
 const isOpen = ref(false)
 
-const availableLocales = computed(() => props.locales)
+const getLocaleFlag = (code: string): string => {
+  const flags: Record<string, string> = {
+    en: '🇺🇸', zh: '🇨🇳', es: '🇪🇸', fr: '🇫🇷', de: '🇩🇪',
+    ja: '🇯🇵', ko: '🇰🇷', pt: '🇵🇹', ru: '🇷🇺', ar: '🇸🇦',
+    it: '🇮🇹', nl: '🇳🇱', pl: '🇵🇱', tr: '🇹🇷',
+    vi: '🇻🇳', th: '🇹🇭', id: '🇮🇩', ms: '🇲🇾'
+  }
+  return flags[code] || '🌐'
+}
+
+const availableLocales = computed(() =>
+  props.locales.length > 0 ? props.locales : i18nLocales.value.map(l => ({
+    code: l.code,
+    name: l.name || l.code,
+    flag: getLocaleFlag(l.code)
+  }))
+)
 
 const currentLocale = computed(() =>
   availableLocales.value.find(l => l.code === locale.value)
@@ -89,30 +107,6 @@ const currentLocale = computed(() =>
 const currentLocaleFlag = computed(() =>
   currentLocale.value?.flag || getLocaleFlag(locale.value)
 )
-
-const getLocaleFlag = (code: string): string => {
-  const flags: Record<string, string> = {
-    en: '🇺🇸',
-    zh: '🇨🇳',
-    es: '🇪🇸',
-    fr: '🇫🇷',
-    de: '🇩🇪',
-    ja: '🇯🇵',
-    ko: '🇰🇷',
-    pt: '🇵🇹',
-    ru: '🇷🇺',
-    ar: '🇸🇦',
-    it: '🇮🇹',
-    nl: '🇳🇱',
-    pl: '🇵🇱',
-    tr: '🇹🇷',
-    vi: '🇻🇳',
-    th: '🇹🇭',
-    id: '🇮🇩',
-    ms: '🇲🇾'
-  }
-  return flags[code] || '🌐'
-}
 
 const toggle = () => {
   isOpen.value = !isOpen.value

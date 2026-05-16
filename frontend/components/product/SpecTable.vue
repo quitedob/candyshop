@@ -137,23 +137,23 @@ defineProps<Props>()
 }
 
 .spec-table__badge--success {
-  background-color: #dcfce7;
-  color: #166534;
+  background-color: rgba(var(--color-success-rgb), 0.1);
+  color: var(--color-success);
 }
 
 .spec-table__badge--warning {
-  background-color: #fef3c7;
-  color: #92400e;
+  background-color: rgba(var(--color-warning-rgb), 0.1);
+  color: var(--color-warning);
 }
 
 .spec-table__badge--error {
-  background-color: #fef2f2;
-  color: #dc2626;
+  background-color: rgba(var(--color-error-rgb), 0.1);
+  color: var(--color-error);
 }
 
 .spec-table__badge--info {
-  background-color: #dbeafe;
-  color: #1e40af;
+  background-color: rgba(var(--color-info-rgb), 0.1);
+  color: var(--color-info);
 }
 
 /* Link */

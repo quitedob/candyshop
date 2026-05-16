@@ -29,7 +29,7 @@
             <td class="px-6 py-4 text-sm text-gray-700">{{ formatCurrency(quote.quotedAmount) }}</td>
             <td class="px-6 py-4 text-sm text-gray-700">{{ formatDate(quote.validUntil) }}</td>
             <td class="px-6 py-4 text-sm">
-              <span class="inline-flex rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800">{{ quote.status }}</span>
+              <span class="inline-flex rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800">{{ enumLabel('negotiation_status', quote.status) }}</span>
             </td>
           </tr>
         </tbody>
@@ -45,7 +45,7 @@ definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
-const { formatNumber, formatDate: fmtDate, currencyOrDefault: cur } = useDisplay()
+const { enumLabel, formatNumber, formatDate: fmtDate, currencyOrDefault: cur } = useDisplay()
 const localePath = useLocalePath()
 
 const quotes = ref<any[]>([])

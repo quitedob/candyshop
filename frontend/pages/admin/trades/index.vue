@@ -37,7 +37,7 @@
             <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ t('admin.trades.col_amount') }}</th>
             <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ t('admin.trades.col_status') }}</th>
             <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ t('admin.trades.col_created') }}</th>
-            <th class="relative py-3.5 pl-3 pr-4 sm:pr-6"><span class="sr-only">{{ t('admin.trades.actions') }}</span></th>
+            <th class="relative py-3.5 pl-3 pr-4 text-sm font-semibold text-gray-900 sm:pr-6">{{ t('admin.trades.actions') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200 bg-white">

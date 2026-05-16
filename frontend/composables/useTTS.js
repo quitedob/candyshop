@@ -1,6 +1,7 @@
 /**
  * TTS (Text-to-Speech) Composable
- * Plays pre-generated audio notifications for B2B candy OEM platform
+ * Plays pre-generated audio notifications for B2B candy OEM platform.
+ * Locale-aware: plays language-specific audio when available, falls back to English.
  */
 
 // Map toast types to TTS audio files
@@ -10,6 +11,8 @@ const toastToTTSMap = {
   warning: 'inquiry_received',
   info: 'support_available',
 }
+
+const LOCALES_WITH_AUDIO = ['zh']
 
 let currentAudio = null
 const audioEnabled = ref(true)
@@ -57,6 +60,17 @@ export const useTTS = () => {
     audioEnabled.value = !audioEnabled.value
   }
 
+  /** Resolve a locale-specific audio name, falling back to the default (English) audio. */
+  const localizedAudio = (baseName) => {
+    try {
+      const { locale } = useI18n()
+      if (LOCALES_WITH_AUDIO.includes(locale.value)) {
+        return `${baseName}_${locale.value}`
+      }
+    } catch { /* useI18n not available outside setup — use default */ }
+    return baseName
+  }
+
   // Play TTS based on toast type
   const playForToast = (toastType) => {
     const ttsType = toastToTTSMap[toastType]
@@ -69,81 +83,44 @@ export const useTTS = () => {
   const playWelcome = () => {
     const hour = new Date().getHours()
     if (hour < 12) {
-      play('greeting_morning')
+      play(localizedAudio('greeting_morning'))
     } else if (hour < 18) {
-      play('greeting_afternoon')
+      play(localizedAudio('greeting_afternoon'))
     } else {
-      play('greeting_evening')
+      play(localizedAudio('greeting_evening'))
     }
   }
 
   // Play cart-specific TTS
-  const playCartWelcome = (isZh = false) => {
-    play(isZh ? 'cart_welcome_zh' : 'cart_welcome')
-  }
-
-  const playCartEmpty = (isZh = false) => {
-    play(isZh ? 'cart_empty_zh' : 'cart_empty')
-  }
+  const playCartWelcome = () => { play(localizedAudio('cart_welcome')) }
+  const playCartEmpty = () => { play(localizedAudio('cart_empty')) }
 
   // Play order-specific TTS
-  const playOrderPlaced = (isZh = false) => {
-    play(isZh ? 'order_placed_zh' : 'order_placed')
-  }
-
-  const playOrderConfirmed = () => {
-    play('order_confirmed')
-  }
+  const playOrderPlaced = () => { play(localizedAudio('order_placed')) }
+  const playOrderConfirmed = () => { play('order_confirmed') }
 
   // Play payment TTS
-  const playPaymentSuccess = (isZh = false) => {
-    play(isZh ? 'payment_success_zh' : 'payment_success')
-  }
-
-  const playPaymentFailed = (isZh = false) => {
-    play(isZh ? 'payment_failed_zh' : 'payment_failed')
-  }
+  const playPaymentSuccess = () => { play(localizedAudio('payment_success')) }
+  const playPaymentFailed = () => { play(localizedAudio('payment_failed')) }
 
   // Play shipping TTS
-  const playShippingDispatched = (isZh = false) => {
-    play(isZh ? 'shipping_dispatched_zh' : 'shipping_dispatched')
-  }
+  const playShippingDispatched = () => { play(localizedAudio('shipping_dispatched')) }
 
   // Play OEM project TTS
-  const playOEMProjectUpdate = (isZh = false) => {
-    play(isZh ? 'oem_project_update_zh' : 'oem_project_update')
-  }
+  const playOEMProjectUpdate = () => { play(localizedAudio('oem_project_update')) }
 
   // Play inquiry TTS
-  const playInquiryReceived = (isZh = false) => {
-    play(isZh ? 'inquiry_received_zh' : 'inquiry_received')
-  }
-
-  const playInquiryThanks = () => {
-    play('inquiry_thanks')
-  }
+  const playInquiryReceived = () => { play(localizedAudio('inquiry_received')) }
+  const playInquiryThanks = () => { play('inquiry_thanks') }
 
   // Play account TTS
-  const playAccountApproved = (isZh = false) => {
-    play(isZh ? 'account_approved_zh' : 'account_approved')
-  }
+  const playAccountApproved = () => { play(localizedAudio('account_approved')) }
 
   // Play factory tour TTS
-  const playFactoryTour = () => {
-    play('factory_tour')
-  }
-
-  const playQualityAssurance = () => {
-    play('quality_assurance')
-  }
-
-  const playProductionCapacity = () => {
-    play('production_capacity')
-  }
-
-  const playCertifications = () => {
-    play('certifications')
-  }
+  const playFactoryTour = () => { play('factory_tour') }
+  const playQualityAssurance = () => { play('quality_assurance') }
+  const playProductionCapacity = () => { play('production_capacity') }
+  const playCertifications = () => { play('certifications') }
 
   return {
     // State

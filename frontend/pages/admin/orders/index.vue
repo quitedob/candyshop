@@ -16,7 +16,7 @@
     <div class="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
       <div>
         <label for="filter-status" class="block text-xs font-medium text-gray-500">{{ t('admin.orders.filter_status') }}</label>
-        <select id="filter-status" v-model="filterStatus" class="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm">
+        <select id="filter-status" v-model="filterStatus" name="filterStatus" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm">
           <option value="">{{ t('admin.orders.filter_all') }}</option>
           <option value="pending">{{ enumLabel('order_status', 'pending') }}</option>
           <option value="confirmed">{{ enumLabel('order_status', 'confirmed') }}</option>
@@ -28,15 +28,15 @@
       </div>
       <div>
         <label for="filter-userId" class="block text-xs font-medium text-gray-500">{{ t('admin.orders.filter_user') }}</label>
-        <input id="filter-userId" v-model="filterUserId" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" :placeholder="t('admin.orders.filter_user_placeholder')" />
+        <input id="filter-userId" v-model="filterUserId" name="filterUserId" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" :placeholder="t('admin.orders.filter_user_placeholder')" />
       </div>
       <div>
         <label for="filter-dateFrom" class="block text-xs font-medium text-gray-500">{{ t('admin.orders.filter_from') }}</label>
-        <input id="filter-dateFrom" v-model="filterDateFrom" type="date" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
+        <input id="filter-dateFrom" v-model="filterDateFrom" name="filterDateFrom" type="date" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
       </div>
       <div>
         <label for="filter-dateTo" class="block text-xs font-medium text-gray-500">{{ t('admin.orders.filter_to') }}</label>
-        <input id="filter-dateTo" v-model="filterDateTo" type="date" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
+        <input id="filter-dateTo" v-model="filterDateTo" name="filterDateTo" type="date" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
       </div>
     </div>
 
@@ -48,7 +48,7 @@
             <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ t('admin.orders.col_customer') }}</th>
             <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ t('admin.orders.col_amount') }}</th>
             <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ t('admin.orders.col_status') }}</th>
-            <th class="relative py-3.5 pl-3 pr-4 sm:pr-6"><span class="sr-only">{{ t('admin.orders.col_actions') }}</span></th>
+            <th class="relative py-3.5 pl-3 pr-4 text-sm font-semibold text-gray-900 sm:pr-6">{{ t('admin.orders.col_actions') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200 bg-white">
@@ -305,7 +305,8 @@ const addOrderItem = () => {
 
 const statusClass = (status: string) => {
   if (status === 'pending') return 'badge-warning'
-  if (status === 'confirmed' || status === 'production') return 'badge-info'
+  if (status === 'confirmed') return 'badge-info'
+  if (status === 'production') return 'badge-production'
   if (status === 'shipped') return 'badge-primary'
   if (status === 'delivered') return 'badge-success'
   return 'badge-default'
@@ -575,7 +576,7 @@ onMounted(fetchOrders)
 }
 
 .link-danger:hover {
-  color: #dc2626;
+  color: var(--color-error);
 }
 
 .form-grid {

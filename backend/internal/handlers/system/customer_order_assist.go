@@ -6,6 +6,7 @@ import (
 	"candypro/api/internal/pkg/crypto"
 	"candypro/api/internal/pkg/kyb"
 	"candypro/api/internal/pkg/response"
+	tradeSvc "candypro/api/internal/services/trade"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -28,22 +29,6 @@ type customerOrderAssistRequest struct {
 	InquiryID              *string             `json:"inquiryId"`
 }
 
-type aiAssistRecommendedItem struct {
-	ProductID      string  `json:"productId"`
-	Quantity       int     `json:"quantity"`
-	UnitPrice      float64 `json:"unitPrice"`
-	Specifications string  `json:"specifications"`
-	Reason         string  `json:"reason"`
-}
-
-type aiAssistDraft struct {
-	RecommendedProducts  []aiAssistRecommendedItem `json:"recommendedProducts"`
-	ComplianceChecklist  []string                  `json:"complianceChecklist"`
-	RequiredCertificates []string                  `json:"requiredCertificates"`
-	MissingInformation   []string                  `json:"missingInformation"`
-	Warnings             []string                  `json:"warnings"`
-	Summary              string                    `json:"summary"`
-}
 
 // CustomerAIAssistOrder selects products via AI, creates a draft order, and requires user confirmation.
 func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
@@ -79,6 +64,11 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 	if targetCountry == "" {
 		response.InvalidResp(c, "target_country_required")
 		return
+	}
+
+	currency := strings.ToUpper(strings.TrimSpace(req.Currency))
+	if currency == "" {
+		currency = "USD"
 	}
 
 	queryParts := []string{
@@ -120,20 +110,19 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 		return
 	}
 
-	aiPrompt := buildAIAssistPrompt(req, string(candidateJSON))
-	aiResponse, err := h.aiService.GenerateJSON(c.Request.Context(), aiPrompt)
-	if err != nil {
-		// Fallback to regular Generate
-		aiResponse, err = h.aiService.Generate(c.Request.Context(), aiPrompt)
-		if err != nil {
-			response.ErrorResp(c, http.StatusInternalServerError, "ai_draft_generate_failed")
-			return
-		}
-	}
-
-	draft, parseErr := parseAIAssistDraft(aiResponse)
-	if parseErr != nil {
-		draft = &aiAssistDraft{}
+	draft, analyzeErr := h.aiService.OrderAssistAnalyze(c.Request.Context(), tradeSvc.OrderAssistParams{
+		Prompt:                 req.Prompt,
+		TargetCountry:          targetCountry,
+		Quantity:               req.Quantity,
+		Budget:                 req.Budget,
+		Currency:               currency,
+		AdditionalRequirements: req.AdditionalRequirements,
+		ShippingCountry:        req.ShippingAddress.Country,
+		CandidateJSON:          string(candidateJSON),
+	})
+	if analyzeErr != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "ai_draft_generate_failed")
+		return
 	}
 
 	items, selectedProducts, selectedProductModels, selectionWarnings := buildAssistOrderItems(draft.RecommendedProducts, searchRes.Products, req.Quantity)
@@ -202,11 +191,6 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 		subtotal += float64(item.Quantity) * item.UnitPrice
 	}
 
-	currency := strings.ToUpper(strings.TrimSpace(req.Currency))
-	if currency == "" {
-		currency = "USD"
-	}
-
 	now := time.Now()
 	order := &modelsOrder.Order{
 		ID:                         crypto.GenerateID(),
@@ -244,9 +228,6 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 	}
 
 	warnings := make([]string, 0, 8)
-	if parseErr != nil {
-		warnings = append(warnings, "AI response was not valid JSON. Applied deterministic fallback product selection.")
-	}
 	warnings = append(warnings, selectionWarnings...)
 	warnings = append(warnings, complianceValidation.Warnings...)
 	warnings = append(warnings, inventoryValidation.Warnings...)
@@ -319,83 +300,7 @@ func buildCandidatePayload(products []modelsProduct.Product) []gin.H {
 	return payload
 }
 
-func buildAIAssistPrompt(req customerOrderAssistRequest, candidatePayload string) string {
-	return fmt.Sprintf(`You are a cross-border B2B confectionery order assistant.
-
-Select products from the provided candidate list and produce STRICT JSON only.
-Do not output markdown. Do not include explanations outside JSON.
-
-User request:
-- prompt: %s
-- targetCountry: %s
-- requestedQuantity: %d
-- budget: %.2f
-- currency: %s
-- additionalRequirements: %s
-- shippingAddressCountry: %s
-
-Candidate products JSON:
-%s
-
-Output schema:
-{
-  "recommendedProducts": [
-    {
-      "productId": "string",
-      "quantity": 0,
-      "unitPrice": 0,
-      "specifications": "string",
-      "reason": "string"
-    }
-  ],
-  "complianceChecklist": ["string"],
-  "requiredCertificates": ["string"],
-  "missingInformation": ["string"],
-  "warnings": ["string"],
-  "summary": "string"
-}
-
-Rules:
-1. Use only productId values from candidates.
-2. quantity must be integer >= 1.
-3. Keep output practical for import/export compliance in target country.
-4. If budget likely insufficient, include a warning.`,
-		strings.TrimSpace(req.Prompt),
-		strings.TrimSpace(req.TargetCountry),
-		req.Quantity,
-		req.Budget,
-		strings.TrimSpace(req.Currency),
-		strings.TrimSpace(req.AdditionalRequirements),
-		strings.TrimSpace(req.ShippingAddress.Country),
-		candidatePayload,
-	)
-}
-
-func parseAIAssistDraft(raw string) (*aiAssistDraft, error) {
-	text := strings.TrimSpace(raw)
-	if text == "" {
-		return nil, fmt.Errorf("empty AI response")
-	}
-
-	var draft aiAssistDraft
-	if err := json.Unmarshal([]byte(text), &draft); err == nil {
-		return &draft, nil
-	}
-
-	start := strings.Index(text, "{")
-	end := strings.LastIndex(text, "}")
-	if start < 0 || end <= start {
-		return nil, fmt.Errorf("JSON object not found in AI response")
-	}
-
-	jsonPart := strings.TrimSpace(text[start : end+1])
-	if err := json.Unmarshal([]byte(jsonPart), &draft); err != nil {
-		return nil, err
-	}
-	return &draft, nil
-}
-
-func buildAssistOrderItems(recommended []aiAssistRecommendedItem, candidates []modelsProduct.Product, requestedQuantity int) (modelsOrder.OrderItemArray, []gin.H, []modelsProduct.Product, []string) {
+func buildAssistOrderItems(recommended []tradeSvc.OrderAssistItem, candidates []modelsProduct.Product, requestedQuantity int) (modelsOrder.OrderItemArray, []gin.H, []modelsProduct.Product, []string) {
 	candidateByID := make(map[string]modelsProduct.Product, len(candidates))
 	for _, product := range candidates {
 		candidateByID[product.ID] = product

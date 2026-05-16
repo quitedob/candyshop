@@ -1,0 +1,35 @@
+{
+  "blog": {
+    "title": "Blog & Resources",
+    "categories": {
+      "compliance": "Compliance",
+      "product_knowledge": "Product Knowledge",
+      "packaging": "Packaging Trends",
+      "market_insights": "Market Insights"
+    },
+    "read_more": "Read More",
+    "related_articles": "Related Articles",
+    "share": "Share Article",
+    "table_of_contents": "Table of Contents"
+  },
+  "blog_extra": {
+    "featured": "Featured",
+    "stay_updated": "Stay Updated",
+    "subscribe_desc": "Get the latest industry insights and compliance updates delivered to your inbox",
+    "email_placeholder": "Enter your email",
+    "all_posts": "All Posts",
+    "loading_posts": "Loading posts...",
+    "no_posts": "No posts found in this category.",
+    "newsletter_invalid": "Please enter a valid email address.",
+    "newsletter_redirect": "Opening the contact form…",
+    "cta_questions": "Have questions about our candy manufacturing capabilities?",
+    "cta_heading": "Learn More About Our Services",
+    "min_read": "min read",
+    "share_twitter": "Twitter",
+    "share_linkedin": "LinkedIn",
+    "share_facebook": "Facebook",
+    "share_copy_link": "Copy Link",
+    "share_copied": "Copied!",
+    "seo_description": "Industry insights, compliance knowledge, and product expertise for candy manufacturers."
+  }
+}

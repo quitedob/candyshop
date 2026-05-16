@@ -17,8 +17,15 @@ type Config struct {
 	Security      SecurityConfig
 	JWT           JWTConfig
 	AI            AIConfig
+	Stripe        StripeConfig
 	KYB           KYBConfig
 	ExchangeRates map[string]float64
+}
+
+// StripeConfig holds Stripe payment gateway configuration.
+type StripeConfig struct {
+	SecretKey     string
+	WebhookSecret string
 }
 
 // KYBConfig 客户激活与小额免审策略
@@ -154,6 +161,10 @@ func Load() (*Config, error) {
 			RefreshTokenDuration: getEnvInt("JWT_REFRESH_DAYS", 7),
 		},
 		AI:            LoadAIConfig(),
+		Stripe: StripeConfig{
+			SecretKey:     getEnv("STRIPE_SECRET_KEY", ""),
+			WebhookSecret: getEnv("STRIPE_WEBHOOK_SECRET", ""),
+		},
 		ExchangeRates: parseExchangeRates(getEnv("EXCHANGE_RATES", "")),
 		KYB: KYBConfig{
 			BypassMaxOrderUSD:       getEnvFloat("KYB_BYPASS_MAX_ORDER_USD", 0),

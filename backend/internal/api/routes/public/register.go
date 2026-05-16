@@ -50,4 +50,7 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, inquiryExtra ...gin.
 
 	// Search
 	group.GET("/search", h.Public.Search)
+
+	// Supplier self-service registration
+	group.POST("/supplier/register", h.AdminPortal.SupplierRegisterSelf)
 }

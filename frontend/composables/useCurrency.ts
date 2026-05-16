@@ -79,7 +79,8 @@ export const useCurrency = () => {
   // Detect best currency from locale
   const detectCurrency = (): string => {
     const map: Record<string, string> = {
-      zh: 'CNY', en: 'USD'
+      zh: 'CNY', en: 'USD', ko: 'KRW', ar: 'AED',
+      ja: 'JPY', th: 'THB', vi: 'VND', id: 'IDR', ms: 'MYR'
     }
     return map[locale.value] || 'USD'
   }

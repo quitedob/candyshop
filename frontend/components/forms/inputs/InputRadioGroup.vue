@@ -1,6 +1,6 @@
 <template>
   <div class="input-radio-group" :class="{ 'input-radio-group--error': error }">
-    <label v-if="label" class="input-radio-group__label">
+    <label v-if="label" :for="id" class="input-radio-group__label">
       {{ label }}
       <span v-if="required" class="input-radio-group__required">*</span>
     </label>
@@ -30,7 +30,7 @@
     </div>
 
     <div v-if="error" class="input-radio-group__error">
-      <Icon name="lucide:alert-circle" size="12" />
+      <Icon name="lucide:alert-circle" size="12" aria-hidden="true" />
       <span>{{ error }}</span>
     </div>
   </div>
@@ -44,6 +44,7 @@ interface RadioOption {
 }
 
 interface Props {
+  id?: string
   name: string
   modelValue: string | number | boolean | undefined
   options: RadioOption[]
@@ -106,7 +107,7 @@ const handleChange = (event: Event) => {
   padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--text-sm);
   color: var(--color-text);
-  background-color: white;
+  background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;

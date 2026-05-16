@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -16,6 +17,36 @@ var safeFilenameRE = regexp.MustCompile("[^a-zA-Z0-9._-]")
 
 func sanitizeFilename(s string) string {
 	return safeFilenameRE.ReplaceAllString(s, "_")
+}
+
+// invoiceItemJSON mirrors the JSON blob stored in Invoice.Items.
+type invoiceItemJSON struct {
+	ProductID string  `json:"productId"`
+	Name      string  `json:"name"`
+	Qty       int     `json:"qty"`
+	UnitPrice float64 `json:"unitPrice"`
+	Total     float64 `json:"total"`
+}
+
+// parseInvoiceItems parses the Invoice.Items JSON text into DOCX line items.
+func parseInvoiceItems(itemsJSON string) []docxgen.InvoiceLineItem {
+	if itemsJSON == "" {
+		return nil
+	}
+	var raw []invoiceItemJSON
+	if err := json.Unmarshal([]byte(itemsJSON), &raw); err != nil {
+		return nil
+	}
+	items := make([]docxgen.InvoiceLineItem, 0, len(raw))
+	for _, r := range raw {
+		items = append(items, docxgen.InvoiceLineItem{
+			ProductName: r.Name,
+			Quantity:    r.Qty,
+			UnitPrice:   r.UnitPrice,
+			TotalPrice:  r.Total,
+		})
+	}
+	return items
 }
 
 // AdminExportTradeContract exports a trade's sales contract as DOCX.
@@ -128,7 +159,7 @@ func (h *Handler) AdminExportInvoice(c *gin.Context) {
 		DueDate:     dueDate,
 		IssueDate:   issueDate,
 		Notes:       invoice.Notes,
-		Items:       nil, // Invoice items are stored as JSON text; omitted for Phase 3
+		Items:       parseInvoiceItems(invoice.Items),
 	}
 
 	// If the invoice has an order, try to enrich buyer info
@@ -192,7 +223,7 @@ func (h *Handler) AdminExportInvoiceProforma(c *gin.Context) {
 		DueDate:     dueDate,
 		IssueDate:   issueDate,
 		Notes:       invoice.Notes,
-		Items:       nil,
+		Items:       parseInvoiceItems(invoice.Items),
 	}
 
 	if invoice.OrderID != "" {

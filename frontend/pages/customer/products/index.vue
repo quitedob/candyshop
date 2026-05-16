@@ -264,7 +264,7 @@
                   <div class="flex items-center gap-3 text-xs text-gray-500 mb-3">
                     <span class="flex items-center gap-1">
                       <Icon name="heroicons:cube" class="h-3 w-3" />
-                      MOQ: {{ product.moq || 1 }}
+                      {{ $t('product.moq_prefix') }}{{ product.moq || 1 }}
                     </span>
                     <span v-if="product.leadTime" class="flex items-center gap-1">
                       <Icon name="heroicons:clock" class="h-3 w-3" />

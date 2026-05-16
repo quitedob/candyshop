@@ -17,7 +17,7 @@
       </div>
       <div class="category-card__hover">
         <span class="category-card__arrow">
-          <Icon name="lucide:arrow-right" size="24" />
+          <Icon name="lucide:arrow-right" size="24" aria-hidden="true" />
         </span>
       </div>
     </div>

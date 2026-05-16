@@ -86,7 +86,7 @@ func (r *OrderRepository) Create(ctx context.Context, order *modelsOrder.Order) 
 	return r.db.WithContext(ctx).Create(order).Error
 }
 
-// CreateWithStockReservation creates an order and atomically deducts product stock.
+// CreateWithStockReservation creates an order and atomically reserves stock (three-phase: reserve on create, deduct on ship).
 func (r *OrderRepository) CreateWithStockReservation(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		now := time.Now()
@@ -95,12 +95,13 @@ func (r *OrderRepository) CreateWithStockReservation(ctx context.Context, order 
 			if qty <= 0 {
 				continue
 			}
-			recs, err := deductStockForProductLine(tx, productID, qty, modelsOrder.StockReasonOrderCreated, order.ID, order.UserID, now)
+			recs, err := reserveStockForOrderLine(tx, warehouseIDFromOrder(order), productID, qty, modelsOrder.StockReasonStockReserved, order.ID, order.UserID, now)
 			if err != nil {
 				return err
 			}
 			all = append(all, recs...)
 		}
+		order.StockReserved = true
 		if err := tx.Create(order).Error; err != nil {
 			return err
 		}
@@ -113,8 +114,8 @@ func (r *OrderRepository) Update(ctx context.Context, order *modelsOrder.Order) 
 	return r.db.WithContext(ctx).Omit("User", "Inquiry").Save(order).Error
 }
 
-// UpdateWithStockAdjustment updates an order and adjusts stock atomically.
-// Positive delta reserves additional stock; negative delta releases stock.
+// UpdateWithStockAdjustment adjusts stock atomically during order edits.
+// Positive delta reserves additional stock (three-phase); negative delta releases reserved stock.
 func (r *OrderRepository) UpdateWithStockAdjustment(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		now := time.Now()
@@ -122,32 +123,18 @@ func (r *OrderRepository) UpdateWithStockAdjustment(ctx context.Context, order *
 		for productID, delta := range stockDeltas {
 			switch {
 			case delta > 0:
-				recs, err := deductStockForProductLine(tx, productID, delta, modelsOrder.StockReasonOrderUpdated, order.ID, order.UserID, now)
+				recs, err := reserveStockForOrderLine(tx, warehouseIDFromOrder(order), productID, delta, modelsOrder.StockReasonStockReserved, order.ID, order.UserID, now)
 				if err != nil {
 					return err
 				}
 				extra = append(extra, recs...)
 			case delta < 0:
 				releaseQty := -delta
-				var p modelsProduct.Product
-				if err := tx.Where("id = ?", productID).First(&p).Error; err != nil {
+				recs, err := releaseStockForOrderLine(tx, warehouseIDFromOrder(order), productID, releaseQty, modelsOrder.StockReasonStockReleased, order.ID, order.UserID, now)
+				if err != nil {
 					return err
 				}
-				before := p.StockQuantity
-				if err := restoreLegacyProductStock(tx, productID, releaseQty); err != nil {
-					return err
-				}
-				after := before + releaseQty
-				extra = append(extra, &modelsOrder.StockTransaction{
-					ProductID:   productID,
-					Change:      releaseQty,
-					StockBefore: before,
-					StockAfter:  after,
-					Reason:      modelsOrder.StockReasonOrderUpdated,
-					ReferenceID: order.ID,
-					OperatorID:  order.UserID,
-					CreatedAt:   now,
-				})
+				extra = append(extra, recs...)
 			}
 		}
 		if err := writeStockAuditEntries(tx, extra); err != nil {
@@ -162,51 +149,85 @@ func (r *OrderRepository) Delete(ctx context.Context, id string) error {
 	return r.db.WithContext(ctx).Delete(&modelsOrder.Order{}, "id = ?", id).Error
 }
 
-// ReleaseStockForOrder returns reserved stock and marks the order as not reserved.
-func (r *OrderRepository) ReleaseStockForOrder(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error {
+// ReserveStockForOrder atomically reserves stock for an existing order (increment Reserved, not deduct Quantity).
+// When warehouse stock rows exist, increments WarehouseStock.Reserved and decrements Product.StockQuantity.
+// Falls back to legacy direct deduction when no warehouse rows exist.
+func (r *OrderRepository) ReserveStockForOrder(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		beforeStock := readStockLevels(tx, stockDeltas)
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("id = ?", order.ID).First(order).Error; err != nil {
+			return err
+		}
+		if order.StockReserved {
+			return nil
+		}
+
+		now := time.Now()
+		var all []*modelsOrder.StockTransaction
 		for productID, qty := range stockDeltas {
 			if qty <= 0 {
 				continue
 			}
-			if err := restoreLegacyProductStock(tx, productID, qty); err != nil {
+			recs, err := reserveStockForOrderLine(tx, warehouseIDFromOrder(order), productID, qty, modelsOrder.StockReasonStockReserved, order.ID, order.UserID, now)
+			if err != nil {
 				return err
 			}
+			all = append(all, recs...)
+		}
+
+		order.StockReserved = true
+		order.UpdatedAt = now
+		if err := tx.Save(order).Error; err != nil {
+			return err
+		}
+		return writeStockAuditEntries(tx, all)
+	})
+}
+
+// ReleaseStockForOrder releases previously reserved stock (decrement Reserved, increment Product.StockQuantity).
+func (r *OrderRepository) ReleaseStockForOrder(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("id = ?", order.ID).First(order).Error; err != nil {
+			return err
+		}
+		if !order.StockReserved {
+			return nil
+		}
+
+		now := time.Now()
+		var all []*modelsOrder.StockTransaction
+		for productID, qty := range stockDeltas {
+			if qty <= 0 {
+				continue
+			}
+			recs, err := releaseStockForOrderLine(tx, warehouseIDFromOrder(order), productID, qty, modelsOrder.StockReasonStockReleased, order.ID, order.UserID, now)
+			if err != nil {
+				return err
+			}
+			all = append(all, recs...)
 		}
 		order.StockReserved = false
 		if err := tx.Save(order).Error; err != nil {
 			return err
 		}
-		// Negate deltas for audit: releasing stock means positive change
-		negDeltas := make(map[string]int, len(stockDeltas))
-		for pid, qty := range stockDeltas {
-			negDeltas[pid] = -qty
-		}
-		return writeStockAudit(tx, negDeltas, beforeStock, modelsOrder.StockReasonOrderCancelled, order.ID, order.UserID)
+		return writeStockAuditEntries(tx, all)
 	})
 }
 
-// DeleteWithStockRestore restores reserved stock and deletes the order in one transaction.
+// DeleteWithStockRestore releases reserved stock and deletes the order in one transaction.
 func (r *OrderRepository) DeleteWithStockRestore(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		beforeStock := readStockLevels(tx, stockDeltas)
+		now := time.Now()
 		for productID, qty := range stockDeltas {
 			if qty <= 0 {
 				continue
 			}
-			if err := restoreLegacyProductStock(tx, productID, qty); err != nil {
+			if _, err := releaseStockForOrderLine(tx, warehouseIDFromOrder(order), productID, qty, modelsOrder.StockReasonStockReleased, order.ID, order.UserID, now); err != nil {
 				return err
 			}
 		}
-		if err := tx.Delete(&modelsOrder.Order{}, "id = ?", order.ID).Error; err != nil {
-			return err
-		}
-		negDeltas := make(map[string]int, len(stockDeltas))
-		for pid, qty := range stockDeltas {
-			negDeltas[pid] = -qty
-		}
-		return writeStockAudit(tx, negDeltas, beforeStock, modelsOrder.StockReasonOrderDeleted, order.ID, order.UserID)
+		return tx.Delete(&modelsOrder.Order{}, "id = ?", order.ID).Error
 	})
 }
 
@@ -233,9 +254,11 @@ func (r *OrderRepository) ConfirmPendingOrder(ctx context.Context, id string, co
 // Used for AI draft orders that defer stock reservation until customer confirmation.
 func (r *OrderRepository) ConfirmAndReserveStock(ctx context.Context, id string, stockDeltas map[string]int, confirmedAt time.Time) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Verify order is still pending_confirmation
+		// Verify order is still pending_confirmation (with row lock to prevent concurrent confirms)
 		var order modelsOrder.Order
-		if err := tx.Where("id = ? AND status = ?", id, "pending_confirmation").First(&order).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("id = ? AND status = ?", id, modelsOrder.OrderStatusPendingConfirm).
+			First(&order).Error; err != nil {
 			return err
 		}
 
@@ -245,7 +268,7 @@ func (r *OrderRepository) ConfirmAndReserveStock(ctx context.Context, id string,
 			if qty <= 0 {
 				continue
 			}
-			recs, err := deductStockForProductLine(tx, productID, qty, modelsOrder.StockReasonOrderConfirmed, id, order.UserID, now)
+			recs, err := reserveStockForOrderLine(tx, warehouseIDFromOrder(&order), productID, qty, modelsOrder.StockReasonStockReserved, id, order.UserID, now)
 			if err != nil {
 				return err
 			}
@@ -254,9 +277,9 @@ func (r *OrderRepository) ConfirmAndReserveStock(ctx context.Context, id string,
 
 		// Update order: status → pending, stock_reserved → true
 		res := tx.Model(&modelsOrder.Order{}).
-			Where("id = ? AND status = ?", id, "pending_confirmation").
+			Where("id = ? AND status = ?", id, modelsOrder.OrderStatusPendingConfirm).
 			Updates(map[string]interface{}{
-				"status":         "pending",
+				"status":         modelsOrder.OrderStatusPending,
 				"stock_reserved": true,
 				"confirmed_at":   confirmedAt,
 				"updated_at":     confirmedAt,
@@ -292,28 +315,27 @@ func (r *OrderRepository) ReleaseExpiredPendingConfirmationOrders(ctx context.Co
 		err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 			if order.StockReserved {
 				stockDeltas := buildStockDeltasFromItems(order.Items)
-				beforeStock := readStockLevels(tx, stockDeltas)
+				now := time.Now()
+				var allAudit []*modelsOrder.StockTransaction
 				for productID, qty := range stockDeltas {
 					if qty <= 0 {
 						continue
 					}
-					if err := tx.Model(&modelsProduct.Product{}).
-						Where("id = ?", productID).
-						Update("stock_quantity", gorm.Expr("stock_quantity + ?", qty)).Error; err != nil {
+					recs, err := releaseStockForOrderLine(tx, warehouseIDFromOrder(&order), productID, qty, modelsOrder.StockReasonDraftExpired, order.ID, "system", now)
+					if err != nil {
 						return err
 					}
+					allAudit = append(allAudit, recs...)
 				}
-				negDeltas := make(map[string]int, len(stockDeltas))
-				for pid, qty := range stockDeltas {
-					negDeltas[pid] = -qty
+				if ae := writeStockAuditEntries(tx, allAudit); ae != nil {
+					log.Printf("order: writeStockAuditEntries failed: %v", ae)
 				}
-				_ = writeStockAudit(tx, negDeltas, beforeStock, modelsOrder.StockReasonDraftExpired, order.ID, "system")
 			}
 
 			res := tx.Model(&modelsOrder.Order{}).
-				Where("id = ? AND status = ?", order.ID, "pending_confirmation").
+				Where("id = ? AND status = ?", order.ID, modelsOrder.OrderStatusPendingConfirm).
 				Updates(map[string]interface{}{
-					"status":         "cancelled",
+					"status":         modelsOrder.OrderStatusExpired,
 					"stock_reserved": false,
 					"updated_at":     now,
 				})
@@ -604,4 +626,297 @@ func writeStockAudit(tx *gorm.DB, deltas map[string]int, beforeStock map[string]
 		})
 	}
 	return writeStockAuditEntries(tx, records)
+}
+
+// warehouseIDFromOrder returns the warehouse ID from an order, or empty string if nil.
+func warehouseIDFromOrder(order *modelsOrder.Order) string {
+	if order.WarehouseID != nil {
+		return *order.WarehouseID
+	}
+	return ""
+}
+
+// reserveStockForOrderLine reserves stock for a single product line.
+// When warehouse stock rows exist, uses three-phase reserve (increment Reserved, decrement Product.StockQuantity).
+// warehouseID routes to a specific warehouse; empty string falls back to default warehouse.
+// Falls back to legacy direct deduction when no warehouse rows exist.
+func reserveStockForOrderLine(tx *gorm.DB, warehouseID, productID string, qty int, reason, refID, operatorID string, t time.Time) ([]*modelsOrder.StockTransaction, error) {
+	if qty <= 0 {
+		return nil, nil
+	}
+	nWh, err := countWarehouseStockRows(tx, productID)
+	if err != nil {
+		return nil, err
+	}
+	if nWh > 0 {
+		wid, werr := resolveWarehouseID(tx, warehouseID)
+		if werr != nil {
+			return nil, werr
+		}
+		return reserveWarehouseStock(tx, wid, productID, qty, reason, refID, operatorID, t)
+	}
+	return deductLegacyProductStock(tx, productID, qty, reason, refID, operatorID, t)
+}
+
+// releaseStockForOrderLine releases stock for a single product line.
+// When warehouse stock rows exist, decrements Reserved and increments Product.StockQuantity.
+// warehouseID routes to a specific warehouse; empty string falls back to default warehouse.
+// Falls back to legacy direct restoration when no warehouse rows exist.
+func releaseStockForOrderLine(tx *gorm.DB, warehouseID, productID string, qty int, reason, refID, operatorID string, t time.Time) ([]*modelsOrder.StockTransaction, error) {
+	if qty <= 0 {
+		return nil, nil
+	}
+	nWh, err := countWarehouseStockRows(tx, productID)
+	if err != nil {
+		return nil, err
+	}
+	if nWh > 0 {
+		wid, werr := resolveWarehouseID(tx, warehouseID)
+		if werr != nil {
+			return nil, werr
+		}
+		return releaseWarehouseStock(tx, wid, productID, qty, reason, refID, operatorID, t)
+	}
+	// Legacy path: restore product stock_quantity directly
+	if err := restoreLegacyProductStock(tx, productID, qty); err != nil {
+		return nil, err
+	}
+	var p modelsProduct.Product
+	if err := tx.Where("id = ?", productID).First(&p).Error; err != nil {
+		return nil, err
+	}
+	rec := &modelsOrder.StockTransaction{
+		ProductID:   productID,
+		Change:      qty,
+		StockBefore: p.StockQuantity - qty,
+		StockAfter:  p.StockQuantity,
+		Reason:      reason,
+		ReferenceID: refID,
+		OperatorID:  operatorID,
+		CreatedAt:   t,
+	}
+	return []*modelsOrder.StockTransaction{rec}, nil
+}
+
+// ── Analytics ──
+
+// SalesVelocityResult holds per-product sales velocity.
+type SalesVelocityResult struct {
+	ProductID   string  `json:"productId"`
+	ProductName string  `json:"productName"`
+	Category    string  `json:"category"`
+	TotalQty    int     `json:"totalQty"`
+	Revenue     float64 `json:"revenue"`
+}
+
+// SalesVelocity returns per-product sales velocity for the last N months.
+func (r *OrderRepository) SalesVelocity(ctx context.Context, months int) ([]SalesVelocityResult, error) {
+	var rows []SalesVelocityResult
+	err := r.db.WithContext(ctx).Raw(`
+		SELECT p.id AS product_id, p.name AS product_name, p.category,
+			COALESCE(SUM(oi.quantity), 0)::int AS total_qty,
+			COALESCE(SUM(oi.total), 0) AS revenue
+		FROM products p
+		LEFT JOIN order_items oi ON p.id = oi.product_id
+		LEFT JOIN orders o ON oi.order_id = o.id
+			AND o.status NOT IN ('cancelled', 'expired')
+			AND o.created_at >= date_trunc('month', NOW()) - (? * INTERVAL '1 month')
+		GROUP BY p.id, p.name, p.category
+		ORDER BY revenue DESC
+	`, months).Scan(&rows).Error
+	return rows, err
+}
+
+// RFMRecord holds Recency/Frequency/Monetary values for a customer.
+type RFMRecord struct {
+	UserID      string  `json:"userId"`
+	UserName    string  `json:"userName"`
+	UserEmail   string  `json:"userEmail"`
+	RecencyDays int     `json:"recencyDays"`
+	Frequency   int     `json:"frequency"`
+	Monetary    float64 `json:"monetary"`
+	Segment     string  `json:"segment"`
+}
+
+// RFMAnalysis returns RFM values for all ordering users.
+func (r *OrderRepository) RFMAnalysis(ctx context.Context) ([]RFMRecord, error) {
+	var rows []RFMRecord
+	err := r.db.WithContext(ctx).Raw(`
+		SELECT u.id AS user_id,
+			COALESCE(u.first_name || ' ' || u.last_name, u.email) AS user_name,
+			u.email AS user_email,
+			EXTRACT(DAY FROM NOW() - MAX(o.created_at))::int AS recency_days,
+			COUNT(DISTINCT o.id)::int AS frequency,
+			COALESCE(SUM(o.total_amount), 0) AS monetary
+		FROM users u
+		INNER JOIN orders o ON u.id = o.user_id
+		WHERE o.status NOT IN ('cancelled', 'expired')
+		GROUP BY u.id, u.first_name, u.last_name, u.email
+		ORDER BY monetary DESC
+	`).Scan(&rows).Error
+	return rows, err
+}
+
+// CustomerChurnResult holds churn risk for a customer.
+type CustomerChurnResult struct {
+	UserID    string `json:"userId"`
+	UserName  string `json:"userName"`
+	UserEmail string `json:"userEmail"`
+	LastOrder string `json:"lastOrder"`
+	DaysSince int    `json:"daysSince"`
+	RiskLevel string `json:"riskLevel"`
+}
+
+// CustomerChurn finds customers at risk of churning (no order in N days).
+func (r *OrderRepository) CustomerChurn(ctx context.Context, dormantDays int) ([]CustomerChurnResult, error) {
+	var rows []CustomerChurnResult
+	err := r.db.WithContext(ctx).Raw(`
+		SELECT u.id AS user_id,
+			COALESCE(u.first_name || ' ' || u.last_name, u.email) AS user_name,
+			u.email AS user_email,
+			MAX(o.created_at)::text AS last_order,
+			EXTRACT(DAY FROM NOW() - MAX(o.created_at))::int AS days_since
+		FROM users u
+		INNER JOIN orders o ON u.id = o.user_id
+		WHERE o.status NOT IN ('cancelled', 'expired')
+		GROUP BY u.id, u.first_name, u.last_name, u.email
+		HAVING MAX(o.created_at) < NOW() - (? * INTERVAL '1 day')
+		ORDER BY MAX(o.created_at)
+	`, dormantDays).Scan(&rows).Error
+	return rows, err
+}
+
+// InventoryHealthResult holds inventory health metrics for a product.
+type InventoryHealthResult struct {
+	ProductID      string  `json:"productId"`
+	ProductName    string  `json:"productName"`
+	StockQuantity  int     `json:"stockQuantity"`
+	SafetyStock    int     `json:"safetyStock"`
+	AvgDailySales  float64 `json:"avgDailySales"`
+	SellableDays   float64 `json:"sellableDays"`
+	ShortageAlert  bool    `json:"shortageAlert"`
+	OverstockAlert bool    `json:"overstockAlert"`
+}
+
+// InventoryHealth computes sellable days and shortage alerts for all products.
+func (r *OrderRepository) InventoryHealth(ctx context.Context, salesWindowDays int) ([]InventoryHealthResult, error) {
+	var rows []InventoryHealthResult
+	err := r.db.WithContext(ctx).Raw(`
+		SELECT p.id AS product_id,
+			p.name AS product_name,
+			p.stock_quantity AS stock_quantity,
+			COALESCE(p.safety_stock, 0) AS safety_stock,
+			ROUND(COALESCE(SUM(oi.quantity), 0)::numeric / NULLIF(?, 0), 2) AS avg_daily_sales,
+			CASE WHEN COALESCE(SUM(oi.quantity), 0) > 0
+				THEN ROUND((p.stock_quantity::numeric / (SUM(oi.quantity)::numeric / NULLIF(?, 0))), 1)
+				ELSE 999
+			END AS sellable_days
+		FROM products p
+		LEFT JOIN order_items oi ON p.id = oi.product_id
+		LEFT JOIN orders o ON oi.order_id = o.id
+			AND o.status NOT IN ('cancelled', 'expired')
+			AND o.created_at >= NOW() - (? * INTERVAL '1 day')
+		GROUP BY p.id, p.name, p.stock_quantity, p.safety_stock
+		ORDER BY sellable_days
+	`, salesWindowDays, salesWindowDays, salesWindowDays).Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	for i := range rows {
+		rows[i].ShortageAlert = rows[i].SellableDays < float64(rows[i].SafetyStock)
+		rows[i].OverstockAlert = rows[i].SellableDays > 180
+	}
+	return rows, nil
+}
+
+// ProfitLossResult holds a P&L row.
+type ProfitLossResult struct {
+	Period         string  `json:"period"`
+	Revenue        float64 `json:"revenue"`
+	COGS           float64 `json:"cogs"`
+	ShippingCost   float64 `json:"shippingCost"`
+	GrossProfit     float64 `json:"grossProfit"`
+	GrossMarginPct  float64 `json:"grossMarginPct"`
+	OrderCount     int     `json:"orderCount"`
+}
+
+// ProfitLossByPeriod returns P&L grouped by period (day/week/month).
+func (r *OrderRepository) ProfitLossByPeriod(ctx context.Context, groupBy string, periods int) ([]ProfitLossResult, error) {
+	var truncate string
+	var interval string
+	switch groupBy {
+	case "week":
+		truncate = "week"
+		interval = "week"
+	case "day":
+		truncate = "day"
+		interval = "day"
+	default:
+		truncate = "month"
+		interval = "month"
+	}
+
+	var rows []ProfitLossResult
+	err := r.db.WithContext(ctx).Raw(`
+		SELECT date_trunc(?, o.created_at)::text AS period,
+			COALESCE(SUM(o.total_amount), 0) AS revenue,
+			COALESCE(SUM(o.cogs), 0) AS cogs,
+			COALESCE(SUM(o.shipping_amount), 0) AS shipping_cost,
+			COALESCE(SUM(o.total_amount) - SUM(o.cogs) - SUM(o.shipping_amount), 0) AS gross_profit,
+			CASE WHEN SUM(o.total_amount) > 0
+				THEN ROUND(((SUM(o.total_amount) - SUM(o.cogs) - SUM(o.shipping_amount)) / SUM(o.total_amount) * 100)::numeric, 1)
+				ELSE 0
+			END AS gross_margin_pct,
+			COUNT(o.id)::int AS order_count
+		FROM orders o
+		WHERE o.status NOT IN ('cancelled', 'expired')
+			AND o.created_at >= date_trunc(?, NOW()) - (? * INTERVAL '1 ' || ?)
+		GROUP BY date_trunc(?, o.created_at)
+		ORDER BY period
+	`, truncate, truncate, periods, interval, truncate).Scan(&rows).Error
+	return rows, err
+}
+
+// ReplenishmentItem holds a single replenishment suggestion.
+type ReplenishmentItem struct {
+	ProductID       string  `json:"productId"`
+	ProductName     string  `json:"productName"`
+	CurrentStock    int     `json:"currentStock"`
+	SafetyStock     int     `json:"safetyStock"`
+	AvgDailySales   float64 `json:"avgDailySales"`
+	InTransit       int     `json:"inTransit"`
+	PendingOrders   int     `json:"pendingOrders"`
+	SuggestedQty    int     `json:"suggestedQty"`
+	CycleDays       int     `json:"cycleDays"`
+}
+
+// ReplenishmentSuggestions computes smart replenishment for all products.
+func (r *OrderRepository) ReplenishmentSuggestions(ctx context.Context, cycleDays int, salesWindowDays int) ([]ReplenishmentItem, error) {
+	var rows []ReplenishmentItem
+	err := r.db.WithContext(ctx).Raw(`
+		SELECT p.id AS product_id,
+			p.name AS product_name,
+			p.stock_quantity AS current_stock,
+			COALESCE(p.safety_stock, 0) AS safety_stock,
+			ROUND(COALESCE(SUM(oi.quantity), 0)::numeric / NULLIF(?, 0), 2) AS avg_daily_sales,
+			0 AS in_transit,
+			0 AS pending_orders,
+			GREATEST(0, (
+				(ROUND(COALESCE(SUM(oi.quantity), 0)::numeric / NULLIF(?, 0), 2) * ?)
+				+ COALESCE(p.safety_stock, 0)
+				- p.stock_quantity
+			)::int) AS suggested_qty,
+			? AS cycle_days
+		FROM products p
+		LEFT JOIN order_items oi ON p.id = oi.product_id
+		LEFT JOIN orders o ON oi.order_id = o.id
+			AND o.status NOT IN ('cancelled', 'expired')
+			AND o.created_at >= NOW() - (? * INTERVAL '1 day')
+		GROUP BY p.id, p.name, p.stock_quantity, p.safety_stock
+		HAVING (ROUND(COALESCE(SUM(oi.quantity), 0)::numeric / NULLIF(?, 0), 2) * ?)
+			+ COALESCE(p.safety_stock, 0)
+			- p.stock_quantity > 0
+		ORDER BY suggested_qty DESC
+	`, salesWindowDays, salesWindowDays, cycleDays, cycleDays, salesWindowDays, salesWindowDays, cycleDays).Scan(&rows).Error
+	return rows, err
 }

@@ -13,7 +13,7 @@ import (
 var (
 	mu      sync.RWMutex
 	cache   map[string]string // "locale|group.key" → value
-	locales = []string{"en", "zh"}
+	locales = []string{"en", "zh", "ko", "ar", "ja", "th", "vi", "id", "ms"}
 )
 
 // Init loads all active translations from the database into the in-memory cache.
@@ -27,7 +27,7 @@ func Init(db *gorm.DB) error {
 	defer mu.Unlock()
 
 	cache = make(map[string]string, len(records))
-	localeSet := map[string]bool{"en": true, "zh": true}
+	localeSet := map[string]bool{"en": true, "zh": true, "ko": true, "ar": true, "ja": true, "th": true, "vi": true, "id": true, "ms": true}
 	for _, r := range records {
 		key := r.Group + "." + r.Key
 		cache[r.Locale+"|"+key] = r.Value
@@ -63,8 +63,8 @@ func Translate(locale, key string) string {
 // TranslateWithVars substitutes {{.varName}} placeholders in the translated string.
 func TranslateWithVars(locale, key string, vars map[string]string) string {
 	s := Translate(locale, key)
-	for k, v := range vars {
-		s = strings.ReplaceAll(s, "{{."+k+"}}", v)
+	for varName, varValue := range vars {
+		s = strings.ReplaceAll(s, "{{."+varName+"}}", varValue)
 	}
 	return s
 }

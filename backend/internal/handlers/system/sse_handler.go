@@ -12,6 +12,7 @@ import (
 
 	"candypro/api/internal/pkg/eino"
 	"candypro/api/internal/pkg/eino/retry"
+	"candypro/api/internal/pkg/response"
 
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/adk"
@@ -49,7 +50,7 @@ func (h *Handler) InitAgent() error {
 	chatModel := retry.New(rawModel, h.cfg.AI.RetryMaxAttempts, h.cfg.AI.RetryIntervalSec)
 
 	if h.services != nil && h.services.Trade != nil {
-		a, err := eino.NewTradeAgent(ctx, chatModel, h.services.Trade)
+		a, err := eino.NewTradeAgent(ctx, chatModel, h.services.Trade, h.translateFunc())
 		if err != nil {
 			return err
 		}
@@ -58,7 +59,7 @@ func (h *Handler) InitAgent() error {
 		return nil
 	}
 
-	a, err := eino.NewTradeAgent(ctx, chatModel, nil)
+	a, err := eino.NewTradeAgent(ctx, chatModel, nil, h.translateFunc())
 	if err != nil {
 		return err
 	}
@@ -69,13 +70,13 @@ func (h *Handler) InitAgent() error {
 
 func (h *Handler) HandleTradeChat(c *gin.Context) {
 	if h.tradeAgent == nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Trade AI not configured"})
+		response.ErrorResp(c, http.StatusInternalServerError, "trade_ai_not_configured")
 		return
 	}
 
 	query := c.Query("query")
 	if query == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "query parameter required"})
+		response.ErrorResp(c, http.StatusBadRequest, "query_param_required")
 		return
 	}
 	// N-06: Limit query length to prevent cost abuse
@@ -122,6 +123,94 @@ func (h *Handler) HandleTradeChat(c *gin.Context) {
 
 		if err := processAgentEvent(ctx, c.Writer, event); err != nil {
 			log.Printf("SSE Process error: %v", err)
+			break
+		}
+	}
+}
+
+// HandleB2BCoordinatorChat handles SSE streaming for the multi-agent B2B coordinator (DeepAgent).
+func (h *Handler) HandleB2BCoordinatorChat(c *gin.Context) {
+	if h.b2bCoordinatorAgent == nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "b2b_coordinator_not_configured")
+		return
+	}
+
+	query := c.Query("query")
+	if query == "" {
+		response.ErrorResp(c, http.StatusBadRequest, "query_param_required")
+		return
+	}
+	const maxQueryLen = 4000
+	if len([]rune(query)) > maxQueryLen {
+		query = string([]rune(query)[:maxQueryLen])
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Minute)
+	defer cancel()
+
+	runner := adk.NewRunner(ctx, adk.RunnerConfig{
+		EnableStreaming: true,
+		Agent:           h.b2bCoordinatorAgent,
+	})
+
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("Transfer-Encoding", "chunked")
+	c.Writer.Flush()
+
+	iter := runner.Query(ctx, query)
+	for {
+		event, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if err := processAgentEvent(ctx, c.Writer, event); err != nil {
+			log.Printf("B2B Coordinator SSE error: %v", err)
+			break
+		}
+	}
+}
+
+// HandleOrderProcessingChat handles SSE streaming for the Plan-Execute-Replan order processing agent.
+func (h *Handler) HandleOrderProcessingChat(c *gin.Context) {
+	if h.orderProcessingAgent == nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "order_processing_not_configured")
+		return
+	}
+
+	query := c.Query("query")
+	if query == "" {
+		response.ErrorResp(c, http.StatusBadRequest, "query_param_required")
+		return
+	}
+	const maxQueryLen = 4000
+	if len([]rune(query)) > maxQueryLen {
+		query = string([]rune(query)[:maxQueryLen])
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Minute)
+	defer cancel()
+
+	runner := adk.NewRunner(ctx, adk.RunnerConfig{
+		EnableStreaming: true,
+		Agent:           h.orderProcessingAgent,
+	})
+
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("Transfer-Encoding", "chunked")
+	c.Writer.Flush()
+
+	iter := runner.Query(ctx, query)
+	for {
+		event, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if err := processAgentEvent(ctx, c.Writer, event); err != nil {
+			log.Printf("Order Processing SSE error: %v", err)
 			break
 		}
 	}

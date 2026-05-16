@@ -29,7 +29,7 @@
             <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ t('admin.content.col_type') }}</th>
             <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ t('admin.content.col_meta') }}</th>
             <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ t('admin.content.col_updated') }}</th>
-            <th class="relative py-3.5 pl-3 pr-4 sm:pr-6"><span class="sr-only">Actions</span></th>
+            <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ $t('common.actions') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200 bg-white">
@@ -39,7 +39,7 @@
           <tr v-else v-for="item in contentList" :key="item.id">
             <td class="py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{{ item.title }}</td>
             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-              <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5" :class="item.type === 'post' ? 'bg-amber-100 text-amber-800' : 'bg-cyan-100 text-cyan-800'">{{ item.type }}</span>
+              <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5" :class="item.type === 'post' ? 'bg-amber-100 text-amber-800' : 'bg-cyan-100 text-cyan-800'">{{ enumLabel('content_type', item.type) }}</span>
             </td>
             <td class="px-3 py-4 text-sm text-gray-500">{{ item.type === 'post' ? (item.category || t('admin.content.category_general')) : (item.industry || t('admin.content.category_general')) }}</td>
             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ formatDate(item.updatedAt, { dateStyle: 'medium', timeStyle: 'short' }) }}</td>
@@ -156,12 +156,12 @@
 
             <!-- AI Generate Bar -->
             <div class="flex items-center gap-3 rounded-lg bg-amber-50 border border-amber-200 p-3">
-              <Icon name="heroicons:sparkles" class="h-5 w-5 text-amber-600 flex-shrink-0" />
+              <Icon name="heroicons:sparkles" class="h-5 w-5 text-amber-600 flex-shrink-0" aria-hidden="true" />
               <label for="content-aiTopic" class="sr-only">{{ t('admin.content.ai_topic_placeholder') }}</label>
               <input id="content-aiTopic" v-model="aiTopic" name="aiTopic" type="text" :placeholder="form.type === 'post' ? t('admin.content.ai_topic_placeholder') : t('admin.content.ai_case_topic_placeholder')" class="flex-1 rounded-md border border-amber-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" @keydown.enter.prevent="generateWithAI" />
               <button type="button" :disabled="aiGenerating || !aiTopic.trim()" class="inline-flex items-center gap-1.5 rounded-md bg-orange-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50" @click="generateWithAI">
-                <Icon v-if="aiGenerating" name="heroicons:arrow-path" class="h-4 w-4 animate-spin" />
-                <Icon v-else name="heroicons:sparkles" class="h-4 w-4" />
+                <Icon v-if="aiGenerating" name="heroicons:arrow-path" class="h-4 w-4 animate-spin" aria-hidden="true" />
+                <Icon v-else name="heroicons:sparkles" class="h-4 w-4" aria-hidden="true" />
                 {{ aiGenerating ? t('admin.content.ai_generating') : t('admin.content.ai_generate') }}
               </button>
             </div>

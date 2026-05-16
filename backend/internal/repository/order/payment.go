@@ -172,3 +172,12 @@ func (r *PaymentRepository) StatusBreakdown(ctx context.Context) (map[string]int
 	}
 	return m, nil
 }
+
+// FindByGatewayTransactionID finds a payment by its gateway (Stripe/PayPal) transaction ID.
+func (r *PaymentRepository) FindByGatewayTransactionID(ctx context.Context, txID string) (*modelsOrder.Payment, error) {
+	var payment modelsOrder.Payment
+	if err := r.db.WithContext(ctx).Where("gateway_transaction_id = ?", txID).First(&payment).Error; err != nil {
+		return nil, err
+	}
+	return &payment, nil
+}

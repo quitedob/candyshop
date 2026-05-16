@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
-const { t } = useI18n()
+const { t, availableLocales } = useI18n()
 const api = useApi()
 
 const translations = ref<any[]>([])
@@ -88,7 +88,7 @@ async function exportAll() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = '翻译数据.json'
+    a.download = `translations_${new Date().toISOString().split('T')[0]}.json`
     a.click()
     URL.revokeObjectURL(url)
   } catch (err: any) {
@@ -146,8 +146,7 @@ onMounted(() => loadTranslations())
         @change="loadTranslations(1)"
       >
         <option value="">{{ t('admin.translations.all_locales') }}</option>
-        <option value="zh">中文</option>
-        <option value="en">English</option>
+        <option v-for="loc in availableLocales" :key="loc.code" :value="loc.code">{{ loc.name || loc.code }}</option>
       </select>
       <button
         class="px-4 py-2 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700"
@@ -258,8 +257,7 @@ onMounted(() => loadTranslations())
           <div>
             <label class="text-sm font-medium">{{ t('admin.translations.label_locale') }}</label>
             <select v-model="newForm.locale" class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600">
-              <option value="zh">中文</option>
-              <option value="en">English</option>
+              <option v-for="loc in availableLocales" :key="loc.code" :value="loc.code">{{ loc.name || loc.code }}</option>
             </select>
           </div>
           <div>

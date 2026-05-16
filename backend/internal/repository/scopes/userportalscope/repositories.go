@@ -28,7 +28,14 @@ type Repositories struct {
 	ShipmentEvent  *trade.ShipmentEventRepository
 	TradeDocDetail *trade.TradeDocumentDetailRepository
 	OrderMessage   *order.OrderMessageRepository
+	Negotiation    *order.NegotiationRepository
+	Shipping       *order.ShippingRepository
+	Tax            *order.TaxRepository
 	Notification   *notificationrepo.NotificationRepository
+	Return           *order.ReturnRepository
+	Coupon           *order.CouponRepository
+	RequisitionList  *order.RequisitionListRepository
+	Webhook          *order.WebhookRepository
 }
 
 func New(db *gorm.DB) *Repositories {
@@ -48,6 +55,13 @@ func New(db *gorm.DB) *Repositories {
 		ShipmentEvent:  trade.NewShipmentEventRepository(db),
 		TradeDocDetail: trade.NewTradeDocumentDetailRepository(db),
 		OrderMessage:   order.NewOrderMessageRepository(db),
+		Negotiation:    order.NewNegotiationRepository(db),
+		Shipping:       order.NewShippingRepository(db),
+			Tax:            order.NewTaxRepository(db),
 		Notification:   notificationrepo.NewNotificationRepository(db),
+		Return:          order.NewReturnRepository(db),
+		Coupon:          order.NewCouponRepository(db),
+		RequisitionList: order.NewRequisitionListRepository(db),
+		Webhook:         order.NewWebhookRepository(db),
 	}
 }

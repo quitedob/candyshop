@@ -19,7 +19,7 @@
       :aria-label="$t('form.submit')"
       @click="openInquiry"
     >
-      <Icon name="lucide:mail" size="24" />
+      <Icon name="lucide:mail" size="24" aria-hidden="true" />
       <span class="inquiry-floating__tooltip">{{ $t('product.inquire_now') }}</span>
     </button>
 
@@ -30,7 +30,7 @@
       :aria-label="t('a11y.scroll_to_top')"
       @click="scrollToTop"
     >
-      <Icon name="lucide:chevron-up" size="20" />
+      <Icon name="lucide:chevron-up" size="20" aria-hidden="true" />
     </button>
 
     <!-- Inquiry Modal (if needed) -->
@@ -38,6 +38,9 @@
       <div
         v-if="isInquiryOpen"
         class="inquiry-modal"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="t('form.title')"
         @click.self="closeInquiry"
         @keydown.esc="closeInquiry"
       >
@@ -50,7 +53,7 @@
               :aria-label="t('a11y.close')"
               @click="closeInquiry"
             >
-              <Icon name="lucide:x" size="24" />
+              <Icon name="lucide:x" size="24" aria-hidden="true" />
             </button>
           </div>
           <div class="inquiry-modal__body">

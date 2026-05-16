@@ -246,11 +246,14 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 	}
 
 	var req struct {
-		ShippingAddress modelsOrder.Address `json:"shippingAddress"`
-		Notes           string              `json:"notes"`
-		Currency        string              `json:"currency"`
+		ShippingAddress   modelsOrder.Address `json:"shippingAddress"`
+		Notes             string              `json:"notes"`
+		Currency          string              `json:"currency"`
+		EstimatedWeightKg float64             `json:"estimated_weight_kg"`
 	}
-	_ = c.ShouldBindJSON(&req)
+	if !response.BindJSONOrInvalid(c, &req) {
+		return
+	}
 
 	// Build order items from cart and collect product details for validation
 	orderItems := make(modelsOrder.OrderItemArray, 0, len(items))
@@ -363,6 +366,24 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 		return
 	}
 
+	// Calculate shipping cost
+	var shippingAmount float64
+	shippingCurrency := currency
+	if req.EstimatedWeightKg > 0 && h.services.Shipping != nil && req.ShippingAddress.Country != "" {
+		if cost, shipCurr, err := h.services.Shipping.CalculateShippingCost(c.Request.Context(), req.ShippingAddress.Country, req.EstimatedWeightKg); err == nil && cost > 0 {
+			shippingAmount = cost
+			if shipCurr != "" {
+				shippingCurrency = shipCurr
+			}
+		}
+	}
+		// Calculate tax based on destination country/region
+		var taxAmount float64
+		if h.services.Tax != nil && req.ShippingAddress.Country != "" {
+			if tax, _, _, err := h.services.Tax.CalculateTax(c.Request.Context(), subtotal, req.ShippingAddress.Country, req.ShippingAddress.State); err == nil && tax > 0 {
+				taxAmount = tax
+			}
+		}
 	order := &modelsOrder.Order{
 		ID:              generateCartOrderID(),
 		OrderNumber:     generateCartOrderNumber(),
@@ -372,8 +393,10 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 		StockReserved:   true,
 		Items:           orderItems,
 		Subtotal:        subtotal,
-		TotalAmount:     subtotal,
-		Currency:        currency,
+		TaxAmount:       taxAmount,
+		ShippingAmount:  shippingAmount,
+		TotalAmount:     subtotal + taxAmount + shippingAmount,
+		Currency:        shippingCurrency,
 		ShippingAddress: req.ShippingAddress,
 	}
 

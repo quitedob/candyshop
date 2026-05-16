@@ -366,6 +366,69 @@ func (h *Handler) AdminQuoteInquiry(c *gin.Context) {
 	c.JSON(http.StatusOK, inquiry)
 }
 
+
+	// AdminConfirmInquiry confirms packaging/weight/standards from admin side.
+	// If customer has already confirmed, transitions to "confirmed" status.
+	// PUT /admin/inquiries/:id/confirm
+	func (h *Handler) AdminConfirmInquiry(c *gin.Context) {
+		if h.services == nil {
+			response.ServiceUnavailableResp(c)
+			return
+		}
+
+		inquiryID := c.Param("id")
+		inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID)
+		if err != nil {
+			response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
+			return
+		}
+
+		var req struct {
+			PackagingType   string  `json:"packagingType"`
+			PackagingWeight float64 `json:"packagingWeight"`
+			PackagingSize   string  `json:"packagingSize"`
+			QualityStandard string  `json:"qualityStandard"`
+			Notes           string  `json:"notes"`
+		}
+		if !response.BindJSONOrInvalid(c, &req) {
+			return
+		}
+
+		inquiry.PackagingType = strings.TrimSpace(req.PackagingType)
+		inquiry.PackagingWeight = req.PackagingWeight
+		inquiry.PackagingSize = strings.TrimSpace(req.PackagingSize)
+		inquiry.QualityStandard = strings.TrimSpace(req.QualityStandard)
+		inquiry.AdminConfirmed = true
+
+		if req.Notes != "" {
+			if inquiry.ConfirmationNotes != "" {
+				inquiry.ConfirmationNotes += "\n[Admin] " + req.Notes
+			} else {
+				inquiry.ConfirmationNotes = "[Admin] " + req.Notes
+			}
+		}
+
+		if inquiry.CustomerConfirmed {
+			inquiry.Status = "confirmed"
+			now := time.Now()
+			inquiry.ConfirmedAt = &now
+		} else {
+			inquiry.Status = "pending_confirmation"
+		}
+
+		inquiry.UpdatedAt = time.Now()
+		if err := h.services.Inquiry.UpdateInquiry(c.Request.Context(), inquiry); err != nil {
+			response.ErrorResp(c, http.StatusInternalServerError, "inquiry_update_failed")
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"success":        true,
+			"message":        "Admin specifications confirmed",
+			"status":         inquiry.Status,
+			"fullyConfirmed": inquiry.AdminConfirmed && inquiry.CustomerConfirmed,
+		})
+	}
 // AdminGetProducts returns paginated product list for admin.
 func (h *Handler) AdminGetProducts(c *gin.Context) {
 	if h.services == nil {

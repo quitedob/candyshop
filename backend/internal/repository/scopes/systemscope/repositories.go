@@ -18,6 +18,7 @@ type Repositories struct {
 	Content *content.ContentRepository
 	Trade   trade.TradeRepository
 	User    *user.UserRepository
+	Payment *order.PaymentRepository
 }
 
 func New(db *gorm.DB) *Repositories {
@@ -28,5 +29,6 @@ func New(db *gorm.DB) *Repositories {
 		Content: content.NewContentRepository(db),
 		Trade:   trade.NewTradeRepository(db),
 		User:    user.NewUserRepository(db),
+		Payment: order.NewPaymentRepository(db),
 	}
 }

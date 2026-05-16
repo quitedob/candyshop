@@ -38,27 +38,27 @@
         <form @submit.prevent="saveProfile" class="space-y-4 max-w-2xl">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('customer.profile.first_name') }}</label>
-              <input v-model="editForm.firstName" type="text" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+              <label for="profile-firstName" class="block text-sm font-medium text-gray-700">{{ t('customer.profile.first_name') }}</label>
+              <input id="profile-firstName" v-model="editForm.firstName" name="firstName" type="text" autocomplete="given-name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" required>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{ t('customer.profile.last_name') }}</label>
-              <input v-model="editForm.lastName" type="text" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+              <label for="profile-lastName" class="block text-sm font-medium text-gray-700">{{ t('customer.profile.last_name') }}</label>
+              <input id="profile-lastName" v-model="editForm.lastName" name="lastName" type="text" autocomplete="family-name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" required>
             </div>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">{{ t('customer.profile.company') }}</label>
-            <input v-model="editForm.company" type="text" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            <label for="profile-company" class="block text-sm font-medium text-gray-700">{{ t('customer.profile.company') }}</label>
+            <input id="profile-company" v-model="editForm.company" name="company" type="text" autocomplete="organization" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm">
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">{{ t('customer.profile.phone') }}</label>
-            <input v-model="editForm.phone" type="text" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            <label for="profile-phone" class="block text-sm font-medium text-gray-700">{{ t('customer.profile.phone') }}</label>
+            <input id="profile-phone" v-model="editForm.phone" name="phone" type="text" autocomplete="tel" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm">
           </div>
           <div class="flex justify-end space-x-3 mt-4">
             <button type="button" @click="cancelEditing" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
               {{ t('customer.profile.cancel') }}
             </button>
-            <button type="submit" :disabled="isSaving" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50">
+            <button type="submit" :disabled="isSaving" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50">
               {{ isSaving ? t('customer.profile.saving') : t('customer.profile.save_changes') }}
             </button>
           </div>
@@ -73,22 +73,22 @@
       <div class="border-t border-gray-200 px-4 py-5">
         <form @submit.prevent="changePassword" class="space-y-4 max-w-md">
           <div>
-            <label class="block text-sm font-medium text-gray-700">{{ t('customer.profile.current_password') }}</label>
-            <input v-model="pwdForm.currentPassword" type="password" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+            <label for="profile-currentPassword" class="block text-sm font-medium text-gray-700">{{ t('customer.profile.current_password') }}</label>
+            <input id="profile-currentPassword" v-model="pwdForm.currentPassword" name="currentPassword" type="password" autocomplete="current-password" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" required>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">{{ t('customer.profile.new_password') }}</label>
-            <input v-model="pwdForm.newPassword" type="password" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required minlength="8">
+            <label for="profile-newPassword" class="block text-sm font-medium text-gray-700">{{ t('customer.profile.new_password') }}</label>
+            <input id="profile-newPassword" v-model="pwdForm.newPassword" name="newPassword" type="password" autocomplete="new-password" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" required minlength="8">
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">{{ t('customer.profile.confirm_password') }}</label>
-            <input v-model="pwdForm.confirmPassword" type="password" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required minlength="8">
+            <label for="profile-confirmPassword" class="block text-sm font-medium text-gray-700">{{ t('customer.profile.confirm_password') }}</label>
+            <input id="profile-confirmPassword" v-model="pwdForm.confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" required minlength="8">
             <p v-if="pwdForm.confirmPassword && pwdForm.newPassword !== pwdForm.confirmPassword" class="mt-1 text-xs text-red-600">
               {{ t('customer.profile.password_mismatch') }}
             </p>
           </div>
           <div>
-            <button type="submit" :disabled="isChangingPwd" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50">
+            <button type="submit" :disabled="isChangingPwd" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50">
               {{ isChangingPwd ? t('customer.profile.updating') : t('customer.profile.update_password') }}
             </button>
           </div>

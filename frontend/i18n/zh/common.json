@@ -130,6 +130,12 @@
       "cancelled": "已取消",
       "processing": "处理中",
       "pending_confirmation": "待确认",
+      "pending_approval": "待审批",
+      "partially_shipped": "部分发货",
+      "partially_delivered": "部分送达",
+      "partially_returned": "部分退货",
+      "returned": "已退货",
+      "expired": "已过期",
       "unknown": "未知"
     },
     "payment_status": {
@@ -228,6 +234,82 @@
       "post": "文章",
       "case": "案例",
       "unknown": "未知"
+    },
+    "oem_status": {
+      "inquiry": "询价",
+      "sampling": "样品",
+      "formulation": "配方",
+      "quotation": "报价",
+      "contract": "合同",
+      "production": "生产",
+      "delivery": "交付",
+      "completed": "已完成",
+      "cancelled": "已取消",
+      "unknown": "未知"
+    },
+    "sample_status": {
+      "requested": "已申请",
+      "shipped": "已寄出",
+      "received": "已收到",
+      "approved": "已通过",
+      "rejected": "已拒绝",
+      "unknown": "未知"
+    },
+    "document_status": {
+      "draft": "草稿",
+      "pending": "待处理",
+      "confirmed": "已确认",
+      "cancelled": "已取消",
+      "completed": "已完成",
+      "unknown": "未知"
+    },
+    "document_type": {
+      "quotation": "报价单",
+      "proforma_invoice": "形式发票",
+      "sales_contract": "销售合同",
+      "commercial_invoice": "商业发票",
+      "packing_list": "装箱单",
+      "bill_of_lading": "提单",
+      "health_certificate": "卫生证书",
+      "origin_certificate": "原产地证书",
+      "unknown": "未知"
+    },
+    "negotiation_status": {
+      "pending": "待处理",
+      "accepted": "已接受",
+      "rejected": "已拒绝",
+      "expired": "已过期",
+      "unknown": "未知"
+    },
+    "invoice_status": {
+      "draft": "草稿",
+      "sent": "已发送",
+      "paid": "已付款",
+      "overdue": "已逾期",
+      "voided": "已作废",
+      "cancelled": "已取消",
+      "unknown": "未知"
+    },
+    "user_status": {
+      "active": "正常",
+      "inactive": "未激活",
+      "suspended": "已停用",
+      "pending": "待审核",
+      "deleted": "已删除",
+      "unknown": "未知"
+    },
+    "tool_status": {
+      "success": "成功",
+      "error": "失败",
+      "running": "运行中",
+      "unknown": "未知"
+    },
+    "compliance_status": {
+      "passed": "通过",
+      "failed": "未通过",
+      "warnings": "警告",
+      "pending": "待检查",
+      "unknown": "未知"
     }
   },
   "rte": {
@@ -283,8 +365,22 @@
   "languages": {
     "en": "English",
     "zh": "中文",
+    "ko": "韩语",
+    "ar": "阿拉伯语",
+    "ja": "日语",
+    "th": "泰语",
+    "vi": "越南语",
+    "id": "印尼语",
+    "ms": "马来语",
     "en_short": "EN",
-    "zh_short": "中"
+    "zh_short": "中",
+    "ko_short": "韩",
+    "ar_short": "阿",
+    "ja_short": "日",
+    "th_short": "泰",
+    "vi_short": "越",
+    "id_short": "印",
+    "ms_short": "马"
   },
   "common": {
     "previous": "上一页",
@@ -293,6 +389,41 @@
     "save": "保存",
     "edit": "编辑",
     "delete": "删除",
-    "loading": "加载中..."
+    "loading": "加载中...",
+    "actions": "操作",
+    "close": "关闭",
+    "clear": "清除输入"
+  },
+  "product": {
+    "moq_prefix": "起订量: ",
+    "gallery_image_alt": "{alt} - 图片 {n}",
+    "gallery_view_image": "查看图片 {n}",
+    "gallery_thumbnail_alt": "{alt} - 缩略图 {n}"
+  },
+  "factory": {
+    "alt_hero": "工厂",
+    "alt_production": "生产线",
+    "alt_quality": "质量控制",
+    "alt_packaging": "包装区",
+    "alt_warehouse": "仓库",
+    "alt_laboratory": "质量实验室",
+    "cert_valid_until": "有效期至 {date}",
+    "cert_haccp_desc": "危害分析关键控制点 - 食品安全管理体系",
+    "cert_iso_desc": "食品安全管理体系标准",
+    "cert_brc_desc": "英国零售商协会全球食品安全标准 - A级",
+    "cert_halal_desc": "清真认证 - 伊斯兰市场合规"
+  },
+  "about": {
+    "alt_our_factory": "我们的工厂"
+  },
+  "inventory": {
+    "image_column": "图片列"
+  },
+  "invoices": {
+    "company_name": "CandyPro OEM",
+    "company_tagline": "B2B 糖果制造"
+  },
+  "form": {
+    "phone_placeholder": "+86 123 4567 890"
   }
 }

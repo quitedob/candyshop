@@ -21,42 +21,42 @@
       <button @click="loadData" class="mt-3 text-sm text-red-700 underline">{{ t('admin.dashboard.error') }}</button>
     </div>
 
-    <div v-else class="mt-6 space-y-6">
+    <div v-else class="mt-6 space-y-6 min-w-0">
       <!-- Summary Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white rounded-lg shadow p-5">
+        <div class="bg-white rounded-lg shadow p-5 min-w-0">
           <dt class="text-sm font-medium text-gray-500 truncate">{{ t('admin.financial.accounts_receivable') }}</dt>
-          <dd class="mt-1 text-2xl font-bold text-gray-900">${{ formatNumber(overview?.accountsReceivable || 0) }}</dd>
+          <dd class="mt-1 text-2xl font-bold text-gray-900 truncate">${{ formatNumber(overview?.accountsReceivable || 0) }}</dd>
         </div>
-        <div class="bg-white rounded-lg shadow p-5">
+        <div class="bg-white rounded-lg shadow p-5 min-w-0">
           <dt class="text-sm font-medium text-gray-500 truncate">{{ t('admin.financial.overdue_amount') }}</dt>
-          <dd class="mt-1 text-2xl font-bold text-red-600">${{ formatNumber(overview?.overdueAmount || 0) }}</dd>
+          <dd class="mt-1 text-2xl font-bold text-red-600 truncate">${{ formatNumber(overview?.overdueAmount || 0) }}</dd>
         </div>
-        <div class="bg-white rounded-lg shadow p-5">
+        <div class="bg-white rounded-lg shadow p-5 min-w-0">
           <dt class="text-sm font-medium text-gray-500 truncate">{{ t('admin.financial.revenue_this_month') }}</dt>
-          <dd class="mt-1 text-2xl font-bold text-green-600">${{ formatNumber(overview?.revenueThisMonth || 0) }}</dd>
+          <dd class="mt-1 text-2xl font-bold text-green-600 truncate">${{ formatNumber(overview?.revenueThisMonth || 0) }}</dd>
         </div>
-        <div class="bg-white rounded-lg shadow p-5">
+        <div class="bg-white rounded-lg shadow p-5 min-w-0">
           <dt class="text-sm font-medium text-gray-500 truncate">{{ t('admin.financial.outstanding_invoices') }}</dt>
-          <dd class="mt-1 text-2xl font-bold text-gray-900">{{ overview?.overdueCount || 0 }}</dd>
+          <dd class="mt-1 text-2xl font-bold text-gray-900 truncate">{{ overview?.overdueCount || 0 }}</dd>
         </div>
       </div>
 
       <!-- Charts Row -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 min-w-0">
         <!-- Payment Breakdown -->
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="bg-white rounded-lg shadow p-6 min-w-0">
           <h3 class="text-base font-semibold text-gray-900 mb-4">{{ t('admin.financial.payment_breakdown') }}</h3>
-          <div v-if="breakdown && breakdown.length" class="h-64">
+          <div v-if="breakdown && breakdown.length" class="h-64 min-w-0">
             <Doughnut :data="paymentChartData" :options="paymentChartOptions" />
           </div>
           <div v-else class="h-64 flex items-center justify-center text-sm text-gray-500">{{ t('admin.financial.no_data') }}</div>
         </div>
 
         <!-- Revenue Trend placeholder -->
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="bg-white rounded-lg shadow p-6 min-w-0">
           <h3 class="text-base font-semibold text-gray-900 mb-4">{{ t('admin.analytics.revenue_trends') }}</h3>
-          <div v-if="revenueData && revenueData.length" class="h-64">
+          <div v-if="revenueData && revenueData.length" class="h-64 min-w-0">
             <Line :data="revenueChartData" :options="lineChartOptions" />
           </div>
           <div v-else class="h-64 flex items-center justify-center text-sm text-gray-500">{{ t('admin.financial.no_data') }}</div>
@@ -84,15 +84,15 @@
             </thead>
             <tbody class="divide-y divide-gray-200">
               <tr v-for="inv in invoices" :key="inv.id" class="hover:bg-gray-50" :class="{ 'bg-red-50': isOverdue(inv) }">
-                <td class="py-4 px-4 text-sm font-medium text-gray-900">{{ inv.invoice_no || inv.invoiceNo || '-' }}</td>
-                <td class="py-4 px-4 text-sm text-gray-700">${{ formatNumber(inv.total_amount || inv.totalAmount || 0) }}</td>
-                <td class="py-4 px-4 text-sm text-gray-700">{{ formatDate(inv.due_date || inv.dueDate) }}</td>
-                <td class="py-4 px-4">
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium" :class="statusClass(inv.status)">
-                    {{ inv.status }}
+                <td class="py-4 px-4 text-sm font-medium text-gray-900 max-w-[180px] truncate" :title="inv.invoice_no || inv.invoiceNo || '-'">{{ inv.invoice_no || inv.invoiceNo || '-' }}</td>
+                <td class="py-4 px-4 text-sm text-gray-700 whitespace-nowrap">${{ formatNumber(inv.total_amount || inv.totalAmount || 0) }}</td>
+                <td class="py-4 px-4 text-sm text-gray-700 whitespace-nowrap">{{ formatDate(inv.due_date || inv.dueDate) }}</td>
+                <td class="py-4 px-4 whitespace-nowrap">
+                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium max-w-[120px] truncate" :class="statusClass(inv.status)">
+                    {{ enumLabel('invoice_status', inv.status) }}
                   </span>
                 </td>
-                <td class="py-4 px-4 text-sm text-gray-500">{{ inv.order_id || inv.orderId || '-' }}</td>
+                <td class="py-4 px-4 text-sm text-gray-500 max-w-[160px] truncate" :title="inv.order_id || inv.orderId || '-'">{{ inv.order_id || inv.orderId || '-' }}</td>
               </tr>
             </tbody>
           </table>
@@ -180,10 +180,22 @@ const lineChartOptions = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: { legend: { display: false } },
-  scales: { y: { beginAtZero: true } }
+  scales: {
+    x: {
+      display: true,
+      ticks: {
+        display: true,
+        maxRotation: 45,
+        color: '#6B7280',
+        font: { size: 11 }
+      },
+      grid: { display: false }
+    },
+    y: { beginAtZero: true }
+  }
 }
 
-const { formatNumber, formatDate } = useDisplay()
+const { enumLabel, formatNumber, formatDate } = useDisplay()
 const isOverdue = (inv: any) => {
   const due = inv.due_date || inv.dueDate
   if (!due) return false

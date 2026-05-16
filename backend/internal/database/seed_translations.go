@@ -21,7 +21,7 @@ func SeedTranslations(db *gorm.DB, localesDir string) error {
 		return nil
 	}
 
-	for _, lang := range []string{"en", "zh"} {
+	for _, lang := range []string{"en", "zh", "ko", "ar", "ja", "th", "vi", "id", "ms"} {
 		path := filepath.Join(localesDir, lang+".yaml")
 		data, err := os.ReadFile(path)
 		if err != nil {

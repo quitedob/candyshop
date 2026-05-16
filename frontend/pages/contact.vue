@@ -34,7 +34,7 @@
                 <template #fallback>
                   <div class="form-loading">
                     <div class="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent mx-auto" />
-                    <p style="margin-top: 12px; color: var(--color-text-light);">Loading form...</p>
+                    <p style="margin-top: 12px; color: var(--color-text-light);">{{ t('contact.loading_form') }}</p>
                   </div>
                 </template>
               </ClientOnly>

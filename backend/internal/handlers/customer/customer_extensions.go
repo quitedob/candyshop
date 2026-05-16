@@ -1,14 +1,19 @@
 package customer
 
 import (
+	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
 	modelsCommon "candypro/api/internal/models/common"
 	modelsProduct "candypro/api/internal/models/product"
+	"log"
+
 	"candypro/api/internal/pkg/crypto"
 	"candypro/api/internal/pkg/pagination"
 	"candypro/api/internal/pkg/response"
-	"fmt"
-	"net/http"
-	"time"
+	"candypro/api/internal/pkg/storage"
 
 	"github.com/gin-gonic/gin"
 )
@@ -58,6 +63,7 @@ func (h *Handler) CustomerGetDashboard(c *gin.Context) {
 }
 
 // CustomerCreateInquiry creates an authenticated customer inquiry.
+// Accepts multipart/form-data with optional file attachments.
 func (h *Handler) CustomerCreateInquiry(c *gin.Context) {
 	if h.services == nil {
 		response.ServiceUnavailableResp(c)
@@ -70,41 +76,99 @@ func (h *Handler) CustomerCreateInquiry(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-		CompanyName           string   `json:"companyName" binding:"required"`
-		ContactPerson         string   `json:"contactPerson" binding:"required"`
-		Email                 string   `json:"email" binding:"required,email"`
-		WhatsApp              string   `json:"whatsapp"`
-		TargetCountry         string   `json:"targetCountry"`
-		EstimatedQuantity     string   `json:"estimatedQuantity"`
-		InterestedProducts    []string `json:"interestedProducts"`
-		PackagingRequirements string   `json:"packagingRequirements"`
-		FlavorRequirements    string   `json:"flavorRequirements"`
-		OEMNeeded             bool     `json:"oemNeeded"`
-		ExpectedDelivery      string   `json:"expectedDelivery"`
-		Message               string   `json:"message"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.InvalidResp(c, "invalid_request")
+	// Parse multipart form (32MB max)
+	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
+		response.ErrorResp(c, http.StatusBadRequest, "form_parse_failed")
 		return
 	}
+
+	form := c.Request.MultipartForm
+	getVal := func(key string) string {
+		if values, ok := form.Value[key]; ok && len(values) > 0 {
+			return strings.TrimSpace(values[0])
+		}
+		return ""
+	}
+	getValues := func(key string) []string {
+		if values, ok := form.Value[key]; ok {
+			result := make([]string, 0, len(values))
+			for _, item := range values {
+				if item = strings.TrimSpace(item); item != "" {
+					result = append(result, item)
+				}
+			}
+			return result
+		}
+		return []string{}
+	}
+
+	companyName := getVal("companyName")
+	contactPerson := getVal("contactPerson")
+	email := getVal("email")
+
+	if companyName == "" || contactPerson == "" || email == "" {
+		response.ErrorResp(c, http.StatusBadRequest, "inquiry_fields_required")
+		return
+	}
+
+	// Handle file uploads
+	var files []string
+	if fileHeaders, ok := form.File["files"]; ok {
+		cfg := h.cfg
+		for _, fileHeader := range fileHeaders {
+			if fileHeader.Size > cfg.Upload.MaxFileSize {
+				response.ErrorRespDetail(c, http.StatusBadRequest, "file_size_exceeded", gin.H{
+					"filename": fileHeader.Filename,
+					"maxBytes": cfg.Upload.MaxFileSize,
+				})
+				return
+			}
+			contentType := fileHeader.Header.Get("Content-Type")
+			if !isAllowedInquiryType(contentType, cfg.Upload.AllowedTypes) {
+				response.ErrorRespDetail(c, http.StatusBadRequest, "file_type_not_allowed", gin.H{
+					"contentType": contentType,
+				})
+				return
+			}
+			f, fErr := fileHeader.Open()
+			if fErr != nil {
+				response.ErrorRespDetail(c, http.StatusBadRequest, "file_open_failed", gin.H{
+					"filename": fileHeader.Filename,
+				})
+				return
+			}
+			url, uploadErr := h.storage.Upload(c.Request.Context(), f, storage.UploadOptions{
+				FileName: fileHeader.Filename,
+			})
+			f.Close()
+			if uploadErr != nil {
+				response.ErrorRespDetail(c, http.StatusInternalServerError, "file_save_failed", gin.H{
+					"filename": fileHeader.Filename,
+				})
+				return
+			}
+			files = append(files, url)
+		}
+	}
+
+	oemNeeded := getVal("oemNeeded") == "true"
 
 	inquiry := &modelsProduct.Inquiry{
 		ID:                    crypto.GenerateID(),
 		UserID:                &userID,
-		CompanyName:           req.CompanyName,
-		ContactPerson:         req.ContactPerson,
-		Email:                 req.Email,
-		WhatsApp:              req.WhatsApp,
-		TargetCountry:         req.TargetCountry,
-		EstimatedQuantity:     req.EstimatedQuantity,
-		InterestedProducts:    modelsCommon.StringArray(req.InterestedProducts),
-		PackagingRequirements: req.PackagingRequirements,
-		FlavorRequirements:    req.FlavorRequirements,
-		OEMNeeded:             req.OEMNeeded,
-		ExpectedDelivery:      req.ExpectedDelivery,
-		Message:               req.Message,
+		CompanyName:           companyName,
+		ContactPerson:         contactPerson,
+		Email:                 email,
+		WhatsApp:              getVal("whatsapp"),
+		TargetCountry:         getVal("targetCountry"),
+		EstimatedQuantity:     getVal("estimatedQuantity"),
+		InterestedProducts:    modelsCommon.StringArray(getValues("interestedProducts")),
+		PackagingRequirements: getVal("packagingRequirements"),
+		FlavorRequirements:    getVal("flavorRequirements"),
+		OEMNeeded:             oemNeeded,
+		ExpectedDelivery:      getVal("expectedDelivery"),
+		Message:               getVal("message"),
+		Files:                 files,
 		Status:                "pending",
 		CreatedAt:             time.Now(),
 		UpdatedAt:             time.Now(),
@@ -116,10 +180,42 @@ func (h *Handler) CustomerCreateInquiry(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
+		"success":   true,
 		"message":   "Inquiry submitted successfully",
 		"inquiryId": inquiry.ID,
 	})
 }
+
+// isAllowedInquiryType checks if content type is in the allowed list.
+// Also accepts additional document/media types for inquiry attachments.
+func isAllowedInquiryType(contentType string, allowedTypes []string) bool {
+	for _, t := range allowedTypes {
+		if t == contentType {
+			return true
+		}
+	}
+	// Additional inquiry attachment types
+	inquiryAllowed := []string{
+		"application/msword",
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+		"application/pdf",
+		"image/png",
+		"image/jpeg",
+		"video/x-matroska",
+		"video/mp4",
+		"audio/mpeg",
+		"audio/mp3",
+		"text/plain",
+		"image/svg+xml",
+	}
+	for _, t := range inquiryAllowed {
+		if t == contentType {
+			return true
+		}
+	}
+	return false
+}
+
 
 // CustomerUpdateInquiry updates an existing inquiry that belongs to current user.
 func (h *Handler) CustomerUpdateInquiry(c *gin.Context) {
@@ -358,4 +454,173 @@ func (h *Handler) CustomerMarkAllNotificationsRead(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "All notifications marked as read"})
+}
+
+// CustomerUploadInquiryAttachment uploads a file to an existing inquiry.
+// POST /user/inquiries/:id/attachments
+func (h *Handler) CustomerUploadInquiryAttachment(c *gin.Context) {
+	if h.services == nil {
+		response.ServiceUnavailableResp(c)
+		return
+	}
+
+	userID, ok := contextUserID(c)
+	if !ok {
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	inquiryID := c.Param("id")
+	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID)
+	if err != nil {
+		response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
+		return
+	}
+	if inquiry.UserID == nil || *inquiry.UserID != userID {
+		response.ErrorResp(c, http.StatusForbidden, "forbidden")
+		return
+	}
+
+	// Parse multipart
+	if err := c.Request.ParseMultipartForm(64 << 20); err != nil {
+		response.ErrorResp(c, http.StatusBadRequest, "form_parse_failed")
+		return
+	}
+
+	form := c.Request.MultipartForm
+	attachmentNote := ""
+	if values, ok := form.Value["note"]; ok && len(values) > 0 {
+		attachmentNote = strings.TrimSpace(values[0])
+	}
+
+	var newFiles []string
+	if fileHeaders, ok := form.File["files"]; ok {
+		for _, fh := range fileHeaders {
+			if fh.Size > h.cfg.Upload.MaxFileSize {
+				response.ErrorRespDetail(c, http.StatusBadRequest, "file_size_exceeded", gin.H{
+					"filename": fh.Filename, "maxBytes": h.cfg.Upload.MaxFileSize,
+				})
+				return
+			}
+			contentType := fh.Header.Get("Content-Type")
+			if !isAllowedInquiryType(contentType, h.cfg.Upload.AllowedTypes) {
+				response.ErrorRespDetail(c, http.StatusBadRequest, "file_type_not_allowed", gin.H{
+					"contentType": contentType,
+				})
+				return
+			}
+			f, fErr := fh.Open()
+			if fErr != nil {
+				log.Printf("WARN: failed to open uploaded file %s: %v", fh.Filename, fErr)
+				continue
+			}
+			url, uploadErr := h.storage.Upload(c.Request.Context(), f, storage.UploadOptions{FileName: fh.Filename})
+			f.Close()
+			if uploadErr != nil {
+				log.Printf("WARN: failed to store uploaded file %s: %v", fh.Filename, uploadErr)
+				continue
+			}
+			newFiles = append(newFiles, url)
+		}
+	}
+
+	// Append new file URLs
+	existingFiles := []string(inquiry.Files)
+	existingFiles = append(existingFiles, newFiles...)
+	inquiry.Files = existingFiles
+
+	// Append note to customer notes
+	if attachmentNote != "" {
+		if inquiry.CustomerNotes != "" {
+			inquiry.CustomerNotes += "\n" + attachmentNote
+		} else {
+			inquiry.CustomerNotes = attachmentNote
+		}
+	}
+
+	inquiry.UpdatedAt = time.Now()
+	if err := h.services.Inquiry.UpdateInquiry(c.Request.Context(), inquiry); err != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "inquiry_update_failed")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":   true,
+		"message":   "Attachments uploaded",
+		"files":     newFiles,
+		"totalFiles": len(existingFiles),
+	})
+}
+
+// CustomerConfirmInquiry confirms packaging/weight/standards for the inquiry.
+// POST /user/inquiries/:id/confirm
+func (h *Handler) CustomerConfirmInquiry(c *gin.Context) {
+	if h.services == nil {
+		response.ServiceUnavailableResp(c)
+		return
+	}
+
+	userID, ok := contextUserID(c)
+	if !ok {
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	inquiryID := c.Param("id")
+	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID)
+	if err != nil {
+		response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
+		return
+	}
+	if inquiry.UserID == nil || *inquiry.UserID != userID {
+		response.ErrorResp(c, http.StatusForbidden, "forbidden")
+		return
+	}
+
+	var req struct {
+		PackagingType   string  `json:"packagingType"`
+		PackagingWeight float64 `json:"packagingWeight"`
+		PackagingSize   string  `json:"packagingSize"`
+		QualityStandard string  `json:"qualityStandard"`
+		Notes           string  `json:"notes"`
+	}
+	if !response.BindJSONOrInvalid(c, &req) {
+		return
+	}
+
+	inquiry.PackagingType = strings.TrimSpace(req.PackagingType)
+	inquiry.PackagingWeight = req.PackagingWeight
+	inquiry.PackagingSize = strings.TrimSpace(req.PackagingSize)
+	inquiry.QualityStandard = strings.TrimSpace(req.QualityStandard)
+	inquiry.CustomerConfirmed = true
+
+	if req.Notes != "" {
+		if inquiry.ConfirmationNotes != "" {
+			inquiry.ConfirmationNotes += "\n[Customer] " + req.Notes
+		} else {
+			inquiry.ConfirmationNotes = "[Customer] " + req.Notes
+		}
+	}
+
+	// If admin has already confirmed, both are confirmed → confirm status
+	if inquiry.AdminConfirmed {
+		inquiry.Status = "confirmed"
+		now := time.Now()
+		inquiry.ConfirmedAt = &now
+	} else {
+		inquiry.Status = "pending_confirmation"
+	}
+
+	inquiry.UpdatedAt = time.Now()
+	if err := h.services.Inquiry.UpdateInquiry(c.Request.Context(), inquiry); err != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "inquiry_update_failed")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":    true,
+		"message":    "Specifications confirmed",
+		"status":     inquiry.Status,
+		"fullyConfirmed": inquiry.AdminConfirmed && inquiry.CustomerConfirmed,
+	})
 }

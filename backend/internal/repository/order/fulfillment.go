@@ -1,0 +1,267 @@
+package order
+
+import (
+	modelsOrder "candypro/api/internal/models/order"
+	"context"
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+)
+
+// FulfillmentRepository handles fulfillment data operations.
+type FulfillmentRepository struct {
+	db *gorm.DB
+}
+
+// NewFulfillmentRepository creates a new FulfillmentRepository.
+func NewFulfillmentRepository(db *gorm.DB) *FulfillmentRepository {
+	return &FulfillmentRepository{db: db}
+}
+
+// Create creates a fulfillment, deducts warehouse stock, and updates order item fulfilled quantities.
+func (r *FulfillmentRepository) Create(ctx context.Context, fulfillment *modelsOrder.Fulfillment, items []modelsOrder.FulfillmentItem, warehouseID string) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Lock the order row
+		var order modelsOrder.Order
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("id = ?", fulfillment.OrderID).First(&order).Error; err != nil {
+			return err
+		}
+
+		now := time.Now()
+		fulfillment.CreatedAt = now
+		fulfillment.UpdatedAt = now
+		if err := tx.Create(fulfillment).Error; err != nil {
+			return err
+		}
+
+		var allAudit []*modelsOrder.StockTransaction
+		for i := range items {
+			items[i].FulfillmentID = fulfillment.ID
+
+			// Validate item index
+			if items[i].OrderItemIdx < 0 || items[i].OrderItemIdx >= len(order.Items) {
+				return fmt.Errorf("invalid order item index %d", items[i].OrderItemIdx)
+			}
+			oi := &order.Items[items[i].OrderItemIdx]
+			if items[i].ProductID != oi.ProductID {
+				return fmt.Errorf("product mismatch at index %d", items[i].OrderItemIdx)
+			}
+			remaining := oi.Quantity - oi.FulfilledQuantity
+			if items[i].Quantity > remaining {
+				return fmt.Errorf("fulfillment qty %d exceeds remaining %d for product %s",
+					items[i].Quantity, remaining, oi.ProductID)
+			}
+
+			// Deduct warehouse stock (actual goods leaving warehouse)
+			wid, err := resolveWarehouseID(tx, warehouseID)
+			if err != nil {
+				return err
+			}
+			recs, err := deductWarehouseStock(tx, wid, items[i].ProductID, items[i].Quantity,
+				modelsOrder.StockReasonGoodsIssued, fulfillment.ID, "system", now)
+			if err != nil {
+				return err
+			}
+			allAudit = append(allAudit, recs...)
+
+			// Update order item fulfilled quantity
+			oi.FulfilledQuantity += items[i].Quantity
+		}
+
+		// Persist updated order items
+		itemsJSON, err := json.Marshal(order.Items)
+		if err != nil {
+			return err
+		}
+		if err := tx.Model(&order).Update("items", itemsJSON).Error; err != nil {
+			return err
+		}
+
+		// Update order status based on fulfillment
+		allFulfilled := true
+		anyFulfilled := false
+		for _, oi := range order.Items {
+			if oi.FulfilledQuantity > 0 {
+				anyFulfilled = true
+			}
+			if oi.FulfilledQuantity < oi.Quantity {
+				allFulfilled = false
+			}
+		}
+		newStatus := order.Status
+		if allFulfilled {
+			newStatus = modelsOrder.OrderStatusShipped
+		} else if anyFulfilled && order.Status == modelsOrder.OrderStatusProduction {
+			newStatus = modelsOrder.OrderStatusPartiallyShipped
+		} else if anyFulfilled && order.Status == modelsOrder.OrderStatusPartiallyShipped {
+			newStatus = modelsOrder.OrderStatusPartiallyShipped
+		}
+		if newStatus != order.Status {
+			if err := tx.Model(&order).Updates(map[string]interface{}{
+				"status":     newStatus,
+				"updated_at": now,
+			}).Error; err != nil {
+				return err
+			}
+		}
+
+		return writeStockAuditEntries(tx, allAudit)
+	})
+}
+
+// FindByOrder returns all fulfillments for an order.
+func (r *FulfillmentRepository) FindByOrder(ctx context.Context, orderID string) ([]modelsOrder.Fulfillment, error) {
+	var fulfillments []modelsOrder.Fulfillment
+	if err := r.db.WithContext(ctx).Where("order_id = ?", orderID).
+		Order("created_at DESC").Find(&fulfillments).Error; err != nil {
+		return nil, err
+	}
+	return fulfillments, nil
+}
+
+// FindByID returns a fulfillment with its items.
+func (r *FulfillmentRepository) FindByID(ctx context.Context, id string) (*modelsOrder.Fulfillment, []modelsOrder.FulfillmentItem, error) {
+	var f modelsOrder.Fulfillment
+	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&f).Error; err != nil {
+		return nil, nil, err
+	}
+	var items []modelsOrder.FulfillmentItem
+	if err := r.db.WithContext(ctx).Where("fulfillment_id = ?", id).Find(&items).Error; err != nil {
+		return nil, nil, err
+	}
+	return &f, items, nil
+}
+
+// Ship marks a fulfillment as shipped with tracking info.
+func (r *FulfillmentRepository) Ship(ctx context.Context, id, trackingNumber, carrier string, shippedAt time.Time) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var f modelsOrder.Fulfillment
+		if err := tx.Where("id = ?", id).First(&f).Error; err != nil {
+			return err
+		}
+		if f.Status != modelsOrder.FulfillmentStatusPacked && f.Status != modelsOrder.FulfillmentStatusPending {
+			return fmt.Errorf("fulfillment %s cannot be shipped from status %s", id, f.Status)
+		}
+		updates := map[string]interface{}{
+			"status":          modelsOrder.FulfillmentStatusShipped,
+			"tracking_number": trackingNumber,
+			"carrier":         carrier,
+			"shipped_at":      shippedAt,
+			"updated_at":      shippedAt,
+		}
+		if err := tx.Model(&f).Updates(updates).Error; err != nil {
+			return err
+		}
+		// Update order ShippedQuantity for each item
+		var items []modelsOrder.FulfillmentItem
+		if err := tx.Where("fulfillment_id = ?", id).Find(&items).Error; err != nil {
+			return err
+		}
+		var order modelsOrder.Order
+		if err := tx.Where("id = ?", f.OrderID).First(&order).Error; err != nil {
+			return err
+		}
+		for _, item := range items {
+			if item.OrderItemIdx >= 0 && item.OrderItemIdx < len(order.Items) {
+				order.Items[item.OrderItemIdx].ShippedQuantity += item.Quantity
+			}
+		}
+		itemsJSON, _ := json.Marshal(order.Items)
+		return tx.Model(&order).Update("items", itemsJSON).Error
+	})
+}
+
+// Deliver marks a fulfillment as delivered.
+func (r *FulfillmentRepository) Deliver(ctx context.Context, id string, deliveredAt time.Time) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var f modelsOrder.Fulfillment
+		if err := tx.Where("id = ?", id).First(&f).Error; err != nil {
+			return err
+		}
+		if f.Status != modelsOrder.FulfillmentStatusShipped {
+			return fmt.Errorf("fulfillment %s cannot be delivered from status %s", id, f.Status)
+		}
+		updates := map[string]interface{}{
+			"status":       modelsOrder.FulfillmentStatusDelivered,
+			"delivered_at": deliveredAt,
+			"updated_at":   deliveredAt,
+		}
+		if err := tx.Model(&f).Updates(updates).Error; err != nil {
+			return err
+		}
+		// Check if all fulfillments for this order are delivered
+		var allFulfillments []modelsOrder.Fulfillment
+		if err := tx.Where("order_id = ?", f.OrderID).Find(&allFulfillments).Error; err != nil {
+			return err
+		}
+		allDelivered := true
+		for _, ff := range allFulfillments {
+			if ff.ID != id && ff.Status != modelsOrder.FulfillmentStatusDelivered {
+				allDelivered = false
+				break
+			}
+		}
+		if allDelivered {
+			return tx.Model(&modelsOrder.Order{}).Where("id = ?", f.OrderID).
+				Updates(map[string]interface{}{
+					"status":       modelsOrder.OrderStatusDelivered,
+					"delivered_at": deliveredAt,
+					"updated_at":   deliveredAt,
+				}).Error
+		}
+		// Partial delivery
+		return tx.Model(&modelsOrder.Order{}).Where("id = ?", f.OrderID).
+			Updates(map[string]interface{}{
+				"status":     modelsOrder.OrderStatusPartiallyDelivered,
+				"updated_at": deliveredAt,
+			}).Error
+	})
+}
+
+// Cancel cancels a fulfillment and restores warehouse stock.
+func (r *FulfillmentRepository) Cancel(ctx context.Context, id string) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var f modelsOrder.Fulfillment
+		if err := tx.Where("id = ?", id).First(&f).Error; err != nil {
+			return err
+		}
+		if f.Status == modelsOrder.FulfillmentStatusDelivered {
+			return fmt.Errorf("cannot cancel delivered fulfillment %s", id)
+		}
+		// Restore warehouse stock
+		var items []modelsOrder.FulfillmentItem
+		if err := tx.Where("fulfillment_id = ?", id).Find(&items).Error; err != nil {
+			return err
+		}
+		for _, item := range items {
+			if err := addStockToWarehouse(tx, f.WarehouseID, item.ProductID, item.Quantity); err != nil {
+				return err
+			}
+		}
+		// Restore order item fulfilled quantities
+		var order modelsOrder.Order
+		if err := tx.Where("id = ?", f.OrderID).First(&order).Error; err != nil {
+			return err
+		}
+		for _, item := range items {
+			if item.OrderItemIdx >= 0 && item.OrderItemIdx < len(order.Items) {
+				order.Items[item.OrderItemIdx].FulfilledQuantity -= item.Quantity
+				if order.Items[item.OrderItemIdx].FulfilledQuantity < 0 {
+					order.Items[item.OrderItemIdx].FulfilledQuantity = 0
+				}
+			}
+		}
+		itemsJSON, _ := json.Marshal(order.Items)
+		if err := tx.Model(&order).Update("items", itemsJSON).Error; err != nil {
+			return err
+		}
+		return tx.Model(&f).Updates(map[string]interface{}{
+			"status":     modelsOrder.FulfillmentStatusCancelled,
+			"updated_at": time.Now(),
+		}).Error
+	})
+}
