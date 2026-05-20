@@ -2,10 +2,14 @@ package stripe
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -154,17 +158,55 @@ var zeroDecimal = map[string]bool{
 }
 
 // ValidateWebhookPayload validates a Stripe webhook payload against its signature header.
-// Returns the verified event body or an error.
+// The signature header format is: t=<timestamp>,v1=<signature>[,v1=<signature>...]
+// Signature is computed as HMAC-SHA256(webhookSecret, timestamp + "." + payload).
 func (a *Adapter) ValidateWebhookPayload(payload []byte, signatureHeader string) ([]byte, error) {
-	if a.webhookSecret == "" {
-		// Without a webhook secret, we cannot verify signatures — return raw payload
-		return payload, nil
+	if signatureHeader == "" {
+		return nil, fmt.Errorf("missing Stripe-Signature header")
 	}
-	// Stripe webhook verification requires the stripe-go SDK.
-	// Full verification: use stripe.Webhook.ConstructEvent(payload, sigHeader, secret).
-	// For minimal-dependency path, we return the payload with a note.
-	// In production, you MUST set STRIPE_WEBHOOK_SECRET and verify signatures.
-	return payload, nil
+	if a.webhookSecret == "" {
+		return nil, fmt.Errorf("webhook secret not configured")
+	}
+
+	// Parse signature header: "t=1492774577,v1=abc123,v1=def456"
+	var timestamp string
+	var signatures []string
+	for _, part := range strings.Split(signatureHeader, ",") {
+		part = strings.TrimSpace(part)
+		if strings.HasPrefix(part, "t=") {
+			timestamp = strings.TrimPrefix(part, "t=")
+		} else if strings.HasPrefix(part, "v1=") {
+			signatures = append(signatures, strings.TrimPrefix(part, "v1="))
+		}
+	}
+
+	if timestamp == "" || len(signatures) == 0 {
+		return nil, fmt.Errorf("invalid signature header format")
+	}
+
+	// Verify timestamp is within tolerance (±5 minutes)
+	ts, err := strconv.ParseInt(timestamp, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid timestamp in signature header")
+	}
+	if diff := time.Now().Unix() - ts; diff > 300 || diff < -300 {
+		return nil, fmt.Errorf("webhook timestamp outside tolerance window (diff=%ds)", diff)
+	}
+
+	// Compute expected signature
+	signedPayload := fmt.Sprintf("%s.%s", timestamp, string(payload))
+	mac := hmac.New(sha256.New, []byte(a.webhookSecret))
+	mac.Write([]byte(signedPayload))
+	expected := hex.EncodeToString(mac.Sum(nil))
+
+	// Compare against each provided signature (constant-time comparison)
+	for _, sig := range signatures {
+		if hmac.Equal([]byte(sig), []byte(expected)) {
+			return payload, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no matching signature found")
 }
 
 // stripeEvent represents a minimal Stripe webhook event.

@@ -14,6 +14,12 @@ export default defineNuxtConfig({
     '@nuxt/icon'
   ],
 
+  // OG Image requires SSR to generate images at request time.
+  // With ssr:false this module cannot function — disable it to suppress the warning.
+  ogImage: {
+    enabled: false
+  },
+
   // Site config for @nuxtjs/seo
   site: {
     url: process.env.SITE_URL || 'https://candypro-oem.com',

@@ -24,7 +24,7 @@
     "newsletter_redirect": "正在打开联系表单…",
     "cta_questions": "对我们的糖果制造能力有疑问？",
     "cta_heading": "了解更多我们的服务",
-    "min_read": "分钟阅读",
+    "min_read": "{count} 分钟阅读",
     "share_twitter": "推特",
     "share_linkedin": "领英",
     "share_facebook": "脸书",

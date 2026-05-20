@@ -13,6 +13,7 @@ import (
 	modelsProduct "candypro/api/internal/models/product"
 	"candypro/api/internal/pkg/pagination"
 	"candypro/api/internal/pkg/response"
+	productService "candypro/api/internal/services/product"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,6 +29,11 @@ func (h *Handler) AdminGetInventory(c *gin.Context) {
 	if err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "inventory_fetch_failed")
 		return
+	}
+	if products, ok := result.Data.([]modelsProduct.Product); ok {
+		locale := c.GetString("locale")
+		productService.ApplyProductTranslationsBatch(products, locale)
+		result.Data = products
 	}
 	c.JSON(http.StatusOK, result)
 }

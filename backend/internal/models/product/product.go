@@ -113,7 +113,8 @@ type Product struct {
 	CreatedBy   *string        `json:"createdBy" gorm:"index"`
 	UpdatedBy   *string        `json:"updatedBy" gorm:"index"`
 	Status      string         `json:"status" gorm:"default:'active'"`
-	BasePrice   float64        `json:"basePrice" gorm:"default:0"`
+	BasePrice        float64        `json:"basePrice" gorm:"default:0"`
+	WeightedAvgCost  float64        `json:"weightedAvgCost" gorm:"default:0"` // computed from PO receipts
 	ViewCount   int            `json:"viewCount" gorm:"default:0"`
 	CreatedAt   time.Time      `json:"createdAt"`
 	UpdatedAt   time.Time      `json:"updatedAt"`

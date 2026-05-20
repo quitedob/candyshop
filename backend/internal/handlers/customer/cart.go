@@ -384,11 +384,19 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 				taxAmount = tax
 			}
 		}
+	orderStatus := "pending"
+	if h.services.Approval != nil {
+		totalAmount := subtotal + taxAmount + shippingAmount
+		if needsApproval, _, _ := h.services.Approval.ShouldRequireApproval(c.Request.Context(), userID, totalAmount); needsApproval {
+			orderStatus = "pending_approval"
+		}
+	}
+
 	order := &modelsOrder.Order{
 		ID:              generateCartOrderID(),
 		OrderNumber:     generateCartOrderNumber(),
 		UserID:          userID,
-		Status:          "pending",
+		Status:          orderStatus,
 		PaymentStatus:   "unpaid",
 		StockReserved:   true,
 		Items:           orderItems,

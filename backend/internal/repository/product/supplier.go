@@ -139,6 +139,16 @@ func (r *SupplierRepository) ReceivePO(ctx context.Context, id, warehouseID stri
 		if po.Status == modelsProduct.POStatusReceived || po.Status == modelsProduct.POStatusCancelled {
 			return fmt.Errorf("PO is already %s", po.Status)
 		}
+		// Load PO items to get UnitCost for each product
+		var poItems []modelsProduct.PurchaseOrderItem
+		if err := tx.Where("po_id = ?", id).Find(&poItems).Error; err != nil {
+			return err
+		}
+		itemCosts := make(map[string]float64, len(poItems))
+		for _, item := range poItems {
+			itemCosts[item.ProductID] = item.UnitCost
+		}
+
 		now := time.Now()
 		allReceived := true
 		for productID, qty := range receivedItems {
@@ -161,6 +171,23 @@ func (r *SupplierRepository) ReceivePO(ctx context.Context, id, warehouseID stri
 					Update("stock_quantity", gorm.Expr("stock_quantity + ?", qty)).Error; se != nil {
 					log.Printf("supplier: stock update failed for product %s: %v", productID, se)
 				}
+				// Create ProductBatch with UnitCost from PO item
+				unitCost := itemCosts[productID]
+				batchNumber := fmt.Sprintf("%s-%s-%d", id, productID, time.Now().UnixNano())
+				if createErr := tx.Create(&modelsProduct.ProductBatch{
+					ID:          batchNumber,
+					ProductID:   productID,
+					WarehouseID: warehouseID,
+					BatchNumber: batchNumber,
+					Quantity:    qty,
+					UnitCost:    unitCost,
+					CreatedAt:   now,
+					UpdatedAt:   now,
+				}).Error; createErr != nil {
+					log.Printf("supplier: failed to create batch for product %s: %v", productID, createErr)
+				}
+				recomputeWeightedAvgCost(tx, productID)
+
 				// Stock audit
 				_ = tx.Create(&modelsOrder.StockTransaction{
 					ProductID:   productID,
@@ -194,4 +221,44 @@ func (r *SupplierRepository) ReceivePO(ctx context.Context, id, warehouseID stri
 			"updated_at":    now,
 		}).Error
 	})
+}
+
+
+// recomputeWeightedAvgCost calculates the weighted average unit cost for a product
+// from all non-expired batches and updates Product.WeightedAvgCost.
+func recomputeWeightedAvgCost(tx *gorm.DB, productID string) {
+	var batches []modelsProduct.ProductBatch
+	if err := tx.Where("product_id = ? AND quantity > 0 AND is_expired = false", productID).Find(&batches).Error; err != nil {
+		return
+	}
+	var totalCost float64
+	var totalQty int
+	for _, b := range batches {
+		totalCost += float64(b.Quantity) * b.UnitCost
+		totalQty += b.Quantity
+	}
+	if totalQty == 0 {
+		return
+	}
+	avgCost := totalCost / float64(totalQty)
+	tx.Model(&modelsProduct.Product{}).Where("id = ?", productID).Update("weighted_avg_cost", avgCost)
+}
+
+// ComputeWeightedAvgCost returns the weighted average unit cost for a product
+// across all non-expired, in-stock batches. Returns 0 if no batches exist.
+func (r *SupplierRepository) ComputeWeightedAvgCost(ctx context.Context, productID string) float64 {
+	var batches []modelsProduct.ProductBatch
+	if err := r.db.WithContext(ctx).Where("product_id = ? AND quantity > 0 AND is_expired = false", productID).Find(&batches).Error; err != nil {
+		return 0
+	}
+	var totalCost float64
+	var totalQty int
+	for _, b := range batches {
+		totalCost += float64(b.Quantity) * b.UnitCost
+		totalQty += b.Quantity
+	}
+	if totalQty == 0 {
+		return 0
+	}
+	return totalCost / float64(totalQty)
 }

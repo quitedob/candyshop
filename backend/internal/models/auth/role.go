@@ -10,6 +10,7 @@ const (
 	User       = "customer"
 	Admin      = "admin"
 	SuperAdmin = "superadmin"
+	Supplier   = "supplier"
 )
 
 func UserPortal() []string {
@@ -18,6 +19,10 @@ func UserPortal() []string {
 
 func AdminPortal() []string {
 	return []string{Admin, SuperAdmin}
+}
+
+func SupplierPortal() []string {
+	return []string{Supplier}
 }
 
 // Role represents a user role and its permissions

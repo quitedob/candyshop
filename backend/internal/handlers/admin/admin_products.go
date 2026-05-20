@@ -6,6 +6,7 @@ import (
 	"candypro/api/internal/pkg/crypto"
 	"candypro/api/internal/pkg/dberror"
 	"candypro/api/internal/pkg/response"
+	"candypro/api/internal/pkg/sanitize"
 	"net/http"
 	"regexp"
 	"strings"
@@ -299,7 +300,7 @@ func applyProductPatch(product *modelsProduct.Product, req adminProductUpdateReq
 		product.Summary = strings.TrimSpace(*req.Summary)
 	}
 	if req.Description != nil {
-		product.Description = strings.TrimSpace(*req.Description)
+		product.Description = sanitize.HTML(strings.TrimSpace(*req.Description))
 	}
 	if req.Category != nil {
 		product.Category = strings.TrimSpace(*req.Category)

@@ -1,8 +1,10 @@
 package public
 
 import (
+	modelsProduct "candypro/api/internal/models/product"
 	"candypro/api/internal/pkg/pagination"
 	apiresp "candypro/api/internal/pkg/response"
+	productService "candypro/api/internal/services/product"
 	"net/http"
 	"strconv"
 
@@ -48,12 +50,18 @@ func (h *Handler) GetProducts(c *gin.Context) {
 		}
 	}
 
+	locale := c.GetString("locale")
+
 	// Use filtered query when any filter is active
 	if halal || oemOnly || featuredOnly || search != "" || sort != "" || minMOQ > 0 || maxMOQ > 0 {
 		response, err := h.services.Product.GetProductsFiltered(c.Request.Context(), page, limit, halal, oemOnly, featuredOnly, search, sort, minMOQ, maxMOQ)
 		if err != nil {
 			apiresp.ErrorResp(c, http.StatusInternalServerError, "product_fetch_failed")
 			return
+		}
+		if products, ok := response.Data.([]modelsProduct.Product); ok {
+			productService.ApplyProductTranslationsBatch(products, locale)
+			response.Data = products
 		}
 		c.JSON(http.StatusOK, response)
 		return
@@ -63,6 +71,10 @@ func (h *Handler) GetProducts(c *gin.Context) {
 	if err != nil {
 		apiresp.ErrorResp(c, http.StatusInternalServerError, "product_fetch_failed")
 		return
+	}
+	if products, ok := response.Data.([]modelsProduct.Product); ok {
+		productService.ApplyProductTranslationsBatch(products, locale)
+		response.Data = products
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -89,6 +101,8 @@ func (h *Handler) GetProduct(c *gin.Context) {
 		apiresp.ErrorResp(c, http.StatusNotFound, "product_not_found")
 		return
 	}
+
+	productService.ApplyProductTranslations(product, c.GetString("locale"))
 
 	// Increment view count (best-effort, non-blocking)
 	if h.services != nil && h.services.Product != nil {

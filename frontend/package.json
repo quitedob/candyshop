@@ -30,6 +30,7 @@
     "@tiptap/starter-kit": "^3.23.1",
     "@tiptap/vue-3": "^3.23.1",
     "chart.js": "^4.5.1",
+    "dompurify": "^3.4.3",
     "marked": "^15.0.7",
     "nuxt": "^3.15.0",
     "vue": "^3.5.0",

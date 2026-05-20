@@ -76,7 +76,7 @@ const props = withDefaults(defineProps<Props>(), {
   ]
 })
 
-const { locale, setLocale, availableLocales: i18nLocales } = useI18n()
+const { locale, setLocale, locales: i18nLocales } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
 

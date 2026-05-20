@@ -259,3 +259,61 @@ func (s *ProductService) BuildPricingCostContextJSON(ctx context.Context, produc
 	}
 	return string(b), nil
 }
+
+// ApplyProductTranslations overlays locale-specific translations onto a product's display fields.
+// Fields without a translation fall back to the original stored value.
+func ApplyProductTranslations(product *modelsProduct.Product, locale string) {
+	if product == nil || product.Translations == nil || len(product.Translations) == 0 {
+		return
+	}
+	t, ok := product.Translations[locale]
+	if !ok {
+		return
+	}
+	if v := t["name"]; v != "" {
+		product.Name = v
+	}
+	if v := t["summary"]; v != "" {
+		product.Summary = v
+	}
+	if v := t["description"]; v != "" {
+		product.Description = v
+	}
+	if v := t["category"]; v != "" {
+		product.Category = v
+	}
+	if v := t["ingredients"]; v != "" {
+		product.Ingredients = v
+	}
+	if v := t["allergens"]; v != "" {
+		product.Allergens = v
+	}
+	if v := t["storage"]; v != "" {
+		product.Storage = v
+	}
+	if v := t["leadTime"]; v != "" {
+		product.LeadTime = v
+	}
+	if v := t["shelfLife"]; v != "" {
+		product.ShelfLife = v
+	}
+	if v := t["flavors"]; v != "" {
+		var arr []string
+		if err := json.Unmarshal([]byte(v), &arr); err == nil {
+			product.Flavors = arr
+		}
+	}
+	if v := t["shapes"]; v != "" {
+		var arr []string
+		if err := json.Unmarshal([]byte(v), &arr); err == nil {
+			product.Shapes = arr
+		}
+	}
+}
+
+// ApplyProductTranslationsBatch applies translations to a slice of products.
+func ApplyProductTranslationsBatch(products []modelsProduct.Product, locale string) {
+	for i := range products {
+		ApplyProductTranslations(&products[i], locale)
+	}
+}

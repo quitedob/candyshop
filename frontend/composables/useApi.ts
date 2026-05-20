@@ -270,15 +270,22 @@ export const useApi = () => {
   /**
    * Generic fetch wrapper with error handling
    */
+  const isFormData = (body: unknown): body is FormData => body instanceof FormData
+
   const fetchApi = async <T>(
     endpoint: string,
     options?: Record<string, unknown>
   ): Promise<T> => {
     try {
+      const body = options?.body
       const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
         'Accept-Language': locale.value,
         ...(options?.headers as Record<string, string> ?? {})
+      }
+
+      // Don't set Content-Type for FormData — browser sets multipart boundary automatically
+      if (!isFormData(body)) {
+        headers['Content-Type'] = 'application/json'
       }
 
       if (authToken.value) {
@@ -579,11 +586,13 @@ export const useApi = () => {
   }
 
   const POST = <T>(endpoint: string, data?: any): Promise<T> => {
-    return fetchApi<T>(endpoint, { method: 'POST', body: JSON.stringify(data) })
+    const body = isFormData(data) ? data : JSON.stringify(data)
+    return fetchApi<T>(endpoint, { method: 'POST', body })
   }
 
   const PUT = <T>(endpoint: string, data?: any): Promise<T> => {
-    return fetchApi<T>(endpoint, { method: 'PUT', body: JSON.stringify(data) })
+    const body = isFormData(data) ? data : JSON.stringify(data)
+    return fetchApi<T>(endpoint, { method: 'PUT', body })
   }
 
   const DELETE = <T>(endpoint: string): Promise<T> => {
@@ -636,6 +645,7 @@ export const useApi = () => {
   const adminDeletePriceList = (id: string) => DELETE<any>(`/admin/price-lists/${id}`)
   const adminGetProductPrices = (productId: string) => GET<any[]>(`/admin/products/${productId}/prices`)
   const adminSetProductPrice = (productId: string, data: any) => POST<any>(`/admin/products/${productId}/prices`, data)
+  const adminAIGenerateProduct = (data: { description: string; language: string }) => POST<any>('/admin/products/ai-generate', data)
 
   // Admin - Inquiries
   const adminGetInquiry = (id: string) => GET<any>(`/admin/inquiries/${id}`)
@@ -837,6 +847,7 @@ export const useApi = () => {
     adminDeletePriceList,
     adminGetProductPrices,
     adminSetProductPrice,
+    adminAIGenerateProduct,
 
     // Admin - Inquiries
     adminGetInquiry,

@@ -132,7 +132,7 @@
           </ul>
           <div class="footer__lang">
             <button
-              v-for="loc in availableLocales"
+              v-for="loc in locales"
               :key="loc.code"
               :class="['footer__lang-btn', { 'footer__lang-btn--active': loc.code === currentLocale }]"
               @click="switchLocale(loc.code)"
@@ -150,7 +150,7 @@
 import { computed } from 'vue'
 import { useI18n, useLocalePath } from '#i18n'
 
-const { t, locale, setLocale, availableLocales } = useI18n()
+const { t, locale, setLocale, locales } = useI18n()
 const localePath = useLocalePath()
 const config = useRuntimeConfig()
 const { isAuthenticated, isAdmin } = useAuth()
@@ -185,6 +185,7 @@ const LOCALE_STORAGE_KEY = 'user-locale'
 const switchLocale = async (newLocale: string) => {
   if (import.meta.client) {
     localStorage.setItem(LOCALE_STORAGE_KEY, newLocale)
+    document.cookie = `user-locale=${newLocale}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`
   }
   await setLocale(newLocale)
 }

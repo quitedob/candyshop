@@ -103,5 +103,8 @@ frontend/ed-user/dist/
 # Docker
 .dockerignore
 
+# Uploads
+backend/uploads/
+
 # Air live reload
 tmp/

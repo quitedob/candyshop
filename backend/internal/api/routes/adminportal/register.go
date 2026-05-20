@@ -86,6 +86,7 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	// Products
 	group.GET("/products", h.AdminPortal.AdminGetProducts)
 	group.POST("/products", h.AdminPortal.AdminCreateProduct)
+	group.POST("/products/ai-generate", h.AdminPortal.AdminAIGenerateProduct)
 	group.GET("/products/:id", h.AdminPortal.AdminGetProduct)
 	group.PUT("/products/:id", h.AdminPortal.AdminUpdateProduct)
 	group.DELETE("/products/:id", h.AdminPortal.AdminDeleteProduct)

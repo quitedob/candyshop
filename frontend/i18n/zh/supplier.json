@@ -1,0 +1,16 @@
+{
+  "dashboard": "供应商工作台",
+  "welcome": "管理产品、查看采购订单和跟踪结算。",
+  "nav_dashboard": "工作台",
+  "nav_profile": "企业资料",
+  "nav_pos": "采购订单",
+  "pending_pos": "待处理订单",
+  "active_pos": "进行中",
+  "completed_pos": "已完成",
+  "recent_pos": "最近采购订单",
+  "no_pos_yet": "暂无采购订单",
+  "po_number": "订单编号",
+  "status": "状态",
+  "expected_date": "预计交期",
+  "total": "总金额"
+}

@@ -203,12 +203,19 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 		return
 	}
 	now := time.Now()
+	orderStatus := "pending"
+	if h.services.Approval != nil {
+		if needsApproval, _, _ := h.services.Approval.ShouldRequireApproval(c.Request.Context(), userID, totalAmount); needsApproval {
+			orderStatus = "pending_approval"
+		}
+	}
+
 	order := &modelsOrder.Order{
 		ID:             crypto.GenerateID(),
 		OrderNumber:    orderNumber,
 		UserID:         userID,
 		InquiryID:      inquiryID,
-		Status:         "pending",
+		Status:         orderStatus,
 		PaymentStatus:  "unpaid",
 		Items:          items,
 		StockReserved:  false,
@@ -228,7 +235,8 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 		UpdatedAt: now,
 	}
 
-	if err := h.services.Order.CreateOrder(c.Request.Context(), order); err != nil {
+	order.StockReserved = true
+	if err := h.services.Order.CreateOrderWithStockReservation(c.Request.Context(), order); err != nil {
 		if dberror.IsDuplicateKeyError(err) {
 			response.ErrorResp(c, http.StatusConflict, "conflict")
 			return

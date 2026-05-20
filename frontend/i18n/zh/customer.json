@@ -696,5 +696,36 @@
       "ai_error": "AI 推荐失败，请重试。",
       "ai_added_count": "已添加 {count} 个产品到购物车"
     }
+  },
+  "quick_order": {
+    "title": "快速下单",
+    "description": "通过SKU输入、CSV上传、采购清单或历史订单快速创建订单。",
+    "tab_manual": "手动输入",
+    "tab_csv": "CSV上传",
+    "tab_requisition": "采购清单",
+    "tab_reorder": "历史复购",
+    "manual_entry": "SKU 手动输入",
+    "add_row": "添加行",
+    "remove_row": "移除行",
+    "sku_placeholder": "产品编号 (SKU)",
+    "qty_placeholder": "数量",
+    "create_order": "创建订单",
+    "creating": "创建中...",
+    "csv_upload": "CSV 批量上传",
+    "csv_format_hint": "CSV 格式：productId,quantity（每行一个产品）",
+    "choose_file": "选择文件",
+    "upload_csv": "上传并创建",
+    "uploading": "上传中...",
+    "rows_found": "找到 {count} 行",
+    "requisition_lists": "我的采购清单",
+    "no_requisition_lists": "暂无采购清单",
+    "create_from_list": "转为订单",
+    "reorder_from_history": "从历史订单复购",
+    "no_order_history": "暂无历史订单",
+    "reorder": "复购",
+    "order_created": "订单已创建"
+  },
+  "common": {
+    "back_to_orders": "返回订单列表"
   }
 }

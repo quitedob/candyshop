@@ -37,11 +37,23 @@ func resolveWarehouseID(tx *gorm.DB, warehouseID string) (string, error) {
 		}
 		return w.ID, nil
 	}
-	return resolveDefaultWarehouseID(tx)
+	return resolveDefaultWarehouseID(tx, "")
 }
 
-// resolveDefaultWarehouseID 解析默认仓（优先 is_default，其次 code=MAIN）
-func resolveDefaultWarehouseID(tx *gorm.DB) (string, error) {
+// resolveDefaultWarehouseID resolves the best warehouse for stock operations.
+// If warehouseID is provided and active, it is used directly.
+// Otherwise falls back to the default warehouse (is_default=true, then code=MAIN).
+func resolveDefaultWarehouseID(tx *gorm.DB, warehouseID string) (string, error) {
+	if warehouseID != "" {
+		var w modelsProduct.Warehouse
+		if err := tx.Where("id = ? AND is_active = ?", warehouseID, true).First(&w).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return "", fmt.Errorf("warehouse %s not found or inactive", warehouseID)
+			}
+			return "", err
+		}
+		return w.ID, nil
+	}
 	var w modelsProduct.Warehouse
 	if err := tx.Where("is_default = ? AND is_active = ?", true, true).First(&w).Error; err == nil {
 		return w.ID, nil
@@ -309,7 +321,7 @@ func deductLegacyProductStock(tx *gorm.DB, productID string, qty int, reason, re
 		return nil, err
 	}
 	if nWh > 0 {
-		wid, werr := resolveDefaultWarehouseID(tx)
+		wid, werr := resolveDefaultWarehouseID(tx, "")
 		if werr == nil {
 			return deductFromDefaultWarehouse(tx, wid, productID, qty, reason, refID, operatorID, t)
 		}
@@ -391,7 +403,7 @@ func restoreLegacyProductStock(tx *gorm.DB, productID string, qty int) error {
 		return err
 	}
 	if nWh > 0 {
-		if wid, werr := resolveDefaultWarehouseID(tx); werr == nil {
+		if wid, werr := resolveDefaultWarehouseID(tx, ""); werr == nil {
 			if err := tx.Model(&modelsProduct.WarehouseStock{}).
 				Where("warehouse_id = ? AND product_id = ?", wid, productID).
 				Update("quantity", gorm.Expr("quantity + ?", qty)).Error; err != nil {
@@ -501,7 +513,7 @@ func deductFEFOFromBatches(tx *gorm.DB, productID string, qty int, reason, refID
 	// Also update warehouse_stock for consistency (mirror legacy path behavior)
 	nWh, whErr := countWarehouseStockRows(tx, productID)
 	if whErr == nil && nWh > 0 {
-		if wid, wErr := resolveDefaultWarehouseID(tx); wErr == nil {
+		if wid, wErr := resolveDefaultWarehouseID(tx, ""); wErr == nil {
 			if ue := tx.Model(&modelsProduct.WarehouseStock{}).
 				Where("warehouse_id = ? AND product_id = ? AND quantity >= ?", wid, productID, qty).
 				Update("quantity", gorm.Expr("quantity - ?", qty)).Error; ue != nil {

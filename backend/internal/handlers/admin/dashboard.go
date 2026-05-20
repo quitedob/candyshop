@@ -1,13 +1,15 @@
 package admin
 
 import (
-	"candypro/api/internal/pkg/response"
 	"context"
 	"fmt"
 	"net/http"
 	"sort"
 	"strings"
 	"time"
+
+	"candypro/api/internal/pkg/i18n"
+	"candypro/api/internal/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,6 +33,10 @@ func (h *Handler) GetDashboardStats(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
+	locale := c.GetString("locale")
+	if locale == "" {
+		locale = i18n.DefaultLocale()
+	}
 
 	totalUsers, err := h.services.User.CountUsers(ctx)
 	if err != nil {
@@ -100,7 +106,7 @@ func (h *Handler) GetDashboardStats(c *gin.Context) {
 
 	revenueByDay, _ := h.services.Order.GetRevenueByDay(ctx, 30)
 
-	recentActivity, err := h.buildRecentActivities(ctx, 10)
+	recentActivity, err := h.buildRecentActivities(ctx, locale, 10)
 	if err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "dashboard_activity_fetch_failed")
 		return
@@ -123,7 +129,7 @@ func (h *Handler) GetDashboardStats(c *gin.Context) {
 	})
 }
 
-func (h *Handler) buildRecentActivities(ctx context.Context, limit int) ([]dashboardActivity, error) {
+func (h *Handler) buildRecentActivities(ctx context.Context, locale string, limit int) ([]dashboardActivity, error) {
 	orders, err := h.services.Order.GetRecentOrders(ctx, limit)
 	if err != nil {
 		return nil, err
@@ -154,8 +160,10 @@ func (h *Handler) buildRecentActivities(ctx context.Context, limit int) ([]dashb
 			}
 		}
 		activities = append(activities, dashboardActivity{
-			Type:      "order",
-			Message:   fmt.Sprintf("New order %s placed by %s", orderNo, userLabel),
+			Type: "order",
+			Message: translateActivityMsg(locale, "admin.dashboard.activity_order",
+				"New order {{order_no}} placed by {{user}}",
+				map[string]string{"order_no": orderNo, "user": userLabel}),
 			CreatedAt: order.CreatedAt,
 		})
 	}
@@ -166,8 +174,10 @@ func (h *Handler) buildRecentActivities(ctx context.Context, limit int) ([]dashb
 			company = "unknown company"
 		}
 		activities = append(activities, dashboardActivity{
-			Type:      "inquiry",
-			Message:   fmt.Sprintf("New B2B inquiry from %s", company),
+			Type: "inquiry",
+			Message: translateActivityMsg(locale, "admin.dashboard.activity_inquiry",
+				"New B2B inquiry from {{company}}",
+				map[string]string{"company": company}),
 			CreatedAt: inquiry.CreatedAt,
 		})
 	}
@@ -178,8 +188,10 @@ func (h *Handler) buildRecentActivities(ctx context.Context, limit int) ([]dashb
 			name = user.Email
 		}
 		activities = append(activities, dashboardActivity{
-			Type:      "user",
-			Message:   fmt.Sprintf("New user registered: %s", name),
+			Type: "user",
+			Message: translateActivityMsg(locale, "admin.dashboard.activity_user",
+				"New user registered: {{user}}",
+				map[string]string{"user": name}),
 			CreatedAt: user.CreatedAt,
 		})
 	}
@@ -194,29 +206,71 @@ func (h *Handler) buildRecentActivities(ctx context.Context, limit int) ([]dashb
 
 	now := time.Now()
 	for i := range activities {
-		activities[i].Time = formatRelativeTime(now, activities[i].CreatedAt)
+		activities[i].Time = formatRelativeTimeLocalized(locale, now, activities[i].CreatedAt)
 	}
 
 	return activities, nil
 }
 
-func formatRelativeTime(now, ts time.Time) string {
+// translateActivityMsg tries the i18n engine; falls back to English format string if key not found.
+func translateActivityMsg(locale, key, enFallback string, vars map[string]string) string {
+	if result := i18n.TranslateWithVars(locale, key, vars); result != key {
+		return result
+	}
+	// No DB translation exists yet — substitute into English fallback
+	s := enFallback
+	for k, v := range vars {
+		s = strings.ReplaceAll(s, "{{"+k+"}}", v)
+	}
+	return s
+}
+
+// timeRelLabel holds the i18n key and English fallback for a relative-time bucket.
+type timeRelLabel struct {
+	maxAge   time.Duration
+	key      string
+	enFormat string
+}
+
+var timeRelLabels = []timeRelLabel{
+	{time.Minute, "admin.dashboard.time_just_now", "just now"},
+	{time.Hour, "admin.dashboard.time_minutes_ago", "%d minutes ago"},
+	{24 * time.Hour, "admin.dashboard.time_hours_ago", "%d hours ago"},
+	{30 * 24 * time.Hour, "admin.dashboard.time_days_ago", "%d days ago"},
+}
+
+func formatRelativeTimeLocalized(locale string, now, ts time.Time) string {
 	if ts.IsZero() {
 		return "unknown"
 	}
-
 	d := now.Sub(ts)
-	if d < time.Minute {
-		return "just now"
-	}
-	if d < time.Hour {
-		return fmt.Sprintf("%d minutes ago", int(d.Minutes()))
-	}
-	if d < 24*time.Hour {
-		return fmt.Sprintf("%d hours ago", int(d.Hours()))
-	}
-	if d < 30*24*time.Hour {
-		return fmt.Sprintf("%d days ago", int(d.Hours()/24))
+	for _, b := range timeRelLabels {
+		if d < b.maxAge {
+			return translateTimeLabel(locale, b, d)
+		}
 	}
 	return ts.Format("2006-01-02")
+}
+
+func translateTimeLabel(locale string, bucket timeRelLabel, d time.Duration) string {
+	var count int
+	switch {
+	case d < time.Minute:
+		count = 0
+	case d < time.Hour:
+		count = int(d.Minutes())
+	case d < 24*time.Hour:
+		count = int(d.Hours())
+	default:
+		count = int(d.Hours() / 24)
+	}
+
+	vars := map[string]string{"count": fmt.Sprintf("%d", count)}
+	if result := i18n.TranslateWithVars(locale, bucket.key, vars); result != bucket.key {
+		return result
+	}
+	if count == 0 {
+		return bucket.enFormat
+	}
+	return fmt.Sprintf(bucket.enFormat, count)
 }

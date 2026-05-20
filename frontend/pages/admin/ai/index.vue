@@ -207,6 +207,7 @@
 definePageMeta({ layout: 'admin', middleware: ['auth'] })
 const { t } = useI18n()
 const { enumLabel } = useDisplay()
+const { sanitize } = useSanitizer()
 const authToken = useCookie<string | null>('auth_token')
 
 interface Message {
@@ -272,12 +273,14 @@ function formatToolArgs(args: unknown): string {
 }
 
 function renderContent(content: string): string {
-  return content
+  // First apply markdown-like formatting, then sanitize for XSS defense
+  const html = content
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/\n/g, '<br>')
     .replace(/`([^`]+)`/g, '<code class="bg-gray-200 px-1 rounded text-xs">$1</code>')
+  return sanitize(html)
 }
 
 function scrollToBottom() {

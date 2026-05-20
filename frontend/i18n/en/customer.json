@@ -696,5 +696,36 @@
       "ai_error": "AI recommendation failed. Please try again.",
       "ai_added_count": "{count} products added to cart"
     }
+  },
+  "quick_order": {
+    "title": "Quick Order",
+    "description": "Create orders quickly via SKU entry, CSV upload, requisition lists, or order history.",
+    "tab_manual": "Manual Entry",
+    "tab_csv": "CSV Upload",
+    "tab_requisition": "Requisition Lists",
+    "tab_reorder": "Reorder",
+    "manual_entry": "Manual SKU Entry",
+    "add_row": "Add Row",
+    "remove_row": "Remove Row",
+    "sku_placeholder": "Product SKU",
+    "qty_placeholder": "Quantity",
+    "create_order": "Create Order",
+    "creating": "Creating...",
+    "csv_upload": "CSV Batch Upload",
+    "csv_format_hint": "CSV format: productId,quantity (one product per line)",
+    "choose_file": "Choose File",
+    "upload_csv": "Upload & Create",
+    "uploading": "Uploading...",
+    "rows_found": "{count} rows found",
+    "requisition_lists": "My Requisition Lists",
+    "no_requisition_lists": "No requisition lists yet",
+    "create_from_list": "Create Order",
+    "reorder_from_history": "Reorder from History",
+    "no_order_history": "No order history yet",
+    "reorder": "Reorder",
+    "order_created": "Order created"
+  },
+  "common": {
+    "back_to_orders": "Back to Orders"
   }
 }

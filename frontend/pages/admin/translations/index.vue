@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
-const { t, availableLocales } = useI18n()
+const { t, locales } = useI18n()
 const api = useApi()
 
 const translations = ref<any[]>([])
@@ -146,7 +146,7 @@ onMounted(() => loadTranslations())
         @change="loadTranslations(1)"
       >
         <option value="">{{ t('admin.translations.all_locales') }}</option>
-        <option v-for="loc in availableLocales" :key="loc.code" :value="loc.code">{{ loc.name || loc.code }}</option>
+        <option v-for="loc in locales" :key="loc.code" :value="loc.code">{{ loc.name || loc.code }}</option>
       </select>
       <button
         class="px-4 py-2 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700"
@@ -257,7 +257,7 @@ onMounted(() => loadTranslations())
           <div>
             <label class="text-sm font-medium">{{ t('admin.translations.label_locale') }}</label>
             <select v-model="newForm.locale" class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600">
-              <option v-for="loc in availableLocales" :key="loc.code" :value="loc.code">{{ loc.name || loc.code }}</option>
+              <option v-for="loc in locales" :key="loc.code" :value="loc.code">{{ loc.name || loc.code }}</option>
             </select>
           </div>
           <div>

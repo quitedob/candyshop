@@ -1,0 +1,16 @@
+{
+  "dashboard": "Supplier Dashboard",
+  "welcome": "Manage products, view purchase orders, and track settlements.",
+  "nav_dashboard": "Dashboard",
+  "nav_profile": "Profile",
+  "nav_pos": "Purchase Orders",
+  "pending_pos": "Pending Orders",
+  "active_pos": "In Progress",
+  "completed_pos": "Completed",
+  "recent_pos": "Recent Purchase Orders",
+  "no_pos_yet": "No purchase orders yet",
+  "po_number": "PO Number",
+  "status": "Status",
+  "expected_date": "Expected Date",
+  "total": "Total"
+}

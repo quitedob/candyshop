@@ -107,7 +107,7 @@
                 <p class="post-card__excerpt">{{ post.excerpt }}</p>
                 <div class="post-card__meta">
                   <span>{{ fmtDate(post.publishedAt) }}</span>
-                  <span>{{ post.readTime }} min read</span>
+                  <span>{{ t('blog_extra.min_read', { count: post.readTime }) }}</span>
                 </div>
               </div>
             </NuxtLink>

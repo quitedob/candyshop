@@ -39,6 +39,7 @@ type Services struct {
 	Coupon          *orderRepo.CouponRepository
 	RequisitionList *orderRepo.RequisitionListRepository
 	Webhook         *order.WebhookService
+	Approval        *order.ApprovalService
 }
 
 func New(repos *repositoryCommon.UserPortalRepositories, cfg *config.Config, db *gorm.DB) *Services {
@@ -72,5 +73,6 @@ func New(repos *repositoryCommon.UserPortalRepositories, cfg *config.Config, db 
 		Coupon:          repos.Coupon,
 		RequisitionList: repos.RequisitionList,
 		Webhook:         order.NewWebhookService(repos.Webhook),
+		Approval: order.NewApprovalService(repos.BuyerOrg, repos.OrgMember, repos.ApprovalAction, repos.Order),
 	}
 }

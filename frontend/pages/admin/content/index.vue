@@ -6,9 +6,13 @@
         <h1 class="text-2xl font-semibold text-gray-900">{{ t('admin.content.title') }}</h1>
         <p class="mt-2 text-sm text-gray-700">{{ t('admin.content.description') }}</p>
       </div>
-      <div class="mt-4 sm:mt-0">
-        <button type="button" class="inline-flex items-center rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-700" @click="openCreateModal">
+      <div class="mt-4 sm:mt-0 flex items-center gap-3">
+        <button type="button" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50" @click="openCreateModal">
           {{ t('admin.content.add_content') }}
+        </button>
+        <button type="button" class="inline-flex items-center gap-2 rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-700" @click="openCreateDrawer">
+          <Icon name="heroicons:sparkles" class="h-4 w-4" />
+          {{ t('admin.content.ai_import') }}
         </button>
       </div>
     </div>
@@ -75,86 +79,17 @@
 
         <form @submit.prevent="saveContent">
           <div class="px-6 py-4 space-y-4">
-            <!-- Meta fields row -->
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div>
-                <label for="content-type" class="block text-sm font-medium text-gray-700">{{ t('admin.content.type') }}</label>
-                <select id="content-type" v-model="form.type" name="type" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" :disabled="Boolean(editingId)">
-                  <option value="post">{{ enumLabel('content_type', 'post') }}</option>
-                  <option value="case">{{ enumLabel('content_type', 'case') }}</option>
-                </select>
-              </div>
-              <div>
-                <label for="content-title" class="block text-sm font-medium text-gray-700">{{ t('admin.content.content_title') }}</label>
-                <input id="content-title" v-model="form.title" name="title" type="text" autocomplete="off" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label for="content-slug" class="block text-sm font-medium text-gray-700">{{ t('admin.content.content_slug') }}</label>
-                <input id="content-slug" v-model="form.slug" name="slug" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-            </div>
+            <ContentFormFields
+              :form="form"
+              :disable-type="Boolean(editingId)"
+              :editing-id="editingId"
+              :ai-translating="aiTranslating"
+              :translation-locale="translationLocale"
+              @ai-translate="aiTranslateContent"
+              @update:translation-locale="translationLocale = $event"
+            />
 
-            <!-- Post-specific meta -->
-            <div v-if="form.type === 'post'" class="grid grid-cols-1 gap-4 sm:grid-cols-4">
-              <div>
-                <label for="content-category" class="block text-sm font-medium text-gray-700">{{ t('admin.content.post_category') }}</label>
-                <input id="content-category" v-model="form.category" name="category" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label for="content-thumbnail" class="block text-sm font-medium text-gray-700">{{ t('admin.content.content_thumbnail') }}</label>
-                <input id="content-thumbnail" v-model="form.thumbnail" name="thumbnail" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" :placeholder="t('admin.content.url_or_upload')" />
-              </div>
-              <div>
-                <label for="content-readTime" class="block text-sm font-medium text-gray-700">{{ t('admin.content.post_read_time') }}</label>
-                <input id="content-readTime" v-model.number="form.readTime" name="readTime" type="number" min="1" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label for="content-tagsInput" class="block text-sm font-medium text-gray-700">{{ t('admin.content.post_tags') }}</label>
-                <input id="content-tagsInput" v-model="form.tagsInput" name="tagsInput" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-            </div>
-
-            <!-- Author fields (post only) -->
-            <div v-if="form.type === 'post'" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label for="content-authorName" class="block text-sm font-medium text-gray-700">{{ t('admin.content.author_name') }}</label>
-                <input id="content-authorName" v-model="form.authorName" name="authorName" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label for="content-authorTitle" class="block text-sm font-medium text-gray-700">{{ t('admin.content.author_title') }}</label>
-                <input id="content-authorTitle" v-model="form.authorTitle" name="authorTitle" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label for="content-authorAvatar" class="block text-sm font-medium text-gray-700">{{ t('admin.content.author_avatar') }}</label>
-                <input id="content-authorAvatar" v-model="form.authorAvatar" name="authorAvatar" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" :placeholder="t('admin.content.url_or_upload')" />
-              </div>
-              <div>
-                <label for="content-authorBio" class="block text-sm font-medium text-gray-700">{{ t('admin.content.author_bio') }}</label>
-                <input id="content-authorBio" v-model="form.authorBio" name="authorBio" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-              </div>
-            </div>
-
-            <!-- Case-specific meta -->
-            <div v-if="form.type === 'case'" class="grid grid-cols-1 gap-4 sm:grid-cols-4">
-              <div><label for="content-client" class="block text-sm font-medium text-gray-700">{{ t('admin.content.case_client') }}</label><input id="content-client" v-model="form.client" name="client" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
-              <div><label for="content-industry" class="block text-sm font-medium text-gray-700">{{ t('admin.content.case_industry') }}</label><input id="content-industry" v-model="form.industry" name="industry" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
-              <div><label for="content-location" class="block text-sm font-medium text-gray-700">{{ t('admin.content.case_location') }}</label><input id="content-location" v-model="form.location" name="location" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
-              <div><label for="content-timeline" class="block text-sm font-medium text-gray-700">{{ t('admin.content.case_timeline') }}</label><input id="content-timeline" v-model="form.timeline" name="timeline" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
-            </div>
-
-            <!-- Case images (comma-separated URLs) -->
-            <div v-if="form.type === 'case'">
-              <label for="content-imagesInput" class="block text-sm font-medium text-gray-700">{{ t('admin.content.case_images') }}</label>
-              <input id="content-imagesInput" v-model="form.imagesInput" name="imagesInput" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" :placeholder="t('admin.content.url_or_upload')" />
-            </div>
-
-            <!-- Excerpt (post only) -->
-            <div v-if="form.type === 'post'">
-              <label for="content-excerpt" class="block text-sm font-medium text-gray-700">{{ t('admin.content.post_excerpt') }}</label>
-              <textarea id="content-excerpt" v-model="form.excerpt" name="excerpt" rows="2" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea>
-            </div>
-
-            <!-- AI Generate Bar -->
+            <!-- AI Generate Bar (edit modal only) -->
             <div class="flex items-center gap-3 rounded-lg bg-amber-50 border border-amber-200 p-3">
               <Icon name="heroicons:sparkles" class="h-5 w-5 text-amber-600 flex-shrink-0" aria-hidden="true" />
               <label for="content-aiTopic" class="sr-only">{{ t('admin.content.ai_topic_placeholder') }}</label>
@@ -165,28 +100,6 @@
                 {{ aiGenerating ? t('admin.content.ai_generating') : t('admin.content.ai_generate') }}
               </button>
             </div>
-
-            <!-- Rich Text Editor (blog posts) -->
-            <div v-if="form.type === 'post'">
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('admin.content.post_content') }}</label>
-              <RichTextEditor v-model="form.content" :placeholder="t('admin.content.editor_placeholder')" />
-            </div>
-
-            <!-- Plain textarea for case study content -->
-            <div v-if="form.type === 'case'">
-              <label for="content-body" class="block text-sm font-medium text-gray-700">{{ t('admin.content.case_content') }}</label>
-              <textarea id="content-body" v-model="form.content" name="content" rows="8" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" :placeholder="t('admin.content.editor_placeholder')"></textarea>
-            </div>
-
-            <!-- Case-specific fields below editor -->
-            <template v-if="form.type === 'case'">
-              <div><label for="content-servicesInput" class="block text-sm font-medium text-gray-700">{{ t('admin.content.case_services') }}</label><input id="content-servicesInput" v-model="form.servicesInput" name="servicesInput" type="text" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" /></div>
-              <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div><label for="content-challenge" class="block text-sm font-medium text-gray-700">{{ t('admin.content.case_challenge') }}</label><textarea id="content-challenge" v-model="form.challenge" name="challenge" rows="3" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea></div>
-                <div><label for="content-solution" class="block text-sm font-medium text-gray-700">{{ t('admin.content.case_solution') }}</label><textarea id="content-solution" v-model="form.solution" name="solution" rows="3" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea></div>
-                <div><label for="content-result" class="block text-sm font-medium text-gray-700">{{ t('admin.content.case_result') }}</label><textarea id="content-result" v-model="form.result" name="result" rows="3" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea></div>
-              </div>
-            </template>
 
             <div v-if="formError" class="text-sm text-red-600">{{ formError }}</div>
           </div>
@@ -201,6 +114,65 @@
         </form>
       </div>
     </div>
+
+    <!-- AI Generate Drawer -->
+    <Drawer :open="showCreateDrawer" width="2xl" @close="showCreateDrawer = false">
+      <template #title>{{ t('admin.content.ai_create_drawer_title') }}</template>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6" style="min-height: 60vh;">
+        <!-- LEFT -->
+        <div class="lg:col-span-5 space-y-4">
+          <div>
+            <label for="ai-content-type" class="block text-sm font-medium text-gray-700">{{ t('admin.content.type') }}</label>
+            <select id="ai-content-type" v-model="form.type" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <option value="post">{{ enumLabel('content_type', 'post') }}</option>
+              <option value="case">{{ enumLabel('content_type', 'case') }}</option>
+            </select>
+          </div>
+          <div>
+            <label for="ai-content-topic" class="block text-sm font-medium text-gray-700">{{ t('admin.content.ai_topic_label') }}</label>
+            <textarea id="ai-content-topic" v-model="aiContentTopic" rows="6" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" :placeholder="form.type === 'post' ? t('admin.content.ai_topic_placeholder') : t('admin.content.ai_case_topic_placeholder')"></textarea>
+          </div>
+          <div>
+            <label for="ai-content-lang" class="block text-sm font-medium text-gray-700">{{ t('admin.content.ai_language_label') }}</label>
+            <select id="ai-content-lang" v-model="aiContentLanguage" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <option v-for="loc in contentLocales" :key="loc" :value="loc">{{ localeTabLabel(loc) }}</option>
+            </select>
+          </div>
+          <button type="button" :disabled="aiGeneratingContent || !aiContentTopic.trim()" class="inline-flex items-center gap-2 rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50" @click="generateContentAI">
+            <Icon name="heroicons:sparkles" class="h-4 w-4" />
+            {{ aiGeneratingContent ? t('admin.content.ai_generating') : t('admin.content.ai_generate') }}
+          </button>
+          <p v-if="formError" class="text-sm text-red-600">{{ formError }}</p>
+        </div>
+
+        <!-- RIGHT: Existing form template auto-filled by AI -->
+        <div class="lg:col-span-7 lg:border-l lg:pl-6 overflow-y-auto" style="max-height: 65vh;">
+          <div v-if="!aiHasContent && !aiGeneratingContent" class="flex flex-col items-center justify-center h-48 text-gray-400 text-sm">
+            <Icon name="heroicons:sparkles" class="h-10 w-10 mb-2 text-gray-300" />
+            {{ t('admin.content.ai_empty_preview') }}
+          </div>
+
+          <div v-if="aiGeneratingContent" class="flex flex-col items-center justify-center h-48 text-gray-500 text-sm gap-2">
+            <svg class="animate-spin h-6 w-6 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+            {{ t('admin.content.ai_generating') }}
+          </div>
+
+          <ContentFormFields v-if="aiHasContent" :form="form" :disable-type="false" :editing-id="''" :ai-translating="false" :translation-locale="translationLocale" @update:translation-locale="translationLocale = $event" />
+        </div>
+      </div>
+
+      <template #footer>
+        <p v-if="formError" class="mb-3 text-sm text-red-600">{{ formError }}</p>
+        <div class="flex justify-end gap-3">
+          <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700" @click="showCreateDrawer = false">{{ t('admin.content.cancel') }}</button>
+          <button type="button" :disabled="saving || !aiHasContent" class="inline-flex items-center gap-2 rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50" @click="saveContent()">
+            <Icon name="heroicons:sparkles" class="h-4 w-4" />
+            {{ saving ? t('admin.content.saving') : t('admin.content.create') }}
+          </button>
+        </div>
+      </template>
+    </Drawer>
 
     <p v-if="actionMessage" class="mt-4 text-sm" :class="actionError ? 'text-red-600' : 'text-green-600'">{{ actionMessage }}</p>
   </div>
@@ -237,9 +209,40 @@ const formError = ref('')
 const actionMessage = ref('')
 const actionError = ref(false)
 
-// AI state
+// AI state (edit modal - legacy)
 const aiTopic = ref('')
 const aiGenerating = ref(false)
+const aiTranslating = ref(false)
+const translationLocale = ref('en')
+
+// AI Drawer state
+const showCreateDrawer = ref(false)
+const aiContentTopic = ref('')
+const aiContentLanguage = ref('zh')
+const aiGeneratingContent = ref(false)
+const aiHasContent = ref(false)
+const contentLocales = ['en', 'zh', 'ko', 'ar', 'ja', 'th', 'vi', 'id', 'ms']
+
+const localeTabLabelMap: Record<string, string> = {
+  en: 'admin.products.locale_tab_en',
+  zh: 'admin.products.locale_tab_zh',
+  ko: 'admin.products.locale_tab_ko',
+  ar: 'admin.products.locale_tab_ar',
+  ja: 'admin.products.locale_tab_ja',
+  th: 'admin.products.locale_tab_th',
+  vi: 'admin.products.locale_tab_vi',
+  id: 'admin.products.locale_tab_id',
+  ms: 'admin.products.locale_tab_ms',
+}
+const localeTabLabel = (loc: string) => t(localeTabLabelMap[loc] || loc)
+
+function emptyContentTranslations() {
+  const result: Record<string, { title: string; excerpt: string; content: string }> = {}
+  for (const loc of contentLocales) {
+    result[loc] = { title: '', excerpt: '', content: '' }
+  }
+  return result
+}
 
 const form = reactive({
   type: 'post' as ContentType,
@@ -247,7 +250,8 @@ const form = reactive({
   excerpt: '', tagsInput: '', content: '',
   authorName: '', authorAvatar: '', authorTitle: '', authorBio: '',
   client: '', industry: '', location: '', timeline: '',
-  servicesInput: '', imagesInput: '', challenge: '', solution: '', result: ''
+  servicesInput: '', imagesInput: '', challenge: '', solution: '', result: '',
+  translations: emptyContentTranslations()
 })
 
 const parseCSV = (v: string) => v.split(',').map(s => s.trim()).filter(Boolean)
@@ -258,6 +262,7 @@ const resetForm = () => {
   form.authorName = ''; form.authorAvatar = ''; form.authorTitle = ''; form.authorBio = ''
   form.client = ''; form.industry = ''; form.location = ''; form.timeline = ''
   form.servicesInput = ''; form.imagesInput = ''; form.challenge = ''; form.solution = ''; form.result = ''
+  form.translations = emptyContentTranslations()
 }
 
 // --- AI Generate ---
@@ -338,11 +343,88 @@ const prevPage = () => { if (page.value > 1) page.value-- }
 
 const openCreateModal = () => {
   editingId.value = ''; formError.value = ''; actionMessage.value = ''; resetForm()
-  aiTopic.value = ''; showModal.value = true
+  aiTopic.value = ''; translationLocale.value = 'en'; showModal.value = true
+}
+
+const openCreateDrawer = () => {
+  showCreateDrawer.value = true
+  resetForm()
+  form.type = selectedType.value
+  aiContentTopic.value = ''
+  aiContentLanguage.value = 'zh'
+  aiGeneratingContent.value = false
+  aiHasContent.value = false
+  formError.value = ''
+  translationLocale.value = 'en'
+}
+
+const generateContentAI = async () => {
+  if (!aiContentTopic.value.trim() || aiGeneratingContent.value) return
+  aiGeneratingContent.value = true
+  formError.value = ''
+  try {
+    const res = await api.adminAIGenerateContent({
+      topic: aiContentTopic.value,
+      type: form.type,
+      language: aiContentLanguage.value,
+    })
+    const data = res.content
+    if (res.parseError || typeof data === 'string') {
+      formError.value = t('admin.content.ai_generate_failed')
+      return
+    }
+    if (data && typeof data === 'object') {
+      form.title = data.title || ''
+      form.slug = data.slug || ''
+      form.content = data.content || ''
+      form.excerpt = data.excerpt || ''
+      form.category = data.category || ''
+      form.readTime = data.readTime || 5
+      form.tagsInput = Array.isArray(data.tags) ? data.tags.join(', ') : ''
+      form.authorName = data.authorName || ''
+      form.authorTitle = data.authorTitle || ''
+      form.authorBio = data.authorBio || ''
+      form.client = data.client || ''
+      form.industry = data.industry || ''
+      form.location = data.location || ''
+      form.timeline = data.timeline || ''
+      form.challenge = data.challenge || ''
+      form.solution = data.solution || ''
+      form.result = data.result || ''
+      form.servicesInput = Array.isArray(data.services) ? data.services.join(', ') : ''
+      if (!data.readTime && data.content && form.type === 'post') {
+        const wc = data.content.replace(/<[^>]+>/g, '').split(/\s+/).filter(Boolean).length
+        form.readTime = Math.max(1, Math.ceil(wc / 200))
+      }
+      // Fill AI translations
+      const transMap = res.translations || {}
+      form.translations = emptyContentTranslations()
+      // Populate source locale from generated content
+      const sourceLoc = aiContentLanguage.value
+      if (sourceLoc && form.translations[sourceLoc]) {
+        form.translations[sourceLoc].title = form.title
+        form.translations[sourceLoc].excerpt = form.excerpt
+        form.translations[sourceLoc].content = form.content
+      }
+      // Populate translations from backend
+      for (const loc of contentLocales) {
+        if (transMap[loc] && typeof transMap[loc] === 'object') {
+          form.translations[loc].title = transMap[loc].title || form.translations[loc].title
+          form.translations[loc].excerpt = transMap[loc].excerpt || form.translations[loc].excerpt
+          form.translations[loc].content = transMap[loc].content || form.translations[loc].content
+        }
+      }
+    }
+    aiHasContent.value = true
+  } catch (err: any) {
+    formError.value = err?.message || t('admin.content.ai_generate_failed')
+  } finally {
+    aiGeneratingContent.value = false
+  }
 }
 
 const openEditModal = async (item: any) => {
-  editingId.value = item.id; formError.value = ''
+  editingId.value = item.id; formError.value = ''; translationLocale.value = 'en'
   try {
     const res = await api.adminGetContentById(item.id, item.type)
     const c = res.content || item
@@ -358,17 +440,72 @@ const openEditModal = async (item: any) => {
     form.servicesInput = Array.isArray(c.services) ? c.services.join(', ') : ''
     form.imagesInput = Array.isArray(c.images) ? c.images.join(', ') : ''
     form.challenge = c.challenge || ''; form.solution = c.solution || ''; form.result = c.result || ''
+    if (c.translations && typeof c.translations === 'object') {
+      form.translations = emptyContentTranslations()
+      const src = c.translations
+      for (const loc of contentLocales) {
+        if (src[loc] && typeof src[loc] === 'object') {
+          form.translations[loc].title = src[loc].title || ''
+          form.translations[loc].excerpt = src[loc].excerpt || ''
+          form.translations[loc].content = src[loc].content || ''
+        }
+      }
+    } else {
+      form.translations = emptyContentTranslations()
+    }
     showModal.value = true
   } catch (err: any) { actionError.value = true; actionMessage.value = err?.message || t('admin.content.load_failed') }
 }
 
 const closeModal = () => { showModal.value = false; saving.value = false; formError.value = '' }
 
-const buildPayload = () => {
-  if (form.type === 'post') {
-    return { type: 'post', title: form.title, slug: form.slug, thumbnail: form.thumbnail, category: form.category, readTime: form.readTime, excerpt: form.excerpt, tags: parseCSV(form.tagsInput), content: form.content, author: { name: form.authorName, avatar: form.authorAvatar, title: form.authorTitle, bio: form.authorBio } }
+const aiTranslateContent = async () => {
+  if (!editingId.value || aiTranslating.value) return
+  aiTranslating.value = true
+  try {
+    const targetLocales = contentLocales.filter(l => l !== 'zh')
+    const res = await api.post<any>(`/admin/content/${editingId.value}/ai-translate`, {
+      contentId: editingId.value,
+      contentType: form.type,
+      targetLocales,
+    })
+    if (res?.translations && typeof res.translations === 'object') {
+      for (const loc of targetLocales) {
+        const fields = res.translations[loc]
+        if (fields && typeof fields === 'object') {
+          if (fields.title) form.translations[loc].title = fields.title
+          if (fields.excerpt) form.translations[loc].excerpt = fields.excerpt
+          if (fields.content) form.translations[loc].content = fields.content
+        }
+      }
+    }
+  } catch (err: any) {
+    formError.value = err?.message || t('errors.api.request_failed')
+  } finally {
+    aiTranslating.value = false
   }
-  return { type: 'case', title: form.title, slug: form.slug, thumbnail: form.thumbnail, client: form.client, industry: form.industry, location: form.location, timeline: form.timeline, services: parseCSV(form.servicesInput), images: parseCSV(form.imagesInput), challenge: form.challenge, solution: form.solution, result: form.result, content: form.content }
+}
+
+const buildContentTranslationsPayload = () => {
+  const result: Record<string, Record<string, string>> = {}
+  for (const loc of contentLocales) {
+    const t = form.translations[loc]
+    if (!t) continue
+    const entry: Record<string, string> = {}
+    if (t.title?.trim()) entry.title = t.title.trim()
+    if (t.excerpt?.trim()) entry.excerpt = t.excerpt.trim()
+    if (t.content?.trim()) entry.content = t.content.trim()
+    if (Object.keys(entry).length > 0) result[loc] = entry
+  }
+  return Object.keys(result).length > 0 ? result : null
+}
+
+const buildPayload = () => {
+  const translations = buildContentTranslationsPayload()
+  if (form.type === 'post') {
+    return { type: 'post', title: form.title, slug: form.slug, thumbnail: form.thumbnail, category: form.category, readTime: form.readTime, excerpt: form.excerpt, tags: parseCSV(form.tagsInput), content: form.content, author: { name: form.authorName, avatar: form.authorAvatar, title: form.authorTitle, bio: form.authorBio }, ...(translations ? { translations } : {}) }
+  }
+  return { type: 'case', title: form.title, slug: form.slug, thumbnail: form.thumbnail, client: form.client, industry: form.industry, location: form.location, timeline: form.timeline, services: parseCSV(form.servicesInput), images: parseCSV(form.imagesInput), challenge: form.challenge, solution: form.solution, result: form.result, content: form.content, ...(translations ? { translations } : {}) }
 }
 
 const saveContent = async () => {
@@ -382,8 +519,10 @@ const saveContent = async () => {
       await api.adminCreateContent(buildPayload())
       actionMessage.value = t('admin.content.created_success')
     }
-    closeModal(); await fetchContent()
-    // Invalidate public blog cache so changes appear immediately
+    showModal.value = false
+    showCreateDrawer.value = false
+    aiHasContent.value = false
+    await fetchContent()
     refreshNuxtData('blog-posts-all')
   } catch (err: any) { formError.value = err?.message || t('admin.content.save_failed') }
   finally { saving.value = false }

@@ -3,6 +3,7 @@ package eino
 import (
 	"context"
 	"sync"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -14,8 +15,9 @@ type PostgresCheckPointStore struct {
 
 // checkpointRow is the database row.
 type checkpointRow struct {
-	CheckPointID string `gorm:"primaryKey;column:checkpoint_id"`
-	Data         []byte `gorm:"type:bytea"`
+	CheckPointID string    `gorm:"primaryKey;column:checkpoint_id"`
+	Data         []byte    `gorm:"type:bytea"`
+	UpdatedAt    time.Time `gorm:"autoUpdateTime"`
 }
 
 func (checkpointRow) TableName() string { return "_eino_checkpoints" }
@@ -60,4 +62,14 @@ func (s *PostgresCheckPointStore) Set(ctx context.Context, checkPointID string, 
 		Data:         checkPoint,
 	}
 	return s.db.WithContext(ctx).Save(&row).Error
+}
+
+// CleanupOlderThan deletes checkpoints not updated within the given duration.
+// Returns the number of deleted rows.
+func (s *PostgresCheckPointStore) CleanupOlderThan(ctx context.Context, maxAge time.Duration) (int64, error) {
+	cutoff := time.Now().Add(-maxAge)
+	result := s.db.WithContext(ctx).
+		Where("updated_at < ?", cutoff).
+		Delete(&checkpointRow{})
+	return result.RowsAffected, result.Error
 }

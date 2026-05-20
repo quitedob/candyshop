@@ -202,7 +202,7 @@ async function submitManualOrder() {
   submitSuccess.value = ''
 
   try {
-    const order = await api.post('/api/v1/user/orders', { items })
+    const order = await api.post('/user/orders', { items })
     submitSuccess.value = t('customer.quick_order.order_created')
     setTimeout(() => router.push({ path: localePath(`/customer/orders/${order.id}`) }), 1500)
   } catch (err: any) {
@@ -241,9 +241,7 @@ async function submitCsvOrder() {
   try {
     const formData = new FormData()
     formData.append('file', csvFile.value)
-    const order = await api.post('/api/v1/user/orders/bulk', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+    const order = await api.post('/user/orders/bulk', formData)
     submitSuccess.value = t('customer.quick_order.order_created')
     setTimeout(() => router.push({ path: localePath(`/customer/orders/${order.id}`) }), 1500)
   } catch (err: any) {
@@ -255,7 +253,7 @@ async function submitCsvOrder() {
 
 async function loadRequisitionLists() {
   try {
-    requisitionLists.value = await api.get('/api/v1/user/requisition-lists')
+    requisitionLists.value = await api.get('/user/requisition-lists')
   } catch {
     // silent
   }
@@ -263,7 +261,7 @@ async function loadRequisitionLists() {
 
 async function loadOrderHistory() {
   try {
-    const res = await api.get('/api/v1/user/orders', { params: { limit: 10 } })
+    const res = await api.get('/user/orders', { limit: 10 })
     orderHistory.value = res?.data || []
   } catch {
     // silent
@@ -274,7 +272,7 @@ async function convertRequisitionToOrder(listId: string) {
   submitting.value = true
   submitError.value = ''
   try {
-    const order = await api.post(`/api/v1/user/requisition-lists/${listId}/convert-to-order`)
+    const order = await api.post(`/user/requisition-lists/${listId}/convert-to-order`)
     router.push({ path: localePath(`/customer/orders/${order.id}`) })
   } catch (err: any) {
     submitError.value = err?.message || t('errors.unknown')
@@ -287,7 +285,7 @@ async function reorderFromHistory(orderId: string) {
   submitting.value = true
   submitError.value = ''
   try {
-    const order = await api.post(`/api/v1/user/orders/${orderId}/reorder`)
+    const order = await api.post(`/user/orders/${orderId}/reorder`)
     router.push({ path: localePath(`/customer/orders/${order.id}`) })
   } catch (err: any) {
     submitError.value = err?.message || t('errors.unknown')

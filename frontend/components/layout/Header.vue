@@ -53,7 +53,7 @@
           <!-- Language Switcher -->
           <div class="header__lang hide-mobile" role="group" :aria-label="t('a11y.language')">
             <button
-              v-for="loc in locales"
+              v-for="loc in localeCodes"
               :key="loc"
               :class="['header__lang-btn', { 'header__lang-btn--active': locale === loc }]"
               :aria-pressed="locale === loc"
@@ -179,7 +179,7 @@
         <div class="header__drawer-footer">
           <div class="header__drawer-lang" role="group" :aria-label="t('a11y.language')">
             <button
-              v-for="loc in locales"
+              v-for="loc in localeCodes"
               :key="loc"
               :class="['header__lang-btn', { 'header__lang-btn--active': locale === loc }]"
               @click="switchLocale(loc)"
@@ -222,13 +222,13 @@
 <script setup lang="ts">
 const LOCALE_KEY = 'user-locale'
 
-const { t, locale, setLocale, availableLocales } = useI18n()
+const { t, locale, setLocale, locales } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
 const config = useRuntimeConfig()
 const { isAuthenticated, isAdmin, initAuth } = useAuth()
 
-const locales = computed(() => availableLocales.value.map(l => l.code))
+const localeCodes = computed(() => locales.value.map(l => l.code))
 const isScrolled = ref(false)
 const isMenuOpen = ref(false)
 const openMobileSub = ref<string | null>(null)
@@ -267,7 +267,10 @@ const isActive = (to: string): boolean => {
 }
 
 const switchLocale = async (code: string) => {
-  if (import.meta.client) localStorage.setItem(LOCALE_KEY, code)
+  if (import.meta.client) {
+    localStorage.setItem(LOCALE_KEY, code)
+    document.cookie = `user-locale=${code}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`
+  }
   await setLocale(code)
 }
 

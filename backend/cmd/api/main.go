@@ -18,6 +18,7 @@ import (
 	"candypro/api/internal/config"
 	"candypro/api/internal/database"
 	"candypro/api/internal/handlers"
+	"candypro/api/internal/pkg/eino"
 	"candypro/api/internal/pkg/i18n"
 
 	"github.com/joho/godotenv"
@@ -85,6 +86,9 @@ func main() {
 			if err := database.SeedDemoWorkspace(db); err != nil {
 				log.Printf("Warning: demo workspace seed: %v", err)
 			}
+			if err := database.SeedProductTranslations(db); err != nil {
+				log.Printf("Warning: Failed to seed product translations: %v", err)
+			}
 		}
 	}
 
@@ -124,10 +128,21 @@ func main() {
 	} else if h.System.IsOrderProcessingReady() {
 		log.Println("Order Processing P-E-R agent initialized successfully")
 	}
+	// Wire PostgreSQL checkpoint store for agent persistence across restarts
+	if db != nil {
+		h.System.InitCheckPointStore(db)
+		if migrateErr := eino.AutoMigrateErr(); migrateErr != nil {
+			log.Printf("Warning: checkpoint table migration failed: %v", migrateErr)
+		} else if h.System.CheckPointStore() != nil {
+			log.Println("Agent checkpoint store initialized (PostgreSQL)")
+		}
+	}
+
 	backgroundCtx, stopBackground := context.WithCancel(context.Background())
 	defer stopBackground()
 	stopOrderDraftCleanup := startOrderDraftCleanup(backgroundCtx, svcs)
 	stopOutboxRelay := startEventOutboxTradeRelay(backgroundCtx, svcs)
+	stopCheckpointCleanup := startCheckpointCleanup(backgroundCtx, h.System.CheckPointStore())
 
 	// Setup router
 	routerWithShutdown := api.SetupRouter(h, cfg, db)
@@ -175,6 +190,7 @@ func main() {
 	}
 	stopOrderDraftCleanup()
 	stopOutboxRelay()
+	stopCheckpointCleanup()
 	stopBackground()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -320,4 +336,44 @@ func getEnvPositiveInt(key string, defaultValue int) int {
 		return defaultValue
 	}
 	return parsed
+}
+
+const (
+	defaultCheckpointCleanupIntervalMinutes = 60
+	defaultCheckpointTTLHours               = 24
+)
+
+// startCheckpointCleanup periodically deletes stale agent checkpoints.
+func startCheckpointCleanup(ctx context.Context, store *eino.PostgresCheckPointStore) func() {
+	if store == nil {
+		return func() {}
+	}
+
+	intervalMin := getEnvPositiveInt("CHECKPOINT_CLEANUP_INTERVAL_MINUTES", defaultCheckpointCleanupIntervalMinutes)
+	ttlHours := getEnvPositiveInt("CHECKPOINT_TTL_HOURS", defaultCheckpointTTLHours)
+
+	workerCtx, cancel := context.WithCancel(ctx)
+	interval := time.Duration(intervalMin) * time.Minute
+	ttl := time.Duration(ttlHours) * time.Hour
+
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-workerCtx.Done():
+				return
+			case <-ticker.C:
+				deleted, err := store.CleanupOlderThan(workerCtx, ttl)
+				if err != nil {
+					log.Printf("Warning: checkpoint cleanup failed: %v", err)
+				} else if deleted > 0 {
+					log.Printf("Checkpoint cleanup deleted %d stale entry/entries (TTL=%dh)", deleted, ttlHours)
+				}
+			}
+		}
+	}()
+
+	log.Printf("Checkpoint cleanup worker started (interval=%dmin TTL=%dh)", intervalMin, ttlHours)
+	return cancel
 }

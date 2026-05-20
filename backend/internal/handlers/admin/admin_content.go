@@ -7,6 +7,7 @@ import (
 	"candypro/api/internal/pkg/dberror"
 	"candypro/api/internal/pkg/pagination"
 	"candypro/api/internal/pkg/response"
+	"candypro/api/internal/pkg/sanitize"
 	"errors"
 	"net/http"
 	"strings"
@@ -431,7 +432,7 @@ func buildPostFromCreateRequest(req adminContentCreateRequest) *modelsProduct.Bl
 		Slug:        slug,
 		Title:       title,
 		Excerpt:     strings.TrimSpace(req.Excerpt),
-		Content:     strings.TrimSpace(req.Content),
+		Content:     sanitize.HTML(strings.TrimSpace(req.Content)),
 		Category:    strings.TrimSpace(req.Category),
 		Thumbnail:   strings.TrimSpace(req.Thumbnail),
 		ReadTime:    req.ReadTime,
@@ -483,9 +484,9 @@ func buildCaseFromCreateRequest(req adminContentCreateRequest) *modelsProduct.Ca
 		Location:  strings.TrimSpace(req.Location),
 		Thumbnail: strings.TrimSpace(req.Thumbnail),
 		Images:    modelsCommon.StringArray(req.Images),
-		Challenge: strings.TrimSpace(req.Challenge),
-		Solution:  strings.TrimSpace(req.Solution),
-		Result:    strings.TrimSpace(req.Result),
+		Challenge: sanitize.HTML(strings.TrimSpace(req.Challenge)),
+		Solution:  sanitize.HTML(strings.TrimSpace(req.Solution)),
+		Result:    sanitize.HTML(strings.TrimSpace(req.Result)),
 		Timeline:  strings.TrimSpace(req.Timeline),
 		Services:  modelsCommon.StringArray(req.Services),
 		CreatedAt: now,
@@ -508,7 +509,7 @@ func applyPostPatch(post *modelsProduct.BlogPost, req adminContentUpdateRequest)
 		post.Excerpt = strings.TrimSpace(*req.Excerpt)
 	}
 	if req.Content != nil {
-		post.Content = strings.TrimSpace(*req.Content)
+		post.Content = sanitize.HTML(strings.TrimSpace(*req.Content))
 	}
 	if req.Category != nil {
 		post.Category = strings.TrimSpace(*req.Category)
@@ -570,13 +571,13 @@ func applyCasePatch(caseStudy *modelsProduct.CaseStudy, req adminContentUpdateRe
 		caseStudy.Images = modelsCommon.StringArray(*req.Images)
 	}
 	if req.Challenge != nil {
-		caseStudy.Challenge = strings.TrimSpace(*req.Challenge)
+		caseStudy.Challenge = sanitize.HTML(strings.TrimSpace(*req.Challenge))
 	}
 	if req.Solution != nil {
-		caseStudy.Solution = strings.TrimSpace(*req.Solution)
+		caseStudy.Solution = sanitize.HTML(strings.TrimSpace(*req.Solution))
 	}
 	if req.Result != nil {
-		caseStudy.Result = strings.TrimSpace(*req.Result)
+		caseStudy.Result = sanitize.HTML(strings.TrimSpace(*req.Result))
 	}
 	if req.Timeline != nil {
 		caseStudy.Timeline = strings.TrimSpace(*req.Timeline)

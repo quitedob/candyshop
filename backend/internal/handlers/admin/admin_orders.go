@@ -150,6 +150,15 @@ func (h *Handler) AdminUpdateOrderStatus(c *gin.Context) {
 	order.UpdatedAt = now
 	if targetStatus == "confirmed" && order.ConfirmedAt == nil {
 		order.ConfirmedAt = &now
+		// Compute COGS from weighted average batch costs when first confirming
+		if order.COGS == 0 && h.services.Supplier != nil {
+			var totalCOGS float64
+			for _, item := range order.Items {
+				avgCost := h.services.Supplier.ComputeWeightedAvgCost(c.Request.Context(), item.ProductID)
+				totalCOGS += float64(item.Quantity) * avgCost
+			}
+			order.COGS = totalCOGS
+		}
 	}
 	if targetStatus == modelsOrder.OrderStatusShipped && order.ShippedAt == nil {
 		order.ShippedAt = &now

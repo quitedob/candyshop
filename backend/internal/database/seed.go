@@ -42,6 +42,14 @@ func ensureSystemRoles(db *gorm.DB) (map[string]string, error) {
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
 		},
+		{
+			ID:          "role_supplier",
+			Name:        modelsAuth.Supplier,
+			Description: "Supplier / factory self-service account",
+			IsSystem:    true,
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+		},
 	}
 
 	roleIDs := make(map[string]string, len(roleSeeds))
@@ -737,6 +745,113 @@ func seedProducts(db *gorm.DB) error {
 	}
 
 	return nil
+}
+
+// seedProductTranslations updates existing demo products with Chinese translations.
+// It upserts the translations JSONB field by product slug.
+func seedProductTranslations(db *gorm.DB) error {
+	type translationMap map[string]map[string]string
+	translations := map[string]translationMap{
+		"4d-fruit-gummy": {
+			"zh": {
+				"name":        "四维水果软糖",
+				"summary":     "真果汁软糖，天然风味和趣味3D造型",
+				"description": "我们的招牌四维水果软糖采用真果汁与创新成型技术，打造出色味俱佳的糖果。提供草莓、橙子、葡萄、苹果口味，造型涵盖小熊、蠕虫、水果及定制造型。",
+				"category":    "软糖",
+				"flavors":     `["草莓","橙子","葡萄","苹果","芒果"]`,
+				"shapes":      `["小熊","蠕虫","水果","定制"]`,
+				"ingredients": "白砂糖、葡萄糖浆、浓缩果汁、明胶、柠檬酸、食用天然香精",
+				"allergens":   "可能含微量乳制品",
+				"storage":     "阴凉干燥处保存，温度低于25°C",
+				"shelfLife":   "18个月",
+				"leadTime":    "15-20天",
+			},
+		},
+		"crystal-hard-candy": {
+			"zh": {
+				"name":        "水晶硬糖",
+				"summary":     "优质晶莹硬糖，天然水果风味",
+				"description": "水晶硬糖以标志性的晶莹剔透与持久风味带来优质糖果体验。每一颗都经过精密工艺打造，达到完美透明度与味觉层次。",
+				"category":    "硬糖",
+				"flavors":     `["草莓","柠檬","薄荷","葡萄","蜜瓜"]`,
+				"shapes":      `["圆形","椭圆","方形","定制"]`,
+				"ingredients": "白砂糖、葡萄糖浆、食用天然香精、柠檬酸、食用色素",
+				"allergens":   "无",
+				"storage":     "阴凉干燥处保存，温度低于25°C",
+				"shelfLife":   "24个月",
+				"leadTime":    "20-25天",
+			},
+		},
+		"rainbow-lollipop": {
+			"zh": {
+				"name":        "彩虹漩涡棒棒糖",
+				"summary":     "彩色漩涡棒棒糖，多层次风味",
+				"description": "彩虹漩涡棒棒糖是视觉与味觉的双重享受。每一支棒棒糖呈现精美的彩色漩涡纹路，搭配互补的风味层次，带来独特的品尝体验。",
+				"category":    "充气糖果",
+				"flavors":     `["彩虹混合","浆果爆发","热带风情","酸味混合"]`,
+				"shapes":      `["圆形","心形","星形","定制"]`,
+				"ingredients": "白砂糖、葡萄糖浆、食用天然香精、柠檬酸、天然色素",
+				"allergens":   "无",
+				"storage":     "阴凉干燥处保存，温度低于25°C",
+				"shelfLife":   "18个月",
+				"leadTime":    "18-22天",
+			},
+		},
+		"sour-belt": {
+			"zh": {
+				"name":        "酸条糖",
+				"summary":     "浓郁酸味果味条形软糖",
+				"description": "酸条糖完美平衡甜与酸的滋味。长条嚼感软糖外覆酸砂糖晶粒，带来绝妙的刺激口感。",
+				"category":    "代可可脂巧克力",
+				"flavors":     `["草莓","苹果","西瓜","蓝覆盆子"]`,
+				"shapes":      `["条状","带状"]`,
+				"ingredients": "白砂糖、葡萄糖浆、小麦粉、柠檬酸、苹果酸、食用天然香精",
+				"allergens":   "含小麦",
+				"storage":     "阴凉干燥处保存，温度低于25°C",
+				"shelfLife":   "12个月",
+				"leadTime":    "15-18天",
+			},
+		},
+		"marshmallow-pops": {
+			"zh": {
+				"name":    "棉花糖棒",
+				"summary": "软绵棉花糖棒，多种趣味造型与口味",
+				"category": "棉花糖",
+			},
+		},
+		"chocolate-pearls": {
+			"zh": {
+				"name":    "巧克力珍珠",
+				"summary": "优质巧克力脆壳包裹顺滑内馅",
+				"category": "巧克力",
+			},
+		},
+	}
+
+	for slug, localeMap := range translations {
+		var p modelsProduct.Product
+		if err := db.Where("slug = ?", slug).First(&p).Error; err != nil {
+			continue // product not found, skip
+		}
+		if p.Translations == nil {
+			p.Translations = make(modelsCommon.JSONMap)
+		}
+		for locale, fields := range localeMap {
+			if p.Translations[locale] == nil {
+				p.Translations[locale] = make(map[string]string)
+			}
+			for k, v := range fields {
+				p.Translations[locale][k] = v
+			}
+		}
+		db.Model(&p).Update("translations", p.Translations)
+	}
+	return nil
+}
+
+// SeedProductTranslations is the exported wrapper for seeding product translations.
+func SeedProductTranslations(db *gorm.DB) error {
+	return seedProductTranslations(db)
 }
 
 // seedOEMFlows seeds OEM flow data

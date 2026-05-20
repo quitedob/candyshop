@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"candypro/api/internal/pkg/response"
+	"candypro/api/internal/pkg/sanitize"
 
 	"github.com/gin-gonic/gin"
 )
@@ -44,7 +45,7 @@ func (h *Handler) AdminAIGenerateContent(c *gin.Context) {
 
 	if content == nil && rawFallback != "" {
 		c.JSON(http.StatusOK, gin.H{
-			"content":    rawFallback,
+			"content":    sanitize.HTML(rawFallback),
 			"topic":      req.Topic,
 			"type":       req.Type,
 			"parseError": true,
@@ -52,9 +53,43 @@ func (h *Handler) AdminAIGenerateContent(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"content": content,
-		"topic":   req.Topic,
-		"type":    req.Type,
-	})
+	// Sanitize AI-generated HTML before returning to client
+	content.Content = sanitize.HTML(content.Content)
+	content.Excerpt = sanitize.HTML(content.Excerpt)
+
+	// Auto-translate text fields to all non-source locales
+	sourceData := map[string]string{
+		"title":   content.Title,
+		"excerpt": content.Excerpt,
+		"content": content.Content,
+	}
+	targetLocales := make([]string, 0, 8)
+	for _, l := range []string{"en", "zh", "ko", "ar", "ja", "th", "vi", "id", "ms"} {
+		if l != req.Language {
+			targetLocales = append(targetLocales, l)
+		}
+	}
+	transResult, _ := h.aiService.BatchTranslateFields(c.Request.Context(), sourceData, targetLocales)
+	// Sanitize translated content fields
+	for locale, fields := range transResult.Fields {
+		if v, ok := fields["content"]; ok {
+			fields["content"] = sanitize.HTML(v)
+		}
+		if v, ok := fields["excerpt"]; ok {
+			fields["excerpt"] = sanitize.HTML(v)
+		}
+		transResult.Fields[locale] = fields
+	}
+
+	resp := gin.H{
+		"content":      content,
+		"translations": transResult.Fields,
+		"topic":        req.Topic,
+		"type":         req.Type,
+	}
+	if len(transResult.Warnings) > 0 {
+		resp["warnings"] = transResult.Warnings
+	}
+
+	c.JSON(http.StatusOK, resp)
 }

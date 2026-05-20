@@ -35,6 +35,7 @@ type ProductBatch struct {
 	WarehouseID    string    `json:"warehouseId" gorm:"not null;index"`
 	BatchNumber    string    `json:"batchNumber" gorm:"uniqueIndex;not null"`
 	Quantity       int       `json:"quantity" gorm:"default:0"`
+	UnitCost       float64   `json:"unitCost" gorm:"default:0"` // purchase unit cost
 	ProductionDate time.Time `json:"productionDate"`
 	ExpiryDate     time.Time `json:"expiryDate"`
 	IsExpired      bool      `json:"isExpired" gorm:"default:false"`

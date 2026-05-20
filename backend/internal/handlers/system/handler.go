@@ -28,6 +28,7 @@ type Handler struct {
 	b2bCoordinatorReady   bool
 	orderProcessingAgent  adk.Agent
 	orderProcessingReady  bool
+	checkPointStore       *eino.PostgresCheckPointStore
 	stripeAdapter         *stripeAdapter.Adapter
 }
 
@@ -81,7 +82,13 @@ func (h *Handler) translateFunc() einotool.TranslateFunc {
 	if h.aiService == nil {
 		return nil
 	}
-	return h.aiService.BatchTranslateFields
+	return func(ctx context.Context, sourceData map[string]string, targetLocales []string) (map[string]map[string]string, error) {
+		result, err := h.aiService.BatchTranslateFields(ctx, sourceData, targetLocales)
+		if err != nil {
+			return nil, err
+		}
+		return result.Fields, nil
+	}
 }
 
 // InitCheckPointStore creates a PostgreSQL-backed checkpoint store and sets it on the AI service.
@@ -91,6 +98,12 @@ func (h *Handler) InitCheckPointStore(db *gorm.DB) {
 	}
 	store := eino.NewPostgresCheckPointStore(db)
 	h.aiService.SetCheckPointStore(store)
+	h.checkPointStore = store
+}
+
+// CheckPointStore returns the PostgreSQL checkpoint store for background cleanup.
+func (h *Handler) CheckPointStore() *eino.PostgresCheckPointStore {
+	return h.checkPointStore
 }
 
 // InitDeepAgent initializes the B2B DeepAgent coordinator (ProductExpert, PricingExpert, LogisticsExpert).

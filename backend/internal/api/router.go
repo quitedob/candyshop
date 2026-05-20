@@ -14,6 +14,7 @@ import (
 	userportalroutes "candypro/api/internal/api/routes/userportal"
 	"candypro/api/internal/config"
 	"candypro/api/internal/handlers"
+	productRepo "candypro/api/internal/repository/product"
 	"candypro/api/internal/middleware"
 	"candypro/api/internal/pkg/response"
 
@@ -125,6 +126,19 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 		// System routes (preferred explicit namespace)
 		system := api.Group("/system")
 		systemroutes.Register(system, h, cfg, publicAIMiddlewares...)
+
+		// Supplier portal routes (API key auth)
+		if db != nil {
+			supplierRepo := productRepo.NewSupplierRepository(db)
+			supplier := api.Group("/supplier")
+			supplier.Use(middleware.SupplierAuthMiddleware(supplierRepo))
+			{
+				supplier.GET("/profile", h.AdminPortal.SupplierGetProfile)
+				supplier.PUT("/profile", h.AdminPortal.SupplierUpdateProfile)
+				supplier.GET("/purchase-orders", h.AdminPortal.SupplierGetMyPOs)
+				supplier.PUT("/purchase-orders/:id/status", h.AdminPortal.SupplierUpdatePOStatus)
+			}
+		}
 	}
 
 	// Swagger documentation (if enabled)

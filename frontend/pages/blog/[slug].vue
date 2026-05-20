@@ -33,7 +33,7 @@
                 </span>
                 <span class="article__read-time">
                   <Icon name="lucide:clock" size="14" />
-                  {{ post.readTime }} min read
+                  {{ t('blog_extra.min_read', { count: post.readTime }) }}
                 </span>
               </div>
             </div>
@@ -169,6 +169,7 @@ const localePath = useLocalePath()
 const route = useRoute()
 const config = useRuntimeConfig()
 const { getPost, getRelatedPosts } = useApi()
+const { sanitize } = useSanitizer()
 
 const copied = ref(false)
 const slug = computed(() => route.params.slug as string)
@@ -188,9 +189,7 @@ const { data: relatedData } = await useAsyncData(
 const renderedContent = computed(() => {
   const raw = post.value?.content || ''
   if (!raw) return ''
-  // Content is stored as HTML (from rich text editor).
-  // For legacy Markdown content, detect and render as-is (browsers handle plain text).
-  return raw
+  return sanitize(raw)
 })
 
 const post = computed(() => {

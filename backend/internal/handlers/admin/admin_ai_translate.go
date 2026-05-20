@@ -6,6 +6,8 @@ import (
 	modelsCommon "candypro/api/internal/models/common"
 	modelsProduct "candypro/api/internal/models/product"
 	"candypro/api/internal/pkg/response"
+	"candypro/api/internal/pkg/sanitize"
+	tradeSvc "candypro/api/internal/services/trade"
 
 	"github.com/gin-gonic/gin"
 )
@@ -40,8 +42,8 @@ func (h *Handler) AdminAITranslateProduct(c *gin.Context) {
 	}
 
 	sourceData := productFieldsToTranslate(product)
-	translations, err := h.aiService.BatchTranslateFields(c.Request.Context(), sourceData, req.TargetLocales)
-	if err != nil {
+	transResult, _ := h.aiService.BatchTranslateFields(c.Request.Context(), sourceData, req.TargetLocales)
+	if len(transResult.Fields) == 0 && len(transResult.Warnings) > 0 {
 		response.ErrorResp(c, http.StatusInternalServerError, "translation_failed")
 		return
 	}
@@ -49,13 +51,17 @@ func (h *Handler) AdminAITranslateProduct(c *gin.Context) {
 	if product.Translations == nil {
 		product.Translations = make(modelsCommon.JSONMap)
 	}
-	mergeTranslations(product.Translations, translations)
+	mergeTranslations(product.Translations, transResult)
 
 	if err := h.services.Product.UpdateProduct(c.Request.Context(), product); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "update_failed")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "translations": product.Translations})
+	resp := gin.H{"success": true, "translations": product.Translations}
+	if len(transResult.Warnings) > 0 {
+		resp["warnings"] = transResult.Warnings
+	}
+	c.JSON(http.StatusOK, resp)
 }
 
 // AdminAITranslateContent uses AI to translate blog post or case study fields.
@@ -97,8 +103,8 @@ func (h *Handler) translatePost(c *gin.Context, req adminAITranslateRequest) {
 		"content": post.Content,
 	}
 
-	translations, err := h.aiService.BatchTranslateFields(c.Request.Context(), sourceData, req.TargetLocales)
-	if err != nil {
+	transResult, _ := h.aiService.BatchTranslateFields(c.Request.Context(), sourceData, req.TargetLocales)
+	if len(transResult.Fields) == 0 && len(transResult.Warnings) > 0 {
 		response.ErrorResp(c, http.StatusInternalServerError, "translation_failed")
 		return
 	}
@@ -106,13 +112,18 @@ func (h *Handler) translatePost(c *gin.Context, req adminAITranslateRequest) {
 	if post.Translations == nil {
 		post.Translations = make(modelsCommon.JSONMap)
 	}
-	mergeTranslations(post.Translations, translations)
+	sanitizeHTMLFields(transResult.Fields, "content", "excerpt")
+	mergeTranslations(post.Translations, transResult)
 
 	if err := h.services.Content.UpdatePost(c.Request.Context(), post); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "update_failed")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "translations": post.Translations})
+	resp := gin.H{"success": true, "translations": post.Translations}
+	if len(transResult.Warnings) > 0 {
+		resp["warnings"] = transResult.Warnings
+	}
+	c.JSON(http.StatusOK, resp)
 }
 
 func (h *Handler) translateCase(c *gin.Context, req adminAITranslateRequest) {
@@ -129,8 +140,8 @@ func (h *Handler) translateCase(c *gin.Context, req adminAITranslateRequest) {
 		"result":    caseStudy.Result,
 	}
 
-	translations, err := h.aiService.BatchTranslateFields(c.Request.Context(), sourceData, req.TargetLocales)
-	if err != nil {
+	transResult, _ := h.aiService.BatchTranslateFields(c.Request.Context(), sourceData, req.TargetLocales)
+	if len(transResult.Fields) == 0 && len(transResult.Warnings) > 0 {
 		response.ErrorResp(c, http.StatusInternalServerError, "translation_failed")
 		return
 	}
@@ -138,13 +149,18 @@ func (h *Handler) translateCase(c *gin.Context, req adminAITranslateRequest) {
 	if caseStudy.Translations == nil {
 		caseStudy.Translations = make(modelsCommon.JSONMap)
 	}
-	mergeTranslations(caseStudy.Translations, translations)
+	sanitizeHTMLFields(transResult.Fields, "challenge", "solution", "result")
+	mergeTranslations(caseStudy.Translations, transResult)
 
 	if err := h.services.Content.UpdateCase(c.Request.Context(), caseStudy); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "update_failed")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "translations": caseStudy.Translations})
+	resp := gin.H{"success": true, "translations": caseStudy.Translations}
+	if len(transResult.Warnings) > 0 {
+		resp["warnings"] = transResult.Warnings
+	}
+	c.JSON(http.StatusOK, resp)
 }
 
 func productFieldsToTranslate(p *modelsProduct.Product) map[string]string {
@@ -160,13 +176,24 @@ func productFieldsToTranslate(p *modelsProduct.Product) map[string]string {
 	}
 }
 
-func mergeTranslations(target modelsCommon.JSONMap, translations map[string]map[string]string) {
-	for locale, fields := range translations {
+func mergeTranslations(target modelsCommon.JSONMap, result *tradeSvc.TranslationResult) {
+	for locale, fields := range result.Fields {
 		if target[locale] == nil {
 			target[locale] = make(map[string]string)
 		}
 		for fieldName, translatedText := range fields {
 			target[locale][fieldName] = translatedText
+		}
+	}
+}
+
+// sanitizeHTMLFields sanitizes specified HTML fields in all locale translation maps.
+func sanitizeHTMLFields(fields map[string]map[string]string, htmlFieldNames ...string) {
+	for _, localeFields := range fields {
+		for _, fieldName := range htmlFieldNames {
+			if v, ok := localeFields[fieldName]; ok {
+				localeFields[fieldName] = sanitize.HTML(v)
+			}
 		}
 	}
 }

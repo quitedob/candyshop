@@ -194,7 +194,7 @@
         <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-900">{{ t('admin.trades.ai_generate_title', { type: aiGenModal.docType }) }}</h3>
-            <button @click="aiGenModal = { docType: '', context: '' }" class="text-gray-400 hover:text-gray-600" :aria-label="t('close')">
+            <button @click="closeAiGenModal" class="text-gray-400 hover:text-gray-600" :aria-label="t('close')">
               <Icon name="heroicons:x-mark" class="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
@@ -210,7 +210,7 @@
                 <Icon name="heroicons:sparkles" class="h-4 w-4" aria-hidden="true" />
                 {{ aiGenerating ? t('admin.trades.ai_generating') : t('admin.trades.ai_generate') }}
               </button>
-              <button @click="aiGenModal = { docType: '', context: '' }"
+              <button @click="closeAiGenModal"
                 class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200">
                 {{ t('admin.trades.cancel') }}
               </button>
@@ -407,18 +407,20 @@ const aiHandleSSE = (data: any) => {
 }
 
 // ── AI Document Generation ──
-const aiGenerateDocument = () => {
+const closeAiGenModal = () => {
+  aiGenModal.docType = ''
+  aiGenModal.context = ''
   aiGenError.value = ''
   aiGenResult.value = ''
-  // Show a prompt to select document type
-  aiGenModal.context = ''
+}
+
+const aiGenerateDocument = () => {
+  closeAiGenModal()
   aiGenModal.docType = 'PROFORMA_INVOICE'
 }
 
 const aiGenerateRichDoc = (rdoc: any) => {
-  aiGenError.value = ''
-  aiGenResult.value = ''
-  aiGenModal.context = ''
+  closeAiGenModal()
   aiGenModal.docType = richDocKeyToType(rdoc.key)
 }
 
@@ -434,8 +436,7 @@ const aiSubmitGenerate = async () => {
       prompt: `Generate a ${aiGenModal.docType} for this trade transaction.`,
     })
     aiGenResult.value = result?.message || 'Document generated successfully'
-    aiGenModal.docType = ''
-    aiGenModal.context = ''
+    closeAiGenModal()
     await fetchRichDocs()
     await fetchDocuments()
   } catch (err: any) {

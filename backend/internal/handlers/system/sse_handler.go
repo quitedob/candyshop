@@ -99,10 +99,14 @@ func (h *Handler) HandleTradeChat(c *gin.Context) {
 	defer cancel()
 
 	// Create a new runner for each connection with streaming
-	runner := adk.NewRunner(ctx, adk.RunnerConfig{
+	runnerCfg := adk.RunnerConfig{
 		EnableStreaming: true,
-		Agent:           h.tradeAgent,
-	})
+		Agent:          h.tradeAgent,
+	}
+	if h.checkPointStore != nil {
+		runnerCfg.CheckPointStore = h.checkPointStore
+	}
+	runner := adk.NewRunner(ctx, runnerCfg)
 
 	// Setup SSE headers
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
@@ -148,10 +152,14 @@ func (h *Handler) HandleB2BCoordinatorChat(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Minute)
 	defer cancel()
 
-	runner := adk.NewRunner(ctx, adk.RunnerConfig{
+	runnerCfg := adk.RunnerConfig{
 		EnableStreaming: true,
-		Agent:           h.b2bCoordinatorAgent,
-	})
+		Agent:          h.b2bCoordinatorAgent,
+	}
+	if h.checkPointStore != nil {
+		runnerCfg.CheckPointStore = h.checkPointStore
+	}
+	runner := adk.NewRunner(ctx, runnerCfg)
 
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")
@@ -192,10 +200,14 @@ func (h *Handler) HandleOrderProcessingChat(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Minute)
 	defer cancel()
 
-	runner := adk.NewRunner(ctx, adk.RunnerConfig{
+	runnerCfg := adk.RunnerConfig{
 		EnableStreaming: true,
-		Agent:           h.orderProcessingAgent,
-	})
+		Agent:          h.orderProcessingAgent,
+	}
+	if h.checkPointStore != nil {
+		runnerCfg.CheckPointStore = h.checkPointStore
+	}
+	runner := adk.NewRunner(ctx, runnerCfg)
 
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")

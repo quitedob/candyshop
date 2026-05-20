@@ -122,12 +122,13 @@
       <div class="admin-sidebar__footer">
         <div v-if="showNavLabels" class="admin-sidebar__lang">
           <button
-            v-for="loc in availableLocales"
+            v-for="loc in locales"
             :key="loc.code"
             type="button"
             :class="['admin-sidebar__lang-btn', { 'admin-sidebar__lang-btn--active': locale === loc.code }]"
+            :title="loc.name"
             @click="switchLocale(loc.code)"
-          >{{ t(`languages.${loc.code}`) }}</button>
+          >{{ loc.code.toUpperCase() }}</button>
         </div>
         <div class="admin-sidebar__user" :class="{ 'admin-sidebar__user--collapsed': !showNavLabels }">
           <div class="admin-sidebar__user-avatar">{{ userInitials }}</div>
@@ -138,13 +139,13 @@
         </div>
         <div v-if="!showNavLabels" class="admin-sidebar__lang admin-sidebar__lang--icon">
           <button
-            v-for="loc in availableLocales"
+            v-for="loc in locales"
             :key="loc.code"
             type="button"
             :class="['admin-sidebar__lang-btn', { 'admin-sidebar__lang-btn--active': locale === loc.code }]"
-            :title="t(`languages.${loc.code}`)"
+            :title="loc.name"
             @click="switchLocale(loc.code)"
-          >{{ t(`languages.${loc.code}_short`) }}</button>
+          >{{ loc.code.toUpperCase() }}</button>
         </div>
         <button type="button" class="admin-sidebar__logout" :title="!showNavLabels ? t('admin.logout') : ''" @click="handleLogout">
           <Icon name="heroicons:arrow-right-on-rectangle" class="admin-sidebar__logout-icon" aria-hidden="true" />
@@ -162,7 +163,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 
 useSeo({ noindex: true })
@@ -170,7 +171,7 @@ useSeo({ noindex: true })
 const { user, logout } = useAuth()
 const route = useRoute()
 const localePath = useLocalePath()
-const { t, locale, setLocale, availableLocales } = useI18n()
+const { t, locale, setLocale, locales } = useI18n()
 
 const isCollapsed = ref(false)
 const isMobileNavOpen = ref(false)
@@ -229,9 +230,12 @@ const handleLogout = async () => {
   await logout()
 }
 
-const switchLocale = (code) => {
-  if (import.meta.client) localStorage.setItem('user-locale', code)
-  setLocale(code)
+const switchLocale = async (code: string) => {
+  if (import.meta.client) {
+    localStorage.setItem('user-locale', code)
+    document.cookie = `user-locale=${code}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`
+  }
+  await setLocale(code)
 }
 
 let mediaQuery
@@ -241,12 +245,14 @@ const closeMobileIfDesktop = () => {
   }
 }
 
-// Persist collapse state
-onMounted(() => {
+// Persist collapse state and restore locale
+onMounted(async () => {
   const saved = localStorage.getItem('admin-sidebar-collapsed')
   if (saved) {
     isCollapsed.value = saved === 'true'
   }
+  const savedLocale = localStorage.getItem('user-locale')
+  if (savedLocale && savedLocale !== locale.value) await setLocale(savedLocale)
   mediaQuery = window.matchMedia('(min-width: 768px)')
   mediaQuery.addEventListener('change', closeMobileIfDesktop)
 })

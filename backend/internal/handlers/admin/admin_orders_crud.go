@@ -334,6 +334,14 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 	order.UpdatedAt = now
 	if order.Status == "confirmed" && order.ConfirmedAt == nil {
 		order.ConfirmedAt = &now
+		if order.COGS == 0 && h.services.Supplier != nil {
+			var totalCOGS float64
+			for _, item := range order.Items {
+				avgCost := h.services.Supplier.ComputeWeightedAvgCost(c.Request.Context(), item.ProductID)
+				totalCOGS += float64(item.Quantity) * avgCost
+			}
+			order.COGS = totalCOGS
+		}
 	}
 	if order.Status == "shipped" && order.ShippedAt == nil {
 		order.ShippedAt = &now

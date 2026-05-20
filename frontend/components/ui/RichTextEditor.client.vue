@@ -110,9 +110,11 @@ import { useI18n } from '#i18n'
 const props = withDefaults(defineProps<{
   modelValue?: string
   placeholder?: string
+  uploadUrl?: string
 }>(), {
   modelValue: '',
-  placeholder: undefined
+  placeholder: undefined,
+  uploadUrl: '/admin/upload/image'
 })
 
 const emit = defineEmits<{
@@ -179,7 +181,7 @@ const handleImageFile = async (e: Event) => {
     const formData = new FormData()
     formData.append('file', file)
     const { fetchApi } = useApi()
-    const res = await fetchApi<{ url: string }>('/upload', { method: 'POST', body: formData })
+    const res = await fetchApi<{ url: string }>(props.uploadUrl, { method: 'POST', body: formData })
     if (res.url) {
       editor.value?.chain().focus().setImage({ src: res.url }).run()
     }
