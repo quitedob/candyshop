@@ -1,14 +1,18 @@
 package publicroutes
 
 import (
+	"time"
+
+	"candypro/api/internal/config"
 	"candypro/api/internal/handlers"
+	"candypro/api/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
 
 // Register wires all public API routes under /api/v1/public。
 // inquiryExtra 仅挂在 POST /inquiry 上（例如独立限流）。
-func Register(group *gin.RouterGroup, h *handlers.Handlers, inquiryExtra ...gin.HandlerFunc) {
+func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, inquiryExtra ...gin.HandlerFunc) {
 	// Products
 	group.GET("/products", h.Public.GetProducts)
 	group.GET("/products/featured", h.Public.GetFeaturedProducts)
@@ -52,5 +56,13 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, inquiryExtra ...gin.
 	group.GET("/search", h.Public.Search)
 
 	// Supplier self-service registration
-	group.POST("/supplier/register", h.AdminPortal.SupplierRegisterSelf)
+	// H-17: dedicated per-IP rate limit (3/min) on top of the global limiter,
+	// matching the policy applied to /auth/register. Without this, the supplier
+	// register endpoint relied solely on the 60/min/IP global throttle, which
+	// is too lax for a credential-creating endpoint.
+	supplierRegister := group.Group("")
+	if cfg != nil {
+		supplierRegister.Use(middleware.AuthEndpointRateLimit(3, time.Minute, cfg.Security.RedisURL))
+	}
+	supplierRegister.POST("/supplier/register", h.AdminPortal.SupplierRegisterSelf)
 }

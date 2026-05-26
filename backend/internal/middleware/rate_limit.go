@@ -186,8 +186,8 @@ func SecurityHeaders(environment string) gin.HandlerFunc {
 		if environment == "production" {
 			c.Header("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
 		}
-		// SEC-11: Content-Security-Policy — allow Google Fonts for frontend styling
-		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none'")
+		// Content-Security-Policy — allow Google Fonts, OpenStreetMap iframes, and Vite workers
+		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-src 'self' https://www.openstreetmap.org https://www.google.com; form-action 'self'; frame-ancestors 'none'")
 		c.Next()
 	}
 }

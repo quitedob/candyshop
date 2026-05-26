@@ -81,6 +81,19 @@
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.inquiryDetail.interested_products') }}</dt>
               <dd class="mt-1 text-sm text-gray-900">{{ Array.isArray(inquiry.interestedProducts) ? inquiry.interestedProducts.join(', ') : inquiry.interestedProducts }}</dd>
             </div>
+            <div class="sm:col-span-2" v-if="inquiry.productIds && inquiry.productIds.length">
+              <dt class="text-sm font-medium text-gray-500">{{ t('admin.inquiryDetail.linked_product_ids') }}</dt>
+              <dd class="mt-1 flex flex-wrap gap-2">
+                <NuxtLink
+                  v-for="pid in inquiry.productIds"
+                  :key="pid"
+                  :to="localePath(`/admin/products?search=${encodeURIComponent(pid)}`)"
+                  class="inline-flex items-center px-2 py-1 text-xs font-mono bg-orange-50 text-orange-700 rounded hover:bg-orange-100"
+                >
+                  {{ pid }}
+                </NuxtLink>
+              </dd>
+            </div>
             <div v-if="inquiry.packagingRequirements">
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.inquiryDetail.packaging_requirements') }}</dt>
               <dd class="mt-1 text-sm text-gray-900">{{ inquiry.packagingRequirements }}</dd>
@@ -108,7 +121,10 @@
       <!-- AI Compliance Check Results -->
       <div v-if="inquiry.aiComplianceCheck" class="bg-amber-50 shadow overflow-hidden sm:rounded-lg">
         <div class="px-4 py-5 sm:px-6 bg-amber-100 border-b border-amber-200">
-          <h3 class="text-lg leading-6 font-medium text-amber-900">{{ t('admin.inquiryDetail.ai_compliance_check') }}</h3>
+          <h3 class="text-lg leading-6 font-medium text-amber-900 inline-flex items-center">
+            {{ t('admin.inquiryDetail.ai_compliance_check') }}
+            <AiHelpHint topic="inquiries_compliance" size="sm" />
+          </h3>
         </div>
         <div class="px-4 py-5 sm:p-6">
           <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
@@ -138,10 +154,26 @@
 
       <!-- Quotation Section -->
       <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-        <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
+        <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">
           <h3 class="text-lg leading-6 font-medium text-gray-900">{{ t('admin.inquiryDetail.quotation') }}</h3>
+          <div class="inline-flex items-center gap-1">
+            <button
+              type="button"
+              class="inline-flex items-center rounded-md border border-orange-300 bg-orange-50 px-3 py-1.5 text-sm font-medium text-orange-800 hover:bg-orange-100 disabled:opacity-50"
+              :disabled="generatingQuotation"
+              @click="generateAIQuotation"
+            >
+              <Icon v-if="generatingQuotation" name="heroicons:arrow-path" class="h-4 w-4 mr-1 animate-spin" />
+              {{ generatingQuotation ? t('admin.inquiryDetail.ai_generating_quotation') : t('admin.inquiryDetail.ai_generate_quotation') }}
+            </button>
+            <AiHelpHint topic="inquiries_quotation" size="sm" />
+          </div>
         </div>
         <div class="px-4 py-5 sm:p-6">
+          <div v-if="aiQuotationDraft" class="mb-4 rounded-lg border border-orange-200 bg-orange-50 p-4">
+            <p class="text-sm font-medium text-orange-900 mb-2">{{ t('admin.inquiryDetail.ai_quotation_draft') }}</p>
+            <pre class="text-xs text-orange-950 whitespace-pre-wrap max-h-64 overflow-y-auto">{{ aiQuotationDraft }}</pre>
+          </div>
           <form @submit.prevent="submitQuote" class="space-y-4">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
@@ -425,12 +457,14 @@ definePageMeta({
 })
 
 const route = useRoute()
-const { token } = useAuth()
+const {
+  adminGetInquiry, adminQuoteInquiry, adminConvertInquiryToOrder,
+  adminCreateNegotiation, adminAcceptNegotiation, adminRejectNegotiation,
+  adminConfirmInquiry, get: apiGet, post: apiPost
+} = useApi()
 const { t } = useI18n()
 const localePath = useLocalePath()
 const { currencyOrDefault: cur, cell, enumLabel, formatNumber, formatDate } = useDisplay()
-const config = useRuntimeConfig()
-const baseURL = config.public.apiBase || '/api/v1'
 
 const inquiry = ref<any>(null)
 const pending = ref(true)
@@ -439,6 +473,8 @@ const error = ref('')
 const submittingQuote = ref(false)
 const quoteMessage = ref('')
 const quoteError = ref(false)
+const generatingQuotation = ref(false)
+const aiQuotationDraft = ref('')
 
 const converting = ref(false)
 const convertMessage = ref('')
@@ -490,9 +526,7 @@ const fetchInquiry = async () => {
   pending.value = true
   error.value = ''
   try {
-    inquiry.value = await $fetch<any>(`${baseURL}/admin/inquiries/${route.params.id}`, {
-      headers: { Authorization: `Bearer ${token.value}` }
-    })
+    inquiry.value = await adminGetInquiry(String(route.params.id))
     quoteForm.quotedAmount = inquiry.value.quotedAmount || 0
     quoteForm.validUntil = inquiry.value.validUntil ? new Date(inquiry.value.validUntil).toISOString().slice(0, 16) : ''
     quoteForm.customerNotes = inquiry.value.customerNotes || ''
@@ -503,20 +537,52 @@ const fetchInquiry = async () => {
   }
 }
 
+const buildInquiryRequirements = () => {
+  if (!inquiry.value) return ''
+  const parts = [
+    inquiry.value.message,
+    inquiry.value.packagingRequirements ? `Packaging: ${inquiry.value.packagingRequirements}` : '',
+    inquiry.value.flavorRequirements ? `Flavor: ${inquiry.value.flavorRequirements}` : '',
+    inquiry.value.estimatedQuantity ? `Qty: ${inquiry.value.estimatedQuantity}` : '',
+    inquiry.value.interestedProducts?.length ? `Products: ${inquiry.value.interestedProducts.join(', ')}` : '',
+  ].filter(Boolean)
+  return parts.join('\n')
+}
+
+const generateAIQuotation = async () => {
+  if (!inquiry.value) return
+  generatingQuotation.value = true
+  aiQuotationDraft.value = ''
+  quoteError.value = false
+  try {
+    const res = await apiPost<any>('/system/generate-quotation', {
+      inquiryId: String(route.params.id),
+      targetCountry: inquiry.value.targetCountry || 'global',
+      customerRequirements: buildInquiryRequirements(),
+      currency: 'USD',
+    })
+    aiQuotationDraft.value = res.quotation || res.text || JSON.stringify(res, null, 2)
+    if (aiQuotationDraft.value && !quoteForm.customerNotes) {
+      quoteForm.customerNotes = aiQuotationDraft.value.slice(0, 4000)
+    }
+  } catch (err: any) {
+    quoteError.value = true
+    quoteMessage.value = err?.message || t('errors.api.quote_failed')
+  } finally {
+    generatingQuotation.value = false
+  }
+}
+
 const submitQuote = async () => {
   submittingQuote.value = true
   quoteMessage.value = ''
   quoteError.value = false
 
   try {
-    await $fetch(`${baseURL}/admin/inquiries/${route.params.id}/quote`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token.value}` },
-      body: {
-        quotedAmount: quoteForm.quotedAmount,
-        validUntil: quoteForm.validUntil ? new Date(quoteForm.validUntil).toISOString() : '',
-        customerNotes: quoteForm.customerNotes
-      }
+    await adminQuoteInquiry(String(route.params.id), {
+      quotedAmount: quoteForm.quotedAmount,
+      validUntil: quoteForm.validUntil ? new Date(quoteForm.validUntil).toISOString() : '',
+      customerNotes: quoteForm.customerNotes
     })
     quoteMessage.value = t('admin.inquiryDetail.quote_submitted')
     await fetchInquiry()
@@ -534,17 +600,13 @@ const convertToOrder = async () => {
   convertError.value = false
 
   try {
-    const result = await $fetch<any>(`${baseURL}/admin/inquiries/${route.params.id}/convert-to-order`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token.value}` },
-      body: {
-        shippingAddress: {
-          street: convertForm.street,
-          city: convertForm.city,
-          state: convertForm.state,
-          zipCode: convertForm.zipCode,
-          country: convertForm.country
-        }
+    const result = await apiPost<any>(`/admin/inquiries/${route.params.id}/convert-to-order`, {
+      shippingAddress: {
+        street: convertForm.street,
+        city: convertForm.city,
+        state: convertForm.state,
+        zipCode: convertForm.zipCode,
+        country: convertForm.country
       }
     })
     convertMessage.value = t('admin.inquiryDetail.converted_success') + (result.orderId ? ` Order ID: ${result.orderId}` : '')
@@ -559,9 +621,7 @@ const convertToOrder = async () => {
 
 const fetchNegotiationOffers = async () => {
   try {
-    const data = await $fetch<any>(`${baseURL}/admin/inquiries/${route.params.id}/negotiations`, {
-      headers: { Authorization: `Bearer ${token.value}` }
-    })
+    const data = await apiGet<any>(`/admin/inquiries/${route.params.id}/negotiations`)
     negotiationOffers.value = data?.data || data || []
   } catch (err: any) {
     console.error('Failed to fetch negotiation offers:', err)
@@ -580,11 +640,7 @@ const submitOffer = async () => {
   try {
     const body: any = { ...negotiationForm }
     if (body.validUntil) body.validUntil = new Date(body.validUntil).toISOString()
-    await $fetch(`${baseURL}/admin/inquiries/${route.params.id}/negotiations`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token.value}` },
-      body
-    })
+    await adminCreateNegotiation(String(route.params.id), body)
     negotiationMessage.value = t('admin.inquiryDetail.offer_created')
     showNegotiationForm.value = false
     Object.assign(negotiationForm, { unitPrice: 0, quantity: 1, totalAmount: 0, currency: 'USD', incoterms: '', paymentTerms: '', deliveryDate: '', validUntil: '', message: '' })
@@ -599,10 +655,7 @@ const submitOffer = async () => {
 
 const acceptOffer = async (offerId: string) => {
   try {
-    await $fetch(`${baseURL}/admin/inquiries/${route.params.id}/negotiations/${offerId}/accept`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token.value}` }
-    })
+    await adminAcceptNegotiation(String(route.params.id), offerId)
     await fetchNegotiationOffers()
   } catch (err: any) {
     alert(err?.data?.message || err.message || t('errors.api.save_failed'))
@@ -611,10 +664,7 @@ const acceptOffer = async (offerId: string) => {
 
 const rejectOffer = async (offerId: string) => {
   try {
-    await $fetch(`${baseURL}/admin/inquiries/${route.params.id}/negotiations/${offerId}/reject`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token.value}` }
-    })
+    await adminRejectNegotiation(String(route.params.id), offerId)
     await fetchNegotiationOffers()
   } catch (err: any) {
     alert(err?.data?.message || err.message || t('errors.api.save_failed'))
@@ -625,16 +675,12 @@ const adminConfirmSpecs = async () => {
   adminConfirmMessage.value = ''
   adminConfirmError.value = false
   try {
-    const result = await $fetch<any>(`${baseURL}/admin/inquiries/${route.params.id}/confirm`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${token.value}` },
-      body: {
-        packagingType: adminConfirmForm.packagingType,
-        packagingWeight: adminConfirmForm.packagingWeight,
-        packagingSize: adminConfirmForm.packagingSize,
-        qualityStandard: adminConfirmForm.qualityStandard,
-        notes: adminConfirmForm.notes
-      }
+    const result = await adminConfirmInquiry(String(route.params.id), {
+      packagingType: adminConfirmForm.packagingType,
+      packagingWeight: adminConfirmForm.packagingWeight,
+      packagingSize: adminConfirmForm.packagingSize,
+      qualityStandard: adminConfirmForm.qualityStandard,
+      notes: adminConfirmForm.notes
     })
     adminConfirmMessage.value = result.message || t('admin.inquiryDetail.confirm_specs_success')
     await fetchInquiry()

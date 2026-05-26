@@ -1,35 +1,35 @@
 {
   "blog": {
-    "title": "Blog & Resources",
+    "title": "ブログ・インサイト",
     "categories": {
-      "compliance": "Compliance",
-      "product_knowledge": "Product Knowledge",
-      "packaging": "Packaging Trends",
-      "market_insights": "Market Insights"
+      "compliance": "コンプライアンス",
+      "product_knowledge": "製品知識",
+      "packaging": "包装トレンド",
+      "market_insights": "市場インサイト"
     },
-    "read_more": "Read More",
-    "related_articles": "Related Articles",
-    "share": "Share Article",
-    "table_of_contents": "Table of Contents"
+    "read_more": "続きを読む",
+    "related_articles": "関連記事",
+    "share": "記事を共有",
+    "table_of_contents": "目次"
   },
   "blog_extra": {
-    "featured": "Featured",
-    "stay_updated": "Stay Updated",
-    "subscribe_desc": "Get the latest industry insights and compliance updates delivered to your inbox",
-    "email_placeholder": "Enter your email",
-    "all_posts": "All Posts",
-    "loading_posts": "Loading posts...",
-    "no_posts": "No posts found in this category.",
-    "newsletter_invalid": "Please enter a valid email address.",
-    "newsletter_redirect": "Opening the contact form…",
-    "cta_questions": "Have questions about our candy manufacturing capabilities?",
-    "cta_heading": "Learn More About Our Services",
-    "min_read": "{count} min read",
+    "featured": "注目",
+    "stay_updated": "最新情報を受け取る",
+    "subscribe_desc": "業界インサイトとコンプライアンス更新をメールでお届けします",
+    "email_placeholder": "メールアドレスを入力",
+    "all_posts": "すべての投稿",
+    "loading_posts": "投稿を読み込み中...",
+    "no_posts": "このカテゴリーに投稿はありません。",
+    "newsletter_invalid": "有効なメールアドレスを入力してください。",
+    "newsletter_redirect": "お問い合わせフォームを開いています…",
+    "cta_questions": "キャンディ製造能力についてご質問はありますか？",
+    "cta_heading": "サービスについて詳しく",
+    "min_read": "{count}分で読める",
     "share_twitter": "Twitter",
     "share_linkedin": "LinkedIn",
     "share_facebook": "Facebook",
-    "share_copy_link": "Copy Link",
-    "share_copied": "Copied!",
-    "seo_description": "Industry insights, compliance knowledge, and product expertise for candy manufacturers."
+    "share_copy_link": "リンクをコピー",
+    "share_copied": "コピーしました！",
+    "seo_description": "キャンディメーカー向けの業界インサイト、コンプライアンス知識、製品専門知識。"
   }
 }

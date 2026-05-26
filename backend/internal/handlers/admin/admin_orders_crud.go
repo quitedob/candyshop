@@ -3,6 +3,7 @@ package admin
 import (
 	modelsOrder "candypro/api/internal/models/order"
 	"candypro/api/internal/pkg/crypto"
+	"candypro/api/internal/pkg/request"
 	"candypro/api/internal/pkg/response"
 	orderSvc "candypro/api/internal/services/order"
 	"errors"
@@ -21,7 +22,7 @@ type adminCreateOrderRequest struct {
 	InquiryID       *string                 `json:"inquiryId"`
 	Status          string                  `json:"status"`
 	PaymentStatus   string                  `json:"paymentStatus"`
-	Items           []modelsOrder.OrderItem `json:"items"`
+	Items           []modelsOrder.OrderItem `json:"items" binding:"required,min=1,dive"`
 	Subtotal        float64                 `json:"subtotal"`
 	TaxAmount       float64                 `json:"taxAmount"`
 	ShippingAmount  float64                 `json:"shippingAmount"`
@@ -37,6 +38,7 @@ type adminUpdateOrderRequest struct {
 	InquiryID       *string                  `json:"inquiryId"`
 	Status          *string                  `json:"status"`
 	PaymentStatus   *string                  `json:"paymentStatus"`
+	PaymentStatusSnake *string               `json:"payment_status"`
 	Items           *[]modelsOrder.OrderItem `json:"items"`
 	Subtotal        *float64                 `json:"subtotal"`
 	TaxAmount       *float64                 `json:"taxAmount"`
@@ -44,6 +46,7 @@ type adminUpdateOrderRequest struct {
 	TotalAmount     *float64                 `json:"totalAmount"`
 	Currency        *string                  `json:"currency"`
 	TrackingNumber  *string                  `json:"trackingNumber"`
+	TrackingNumberSnake *string              `json:"tracking_number"`
 	ShippingAddress *modelsOrder.Address     `json:"shippingAddress"`
 	// FinancialAdjustmentReason 在订单已处于 confirmed+ 且修改金额/税/运费/币种/行时必填
 	FinancialAdjustmentReason string `json:"financialAdjustmentReason"`
@@ -100,20 +103,64 @@ func (h *Handler) AdminCreateOrder(c *gin.Context) {
 		currency = "USD"
 	}
 
-	items := modelsOrder.OrderItemArray(req.Items)
-	if items == nil {
-		items = modelsOrder.OrderItemArray{}
+	country := ""
+	if req.ShippingAddress != nil {
+		country = strings.TrimSpace(req.ShippingAddress.Country)
 	}
 
-	subtotal := req.Subtotal
-	if subtotal == 0 && len(items) > 0 {
-		for _, item := range items {
-			subtotal += float64(item.Quantity) * item.UnitPrice
-		}
+	// C-1: Admin-created orders must enforce the same business validations
+	// that customer checkout does — MOQ, server-side pricing, inventory,
+	// compliance, and credit limit. The previous implementation accepted
+	// client-supplied prices and skipped MOQ/inventory/credit checks.
+	contractPriceListID := h.resolveAdminContractPriceListID(c, userID)
+
+	items, productByID, products, ok := h.resolveAdminOrderItems(c, req.Items, contractPriceListID, country)
+	if !ok {
+		return
 	}
-	total := req.TotalAmount
-	if total == 0 {
-		total = subtotal + req.TaxAmount + req.ShippingAmount
+
+	// C-2: Refuse to create orders without a destination country when items are present.
+	// validateOrderItemsCompliance returns true on empty country (no profile match), so
+	// without this guard, market-restricted products (halal-only, etc.) bypass the check.
+	if country == "" {
+		response.ErrorResp(c, http.StatusUnprocessableEntity, "target_country_required")
+		return
+	}
+
+	// Server-side recompute subtotal from validated unit prices; ignore client-supplied
+	// subtotal/total to prevent admin-side price manipulation (M-14).
+	subtotal := 0.0
+	for _, item := range items {
+		subtotal += float64(item.Quantity) * item.UnitPrice
+	}
+
+	taxAmount := req.TaxAmount
+	if taxAmount < 0 {
+		taxAmount = 0
+	}
+	shippingAmount := req.ShippingAmount
+	if shippingAmount < 0 {
+		shippingAmount = 0
+	}
+	total := subtotal + taxAmount + shippingAmount
+
+	// Compliance check (always runs once items are resolved).
+	compliance := h.services.Product.ValidateComplianceWithMarketProfiles(c.Request.Context(), country, products)
+	if len(compliance.Violations) > 0 {
+		response.ErrorRespDetail(c, http.StatusUnprocessableEntity, "compliance_violation", gin.H{
+			"country":    compliance.Country,
+			"violations": compliance.Violations,
+			"warnings":   compliance.Warnings,
+		})
+		return
+	}
+
+	if !h.validateAdminInventory(c, items, productByID) {
+		return
+	}
+
+	if !h.checkAdminCompanyCreditLimit(c, userID, total) {
+		return
 	}
 
 	order := &modelsOrder.Order{
@@ -126,8 +173,8 @@ func (h *Handler) AdminCreateOrder(c *gin.Context) {
 		Items:          items,
 		StockReserved:  len(items) > 0 && requiresPaidBeforeExecution(status),
 		Subtotal:       subtotal,
-		TaxAmount:      req.TaxAmount,
-		ShippingAmount: req.ShippingAmount,
+		TaxAmount:      taxAmount,
+		ShippingAmount: shippingAmount,
 		TotalAmount:    total,
 		Currency:       currency,
 		TrackingNumber: strings.TrimSpace(req.TrackingNumber),
@@ -137,9 +184,7 @@ func (h *Handler) AdminCreateOrder(c *gin.Context) {
 	if req.ShippingAddress != nil {
 		order.ShippingAddress = *req.ShippingAddress
 	}
-	if h.requiresFullPrepaymentForOrder(c.Request.Context(), order.ShippingAddress.Country, order.UserID) &&
-		requiresPaidBeforeExecution(order.Status) &&
-		!isPaidInFull(order.PaymentStatus) {
+	if paymentInsufficientForExecution(order.Status, order.PaymentStatus) {
 		response.ErrorResp(c, http.StatusUnprocessableEntity, "payment_policy_violation")
 		return
 	}
@@ -220,8 +265,8 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 	if req.Status != nil {
 		order.Status = strings.TrimSpace(*req.Status)
 	}
-	if req.PaymentStatus != nil {
-		order.PaymentStatus = strings.TrimSpace(*req.PaymentStatus)
+	if ps := request.FirstOptionalNonEmpty(req.PaymentStatus, req.PaymentStatusSnake); ps != nil {
+		order.PaymentStatus = *ps
 	}
 	if req.Items != nil {
 		order.Items = modelsOrder.OrderItemArray(*req.Items)
@@ -244,11 +289,14 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 			order.Currency = currency
 		}
 	}
-	if req.TrackingNumber != nil {
-		order.TrackingNumber = strings.TrimSpace(*req.TrackingNumber)
+	if tn := request.FirstOptionalNonEmpty(req.TrackingNumber, req.TrackingNumberSnake); tn != nil {
+		order.TrackingNumber = *tn
 	}
 	if req.ShippingAddress != nil {
 		order.ShippingAddress = *req.ShippingAddress
+	}
+	if !h.validateOrderItemsCompliance(c, order.ShippingAddress.Country, order.Items) {
+		return
 	}
 	currentStatus := strings.ToLower(strings.TrimSpace(order.Status))
 
@@ -260,20 +308,9 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 		}
 	}
 
-	if h.requiresFullPrepaymentForOrder(c.Request.Context(), order.ShippingAddress.Country, order.UserID) &&
-		requiresPaidBeforeExecution(order.Status) &&
-		!isPaidInFull(order.PaymentStatus) {
+	if paymentInsufficientForExecution(currentStatus, order.PaymentStatus) {
 		response.ErrorResp(c, http.StatusUnprocessableEntity, "payment_policy_violation")
 		return
-	}
-
-	// Credit limit check for company NET terms
-	company := h.resolveUserCompany(c, order.UserID)
-	if company != nil && requiresPaidBeforeExecution(currentStatus) && !isPaidInFull(order.PaymentStatus) {
-		if !requiresPrepaymentByTerms(company.PaymentTerms) && company.CreditLimit > 0 && order.TotalAmount > company.CreditLimit {
-			response.ErrorResp(c, http.StatusUnprocessableEntity, "credit_limit_exceeded")
-			return
-		}
 	}
 
 	newFin := orderSvc.SnapshotOrderFinancial(order)
@@ -285,63 +322,53 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 	}
 
 	if previousStatus != "cancelled" && currentStatus == "cancelled" && order.StockReserved {
-		order.UpdatedAt = time.Now()
 		if err := h.services.Order.ReleaseOrderStock(c.Request.Context(), order); err != nil {
 			response.ErrorResp(c, http.StatusInternalServerError, "order_stock_release_failed")
 			return
 		}
-		h.syncOrderFinancialSideEffects(c, order, origFin, newFin, previousStatus, req.FinancialAdjustmentReason)
-		if previousStatus != currentStatus && order.User != nil {
-			h.services.Order.SendOrderStatusEmail(order, order.User.Email,
-				order.User.FirstName+" "+order.User.LastName, currentStatus)
+	}
+	// H-22: warn (audit) when cancelling an order with confirmed payments still
+	// outstanding. Mirrors the same guard in AdminUpdateOrderStatus so the audit
+	// trail is consistent across both update paths.
+	if previousStatus != "cancelled" && currentStatus == "cancelled" && h.services.Payment != nil {
+		count, total, perr := h.services.Payment.CountConfirmedPaymentsForOrder(c.Request.Context(), order.ID)
+		if perr == nil && count > 0 {
+			h.logOrderAudit(c, "order_cancel_with_unrefunded_payments",
+				order.ID, c.GetString("userID"),
+				fmt.Sprintf("count=%d", count),
+				fmt.Sprintf("total=%.2f %s", total, order.Currency),
+			)
 		}
-		c.JSON(http.StatusOK, order)
-		return
 	}
 	if order.StockReserved && req.Items != nil && currentStatus != "cancelled" {
 		stockAdjustment := calculateStockAdjustment(originalItems, order.Items)
-		order.UpdatedAt = time.Now()
-		if err := h.services.Order.UpdateOrderWithStockAdjustment(c.Request.Context(), order, stockAdjustment); err != nil {
-			if errors.Is(err, modelsOrder.ErrInsufficientStock) {
-				response.ErrorResp(c, http.StatusUnprocessableEntity, "inventory_violation")
+		if hasNonZeroStockDelta(stockAdjustment) {
+			order.UpdatedAt = time.Now()
+			if err := h.services.Order.UpdateOrderWithStockAdjustment(c.Request.Context(), order, stockAdjustment); err != nil {
+				if errors.Is(err, modelsOrder.ErrInsufficientStock) {
+					response.ErrorResp(c, http.StatusUnprocessableEntity, "inventory_violation")
+					return
+				}
+				response.ErrorResp(c, http.StatusInternalServerError, "order_update_stock_failed")
 				return
 			}
-			response.ErrorResp(c, http.StatusInternalServerError, "order_update_stock_failed")
-			return
-		}
-		h.syncOrderFinancialSideEffects(c, order, origFin, newFin, previousStatus, req.FinancialAdjustmentReason)
-		if previousStatus != currentStatus && order.User != nil {
-			h.services.Order.SendOrderStatusEmail(order, order.User.Email,
-				order.User.FirstName+" "+order.User.LastName, currentStatus)
-		}
-		c.JSON(http.StatusOK, order)
-		return
-	}
-	// Reserve stock when confirming an order that was created without stock deduction
-	if currentStatus == modelsOrder.OrderStatusConfirmed && !order.StockReserved && len(order.Items) > 0 {
-		order.UpdatedAt = time.Now()
-		if err := h.services.Order.ReserveOrderStock(c.Request.Context(), order); err != nil {
-			if errors.Is(err, modelsOrder.ErrInsufficientStock) {
-				response.ErrorResp(c, http.StatusUnprocessableEntity, "inventory_violation")
-				return
+			h.syncOrderFinancialSideEffects(c, order, origFin, newFin, previousStatus, req.FinancialAdjustmentReason)
+			if previousStatus != currentStatus && order.User != nil {
+				h.services.Order.SendOrderStatusEmail(order, order.User.Email,
+					order.User.FirstName+" "+order.User.LastName, currentStatus)
 			}
-			response.ErrorResp(c, http.StatusInternalServerError, "order_stock_reserve_failed")
+			c.JSON(http.StatusOK, order)
 			return
 		}
 	}
 
 	now := time.Now()
 	order.UpdatedAt = now
+	if currentStatus == modelsOrder.OrderStatusConfirmed && previousStatus != currentStatus && h.services.Product != nil {
+		order.COGS = orderSvc.ComputeOrderCOGS(c.Request.Context(), order.Items, h.services.Product)
+	}
 	if order.Status == "confirmed" && order.ConfirmedAt == nil {
 		order.ConfirmedAt = &now
-		if order.COGS == 0 && h.services.Supplier != nil {
-			var totalCOGS float64
-			for _, item := range order.Items {
-				avgCost := h.services.Supplier.ComputeWeightedAvgCost(c.Request.Context(), item.ProductID)
-				totalCOGS += float64(item.Quantity) * avgCost
-			}
-			order.COGS = totalCOGS
-		}
 	}
 	if order.Status == "shipped" && order.ShippedAt == nil {
 		order.ShippedAt = &now
@@ -351,19 +378,19 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 	}
 
 	// Route through UpdateOrderForAdmin to trigger outbox when transitioning to confirmed
-	if currentStatus != previousStatus {
-		if err := h.services.Order.UpdateOrderForAdmin(c.Request.Context(), order, previousStatus, currentStatus); err != nil {
-			response.ErrorResp(c, http.StatusInternalServerError, "order_update_failed")
+	if err := h.services.Order.UpdateOrderForAdmin(c.Request.Context(), order, previousStatus, currentStatus); err != nil {
+		if errors.Is(err, modelsOrder.ErrInsufficientStock) {
+			response.ErrorResp(c, http.StatusUnprocessableEntity, "inventory_violation")
 			return
 		}
-	} else {
-		if err := h.services.Order.UpdateOrder(c.Request.Context(), order); err != nil {
-			response.ErrorResp(c, http.StatusInternalServerError, "order_update_failed")
-			return
-		}
+		response.ErrorResp(c, http.StatusInternalServerError, "order_update_failed")
+		return
 	}
 
 	h.syncOrderFinancialSideEffects(c, order, origFin, newFin, previousStatus, req.FinancialAdjustmentReason)
+	if previousStatus != currentStatus {
+		h.logOrderAudit(c, "order_status_change", order.ID, c.GetString("userID"), previousStatus, currentStatus)
+	}
 	if previousStatus != currentStatus && order.User != nil {
 		h.services.Order.SendOrderStatusEmail(order, order.User.Email,
 			order.User.FirstName+" "+order.User.LastName, currentStatus)
@@ -374,7 +401,7 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 
 // dispatchOrderWebhook fires outgoing webhooks for order status transitions.
 func (h *Handler) dispatchOrderWebhook(c *gin.Context, order *modelsOrder.Order, prevStatus, newStatus string) {
-	if h.services == nil || h.services.Webhook == nil || prevStatus == newStatus {
+	if h.services == nil || prevStatus == newStatus {
 		return
 	}
 	var eventType string
@@ -388,7 +415,7 @@ func (h *Handler) dispatchOrderWebhook(c *gin.Context, order *modelsOrder.Order,
 	default:
 		return
 	}
-	h.services.Webhook.Dispatch(c.Request.Context(), eventType, order.ID, order)
+	h.emitLifecycleEvent(c, eventType, order.ID, order)
 }
 
 // syncOrderFinancialSideEffects 订单金额变更后同步贸易主单并写审计
@@ -439,6 +466,15 @@ func (h *Handler) AdminDeleteOrder(c *gin.Context) {
 		"message": "Order deleted successfully",
 		"id":      orderID,
 	})
+}
+
+func hasNonZeroStockDelta(deltas map[string]int) bool {
+	for _, delta := range deltas {
+		if delta != 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func calculateStockAdjustment(oldItems, newItems []modelsOrder.OrderItem) map[string]int {

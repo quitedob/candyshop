@@ -1,6 +1,5 @@
 <template>
   <div class="legal-page">
-    <!-- Breadcrumb -->
     <div class="container pt-8">
       <Breadcrumb :items="[{ label: t('legal.terms_title') }]" />
     </div>
@@ -13,14 +12,42 @@
         <h2>{{ t('legal.terms.accept_title') }}</h2>
         <p>{{ t('legal.terms.accept_desc') }}</p>
 
+        <h2>{{ t('legal.terms.company_title') }}</h2>
+        <p>{{ t('legal.terms.company_desc') }}</p>
+
+        <h2>{{ t('legal.terms.b2b_title') }}</h2>
+        <p>{{ t('legal.terms.b2b_desc') }}</p>
+
+        <h2>{{ t('legal.terms.registration_title') }}</h2>
+        <p>{{ t('legal.terms.registration_desc') }}</p>
+
         <h2>{{ t('legal.terms.license_title') }}</h2>
         <p>{{ t('legal.terms.license_desc') }}</p>
+
+        <h2>{{ t('legal.terms.ip_title') }}</h2>
+        <p>{{ t('legal.terms.ip_desc') }}</p>
+
+        <h2>{{ t('legal.terms.payment_title') }}</h2>
+        <p>{{ t('legal.terms.payment_desc') }}</p>
+
+        <h2>{{ t('legal.terms.delivery_title') }}</h2>
+        <p>{{ t('legal.terms.delivery_desc') }}</p>
 
         <h2>{{ t('legal.terms.limitations_title') }}</h2>
         <p>{{ t('legal.terms.limitations_desc') }}</p>
 
+        <h2>{{ t('legal.terms.law_title') }}</h2>
+        <p>{{ t('legal.terms.law_desc') }}</p>
+
         <h2>{{ t('legal.terms.revisions_title') }}</h2>
         <p>{{ t('legal.terms.revisions_desc') }}</p>
+
+        <h2>{{ t('legal.terms.termination_title') }}</h2>
+        <p>{{ t('legal.terms.termination_desc') }}</p>
+
+        <h2>{{ t('legal.export_control_title') }}</h2>
+        <p>{{ t('legal.export_control_desc') }}</p>
+        <p>{{ t('legal.sanctions_notice') }}</p>
       </div>
     </div>
   </div>
@@ -32,8 +59,15 @@ import { useI18n } from '#i18n'
 const { t } = useI18n()
 const { formatDate } = useDisplay()
 
-useSeo({
-  title: `Terms of Service | ${t('seo.default_title')}`
+usePageOgImage({
+  title: `Terms of Service | ${t('seo.default_title')}`,
+  description: t('legal.terms.accept_desc'),
+  schema: {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: t('legal.terms_title'),
+    description: t('legal.terms.accept_desc'),
+  },
 })
 </script>
 

@@ -84,15 +84,15 @@
             </thead>
             <tbody class="divide-y divide-gray-200">
               <tr v-for="inv in invoices" :key="inv.id" class="hover:bg-gray-50" :class="{ 'bg-red-50': isOverdue(inv) }">
-                <td class="py-4 px-4 text-sm font-medium text-gray-900 max-w-[180px] truncate" :title="inv.invoice_no || inv.invoiceNo || '-'">{{ inv.invoice_no || inv.invoiceNo || '-' }}</td>
-                <td class="py-4 px-4 text-sm text-gray-700 whitespace-nowrap">${{ formatNumber(inv.total_amount || inv.totalAmount || 0) }}</td>
-                <td class="py-4 px-4 text-sm text-gray-700 whitespace-nowrap">{{ formatDate(inv.due_date || inv.dueDate) }}</td>
+                <td class="py-4 px-4 text-sm font-medium text-gray-900 max-w-[180px] truncate" :title="inv.invoiceNo || '-'">{{ inv.invoiceNo || '-' }}</td>
+                <td class="py-4 px-4 text-sm text-gray-700 whitespace-nowrap">${{ formatNumber(inv.totalAmount || 0) }}</td>
+                <td class="py-4 px-4 text-sm text-gray-700 whitespace-nowrap">{{ formatDate(inv.dueDate) }}</td>
                 <td class="py-4 px-4 whitespace-nowrap">
                   <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium max-w-[120px] truncate" :class="statusClass(inv.status)">
-                    {{ enumLabel('invoice_status', inv.status) }}
+                    {{ enumLabel(`invoice_status_${inv.status}`, inv.status) }}
                   </span>
                 </td>
-                <td class="py-4 px-4 text-sm text-gray-500 max-w-[160px] truncate" :title="inv.order_id || inv.orderId || '-'">{{ inv.order_id || inv.orderId || '-' }}</td>
+                <td class="py-4 px-4 text-sm text-gray-500 max-w-[160px] truncate" :title="inv.orderId || '-'">{{ inv.orderId || '-' }}</td>
               </tr>
             </tbody>
           </table>
@@ -109,6 +109,7 @@ import { Doughnut, Line } from 'vue-chartjs'
 definePageMeta({ layout: 'admin', middleware: ['auth'] })
 const { t } = useI18n()
 const api = useApi()
+const { colors: chartColors, rgba } = useChartTheme()
 
 const loading = ref(true)
 const error = ref(false)
@@ -148,12 +149,18 @@ const loadData = async () => {
 }
 
 const paymentChartData = computed(() => {
-  const colors = ['#10B981', '#F97316', '#F59E0B', '#EF4444', '#78716C']
+  const palette = [
+    chartColors.value.success,
+    chartColors.value.highlight,
+    chartColors.value.warning,
+    chartColors.value.error,
+    chartColors.value.muted,
+  ]
   return {
-    labels: breakdown.value.map(b => b.status || b.Status),
+    labels: breakdown.value.map(b => b.status),
     datasets: [{
-      data: breakdown.value.map(b => b.count || b.Count || 0),
-      backgroundColor: colors.slice(0, breakdown.value.length)
+      data: breakdown.value.map(b => b.count || 0),
+      backgroundColor: palette.slice(0, breakdown.value.length)
     }]
   }
 })
@@ -165,18 +172,18 @@ const paymentChartOptions = {
 }
 
 const revenueChartData = computed(() => ({
-  labels: revenueData.value.map(d => d.month || d.Month),
+  labels: revenueData.value.map(d => d.month),
   datasets: [{
     label: t('admin.financial.revenue'),
-    data: revenueData.value.map(d => d.revenue || d.Revenue || 0),
-    borderColor: '#10B981',
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    data: revenueData.value.map(d => d.revenue || 0),
+    borderColor: chartColors.value.success,
+    backgroundColor: rgba(chartColors.value.success, 0.1),
     fill: true,
     tension: 0.3
   }]
 }))
 
-const lineChartOptions = {
+const lineChartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
   plugins: { legend: { display: false } },
@@ -186,18 +193,18 @@ const lineChartOptions = {
       ticks: {
         display: true,
         maxRotation: 45,
-        color: '#6B7280',
+        color: chartColors.value.muted,
         font: { size: 11 }
       },
       grid: { display: false }
     },
     y: { beginAtZero: true }
   }
-}
+}))
 
 const { enumLabel, formatNumber, formatDate } = useDisplay()
 const isOverdue = (inv: any) => {
-  const due = inv.due_date || inv.dueDate
+  const due = inv.dueDate
   if (!due) return false
   return new Date(due) < new Date() && inv.status !== 'paid' && inv.status !== 'voided'
 }

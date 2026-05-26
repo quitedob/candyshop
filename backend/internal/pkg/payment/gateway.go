@@ -18,6 +18,8 @@ type GatewayResponse struct {
 	TransactionID string
 	Status        string
 	RawResponse   string // JSON dump of gateway response
+	ClientSecret  string // Stripe PaymentIntent client_secret
+	ApprovalURL   string // PayPal checkout approval URL
 }
 
 // PaymentGateway abstracts a payment processor (Stripe, PayPal, etc.).

@@ -1,10 +1,18 @@
 package public
 
 import (
+	modelsCommon "candypro/api/internal/models/common"
+	modelsProduct "candypro/api/internal/models/product"
 	"candypro/api/internal/pkg/response"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+)
+
+var (
+	_ modelsProduct.OEMFlow
+	_ modelsProduct.OEMSolution
+	_ modelsCommon.ErrorResponse
 )
 
 // ===== OEM =====

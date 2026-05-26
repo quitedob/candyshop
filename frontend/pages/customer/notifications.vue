@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="bg-white shadow overflow-hidden sm:rounded-lg">
     <div class="px-4 py-5 sm:px-6 border-b border-gray-200 flex items-center justify-between">
       <div>
@@ -32,6 +32,10 @@
           <NuxtLink v-if="item.type === 'order'" :to="localePath(`/customer/orders/${item.reference}`)"
             class="text-xs text-orange-600 hover:underline">
             {{ t('customer.notifications.view_order') }}
+          </NuxtLink>
+          <NuxtLink v-else-if="item.type === 'order_approval'" :to="localePath(`/customer/orders/${item.reference}`)"
+            class="text-xs text-orange-600 hover:underline">
+            {{ t('customer.notifications.view_approval') }}
           </NuxtLink>
           <NuxtLink v-else-if="item.type === 'inquiry'" :to="localePath(`/customer/inquiries/${item.reference}`)"
             class="text-xs text-orange-600 hover:underline">

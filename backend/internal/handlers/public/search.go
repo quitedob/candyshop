@@ -1,12 +1,16 @@
 package public
 
 import (
+	modelsProduct "candypro/api/internal/models/product"
 	apiresp "candypro/api/internal/pkg/response"
+	productService "candypro/api/internal/services/product"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
+
+var _ modelsProduct.SearchResponse
 
 // ===== Search =====
 
@@ -47,6 +51,15 @@ func (h *Handler) Search(c *gin.Context) {
 	if err != nil {
 		apiresp.ErrorResp(c, http.StatusInternalServerError, "search_failed")
 		return
+	}
+
+	locale, _ := c.Get("locale")
+	loc, _ := locale.(string)
+	if loc == "" {
+		loc = "zh"
+	}
+	if response != nil && len(response.Products) > 0 {
+		productService.ApplyProductTranslationsBatch(response.Products, loc)
 	}
 
 	c.JSON(http.StatusOK, response)

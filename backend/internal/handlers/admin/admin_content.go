@@ -5,6 +5,7 @@ import (
 	modelsProduct "candypro/api/internal/models/product"
 	"candypro/api/internal/pkg/crypto"
 	"candypro/api/internal/pkg/dberror"
+	"candypro/api/internal/pkg/i18n"
 	"candypro/api/internal/pkg/pagination"
 	"candypro/api/internal/pkg/response"
 	"candypro/api/internal/pkg/sanitize"
@@ -42,6 +43,7 @@ type adminContentCreateRequest struct {
 	Author      *adminContentAuthorInput `json:"author"`
 	PublishedAt *time.Time               `json:"publishedAt"`
 	Thumbnail   string                   `json:"thumbnail"`
+	OgImage     string                   `json:"ogImage"`
 	ReadTime    int                      `json:"readTime"`
 	Tags        []string                 `json:"tags"`
 	Translations *modelsCommon.JSONMap   `json:"translations"`
@@ -67,6 +69,7 @@ type adminContentUpdateRequest struct {
 	Author      *adminContentAuthorPatch `json:"author"`
 	PublishedAt *time.Time               `json:"publishedAt"`
 	Thumbnail   *string                  `json:"thumbnail"`
+	OgImage     *string                  `json:"ogImage"`
 	ReadTime     *int                    `json:"readTime"`
 	Tags         *[]string               `json:"tags"`
 	Translations *modelsCommon.JSONMap   `json:"translations"`
@@ -217,6 +220,7 @@ func (h *Handler) AdminCreateContent(c *gin.Context) {
 	switch contentType {
 	case "post":
 		post := buildPostFromCreateRequest(req)
+		syncPostScalarsFromLocale(post, i18n.DefaultLocale())
 		if strings.TrimSpace(post.Title) == "" {
 			response.InvalidResp(c, "content_title_required")
 			return
@@ -238,6 +242,7 @@ func (h *Handler) AdminCreateContent(c *gin.Context) {
 		})
 	case "case":
 		caseStudy := buildCaseFromCreateRequest(req)
+		syncCaseScalarsFromLocale(caseStudy, i18n.DefaultLocale())
 		if strings.TrimSpace(caseStudy.Title) == "" {
 			response.InvalidResp(c, "content_title_required")
 			return
@@ -293,6 +298,7 @@ func (h *Handler) AdminUpdateContent(c *gin.Context) {
 		}
 
 		applyPostPatch(post, req)
+		syncPostScalarsFromLocale(post, i18n.DefaultLocale())
 		if strings.TrimSpace(post.Title) == "" {
 			response.InvalidResp(c, "content_title_empty")
 			return
@@ -321,6 +327,7 @@ func (h *Handler) AdminUpdateContent(c *gin.Context) {
 		}
 
 		applyCasePatch(caseStudy, req)
+		syncCaseScalarsFromLocale(caseStudy, i18n.DefaultLocale())
 		if strings.TrimSpace(caseStudy.Title) == "" {
 			response.InvalidResp(c, "content_title_empty")
 			return
@@ -435,6 +442,7 @@ func buildPostFromCreateRequest(req adminContentCreateRequest) *modelsProduct.Bl
 		Content:     sanitize.HTML(strings.TrimSpace(req.Content)),
 		Category:    strings.TrimSpace(req.Category),
 		Thumbnail:   strings.TrimSpace(req.Thumbnail),
+		OgImage:     strings.TrimSpace(req.OgImage),
 		ReadTime:    req.ReadTime,
 		Tags:        modelsCommon.StringArray(req.Tags),
 		PublishedAt: now,
@@ -483,6 +491,7 @@ func buildCaseFromCreateRequest(req adminContentCreateRequest) *modelsProduct.Ca
 		Industry:  strings.TrimSpace(req.Industry),
 		Location:  strings.TrimSpace(req.Location),
 		Thumbnail: strings.TrimSpace(req.Thumbnail),
+		OgImage:   strings.TrimSpace(req.OgImage),
 		Images:    modelsCommon.StringArray(req.Images),
 		Challenge: sanitize.HTML(strings.TrimSpace(req.Challenge)),
 		Solution:  sanitize.HTML(strings.TrimSpace(req.Solution)),
@@ -516,6 +525,9 @@ func applyPostPatch(post *modelsProduct.BlogPost, req adminContentUpdateRequest)
 	}
 	if req.Thumbnail != nil {
 		post.Thumbnail = strings.TrimSpace(*req.Thumbnail)
+	}
+	if req.OgImage != nil {
+		post.OgImage = strings.TrimSpace(*req.OgImage)
 	}
 	if req.ReadTime != nil {
 		post.ReadTime = *req.ReadTime
@@ -567,6 +579,9 @@ func applyCasePatch(caseStudy *modelsProduct.CaseStudy, req adminContentUpdateRe
 	if req.Thumbnail != nil {
 		caseStudy.Thumbnail = strings.TrimSpace(*req.Thumbnail)
 	}
+	if req.OgImage != nil {
+		caseStudy.OgImage = strings.TrimSpace(*req.OgImage)
+	}
 	if req.Images != nil {
 		caseStudy.Images = modelsCommon.StringArray(*req.Images)
 	}
@@ -614,4 +629,68 @@ func handleDeleteContentError(c *gin.Context, err error, contentType string) {
 		return
 	}
 	response.ErrorResp(c, http.StatusInternalServerError, "content_delete_failed")
+}
+
+// syncPostScalarsFromLocale 将博客翻译字段同步到标量列。
+func syncPostScalarsFromLocale(post *modelsProduct.BlogPost, locale string) {
+	if post.Translations == nil {
+		return
+	}
+	fields, ok := post.Translations[locale]
+	if !ok {
+		return
+	}
+	if v := strings.TrimSpace(fields["title"]); v != "" {
+		post.Title = v
+	}
+	if v := strings.TrimSpace(fields["excerpt"]); v != "" {
+		post.Excerpt = v
+	}
+	if v := strings.TrimSpace(fields["content"]); v != "" {
+		post.Content = sanitize.HTML(v)
+	}
+	if v := strings.TrimSpace(fields["authorName"]); v != "" {
+		post.AuthorName = v
+	}
+	if v := strings.TrimSpace(fields["authorTitle"]); v != "" {
+		post.AuthorTitle = v
+	}
+	if v := strings.TrimSpace(fields["authorBio"]); v != "" {
+		post.AuthorBio = v
+	}
+	if post.Slug == "" && post.Title != "" {
+		post.Slug = buildProductSlug(post.Title)
+	}
+}
+
+// syncCaseScalarsFromLocale 将案例翻译字段同步到标量列。
+func syncCaseScalarsFromLocale(cs *modelsProduct.CaseStudy, locale string) {
+	if cs.Translations == nil {
+		return
+	}
+	fields, ok := cs.Translations[locale]
+	if !ok {
+		return
+	}
+	if v := strings.TrimSpace(fields["title"]); v != "" {
+		cs.Title = v
+	}
+	if v := strings.TrimSpace(fields["challenge"]); v != "" {
+		cs.Challenge = sanitize.HTML(v)
+	}
+	if v := strings.TrimSpace(fields["solution"]); v != "" {
+		cs.Solution = sanitize.HTML(v)
+	}
+	if v := strings.TrimSpace(fields["result"]); v != "" {
+		cs.Result = sanitize.HTML(v)
+	}
+	if cs.Slug == "" {
+		base := cs.Title
+		if base == "" {
+			base = cs.Client
+		}
+		if base != "" {
+			cs.Slug = buildProductSlug(base)
+		}
+	}
 }

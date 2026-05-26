@@ -5,11 +5,17 @@
 
 interface ProductQuery {
   category?: string
+  categories?: string
   page?: number
   limit?: number
-  sort?: 'name' | 'created' | 'popular'
+  sort?: 'name' | 'created' | 'popular' | 'moq_low' | 'moq_high'
   order?: 'asc' | 'desc'
   search?: string
+  halal?: boolean
+  oemOnly?: boolean
+  featured?: boolean
+  minMoq?: number
+  maxMoq?: number
   filters?: Record<string, string[]>
 }
 
@@ -22,6 +28,7 @@ interface Product {
   category: string
   categorySlug: string
   thumbnail: string
+  ogImage?: string
   images: string[]
   oemAvailable: boolean
   halalCertified: boolean
@@ -225,6 +232,7 @@ interface InquiryData {
   targetCountry?: string
   estimatedQuantity?: string
   interestedProducts?: string[]
+  productIds?: string[]
   packagingRequirements?: string
   flavorRequirements?: string
   oemNeeded?: boolean
@@ -265,10 +273,12 @@ export const useApi = () => {
     : config.public.apiBase || '/api/v1'
   const publicBaseURL = `${baseURL}/public`
   const { t, locale } = useI18n()
-  const authToken = useCookie<string | null>('auth_token')
+  const auth = useAuth()
+  let refreshPromise: Promise<boolean> | null = null
+  const requestHeaders = import.meta.server ? useRequestHeaders(['cookie']) : { cookie: undefined as string | undefined }
 
   /**
-   * Generic fetch wrapper with error handling
+   * Generic fetch wrapper with error handling and automatic 401 retry
    */
   const isFormData = (body: unknown): body is FormData => body instanceof FormData
 
@@ -276,29 +286,53 @@ export const useApi = () => {
     endpoint: string,
     options?: Record<string, unknown>
   ): Promise<T> => {
-    try {
+    const doFetch = async (): Promise<T> => {
       const body = options?.body
       const headers: Record<string, string> = {
         'Accept-Language': locale.value,
         ...(options?.headers as Record<string, string> ?? {})
       }
 
-      // Don't set Content-Type for FormData — browser sets multipart boundary automatically
       if (!isFormData(body)) {
         headers['Content-Type'] = 'application/json'
       }
 
-      if (authToken.value) {
-        headers['Authorization'] = `Bearer ${authToken.value}`
+      if (import.meta.server && requestHeaders.cookie) {
+        headers.cookie = requestHeaders.cookie
       }
 
-      const response = await $fetch<T>(`${baseURL}${endpoint}`, {
+      return await $fetch<T>(`${baseURL}${endpoint}`, {
         ...options,
+        credentials: 'include',
         headers
-      })
-      return response as T
+      }) as T
+    }
+
+    try {
+      return await doFetch()
     } catch (err: unknown) {
-      const error = err as { statusCode?: number; data?: { message?: string } }
+      let error = err as { statusCode?: number; data?: { message?: string } }
+
+      if (error?.statusCode === 401) {
+        if (!refreshPromise) {
+          refreshPromise = auth.refreshAccessToken().finally(() => {
+            refreshPromise = null
+          })
+        }
+
+        const refreshed = await refreshPromise
+        if (refreshed) {
+          try {
+            return await doFetch()
+          } catch (retryErr: unknown) {
+            error = retryErr as { statusCode?: number; data?: { message?: string } }
+          }
+        } else {
+          auth.logout()
+          throw { message: t('errors.session_expired'), statusCode: 401 }
+        }
+      }
+
       const apiError: ApiError = {
         message: t('errors.default'),
         statusCode: error?.statusCode
@@ -337,11 +371,21 @@ export const useApi = () => {
     const queryParams = new URLSearchParams()
 
     if (params.category) queryParams.append('category', params.category)
+    if (params.categories) queryParams.append('categories', params.categories)
     if (params.page) queryParams.append('page', params.page.toString())
     if (params.limit) queryParams.append('limit', params.limit.toString())
     if (params.sort) queryParams.append('sort', params.sort)
     if (params.order) queryParams.append('order', params.order)
     if (params.search) queryParams.append('search', params.search)
+    if (params.halal) queryParams.append('halal', 'true')
+    if (params.oemOnly) queryParams.append('oemOnly', 'true')
+    if (params.featured) queryParams.append('featured', 'true')
+    if (params.minMoq != null && Number.isFinite(params.minMoq) && params.minMoq > 0) {
+      queryParams.append('minMoq', String(params.minMoq))
+    }
+    if (params.maxMoq != null && Number.isFinite(params.maxMoq) && params.maxMoq > 0) {
+      queryParams.append('maxMoq', String(params.maxMoq))
+    }
     if (params.filters) {
       Object.entries(params.filters).forEach(([key, values]) => {
         values.forEach(value => queryParams.append(`filter[${key}]`, value))
@@ -497,7 +541,6 @@ export const useApi = () => {
   }
 
   const submitCustomerInquiry = async (data: InquiryData): Promise<InquiryResponse> => {
-    // Use FormData to support file attachments
     const formData = new FormData()
     Object.entries(data).forEach(([key, value]) => {
       if (key === 'files' && Array.isArray(value)) {
@@ -508,10 +551,9 @@ export const useApi = () => {
         formData.append(key, String(value))
       }
     })
-    return $fetch<InquiryResponse>(`${baseURL}/user/inquiries`, {
+    return fetchApi<InquiryResponse>('/user/inquiries', {
       method: 'POST',
-      body: formData,
-      headers: authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}
+      body: formData
     })
   }
 
@@ -527,18 +569,34 @@ export const useApi = () => {
   }
 
   const getOrder = async (id: string): Promise<any> => {
-    return fetchApi<any>(`/user/orders/${id}`)
+    const res = await fetchApi<any>(`/user/orders/${id}`)
+    if (res && typeof res === 'object' && 'order' in res) {
+      return { ...res.order, canApprove: res.canApprove, isOwner: res.isOwner }
+    }
+    return res
   }
+
+  // R2 B-4: critical customer mutations are routed through the POST helper so
+  // they pick up the auto-generated Idempotency-Key. Direct fetchApi POSTs
+  // were duplicate-prone on retries (network blip during checkout) — the
+  // backend M-17 middleware deduplicates only when this header is present.
+  const approveOrder = async (id: string, comment = '') =>
+    POST<any>(`/user/orders/${id}/approve`, { comment })
+
+  const rejectOrder = async (id: string, comment = '') =>
+    POST<any>(`/user/orders/${id}/reject`, { comment })
 
   const createOrder = async (data: {
     items: { productId: string; quantity: number; unitPrice: number; specifications?: string }[]
     currency?: string
     taxAmount?: number
     shippingAmount?: number
+    incoterms?: string
+    estimatedWeightKg?: number
     shippingAddress: { street: string; city: string; state?: string; zipCode?: string; country: string }
     inquiryId?: string
   }): Promise<any> => {
-    return fetchApi<any>('/user/orders', { method: 'POST', body: JSON.stringify(data) })
+    return POST<any>('/user/orders', data)
   }
 
   const createAIAssistOrder = async (data: {
@@ -553,11 +611,11 @@ export const useApi = () => {
     additionalRequirements?: string
     inquiryId?: string
   }): Promise<any> => {
-    return fetchApi<any>('/user/orders/ai-assist', { method: 'POST', body: JSON.stringify(data) })
+    return POST<any>('/user/orders/ai-assist', data)
   }
 
   const confirmOrder = async (id: string, complianceAck: boolean): Promise<any> => {
-    return fetchApi<any>(`/user/orders/${id}/confirm`, { method: 'POST', body: JSON.stringify({ complianceAck }) })
+    return POST<any>(`/user/orders/${id}/confirm`, { complianceAck })
   }
 
   /**
@@ -585,9 +643,32 @@ export const useApi = () => {
     return fetchApi<T>(`${endpoint}${queryString}`)
   }
 
-  const POST = <T>(endpoint: string, data?: any): Promise<T> => {
+  // R2 B-4: auto-generate an Idempotency-Key for every POST unless the
+  // caller has already supplied one (or explicitly opted out via the
+  // skipIdempotency option). This complements the backend M-17 middleware:
+  // when a customer's browser retries a checkout/payment/inquiry mutation
+  // (network blip, double-click, page reload during request), the second
+  // call hits the same key and the backend returns the original response
+  // instead of creating a duplicate row. PUT/DELETE remain idempotent at
+  // the HTTP-method level so we don't add the header there.
+  const generateIdempotencyKey = (): string => {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID()
+    }
+    return `idem-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  }
+
+  const POST = <T>(endpoint: string, data?: any, options?: Record<string, unknown>): Promise<T> => {
     const body = isFormData(data) ? data : JSON.stringify(data)
-    return fetchApi<T>(endpoint, { method: 'POST', body })
+    const skip = options?.skipIdempotency === true
+    const callerHeaders = (options?.headers as Record<string, string> | undefined) ?? {}
+    const hasKey = Object.keys(callerHeaders).some((h) => h.toLowerCase() === 'idempotency-key')
+    const finalOptions: Record<string, unknown> = { ...options, method: 'POST', body }
+    if (!skip && !hasKey) {
+      finalOptions.headers = { ...callerHeaders, 'Idempotency-Key': generateIdempotencyKey() }
+    }
+    delete finalOptions.skipIdempotency
+    return fetchApi<T>(endpoint, finalOptions)
   }
 
   const PUT = <T>(endpoint: string, data?: any): Promise<T> => {
@@ -595,8 +676,12 @@ export const useApi = () => {
     return fetchApi<T>(endpoint, { method: 'PUT', body })
   }
 
-  const DELETE = <T>(endpoint: string): Promise<T> => {
-    return fetchApi<T>(endpoint, { method: 'DELETE' })
+  const DELETE = <T>(endpoint: string, data?: any): Promise<T> => {
+    const opts: RequestInit = { method: 'DELETE' }
+    if (data !== undefined) {
+      opts.body = JSON.stringify(data)
+    }
+    return fetchApi<T>(endpoint, opts)
   }
 
   // Admin - Companies
@@ -645,44 +730,140 @@ export const useApi = () => {
   const adminDeletePriceList = (id: string) => DELETE<any>(`/admin/price-lists/${id}`)
   const adminGetProductPrices = (productId: string) => GET<any[]>(`/admin/products/${productId}/prices`)
   const adminSetProductPrice = (productId: string, data: any) => POST<any>(`/admin/products/${productId}/prices`, data)
-  const adminAIGenerateProduct = (data: { description: string; language: string }) => POST<any>('/admin/products/ai-generate', data)
+  const adminAIGenerateProduct = (data: { description: string; language: string }) =>
+    POST<any>('/admin/products/ai-generate', data, { timeout: 660_000 })
+
+  /** AI 批量翻译可能耗时数分钟，超时与后端 WRITE_TIMEOUT 对齐 */
+  const adminAITranslateProduct = (productId: string, data: { productId: string; targetLocales: string[] }) =>
+    POST<any>(`/admin/products/${productId}/ai-translate`, data, { timeout: 660_000 })
+
+  const adminAITranslateContent = (contentId: string, data: { contentId: string; contentType: string; targetLocales: string[] }) =>
+    POST<any>(`/admin/content/${contentId}/ai-translate`, data, { timeout: 660_000 })
 
   // Admin - Inquiries
   const adminGetInquiry = (id: string) => GET<any>(`/admin/inquiries/${id}`)
   const adminConvertInquiryToOrder = (id: string) => POST<any>(`/admin/inquiries/${id}/convert-to-order`)
   const adminConfirmInquiry = (id: string, data: any) => PUT<any>(`/admin/inquiries/${id}/confirm`, data)
+  const adminQuoteInquiry = (id: string, data: any) => POST<any>(`/admin/inquiries/${id}/quote`, data)
+  const adminCreateNegotiation = (inquiryId: string, data: any) => POST<any>(`/admin/inquiries/${inquiryId}/negotiations`, data)
+  const adminAcceptNegotiation = (inquiryId: string, offerId: string) => POST<any>(`/admin/inquiries/${inquiryId}/negotiations/${offerId}/accept`)
+  const adminRejectNegotiation = (inquiryId: string, offerId: string) => POST<any>(`/admin/inquiries/${inquiryId}/negotiations/${offerId}/reject`)
+
+  // Admin - Users
+  const adminGetUser = (id: string) => GET<any>(`/admin/users/${id}`)
+  const adminUpdateUserStatus = (id: string, status: string) => PUT<any>(`/admin/users/${id}/status`, { status })
+  const adminUpdateUserRole = (id: string, role: string) => PUT<any>(`/admin/users/${id}/role`, { roleName: role })
+  const adminUpdateUser = (id: string, data: any) => PUT<any>(`/admin/users/${id}`, data)
+  const adminDeleteUser = (id: string) => DELETE<any>(`/admin/users/${id}`)
 
   // Customer - Inquiries
   const customerUploadInquiryAttachment = (inquiryId: string, formData: FormData) => {
-    return $fetch<any>(`${baseURL}/user/inquiries/${inquiryId}/attachments`, {
+    return fetchApi<any>(`/user/inquiries/${inquiryId}/attachments`, {
       method: 'POST',
-      body: formData,
-      headers: authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}
+      body: formData
     })
   }
   const customerConfirmInquiry = (inquiryId: string, data: any) => POST<any>(`/user/inquiries/${inquiryId}/confirm`, data)
 
   // Customer - OEM Projects
   const customerGetOemProjects = (params?: Record<string, any>) => GET<PaginatedResponse<any>>('/user/oem-projects', params)
-  const customerCreateOemProject = (data: any) => POST<any>('/user/oem-projects', data)
+  const customerCreateOemProject = (data: {
+    productName: string
+    inquiryId?: string
+    notes?: string
+    flavor?: string
+    shape?: string
+    packaging?: string
+    targetMarket?: string
+    certifications?: string[]
+    moq?: number
+    files?: File[]
+  }) => {
+    if (data.files?.length) {
+      const formData = new FormData()
+      formData.append('productName', data.productName)
+      if (data.inquiryId) formData.append('inquiryId', data.inquiryId)
+      if (data.notes) formData.append('notes', data.notes)
+      if (data.flavor) formData.append('flavor', data.flavor)
+      if (data.shape) formData.append('shape', data.shape)
+      if (data.packaging) formData.append('packaging', data.packaging)
+      if (data.targetMarket) formData.append('targetMarket', data.targetMarket)
+      if (data.certifications?.length) formData.append('certifications', data.certifications.join(','))
+      if (data.moq) formData.append('moq', String(data.moq))
+      data.files.forEach((file) => formData.append('files', file))
+      return fetchApi<any>('/user/oem-projects', { method: 'POST', body: formData })
+    }
+    return POST<any>('/user/oem-projects', {
+      productName: data.productName,
+      inquiryId: data.inquiryId,
+      notes: data.notes,
+      requirements: {
+        flavor: data.flavor,
+        shape: data.shape,
+        packaging: data.packaging,
+        targetMarket: data.targetMarket,
+        certifications: data.certifications,
+        moq: data.moq || 0
+      }
+    })
+  }
+  const customerUploadOemProjectAttachment = (projectId: string, formData: FormData) =>
+    fetchApi<any>(`/user/oem-projects/${projectId}/attachments`, { method: 'POST', body: formData })
   const customerGetOemProject = (id: string) => GET<any>(`/user/oem-projects/${id}`)
+
+  // Customer - Shipments
+  const customerNudgeShipment = (tradeId: number | string, shipmentId: number | string) =>
+    POST<any>(`/user/trades/${tradeId}/shipments/${shipmentId}/nudge`, {})
+  const customerUploadShipmentAttachment = (
+    tradeId: number | string,
+    shipmentId: number | string,
+    formData: FormData
+  ) =>
+    fetchApi<any>(`/user/trades/${tradeId}/shipments/${shipmentId}/attachments`, {
+      method: 'POST',
+      body: formData,
+    })
+  const customerGetShipmentTimeline = (tradeId: number | string, shipmentId: number | string) =>
+    GET<any>(`/user/trades/${tradeId}/shipments/${shipmentId}/timeline`)
 
   // Customer - Payments
   const customerUploadPaymentProof = (orderId: string, formData: FormData) => {
-    return $fetch<any>(`${baseURL}/user/orders/${orderId}/payments`, {
+    return fetchApi<any>(`/user/orders/${orderId}/payments`, {
       method: 'POST',
-      body: formData,
-      headers: authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}
+      body: formData
     })
   }
 
+  const customerCreateGatewayPayment = (orderId: string, body: { method: string; amount?: number }) =>
+    POST<any>(`/user/orders/${orderId}/payments/gateway`, body)
+
+  /** 发送订单消息（支持纯文本 JSON 或 multipart 带附件） */
+  const customerSendOrderMessage = (
+    orderId: string,
+    payload: { message?: string; files?: File[] }
+  ) => {
+    if (payload.files?.length) {
+      const formData = new FormData()
+      if (payload.message?.trim()) formData.append('message', payload.message.trim())
+      payload.files.forEach((f) => formData.append('files', f))
+      return fetchApi<any>(`/user/orders/${orderId}/messages`, { method: 'POST', body: formData })
+    }
+    return POST<any>(`/user/orders/${orderId}/messages`, { message: payload.message?.trim() || '' })
+  }
+
   // Customer - Cart
-  const getCart = () => GET<any>('/user/cart')
+  const getCart = (params?: { destination?: string; region?: string; incoterms?: string }) =>
+    GET<any>('/user/cart', params)
   const addToCart = (productId: string, data: { quantity: number; unitPrice: number; specifications?: string }) => POST<any>('/user/cart/items', { productId, ...data })
   const updateCartItem = (itemId: string, data: { quantity: number }) => PUT<any>(`/user/cart/items/${itemId}`, data)
   const removeCartItem = (itemId: string) => DELETE<any>(`/user/cart/items/${itemId}`)
   const clearCart = () => DELETE<any>('/user/cart')
-  const checkoutCart = (data: { shippingAddress?: any }) => POST<any>('/user/cart/checkout', data)
+  const checkoutCart = (data: { shippingAddress?: any; couponCode?: string; incoterms?: string }) => POST<any>('/user/cart/checkout', data)
+  const validateCartCoupon = (data: { code: string; subtotal?: number }) => POST<any>('/user/cart/coupon/validate', data)
+  const applyCartCoupon = (data: { orderId: string; code: string }) => POST<any>('/user/cart/coupon', data)
+  const removeCartCoupon = (data: { orderId: string }) => DELETE<any>('/user/cart/coupon', data)
+
+  const getCustomerInvoices = () => GET<{ data: any[]; total: number }>('/user/invoices')
 
   // Customer - Notifications
   const markNotificationRead = (id: number) => PUT<any>(`/user/notifications/${id}/read`, {})
@@ -692,29 +873,41 @@ export const useApi = () => {
   const getInventory = (params?: Record<string, any>) => GET<PaginatedResponse<any>>('/admin/inventory', params)
   const updateInventory = (productId: string, data: { stockQuantity: number; reason?: string; notes?: string }) => PUT<any>(`/admin/inventory/${productId}`, data)
   const exportInventoryXlsx = (ids: string[]) => {
-    return fetchApi<Blob>('/admin/inventory/export-xlsx', { method: 'POST', body: JSON.stringify({ ids }) }).then(async (_res) => {
-      // Actually fetch as blob for download
-      const resp = await $fetch<Blob>(`${baseURL}/admin/inventory/export-xlsx`, {
-        method: 'POST',
-        body: { ids },
-        headers: authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {},
-        responseType: 'blob'
-      })
-      return resp
+    return fetchApi<Blob>('/admin/inventory/export-xlsx', {
+      method: 'POST',
+      body: JSON.stringify({ ids }),
+      responseType: 'blob'
     })
   }
   const importInventoryXlsx = (file: File) => {
     const formData = new FormData()
     formData.append('file', file)
-    return $fetch<any>(`${baseURL}/admin/inventory/import-xlsx`, {
+    return fetchApi<any>('/admin/inventory/import-xlsx', {
       method: 'POST',
-      body: formData,
-      headers: authToken.value ? { Authorization: `Bearer ${authToken.value}` } : {}
+      body: formData
     })
   }
   const applyInventoryImport = (data: { rows: any[]; imageColumns: string[] }) => {
     return fetchApi<any>('/admin/inventory/import-xlsx/apply', { method: 'POST', body: JSON.stringify(data) })
   }
+
+  // Admin - XLSX export & translate
+  const exportAdminXlsx = (type: 'products' | 'orders' | 'revenue' | 'trades' | 'customers', params?: Record<string, string>) => {
+    const qs = params ? `?${new URLSearchParams(params).toString()}` : ''
+    return fetchApi<Blob>(`/admin/xlsx/export/${type}${qs}`, { responseType: 'blob' })
+  }
+  const translateAdminXlsx = (file: File, opts: { targetLang?: string; targetLangs?: string[]; sourceLang?: string; batch?: boolean }) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    if (opts.sourceLang) formData.append('sourceLang', opts.sourceLang)
+    if (opts.batch && opts.targetLangs?.length) {
+      formData.append('targetLangs', opts.targetLangs.join(','))
+      return fetchApi<Blob>('/admin/xlsx/translate-batch', { method: 'POST', body: formData, responseType: 'blob', timeout: 660_000 })
+    }
+    if (opts.targetLang) formData.append('targetLang', opts.targetLang)
+    return fetchApi<Blob>('/admin/xlsx/translate', { method: 'POST', body: formData, responseType: 'blob', timeout: 660_000 })
+  }
+
   const batchUpdateInventory = (ids: string[], updates: Record<string, any>) => {
     return fetchApi<any>('/admin/inventory/batch-update', { method: 'POST', body: JSON.stringify({ ids, updates }) })
   }
@@ -749,13 +942,42 @@ export const useApi = () => {
   const adminUpdateCertification = (id: string, data: any) => PUT<any>(`/admin/certifications/${id}`, data)
   const adminDeleteCertification = (id: string) => DELETE<any>(`/admin/certifications/${id}`)
 
+  const adminGetCategories = () => GET<any[]>('/admin/categories')
+  const adminGetCategory = (slug: string) => GET<any>(`/admin/categories/${slug}`)
+  const adminCreateCategory = (data: any) => POST<any>('/admin/categories', data)
+  const adminUpdateCategory = (slug: string, data: any) => PUT<any>(`/admin/categories/${slug}`, data)
+  const adminDeleteCategory = (slug: string) => DELETE<any>(`/admin/categories/${slug}`)
+
   // Admin - Content
   const adminGetContent = (params?: Record<string, any>) => GET<PaginatedResponse<any>>('/admin/content', params)
   const adminGetContentById = (id: string, type: string) => GET<any>(`/admin/content/${id}?type=${type}`)
   const adminCreateContent = (data: any) => POST<any>('/admin/content', data)
   const adminUpdateContent = (id: string, data: any) => PUT<any>(`/admin/content/${id}`, data)
   const adminDeleteContent = (id: string, type: string) => DELETE<any>(`/admin/content/${id}?type=${type}`)
-  const adminAIGenerateContent = (data: { topic: string; type: string; language: string }) => POST<any>('/admin/content/ai-generate', data)
+  const adminAIGenerateContent = (data: { topic: string; type: string; language?: string; translate?: boolean }) => POST<any>('/admin/content/ai-generate', data)
+  const adminAITranslateContentFields = (data: {
+    contentType: string
+    sourceLocale?: string
+    targetLocales: string[]
+    fields: Record<string, string>
+  }) => POST<any>('/admin/content/ai-translate-fields', data, { timeout: 660_000 })
+  const adminAIInlineEditContent = (data: {
+    instruction: string
+    selectedText: string
+    selectedHtml?: string
+    contextBefore?: string
+    contextAfter?: string
+    fieldType: string
+    language?: string
+  }) => POST<any>('/admin/content/ai-inline-edit', data)
+  const adminAIReviseContent = (data: {
+    type: string
+    language?: string
+    instruction: string
+    selectedText?: string
+    focusFields?: string[]
+    current: Record<string, string>
+  }) => POST<any>('/admin/content/ai-revise', data)
 
   return {
     // Products
@@ -794,6 +1016,8 @@ export const useApi = () => {
     // Customer Orders
     getOrders,
     getOrder,
+    approveOrder,
+    rejectOrder,
     createOrder,
     createAIAssistOrder,
     confirmOrder,
@@ -848,21 +1072,40 @@ export const useApi = () => {
     adminGetProductPrices,
     adminSetProductPrice,
     adminAIGenerateProduct,
+    adminAITranslateProduct,
+    adminAITranslateContent,
 
     // Admin - Inquiries
     adminGetInquiry,
     adminConvertInquiryToOrder,
     adminConfirmInquiry,
+    adminQuoteInquiry,
+    adminCreateNegotiation,
+    adminAcceptNegotiation,
+    adminRejectNegotiation,
+    adminGetUser,
+    adminUpdateUserStatus,
+    adminUpdateUserRole,
+    adminUpdateUser,
+    adminDeleteUser,
     customerUploadInquiryAttachment,
     customerConfirmInquiry,
 
     // Customer - OEM Projects
     customerGetOemProjects,
     customerCreateOemProject,
+    customerUploadOemProjectAttachment,
     customerGetOemProject,
+
+    // Customer - Shipments
+    customerNudgeShipment,
+    customerUploadShipmentAttachment,
+    customerGetShipmentTimeline,
 
     // Customer - Payments
     customerUploadPaymentProof,
+    customerCreateGatewayPayment,
+    customerSendOrderMessage,
 
     // Customer - Cart
     getCart,
@@ -871,6 +1114,10 @@ export const useApi = () => {
     removeCartItem,
     clearCart,
     checkoutCart,
+    validateCartCoupon,
+    applyCartCoupon,
+    removeCartCoupon,
+    getCustomerInvoices,
 
     // Customer - Notifications
     markNotificationRead,
@@ -882,6 +1129,8 @@ export const useApi = () => {
     exportInventoryXlsx,
     importInventoryXlsx,
     applyInventoryImport,
+    exportAdminXlsx,
+    translateAdminXlsx,
     batchUpdateInventory,
     batchDeleteInventory,
 
@@ -912,6 +1161,13 @@ export const useApi = () => {
     adminUpdateCertification,
     adminDeleteCertification,
 
+    // Admin - Categories
+    adminGetCategories,
+    adminGetCategory,
+    adminCreateCategory,
+    adminUpdateCategory,
+    adminDeleteCategory,
+
     // Admin - Content
     adminGetContent,
     adminGetContentById,
@@ -919,6 +1175,9 @@ export const useApi = () => {
     adminUpdateContent,
     adminDeleteContent,
     adminAIGenerateContent,
+    adminAITranslateContentFields,
+    adminAIInlineEditContent,
+    adminAIReviseContent,
 
     // Generic HTTP helpers
     fetchApi,

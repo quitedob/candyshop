@@ -93,12 +93,32 @@
     </div>
 
     <!-- Editor Content Area -->
-    <TiptapEditorContent :editor="editor" class="rte-content" @focus="focused = true" @blur="focused = false" @paste="handlePaste" @drop="handleDrop" />
+    <div ref="editorWrapRef" class="rte-content-wrap">
+      <TiptapEditorContent :editor="editor" class="rte-content" @focus="focused = true" @blur="onEditorBlur" @paste="handlePaste" @drop="handleDrop" />
+    </div>
+
+    <InlineAiEditPopover
+      v-if="inlineAiEdit"
+      :open="inlineEdit.open"
+      :phase="inlineEdit.phase"
+      :position="inlineEdit.position"
+      :instruction="inlineEdit.instruction"
+      :selected-preview="truncatePreview(inlineEdit.selectedText)"
+      :original-preview="truncatePreview(stripTags(inlineEdit.selectedText))"
+      :replacement-preview="truncatePreview(stripTags(inlineEdit.replacement))"
+      :error="inlineEdit.error"
+      @update:instruction="inlineEdit.instruction = $event"
+      @submit="submitInlineEdit"
+      @accept="acceptInlineEdit"
+      @reject="rejectInlineEdit"
+      @close="closeInlineEdit"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { useEditor, EditorContent as TiptapEditorContent } from '@tiptap/vue-3'
+import { getHTMLFromFragment } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
@@ -111,15 +131,42 @@ const props = withDefaults(defineProps<{
   modelValue?: string
   placeholder?: string
   uploadUrl?: string
+  /** @deprecated 使用 inlineAiEdit */
+  captureSelection?: boolean
+  inlineAiEdit?: boolean
+  inlineAiLanguage?: string
 }>(), {
   modelValue: '',
   placeholder: undefined,
-  uploadUrl: '/admin/upload/image'
+  uploadUrl: '/admin/upload/image',
+  captureSelection: false,
+  inlineAiEdit: false,
+  inlineAiLanguage: 'zh',
 })
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
+  textSelection: [value: string]
 }>()
+
+const { requestInlineEdit, clampPopoverPosition } = useInlineAiEdit(props.inlineAiLanguage)
+const editorWrapRef = ref<HTMLElement>()
+const selectionRange = ref({ from: 0, to: 0 })
+const inlineEdit = reactive({
+  open: false,
+  phase: 'input' as 'input' | 'loading' | 'preview',
+  instruction: '',
+  position: { top: 0, left: 0 },
+  selectedText: '',
+  selectedHtml: '',
+  contextBefore: '',
+  contextAfter: '',
+  replacement: '',
+  error: '',
+})
+
+const stripTags = (s: string) => s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+const truncatePreview = (s: string, max = 140) => (s.length > max ? `${s.slice(0, max)}…` : s)
 
 const focused = ref(false)
 const linkDialogOpen = ref(false)
@@ -140,9 +187,29 @@ const editor = useEditor({
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
     Placeholder.configure({ placeholder: props.placeholder || defaultPlaceholder })
   ],
+  editorProps: {
+    handleKeyDown: (_view, event) => {
+      if (props.inlineAiEdit && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        openInlineEdit()
+        return true
+      }
+      return false
+    },
+  },
   onUpdate: ({ editor }) => {
     emit('update:modelValue', editor.getHTML())
-  }
+  },
+  onSelectionUpdate: ({ editor }) => {
+    const { from, to } = editor.state.selection
+    if (from !== to) {
+      selectionRange.value = { from, to }
+    }
+    if (!props.captureSelection || props.inlineAiEdit) return
+    if (from === to) return
+    const text = editor.state.doc.textBetween(from, to, ' ').trim()
+    if (text.length >= 2) emit('textSelection', text)
+  },
 })
 
 watch(() => props.modelValue, (val) => {
@@ -150,6 +217,80 @@ watch(() => props.modelValue, (val) => {
     editor.value.commands.setContent(val, false)
   }
 })
+
+const onEditorBlur = () => {
+  focused.value = false
+}
+
+const openInlineEdit = () => {
+  const ed = editor.value
+  if (!ed || !props.inlineAiEdit) return
+  const { from, to } = ed.state.selection
+  if (from === to) return
+  const selectedText = ed.state.doc.textBetween(from, to, ' ')
+  if (selectedText.trim().length < 1) return
+
+  const slice = ed.state.doc.slice(from, to)
+  const selectedHtml = getHTMLFromFragment(slice.content, ed.schema)
+  const doc = ed.state.doc
+  const contextBefore = doc.textBetween(Math.max(0, from - 400), from, ' ')
+  const contextAfter = doc.textBetween(to, Math.min(doc.content.size, to + 400), ' ')
+
+  selectionRange.value = { from, to }
+  inlineEdit.selectedText = selectedText
+  inlineEdit.selectedHtml = selectedHtml
+  inlineEdit.contextBefore = contextBefore
+  inlineEdit.contextAfter = contextAfter
+  inlineEdit.instruction = ''
+  inlineEdit.replacement = ''
+  inlineEdit.error = ''
+  inlineEdit.phase = 'input'
+
+  const coords = ed.view.coordsAtPos(from)
+  inlineEdit.position = clampPopoverPosition(coords.bottom + 8, coords.left)
+  inlineEdit.open = true
+}
+
+const closeInlineEdit = () => {
+  inlineEdit.open = false
+  inlineEdit.phase = 'input'
+  inlineEdit.error = ''
+}
+
+const submitInlineEdit = async () => {
+  if (!inlineEdit.instruction.trim()) return
+  inlineEdit.phase = 'loading'
+  inlineEdit.error = ''
+  try {
+    const res = await requestInlineEdit({
+      instruction: inlineEdit.instruction.trim(),
+      selectedText: inlineEdit.selectedText,
+      selectedHtml: inlineEdit.selectedHtml,
+      contextBefore: inlineEdit.contextBefore,
+      contextAfter: inlineEdit.contextAfter,
+      fieldType: 'html',
+      language: props.inlineAiLanguage,
+    })
+    inlineEdit.replacement = res.replacement
+    inlineEdit.phase = 'preview'
+  } catch {
+    inlineEdit.error = t('admin.content.inline_ai_failed')
+    inlineEdit.phase = 'input'
+  }
+}
+
+const acceptInlineEdit = () => {
+  const ed = editor.value
+  if (!ed) return
+  const { from, to } = selectionRange.value
+  ed.chain().focus().deleteRange({ from, to }).insertContentAt(from, inlineEdit.replacement).run()
+  closeInlineEdit()
+}
+
+const rejectInlineEdit = () => {
+  inlineEdit.phase = 'input'
+  inlineEdit.replacement = ''
+}
 
 const openLinkDialog = () => {
   linkUrl.value = editor.value?.getAttributes('link').href || ''
@@ -318,6 +459,9 @@ onBeforeUnmount(() => {
   color: var(--color-text-light);
 }
 
+.rte-content-wrap {
+  position: relative;
+}
 .rte-content {
   min-height: 300px;
   max-height: 600px;

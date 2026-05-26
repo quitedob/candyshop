@@ -1,0 +1,67 @@
+/* ============================================
+   ADMIN LAYOUT — Tailwind gray → design tokens
+   单仓业务 Admin 页 gray-* 类在此映射到 CSS 变量，支持暗色模式
+   ============================================ */
+
+.admin-layout .text-gray-900,
+.admin-layout .text-gray-800 { color: var(--color-text); }
+.admin-layout .text-gray-700,
+.admin-layout .text-gray-600 { color: var(--color-text-light); }
+.admin-layout .text-gray-500,
+.admin-layout .text-gray-400 { color: var(--color-text-lighter); }
+.admin-layout .text-gray-300 { color: var(--color-outline-variant); }
+
+.admin-layout .bg-white { background-color: var(--color-bg); }
+.admin-layout .bg-gray-50,
+.admin-layout .bg-gray-100 { background-color: var(--color-bg-alt); }
+.admin-layout .bg-gray-200 { background-color: var(--color-bg-dark); }
+
+.admin-layout .border-gray-100,
+.admin-layout .border-gray-200,
+.admin-layout .border-gray-300 { border-color: var(--color-border); }
+.admin-layout .border-gray-400 { border-color: var(--color-border-dark); }
+
+.admin-layout .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.admin-layout .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--color-border-light);
+}
+
+.admin-layout .hover\:bg-gray-50:hover { background-color: var(--color-bg-alt); }
+.admin-layout .hover\:bg-gray-100:hover { background-color: var(--color-bg-dark); }
+.admin-layout .hover\:text-gray-900:hover { color: var(--color-text); }
+
+.admin-layout .shadow,
+.admin-layout .shadow-sm,
+.admin-layout .shadow-md { box-shadow: var(--shadow-sm); }
+
+.admin-layout .ring-gray-300 { --tw-ring-color: var(--color-border); }
+
+/* 违规蓝紫色 → 品牌色 */
+.admin-layout .text-blue-600,
+.admin-layout .text-blue-900,
+.admin-layout .hover\:text-blue-900:hover { color: var(--color-highlight); }
+
+.admin-layout input:not([type="checkbox"]):not([type="radio"]),
+.admin-layout select,
+.admin-layout textarea {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.admin-layout input:focus,
+.admin-layout select:focus,
+.admin-layout textarea:focus {
+  border-color: var(--color-highlight);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(var(--color-highlight-rgb), 0.22);
+}
+
+.admin-main {
+  background-color: var(--color-bg-alt);
+  color: var(--color-text);
+}
+
+.admin-sidebar {
+  background-color: var(--color-primary-container);
+}

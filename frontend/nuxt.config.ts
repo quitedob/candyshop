@@ -1,10 +1,21 @@
 import * as process from 'node:process'
 
+// SWR/ISR 仅用于生产；开发模式走 Vite 实时 SSR，避免 stale dist 与 _payload.json 404
+const isProduction = process.env.NODE_ENV === 'production'
+const cacheRouteRules = isProduction
+  ? {
+      '/products/*': { swr: 3600 },
+      '/products/*/*': { swr: 3600 },
+      '/blog/**': { swr: 3600 },
+      '/cases-clients/**': { swr: 3600 },
+    }
+  : {}
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   // R4-20: Devtools only in development
   devtools: { enabled: process.env.NODE_ENV !== 'production' },
-  ssr: false,
+  ssr: true,
 
   // Modules
   modules: [
@@ -14,10 +25,49 @@ export default defineNuxtConfig({
     '@nuxt/icon'
   ],
 
-  // OG Image requires SSR to generate images at request time.
-  // With ssr:false this module cannot function — disable it to suppress the warning.
+  // Hybrid rendering: marketing SSR/ISR, admin/customer CSR
+  routeRules: {
+    '/api/**': {
+      proxy: {
+        to: (process.env.BACKEND_URL || 'http://localhost:8080') + '/api/**',
+        fetchOptions: { timeout: 660_000 },
+      },
+    },
+    '/**': {
+      headers: {
+        'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https:; object-src 'none'; base-uri 'self'; frame-src 'self' https://www.openstreetmap.org https://www.google.com; form-action 'self'; frame-ancestors 'none'"
+      }
+    },
+    '/admin/**': { ssr: false },
+    '/customer/**': { ssr: false },
+    '/auth/**': { ssr: false },
+    '/supplier/**': { redirect: '/' },
+    '/': { prerender: true },
+    '/about': { prerender: true },
+    '/faq': { prerender: true },
+    '/products': { prerender: true },
+    '/oem-solutions': { prerender: true },
+    '/factory-quality': { prerender: true },
+    '/privacy': { prerender: true },
+    '/terms': { prerender: true },
+    '/legal/**': { prerender: true },
+    '/blog': { prerender: true },
+    '/cases-clients': { prerender: true },
+    ...cacheRouteRules,
+    '/sitemap.xml': { prerender: true },
+    '/__og-image__/**': { prerender: false, index: false },
+  },
+
   ogImage: {
-    enabled: false
+    enabled: process.env.NUXT_OG_IMAGE !== 'false',
+    defaults: {
+      component: 'Default',
+      width: 1200,
+      height: 630,
+    },
+    compatibility: {
+      prerender: { chromium: false, sharp: false },
+    },
   },
 
   // Site config for @nuxtjs/seo
@@ -48,19 +98,26 @@ export default defineNuxtConfig({
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
         { name: 'format-detection', content: 'telephone=no' },
         { name: 'theme-color', content: '#ffffff', media: '(prefers-color-scheme: light)' },
-        { name: 'theme-color', content: '#1c1917', media: '(prefers-color-scheme: dark)' }
+        { name: 'theme-color', content: '#1c1b1b', media: '(prefers-color-scheme: dark)' }
       ],
       link: [
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
-        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap' }
-      ]
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: 'anonymous' },
+        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Noto+Serif+SC:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap' }
+      ],
+      // 首屏前应用主题，避免闪烁；配合 useDarkMode cookie 逻辑
+      script: [
+        {
+          innerHTML: `(function(){try{var m=document.cookie.match(/(?:^|;\\s*)theme=([^;]*)/);var t=m?decodeURIComponent(m[1]):'';var d=t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d)}catch(e){}})();`,
+          tagPosition: 'head',
+        },
+      ],
     },
     pageTransition: { name: 'page', mode: 'out-in' }
   },
 
   // CSS
-  css: ['~/assets/css/main.css'],
+  css: ['~/assets/css/main.css', '~/assets/css/admin-tokens.css'],
 
   // i18n Configuration
   i18n: {
@@ -83,7 +140,8 @@ export default defineNuxtConfig({
           'en/customer.json',
           'en/legal.json',
           'en/seo.json',
-          'en/about.json'
+          'en/about.json',
+          'en/supplier.json'
         ],
         name: 'English'
       },
@@ -105,7 +163,8 @@ export default defineNuxtConfig({
           'zh/customer.json',
           'zh/legal.json',
           'zh/seo.json',
-          'zh/about.json'
+          'zh/about.json',
+          'zh/supplier.json'
         ],
         name: '中文'
       },
@@ -116,7 +175,7 @@ export default defineNuxtConfig({
           'ko/common.json', 'ko/nav.json', 'ko/home.json', 'ko/products.json',
           'ko/factory.json', 'ko/oem.json', 'ko/cases.json', 'ko/blog.json',
           'ko/form.json', 'ko/auth.json', 'ko/admin.json', 'ko/customer.json',
-          'ko/legal.json', 'ko/seo.json', 'ko/about.json'
+          'ko/legal.json', 'ko/seo.json', 'ko/about.json', 'ko/supplier.json'
         ],
         name: '한국어'
       },
@@ -128,7 +187,7 @@ export default defineNuxtConfig({
           'ar/common.json', 'ar/nav.json', 'ar/home.json', 'ar/products.json',
           'ar/factory.json', 'ar/oem.json', 'ar/cases.json', 'ar/blog.json',
           'ar/form.json', 'ar/auth.json', 'ar/admin.json', 'ar/customer.json',
-          'ar/legal.json', 'ar/seo.json', 'ar/about.json'
+          'ar/legal.json', 'ar/seo.json', 'ar/about.json', 'ar/supplier.json'
         ],
         name: 'العربية'
       },
@@ -139,7 +198,7 @@ export default defineNuxtConfig({
           'ja/common.json', 'ja/nav.json', 'ja/home.json', 'ja/products.json',
           'ja/factory.json', 'ja/oem.json', 'ja/cases.json', 'ja/blog.json',
           'ja/form.json', 'ja/auth.json', 'ja/admin.json', 'ja/customer.json',
-          'ja/legal.json', 'ja/seo.json', 'ja/about.json'
+          'ja/legal.json', 'ja/seo.json', 'ja/about.json', 'ja/supplier.json'
         ],
         name: '日本語'
       },
@@ -150,7 +209,7 @@ export default defineNuxtConfig({
           'th/common.json', 'th/nav.json', 'th/home.json', 'th/products.json',
           'th/factory.json', 'th/oem.json', 'th/cases.json', 'th/blog.json',
           'th/form.json', 'th/auth.json', 'th/admin.json', 'th/customer.json',
-          'th/legal.json', 'th/seo.json', 'th/about.json'
+          'th/legal.json', 'th/seo.json', 'th/about.json', 'th/supplier.json'
         ],
         name: 'ไทย'
       },
@@ -161,7 +220,7 @@ export default defineNuxtConfig({
           'vi/common.json', 'vi/nav.json', 'vi/home.json', 'vi/products.json',
           'vi/factory.json', 'vi/oem.json', 'vi/cases.json', 'vi/blog.json',
           'vi/form.json', 'vi/auth.json', 'vi/admin.json', 'vi/customer.json',
-          'vi/legal.json', 'vi/seo.json', 'vi/about.json'
+          'vi/legal.json', 'vi/seo.json', 'vi/about.json', 'vi/supplier.json'
         ],
         name: 'Tiếng Việt'
       },
@@ -172,7 +231,7 @@ export default defineNuxtConfig({
           'id/common.json', 'id/nav.json', 'id/home.json', 'id/products.json',
           'id/factory.json', 'id/oem.json', 'id/cases.json', 'id/blog.json',
           'id/form.json', 'id/auth.json', 'id/admin.json', 'id/customer.json',
-          'id/legal.json', 'id/seo.json', 'id/about.json'
+          'id/legal.json', 'id/seo.json', 'id/about.json', 'id/supplier.json'
         ],
         name: 'Bahasa Indonesia'
       },
@@ -183,7 +242,7 @@ export default defineNuxtConfig({
           'ms/common.json', 'ms/nav.json', 'ms/home.json', 'ms/products.json',
           'ms/factory.json', 'ms/oem.json', 'ms/cases.json', 'ms/blog.json',
           'ms/form.json', 'ms/auth.json', 'ms/admin.json', 'ms/customer.json',
-          'ms/legal.json', 'ms/seo.json', 'ms/about.json'
+          'ms/legal.json', 'ms/seo.json', 'ms/about.json', 'ms/supplier.json'
         ],
         name: 'Bahasa Melayu'
       }
@@ -193,17 +252,28 @@ export default defineNuxtConfig({
     restructureDir: false,
     defaultLocale: 'zh',
     strategy: 'prefix_except_default',
-    seo: false,
-    detectBrowserLanguage: false,
+    // 禁止 lazy 模式预加载 fallback 语言包（避免缺失键时显示英语）
+    fallbackLocale: false as const,
+    baseUrl: process.env.SITE_URL || 'https://candypro-oem.com',
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'user-locale',
+      alwaysRedirect: false,
+      fallbackLocale: 'zh',
+    },
     experimental: {
-      localeDetector: './composables/useLocaleDetector.ts'
+      strictSeo: true,
+      localeDetector: './composables/useLocaleDetector.ts',
     },
     vueI18n: './i18n.config.ts'
   },
 
-  // Icon configuration (serve from local bundle, avoid CDN 404s)
+  // Icon：禁用 server bundle，避免 prerender 阶段 createRequire(file:///_entry.js) 崩溃
   icon: {
-    serverBundle: 'local'
+    provider: 'iconify',
+    clientBundle: {
+      scan: true,
+    },
   },
 
   // Runtime config
@@ -211,16 +281,29 @@ export default defineNuxtConfig({
     public: {
       apiBase: process.env.API_BASE_URL || '/api/v1',
       siteUrl: process.env.SITE_URL || 'https://candypro-oem.com',
+      defaultOgImage: '/og-default.png',
       whatsappNumber: process.env.WHATSAPP_NUMBER || '1234567890',
-      googleMapsApiKey: process.env.NUXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
+      googleMapsApiKey: process.env.NUXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+      enableMultiWarehouse: process.env.NUXT_PUBLIC_ENABLE_MULTI_WAREHOUSE === 'true',
+      jwtAccessMinutes: Number(process.env.NUXT_PUBLIC_JWT_ACCESS_MINUTES || 15),
     },
     // Server-only: used during SSR so $fetch bypasses Nitro localFetch (which ignores devProxy)
-    internalApiBase: 'http://localhost:8080/api/v1'
+    internalApiBase: process.env.INTERNAL_API_BASE || 'http://localhost:8080/api/v1'
   },
 
-  // Sitemap
+  // Sitemap — i18n 多 sitemap 模式下顶层 sources 会被忽略，须写入各 locale sitemap
   sitemap: {
-    sources: ['/api/__sitemap__/urls'],
+    sitemaps: {
+      'en-US': { sources: ['/__sitemap__/cms-urls'], includeAppSources: true },
+      'zh-CN': { sources: ['/__sitemap__/cms-urls'], includeAppSources: true },
+      'ko-KR': { sources: ['/__sitemap__/cms-urls'], includeAppSources: true },
+      'ar-SA': { sources: ['/__sitemap__/cms-urls'], includeAppSources: true },
+      'ja-JP': { sources: ['/__sitemap__/cms-urls'], includeAppSources: true },
+      'th-TH': { sources: ['/__sitemap__/cms-urls'], includeAppSources: true },
+      'vi-VN': { sources: ['/__sitemap__/cms-urls'], includeAppSources: true },
+      'id-ID': { sources: ['/__sitemap__/cms-urls'], includeAppSources: true },
+      'ms-MY': { sources: ['/__sitemap__/cms-urls'], includeAppSources: true },
+    },
     exclude: [
       '/admin/**',
       '/customer/**',
@@ -239,6 +322,8 @@ export default defineNuxtConfig({
       '/admin/',
       '/customer/',
       '/auth/',
+      '/contact',
+      '/api/',
     ],
     allow: [
       '/',
@@ -246,7 +331,6 @@ export default defineNuxtConfig({
       '/blog/**',
       '/faq',
       '/about',
-      '/contact',
       '/oem-solutions',
       '/factory-quality',
       '/cases-clients/**',
@@ -259,12 +343,12 @@ export default defineNuxtConfig({
     host: '0.0.0.0',
     devProxy: {
       '/api': {
-        target: 'http://localhost:8080/api',
+        target: process.env.API_PROXY_TARGET || 'http://localhost:8080/api',
         changeOrigin: true
       }
     },
     prerender: {
-      routes: ['/', '/about', '/faq', '/contact', '/factory-quality', '/oem-solutions', '/privacy', '/terms', '/products', '/blog'],
+      failOnError: false,
     },
     alias: {
       // Fix nuxt-og-image unenv v2 incompatibility — the module references
@@ -285,10 +369,24 @@ export default defineNuxtConfig({
   // Vite config
   vite: {
     optimizeDeps: {
-      include: [],
+      // 预打包核心依赖，减少 dev 模式下 optimizeDeps 变更触发的 HMR 双 Vue 实例问题
+      include: [
+        'vue',
+        'vue-router',
+        'vue-chartjs',
+        'chart.js',
+      ],
       exclude: ['unenv', 'nuxt-og-image']
     },
     resolve: {
+      // 避免 Vite 热更新后加载多份 Vue，导致 inject(route) / ref.value 报错
+      dedupe: [
+        'vue',
+        'vue-router',
+        '@vue/runtime-core',
+        '@vue/runtime-dom',
+        '@vue/reactivity',
+      ],
       alias: {
         // Fix unenv v2 double-runtime path issue (unenv/dist/runtime/runtime/mock/empty.mjs)
         'unenv/runtime/mock/empty.mjs': 'unenv/dist/runtime/mock/empty.mjs'

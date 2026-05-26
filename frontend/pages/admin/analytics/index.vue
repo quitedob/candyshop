@@ -114,9 +114,9 @@
               <tbody class="divide-y divide-gray-200 bg-white">
                 <tr v-for="(product, idx) in topProducts" :key="idx" class="hover:bg-gray-50 transition-colors">
                   <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ idx + 1 }}</td>
-                  <td class="px-4 py-3 text-sm text-gray-700">{{ product.name || product.productName || '-' }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">{{ product.name || '-' }}</td>
                   <td class="px-4 py-3 text-sm text-gray-700 text-right font-medium">{{ cur() }} {{ formatNumber(product.revenue || 0) }}</td>
-                  <td class="px-4 py-3 text-sm text-gray-700 text-right">{{ formatNumber(product.quantity || product.totalQuantity || 0) }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700 text-right">{{ formatNumber(product.quantity || 0) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -164,6 +164,7 @@ definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
 const { t } = useI18n()
 const { formatNumber, currencyOrDefault: cur } = useDisplay()
+const { colors: chartColors, rgba } = useChartTheme()
 const api = useApi()
 
 const pending = ref(true)
@@ -182,7 +183,7 @@ const dateRanges = computed(() => [
 ])
 
 // Chart options
-const lineChartOptions = {
+const lineChartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
@@ -196,10 +197,11 @@ const lineChartOptions = {
   scales: {
     x: {
       display: true,
+      title: { display: true, text: t('admin.dashboard.date'), color: chartColors.value.muted, font: { size: 11 } },
       ticks: {
         display: true,
         maxRotation: 45,
-        color: '#6B7280',
+        color: chartColors.value.muted,
         font: { size: 11 }
       },
       grid: { display: false }
@@ -211,9 +213,9 @@ const lineChartOptions = {
       }
     }
   }
-}
+}))
 
-const barChartOptions = {
+const barChartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
@@ -222,10 +224,11 @@ const barChartOptions = {
   scales: {
     x: {
       display: true,
+      title: { display: true, text: t('admin.dashboard.date'), color: chartColors.value.muted, font: { size: 11 } },
       ticks: {
         display: true,
         maxRotation: 45,
-        color: '#6B7280',
+        color: chartColors.value.muted,
         font: { size: 11 }
       },
       grid: { display: false }
@@ -237,7 +240,7 @@ const barChartOptions = {
       }
     }
   }
-}
+}))
 
 const doughnutOptions = {
   responsive: true,
@@ -258,15 +261,15 @@ const doughnutOptions = {
 const revenueChartData = computed(() => {
   if (!revenueData.value?.data?.length) return null
   return {
-    labels: revenueData.value.data.map((d: any) => d.month || d.label || ''),
+    labels: revenueData.value.data.map((d: any) => d.month || ''),
     datasets: [{
       label: t('admin.analytics.revenue_label'),
-      data: revenueData.value.data.map((d: any) => d.revenue || d.amount || 0),
-      borderColor: '#F97316',
-      backgroundColor: 'rgba(249, 115, 22, 0.1)',
+      data: revenueData.value.data.map((d: any) => d.revenue || 0),
+      borderColor: chartColors.value.highlight,
+      backgroundColor: rgba(chartColors.value.highlight, 0.1),
       fill: true,
       tension: 0.3,
-      pointBackgroundColor: '#F97316',
+      pointBackgroundColor: chartColors.value.highlight,
       pointBorderColor: '#fff',
       pointBorderWidth: 2,
       pointRadius: 4
@@ -277,12 +280,12 @@ const revenueChartData = computed(() => {
 const orderChartData = computed(() => {
   if (!orderData.value?.data?.length) return null
   return {
-    labels: orderData.value.data.map((d: any) => d.month || d.label || ''),
+    labels: orderData.value.data.map((d: any) => d.month || ''),
     datasets: [{
       label: t('admin.analytics.orders_label'),
-      data: orderData.value.data.map((d: any) => d.count || d.orders || 0),
-      backgroundColor: 'rgba(16, 185, 129, 0.7)',
-      borderColor: '#10B981',
+      data: orderData.value.data.map((d: any) => d.count || 0),
+      backgroundColor: rgba(chartColors.value.success, 0.7),
+      borderColor: chartColors.value.success,
       borderWidth: 1,
       borderRadius: 4,
       barPercentage: 0.6
@@ -297,20 +300,23 @@ const inquiryChartData = computed(() => {
   const values = Object.values(statusMap) as number[]
 
   const colorMap: Record<string, string> = {
-    pending: '#F59E0B',
-    reviewing: '#FB923C',
-    quoted: '#EA580C',
-    accepted: '#10B981',
-    rejected: '#EF4444',
-    converted: '#059669',
-    expired: '#9CA3AF'
+    // H-10: align with backend Inquiry status values (pending, quoted,
+    // negotiating, won, lost). Previously this mapped to reviewing/accepted/
+    // rejected/converted, which the API never returns, so most slices fell
+    // back to the muted grey colour.
+    pending: chartColors.value.warning,
+    quoted: chartColors.value.accent,
+    negotiating: chartColors.value.highlight,
+    won: chartColors.value.success,
+    lost: chartColors.value.error,
+    expired: chartColors.value.muted,
   }
 
   return {
     labels: labels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
     datasets: [{
       data: values,
-      backgroundColor: labels.map(l => colorMap[l] || '#6B7280'),
+      backgroundColor: labels.map(l => colorMap[l] || chartColors.value.muted),
       borderWidth: 0,
       hoverOffset: 4
     }]

@@ -24,7 +24,7 @@
           <div class="product-header__gallery">
             <ProductGallery
               :images="product.images"
-              :alt="product.name"
+              :alt="tField(product, 'name')"
             />
           </div>
 
@@ -54,13 +54,13 @@
               </span>
             </div>
 
-            <h1 class="product-header__title">{{ product.name }}</h1>
-            <p class="product-header__summary">{{ product.summary }}</p>
+            <h1 class="product-header__title">{{ tField(product, 'name') }}</h1>
+            <p class="product-header__summary">{{ tField(product, 'summary') }}</p>
 
             <!-- Price -->
             <p v-if="product.basePrice" class="product-header__price">
               {{ $t('product.price_from') }} {{ priceDisplay }}{{ $t('product.price_per_unit') }}
-              <span v-if="currency.isConverted.value" class="product-header__price-note">{{ $t('product.reference_price') }}</span>
+              <span v-if="currency.isConverted.value && currency.ratesLoaded.value" class="product-header__price-note">{{ $t('product.reference_price') }}: {{ referencePriceDisplay }}</span>
             </p>
 
             <!-- Quick Specs -->
@@ -85,14 +85,31 @@
                 <Icon name="lucide:message-circle" size="20" />
                 {{ $t('product.inquire_now') }}
               </button>
-              <NuxtLink v-if="isAuthenticated && !isAdmin" :to="localePath(`/customer/products/${product.id || product.slug}`)" class="btn btn-outline btn-lg">
-                <Icon name="lucide:shopping-bag" size="20" />
-                {{ $t('product.place_order') }}
-              </NuxtLink>
-              <button v-else class="btn btn-outline btn-lg" @click="openInquiryModal">
-                <Icon name="lucide:package" size="20" />
-                {{ $t('product.request_sample') }}
-              </button>
+              <template v-if="isMounted">
+                <button
+                  v-if="!isAdmin"
+                  class="btn btn-outline btn-lg"
+                  :disabled="addingToCart"
+                  @click="handleAddToCart"
+                >
+                  <Icon name="lucide:shopping-cart" size="20" />
+                  {{ addingToCart ? $t('common.loading') : $t('product.add_to_cart') }}
+                </button>
+                <NuxtLink v-if="isAuthenticated && !isAdmin" :to="localePath(`/customer/products/${product.slug}`)" class="btn btn-outline btn-lg">
+                  <Icon name="lucide:shopping-bag" size="20" />
+                  {{ $t('product.place_order') }}
+                </NuxtLink>
+                <button v-else-if="!isAuthenticated" class="btn btn-outline btn-lg" @click="openInquiryModal">
+                  <Icon name="lucide:package" size="20" />
+                  {{ $t('product.request_sample') }}
+                </button>
+              </template>
+              <template v-else>
+                <button class="btn btn-outline btn-lg" disabled>
+                  <Icon name="lucide:package" size="20" />
+                  {{ $t('product.request_sample') }}
+                </button>
+              </template>
             </div>
 
             <!-- Certifications -->
@@ -129,7 +146,7 @@
           <!-- Description -->
           <Transition name="tab-fade" mode="out-in">
           <div v-if="activeTab === 'description'" key="description" class="tab-content">
-            <div class="tab-content__body">{{ product.description }}</div>
+            <div class="tab-content__body">{{ tField(product, 'description') }}</div>
           </div>
 
           <!-- Specifications -->
@@ -205,6 +222,22 @@
       </div>
     </section>
 
+    <!-- Compliance Notices -->
+    <section class="compliance section-sm bg-alt">
+      <div class="container">
+        <div class="compliance__inner">
+          <div class="compliance__notice">
+            <Icon name="lucide:globe" size="18" class="compliance__icon" />
+            <p class="compliance__text">{{ t('legal.jurisdiction_notice_desc') }}</p>
+          </div>
+          <div class="compliance__notice">
+            <Icon name="lucide:shield-check" size="18" class="compliance__icon" />
+            <p class="compliance__text">{{ t('legal.food_compliance_desc') }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Sticky Inquiry CTA (Mobile) -->
     <div class="sticky-cta hide-desktop">
       <button class="sticky-cta__inquire" @click="openInquiryModal">
@@ -215,77 +248,109 @@
       </button>
     </div>
 
-    <!-- Inquiry Modal -->
-    <Teleport to="body">
-      <div
-        v-if="isInquiryOpen"
-        class="modal"
-        @click.self="closeInquiryModal"
-      >
-        <div class="modal__content">
-          <button class="modal__close" @click="closeInquiryModal">
-            <Icon name="lucide:x" size="24" />
-          </button>
-          <div class="modal__body">
-            <h3>{{ $t('product.inquire_now') }}</h3>
-            <InquiryForm
-              :product-slug="product.slug"
-              :product-name="product.name"
-              :category="categoryName"
-              @success="closeInquiryModal"
-            />
+    <!-- Inquiry Modal（仅客户端挂载，避免 SSR/hydration 与 Teleport 冲突） -->
+    <ClientOnly>
+      <Teleport to="body">
+        <div
+          v-if="isInquiryOpen"
+          class="modal"
+          @click.self="closeInquiryModal"
+        >
+          <div class="modal__content">
+            <button class="modal__close" @click="closeInquiryModal">
+              <Icon name="lucide:x" size="24" />
+            </button>
+            <div class="modal__body">
+              <h3>{{ $t('product.inquire_now') }}</h3>
+              <InquiryForm
+                :product-slug="product.slug"
+                :product-id="product.id"
+                :product-name="tField(product, 'name')"
+                :category="categoryName"
+                @success="closeInquiryModal"
+              />
+            </div>
           </div>
         </div>
-      </div>
-    </Teleport>
+      </Teleport>
+    </ClientOnly>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n, useLocalePath } from '#i18n'
 import { useDisplay } from '~/composables/useDisplay'
+import { useTranslation } from '~/composables/useTranslation'
 
-const { t, locale } = useI18n()
+const { t, te, locale } = useI18n()
+const { tField } = useTranslation()
 const localePath = useLocalePath()
 const route = useRoute()
+const config = useRuntimeConfig()
+const siteUrl = config.public.siteUrl || 'https://candypro-oem.com'
 const { isAuthenticated, isAdmin, isPending } = useAuth()
-const { formatNumber } = useDisplay()
+const { formatNumber, currencyOrDefault: cur } = useDisplay()
 const currency = useCurrency()
 const api = useApi()
+const toast = useToast()
 
-const priceDisplay = computed(() => currency.formatPrice(product.value.basePrice || 0))
+const transactionCurrency = computed(() => cur((product.value as { currency?: string })?.currency || 'USD'))
+const priceDisplay = computed(() => `${transactionCurrency.value} ${formatNumber(product.value.basePrice || 0)}`)
+const referencePriceDisplay = computed(() => currency.formatPrice(product.value.basePrice || 0))
 const { getProduct, getRelatedProducts } = api
 
 // State
 const activeTab = ref('description')
 const isInquiryOpen = ref(false)
+const addingToCart = ref(false)
+const isMounted = ref(false)
+
+onMounted(async () => {
+  isMounted.value = true
+  if (route.query.addToCart === '1' && isAuthenticated.value && !isAdmin.value && product.value?.id) {
+    await handleAddToCart()
+    const query = { ...route.query }
+    delete query.addToCart
+    await navigateTo({ path: route.path, query, replace: true })
+  }
+})
 
 // Route params
 const categorySlug = computed(() => route.params.category as string)
 const productSlug = computed(() => route.params.slug as string)
 
-// Fetch product
-const { data: productData, status: productStatus, refresh: refreshProduct } = await useAsyncData(
-  `product-${productSlug.value}-${locale.value}`,
-  async () => {
-    return await getProduct(productSlug.value)
-  }
-)
+// 并行拉取产品与关联产品，避免多次 await 导致 hydration 不一致
+const [
+  { data: productData, status: productStatus, refresh: refreshProduct },
+  { data: relatedProductsData }
+] = await Promise.all([
+  useAsyncData(
+    `product-${productSlug.value}-${locale.value}`,
+    () => getProduct(productSlug.value)
+  ),
+  useAsyncData(
+    `related-${productSlug.value}-${locale.value}`,
+    () => getRelatedProducts(productSlug.value, 3)
+  )
+])
 
 const product = computed(() => productData.value || {})
 
 const categoryName = computed(() => {
-  const slugKey = (product.value.categorySlug || product.value.category || '').replace(/-/g, '_')
+  const slug = product.value.categorySlug || categorySlug.value
+  const slugKey = slug.replace(/-/g, '_')
+  if (!slugKey) return categorySlug.value.replace(/-/g, ' ')
   const key = `product.categories.${slugKey}`
-  return t(key, product.value.category)
+  if (te(key)) return t(key)
+  return product.value.category || categorySlug.value.replace(/-/g, ' ')
 })
 
-// Breadcrumb
+// Breadcrumb — SSR 阶段使用 slug 兜底，避免 hydration 标签不一致
 const breadcrumbItems = computed(() => [
   { label: t('nav.products'), to: '/products' },
-  { label: categoryName.value, to: `/products/${categorySlug.value}` },
-  { label: product.value.name }
+  { label: categoryName.value || categorySlug.value, to: `/products/${categorySlug.value}` },
+  { label: tField(product.value, 'name') || productSlug.value.replace(/-/g, ' ') }
 ])
 
 // Tabs
@@ -395,7 +460,7 @@ const oemOptions = [
       { id: 'berry', label: t('product.flavor_options.berry'), image: '/images/flavors/berry.jpg' },
       { id: 'custom', label: t('product.flavor_options.custom'), image: '/images/flavors/custom.jpg' }
     ],
-    pricing: { moq: '3,000 pcs', leadTime: '4-6 weeks' }
+    pricing: { moq: '3,000 pcs', leadTime: t('product.category_placeholder_lead') }
   },
   {
     icon: 'lucide:shape',
@@ -408,7 +473,7 @@ const oemOptions = [
       { id: 'letter', label: t('product.shape_options.letter'), image: '/images/shapes/letter.jpg' },
       { id: 'custom', label: t('product.shape_options.custom'), image: '/images/shapes/custom.jpg' }
     ],
-    pricing: { moq: '5,000 pcs', leadTime: '6-8 weeks' }
+    pricing: { moq: '5,000 pcs', leadTime: t('product.category_placeholder_lead') }
   },
   {
     icon: 'lucide:palette',
@@ -420,15 +485,10 @@ const oemOptions = [
       { id: 'vibrant', label: t('product.color_options.vibrant'), image: '/images/colors/vibrant.jpg' },
       { id: 'custom', label: t('product.color_options.custom'), image: '/images/colors/custom.jpg' }
     ],
-    pricing: { moq: '2,000 pcs', leadTime: '3-4 weeks' }
+    pricing: { moq: '2,000 pcs', leadTime: t('product.category_placeholder_lead') }
   }
 ]
 
-// Related products
-const { data: relatedProductsData } = await useAsyncData(
-  `related-${productSlug.value}-${locale.value}`,
-  () => getRelatedProducts(productSlug.value, 3)
-)
 const relatedProducts = computed(() => relatedProductsData.value || [])
 
 // Application scenarios
@@ -462,11 +522,35 @@ const scenarios = [
 // Modal functions
 const openInquiryModal = () => {
   if (isAuthenticated.value) {
-    const productName = product.value.name || ''
-    const inquiryPath = localePath(`/customer/inquiries/new?name=${encodeURIComponent(productName)}`)
+    const productName = tField(product.value, 'name')
+    const params = new URLSearchParams({ name: productName })
+    if (product.value.id) params.set('productId', product.value.id)
+    const inquiryPath = localePath(`/customer/inquiries/new?${params.toString()}`)
     navigateTo(inquiryPath)
   } else {
     isInquiryOpen.value = true
+  }
+}
+
+const handleAddToCart = async () => {
+  if (!isAuthenticated.value) {
+    const sep = route.fullPath.includes('?') ? '&' : '?'
+    const redirect = `${route.fullPath}${sep}addToCart=1`
+    await navigateTo(localePath(`/auth/login?redirect=${encodeURIComponent(redirect)}`))
+    return
+  }
+  if (!product.value.id) return
+  addingToCart.value = true
+  try {
+    await api.addToCart(product.value.id, {
+      quantity: product.value.moq || 1,
+      unitPrice: product.value.basePrice || 0
+    })
+    toast.success(t('product.added_to_cart'))
+  } catch (err: any) {
+    alert(err?.message || t('errors.api.cart_submit_failed'))
+  } finally {
+    addingToCart.value = false
   }
 }
 
@@ -475,17 +559,19 @@ const closeInquiryModal = () => {
 }
 
 // SEO
-useSeo({
-  title: product.value.name,
-  description: product.value.summary,
-  ogImage: product.value.images?.[0],
+usePageOgImage({
+  title: tField(product.value, 'name'),
+  description: tField(product.value, 'summary'),
+  ogImage: product.value.ogImage,
+  thumbnail: product.value.thumbnail,
+  images: product.value.images,
   ogType: 'product',
   schema: {
     '@context': 'https://schema.org',
     '@type': 'Product',
     '@id': `${siteUrl}/products/${categorySlug.value}/${productSlug.value}#product`,
-    name: product.value.name,
-    description: product.value.summary,
+    name: tField(product.value, 'name'),
+    description: tField(product.value, 'summary'),
     image: product.value.images,
     sku: product.value.sku || product.value.slug,
     category: categoryName.value,
@@ -838,6 +924,38 @@ useSeo({
 .tab-fade-leave-to {
   opacity: 0;
   transform: translateY(-8px);
+}
+
+/* Compliance Notices */
+.compliance__inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.compliance__notice {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: flex-start;
+  padding: var(--spacing-md);
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.compliance__icon {
+  flex-shrink: 0;
+  color: var(--color-text-light);
+  margin-top: 2px;
+}
+
+.compliance__text {
+  font-size: var(--text-xs);
+  color: var(--color-text-light);
+  line-height: 1.6;
+  margin: 0;
 }
 
 /* Bottom padding to prevent sticky CTA from covering content on mobile */

@@ -54,13 +54,7 @@
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(trade.createdAt || trade.created_at) }}</td>
             <td class="px-6 py-4 text-sm text-gray-900">{{ trade.incoterms || trade.terms || t('display.tbd') }}</td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <span :class="[
-                trade.status === 'DRAFT' || trade.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                trade.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                trade.status === 'CANCELLED' ? 'bg-gray-100 text-gray-800' :
-                'bg-orange-100 text-orange-800',
-                'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium'
-              ]">{{ enumLabel('trade_status', trade.status) }}</span>
+              <span :class="[statusBadgeClass(trade.status), 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium']">{{ enumLabel('trade_status', trade.status) }}</span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
               <NuxtLink :to="localePath(`/customer/trades/${trade.id}`)" class="text-orange-600 hover:text-orange-900">{{ t('customer.trades.open_dashboard') }}</NuxtLink>
@@ -137,6 +131,20 @@ const createTrade = async () => {
 
 const nextPage = () => { if (pagination.value && page.value < pagination.value.totalPages) page.value++ }
 const prevPage = () => { if (page.value > 1) page.value-- }
+
+// B-3 修复：原代码用 'DRAFT'/'PENDING' 等大写字面量比较，但忽略了 PAID/SHIPPED/CONFIRMED，
+// 导致这三个状态永远落到默认橙色（无法区分）。改为统一 lowercase 比较，覆盖完整 7 状态。
+const statusBadgeClass = (status: string) => {
+  const s = String(status || '').toLowerCase()
+  if (s === 'draft') return 'bg-gray-100 text-gray-800'
+  if (s === 'pending') return 'bg-yellow-100 text-yellow-800'
+  if (s === 'confirmed') return 'bg-orange-100 text-orange-800'
+  if (s === 'paid') return 'bg-blue-100 text-blue-800'
+  if (s === 'shipped') return 'bg-indigo-100 text-indigo-800'
+  if (s === 'completed') return 'bg-green-100 text-green-800'
+  if (s === 'cancelled') return 'bg-red-100 text-red-800'
+  return 'bg-gray-100 text-gray-800'
+}
 
 watch(page, fetchTrades)
 onMounted(fetchTrades)

@@ -27,13 +27,13 @@
         <div class="container">
           <div class="case-hero__inner">
             <div class="case-hero__content">
-              <span class="case-hero__industry">{{ caseStudy.industry }}</span>
-              <h1 class="case-hero__title">{{ caseStudy.client }}</h1>
-              <p class="case-hero__project">{{ caseStudy.project }}</p>
+              <span class="case-hero__industry">{{ tField(caseStudy, 'industry') }}</span>
+              <h1 class="case-hero__title">{{ tField(caseStudy, 'client') }}</h1>
+              <p class="case-hero__project">{{ tField(caseStudy, 'title') }}</p>
               <div class="case-hero__meta">
                 <div v-if="caseStudy.location" class="case-hero__meta-item">
                   <Icon name="lucide:map-pin" size="18" />
-                  <span>{{ caseStudy.location }}</span>
+                  <span>{{ tField(caseStudy, 'location') }}</span>
                 </div>
                 <div v-if="caseStudy.year" class="case-hero__meta-item">
                   <Icon name="lucide:calendar" size="18" />
@@ -42,7 +42,7 @@
               </div>
             </div>
             <div v-if="caseStudy.thumbnail" class="case-hero__image">
-              <img :src="caseStudy.thumbnail" :alt="caseStudy.client" />
+              <img :src="caseStudy.thumbnail" :alt="tField(caseStudy, 'client')" />
             </div>
           </div>
         </div>
@@ -52,7 +52,7 @@
         <div class="container">
           <div class="result-banner__inner">
             <h3>{{ t('cases_detail.result') }}</h3>
-            <p class="result-banner__text">{{ caseStudy.result }}</p>
+            <p class="result-banner__text">{{ tField(caseStudy, 'result') }}</p>
           </div>
         </div>
       </section>
@@ -64,7 +64,7 @@
               <Icon name="lucide:alert-triangle" size="32" />
               <h2>{{ t('cases_detail.challenge') }}</h2>
             </div>
-            <div class="case-section__content">{{ caseStudy.challenge }}</div>
+            <div class="case-section__content">{{ tField(caseStudy, 'challenge') }}</div>
           </div>
         </div>
       </section>
@@ -76,7 +76,7 @@
               <Icon name="lucide:lightbulb" size="32" />
               <h2>{{ t('cases_detail.solution') }}</h2>
             </div>
-            <div class="case-section__content">{{ caseStudy.solution }}</div>
+            <div class="case-section__content">{{ tField(caseStudy, 'solution') }}</div>
 
             <div v-if="caseStudy.services.length" class="case-services">
               <h4>{{ t('cases_detail.services') }}</h4>
@@ -105,7 +105,7 @@
               v-for="(image, index) in caseStudy.images"
               :key="`${caseStudy.id}-${index}`"
               :src="image"
-              :alt="`${caseStudy.client} image ${index + 1}`"
+              :alt="`${tField(caseStudy, 'client')} image ${index + 1}`"
               class="gallery__image"
             />
           </div>
@@ -118,7 +118,7 @@
             <h2>{{ t('cases_detail.timeline') }}</h2>
           </div>
           <ProcessFlow v-if="timelineSteps.length" :steps="timelineSteps" variant="default" />
-          <p v-else class="timeline__text">{{ caseStudy.timelineText }}</p>
+          <p v-else class="timeline__text">{{ tField(caseStudy, 'timeline') }}</p>
         </div>
       </section>
 
@@ -135,11 +135,11 @@
               :to="localePath(`/cases-clients/${related.slug}`)"
               class="related-card"
             >
-              <img v-if="related.thumbnail" :src="related.thumbnail" :alt="related.client" />
+              <img v-if="related.thumbnail" :src="related.thumbnail" :alt="tField(related, 'client')" />
               <div class="related-card__content">
-                <span class="related-card__industry">{{ related.industry }}</span>
-                <h4>{{ related.client }}</h4>
-                <p>{{ related.project }}</p>
+                <span class="related-card__industry">{{ tField(related, 'industry') }}</span>
+                <h4>{{ tField(related, 'client') }}</h4>
+                <p>{{ tField(related, 'title') }}</p>
               </div>
             </NuxtLink>
           </div>
@@ -170,6 +170,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n, useLocalePath } from '#i18n'
+import { useTranslation } from '~/composables/useTranslation'
 
 interface RawCaseStudy {
   id: string
@@ -196,6 +197,7 @@ interface TimelineStep {
 
 const { t } = useI18n()
 const localePath = useLocalePath()
+const { tField } = useTranslation()
 const route = useRoute()
 const config = useRuntimeConfig()
 const { getCase, getRelatedCases } = useApi()
@@ -211,8 +213,7 @@ const { data: caseData, pending, error } = await useAsyncData(
 const normalizeCase = (raw: RawCaseStudy) => {
   const createdDate = raw.createdAt ? new Date(raw.createdAt) : null
   return {
-    id: raw.id,
-    slug: raw.slug,
+    ...raw,
     client: raw.client || t('cases_detail.fallback_client'),
     project: raw.title || raw.slug,
     industry: raw.industry || t('cases_detail.fallback_industry'),
@@ -296,10 +297,11 @@ const relatedCases = computed(() => {
 })
 
 const breadcrumbItems = computed(() => {
-  const label = caseStudy.value?.client || t('cases_detail.fallback_client')
+  const label = tField(caseStudy.value, 'client') || t('cases_detail.fallback_client')
   const items = [{ label: t('nav.cases'), to: '/cases-clients' }]
-  if (caseStudy.value?.industry) {
-    items.push({ label: caseStudy.value.industry })
+  const industry = tField(caseStudy.value, 'industry')
+  if (industry) {
+    items.push({ label: industry })
   }
   items.push({ label })
   return items
@@ -307,7 +309,7 @@ const breadcrumbItems = computed(() => {
 
 const whatsappUrl = computed(() => {
   const number = config.public.whatsappNumber
-  const client = caseStudy.value?.client || t('cases_detail.fallback_client')
+  const client = tField(caseStudy.value, 'client') || t('cases_detail.fallback_client')
   const message = encodeURIComponent(t('cases_detail.whatsapp_similar', { client }))
   return `https://wa.me/${number}?text=${message}`
 })
@@ -317,11 +319,13 @@ const loadError = computed(() => {
   return value?.message || ''
 })
 
-useSeo({
-  title: computed(() => `${caseStudy.value?.client || t('cases_detail.fallback_client')} | ${t('seo.default_title')}`),
-  description: computed(() => caseStudy.value?.result || t('cases.subtitle')),
-  ogImage: computed(() => caseStudy.value?.thumbnail || ''),
-  ogType: 'article'
+usePageOgImage({
+  title: computed(() => `${tField(caseStudy.value, 'client') || t('cases_detail.fallback_client')} | ${t('seo.default_title')}`),
+  description: computed(() => tField(caseStudy.value, 'result') || t('cases.subtitle')),
+  ogImage: computed(() => caseStudy.value?.ogImage),
+  thumbnail: computed(() => caseStudy.value?.thumbnail),
+  images: computed(() => caseStudy.value?.images),
+  ogType: 'article',
 })
 </script>
 

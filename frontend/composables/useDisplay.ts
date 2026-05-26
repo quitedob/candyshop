@@ -6,10 +6,11 @@ import { useCurrency } from './useCurrency'
  */
 export function useDisplay() {
   const { t, te, locale } = useI18n()
+  const currency = useCurrency()
 
   const currencyOrDefault = (code?: string | null) => {
     if (code != null && String(code).trim() !== '') return String(code).trim()
-    try { return useCurrency().cur() } catch { return 'USD' }
+    try { return currency.cur() } catch { return 'USD' }
   }
 
   /** 贸易术语空值默认 FOB */

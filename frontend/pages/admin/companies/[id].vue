@@ -174,7 +174,7 @@ definePageMeta({
 })
 
 const route = useRoute()
-const { token } = useAuth()
+const { adminGetCompany, adminVerifyCompany } = useApi()
 const { t } = useI18n()
 const localePath = useLocalePath()
 const { currencyOrDefault: cur, cell, enumLabel, formatNumber, formatDate } = useDisplay()
@@ -194,9 +194,7 @@ const fetchCompany = async () => {
   pending.value = true
   error.value = ''
   try {
-    company.value = await $fetch<any>(`${baseURL}/admin/companies/${route.params.id}`, {
-      headers: { Authorization: `Bearer ${token.value}` }
-    })
+    company.value = await adminGetCompany(String(route.params.id))
     statusInput.value = company.value.kybStatus || 'pending'
     notesInput.value = company.value.kybNotes || ''
   } catch (err: any) {
@@ -212,14 +210,7 @@ const updateStatus = async () => {
   statusError.value = false
 
   try {
-    await $fetch(`${baseURL}/admin/companies/${route.params.id}/verify`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${token.value}` },
-      body: {
-        status: statusInput.value,
-        notes: notesInput.value
-      }
-    })
+    await adminVerifyCompany(String(route.params.id), statusInput.value)
     statusMessage.value = t('admin.companies.status_updated')
     await fetchCompany()
   } catch (err: any) {

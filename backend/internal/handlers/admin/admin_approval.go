@@ -158,21 +158,18 @@ func (h *Handler) AdminGetOrgMembers(c *gin.Context) {
 		response.InvalidResp(c, "invalid_org_id")
 		return
 	}
-	members, err := h.services.Approval.GetUserOrganizations(c.Request.Context(), "")
+	// H-8: query members via indexed FindByOrgID instead of loading every member with
+	// FindByUserID("") and filtering in Go. The previous implementation pulled the
+	// entire org_members table on every admin page load.
+	members, err := h.services.Approval.GetOrgMembers(c.Request.Context(), uint(orgID))
 	if err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "org_members_fetch_failed")
 		return
 	}
-	var filtered []modelsOrder.OrgMember
-	for _, m := range members {
-		if m.OrganizationID == uint(orgID) {
-			filtered = append(filtered, m)
-		}
+	if members == nil {
+		members = []modelsOrder.OrgMember{}
 	}
-	if filtered == nil {
-		filtered = []modelsOrder.OrgMember{}
-	}
-	c.JSON(http.StatusOK, gin.H{"data": filtered})
+	c.JSON(http.StatusOK, gin.H{"data": members})
 }
 
 // ── Approval Actions ──
@@ -189,11 +186,16 @@ func (h *Handler) AdminApproveOrder(c *gin.Context) {
 	var req struct {
 		Comment string `json:"comment"`
 	}
-	response.BindJSONOrInvalid(c, &req)
+	if !response.BindJSONOrInvalid(c, &req) {
+		return
+	}
 
-	if err := h.services.Approval.ApproveOrder(c.Request.Context(), orderID, userID, req.Comment); err != nil {
+	if err := h.services.Approval.ApproveOrderByAdmin(c.Request.Context(), orderID, userID, req.Comment); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "order_approve_failed")
 		return
+	}
+	if order, oerr := h.services.Order.GetOrder(c.Request.Context(), orderID); oerr == nil {
+		h.notifyOrderApprovalResult(c, order, true)
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "approved"})
 }
@@ -210,11 +212,16 @@ func (h *Handler) AdminRejectOrder(c *gin.Context) {
 	var req struct {
 		Comment string `json:"comment"`
 	}
-	response.BindJSONOrInvalid(c, &req)
+	if !response.BindJSONOrInvalid(c, &req) {
+		return
+	}
 
-	if err := h.services.Approval.RejectOrder(c.Request.Context(), orderID, userID, req.Comment); err != nil {
+	if err := h.services.Approval.RejectOrderByAdmin(c.Request.Context(), orderID, userID, req.Comment); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "order_reject_failed")
 		return
+	}
+	if order, oerr := h.services.Order.GetOrder(c.Request.Context(), orderID); oerr == nil {
+		h.notifyOrderApprovalResult(c, order, false)
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "rejected"})
 }

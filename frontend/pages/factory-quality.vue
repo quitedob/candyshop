@@ -500,7 +500,7 @@ const whatsappUrl = computed(() => {
 })
 
 // SEO
-useSeo({
+usePageOgImage({
   title: `${t('nav.factory')} | ${t('seo.default_title')}`,
   description: 'Learn about our factory, quality certifications, and production capabilities.',
   ogType: 'website'

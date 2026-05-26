@@ -56,11 +56,10 @@ function saveToCache(r: Record<string, number>, updated: string) {
   } catch { /* localStorage full - ignore */ }
 }
 
-async function fetchRates() {
+async function fetchRates(baseURL: string) {
   if (loadFromCache()) return
   loading.value = true
   try {
-    const baseURL = useRuntimeConfig().public.apiBase || '/api/v1'
     const resp = await $fetch<ExchangeRates>(`${baseURL}/public/exchange-rates`)
     rates.value = resp.rates || {}
     lastUpdated.value = resp.updated || ''
@@ -75,6 +74,8 @@ async function fetchRates() {
 
 export const useCurrency = () => {
   const { locale } = useI18n()
+  const config = useRuntimeConfig()
+  const baseURL = config.public.apiBase || '/api/v1'
 
   // Detect best currency from locale
   const detectCurrency = (): string => {
@@ -90,13 +91,19 @@ export const useCurrency = () => {
     const saved = loadFromCache()
     if (!saved) {
       selectedCurrency.value = detectCurrency()
-      fetchRates()
+      fetchRates(baseURL)
     } else {
       selectedCurrency.value = detectCurrency()
     }
   }
 
   const isConverted = computed(() => selectedCurrency.value !== 'USD')
+  const ratesLoaded = computed(() => {
+    const target = selectedCurrency.value
+    if (target === 'USD') return true
+    const rate = rates.value[target]
+    return typeof rate === 'number' && rate > 0
+  })
   const currencySymbol = computed(() => CURRENCY_SYMBOLS[selectedCurrency.value] || selectedCurrency.value)
   const currencyName = computed(() => CURRENCY_NAMES[selectedCurrency.value] || selectedCurrency.value)
 
@@ -109,21 +116,26 @@ export const useCurrency = () => {
     const target = selectedCurrency.value
     if (target === 'USD') return usdPrice
     const rate = rates.value[target]
-    if (!rate || rate <= 0) return usdPrice
+    if (!rate || rate <= 0) return 0
     return usdPrice * rate
   }
 
   function setCurrency(code: string) {
     selectedCurrency.value = code
     if (code !== 'USD' && !rates.value[code]) {
-      fetchRates()
+      fetchRates(baseURL)
     }
   }
 
-  function formatPrice(usdPrice: number, showOriginal = true): string {
+  function formatUSDPrice(usdPrice: number): string {
+    if (!usdPrice || usdPrice <= 0) return '$0.00'
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(usdPrice)
+  }
+
+  function formatPrice(usdPrice: number, _showOriginal = true): string {
+    if (selectedCurrency.value !== 'USD' && !ratesLoaded.value) return ''
     const converted = convert(usdPrice)
-    const { locale: loc } = useI18n()
-    const formatter = new Intl.NumberFormat(loc.value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    const formatter = new Intl.NumberFormat(locale.value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     const sym = CURRENCY_SYMBOLS[selectedCurrency.value] || selectedCurrency.value
     return `${sym}${formatter.format(converted)}`
   }
@@ -144,11 +156,13 @@ export const useCurrency = () => {
     loading,
     lastUpdated,
     isConverted,
+    ratesLoaded,
     currencySymbol,
     currencyName,
     supportedCurrencies,
     convert,
     formatPrice,
+    formatUSDPrice,
     setCurrency,
     fetchRates,
     disclaimer,

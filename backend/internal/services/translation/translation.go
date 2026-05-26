@@ -3,6 +3,7 @@ package translation
 import (
 	"candypro/api/internal/models/common"
 	"candypro/api/internal/pkg/i18n"
+	"log/slog"
 	"strconv"
 )
 
@@ -40,7 +41,12 @@ func (s *TranslationService) Create(t *common.Translation) error {
 	if err := s.repo.Create(t); err != nil {
 		return err
 	}
-	s.refreshCache()
+	// R2 E-9: previously every single-key write triggered a full FindAllActive
+	// reload. The hot path for translation editing in the admin UI does many
+	// rapid single-key saves, so we now apply only the changed entry to the
+	// cache. The full reload is reserved for bulk Import where dozens or
+	// hundreds of rows change at once.
+	s.applyDelta(*t)
 	return nil
 }
 
@@ -48,15 +54,31 @@ func (s *TranslationService) Update(t *common.Translation) error {
 	if err := s.repo.Update(t); err != nil {
 		return err
 	}
-	s.refreshCache()
+	s.applyDelta(*t)
 	return nil
 }
 
 func (s *TranslationService) Delete(id uint) error {
+	// Capture the row before deletion so we can invalidate the matching cache
+	// entry without falling back to a full reload.
+	var stale *common.Translation
+	if existing, ferr := s.repo.FindByID(id); ferr == nil {
+		stale = existing
+	}
 	if err := s.repo.Delete(id); err != nil {
 		return err
 	}
-	s.refreshCache()
+	if stale != nil {
+		// Best signal we have for invalidation: overwrite with empty value.
+		// Translate() will still find the entry (returning ""), and the next
+		// full reload (Import) will remove it. This avoids the global reload
+		// cost while keeping correctness for the admin's immediate next read.
+		i18n.WarmCache([]struct{ Locale, Key, Value string }{{
+			Locale: stale.Locale,
+			Key:    stale.Group + "." + stale.Key,
+			Value:  "",
+		}})
+	}
 	return nil
 }
 
@@ -71,6 +93,9 @@ func (s *TranslationService) Import(translations []common.Translation) error {
 	if err := s.repo.BulkUpsert(translations); err != nil {
 		return err
 	}
+	// Bulk import is the one path where a full reload is justified — many
+	// rows change in one shot and the marginal cost of FindAllActive is
+	// dominated by the BulkUpsert work itself.
 	s.refreshCache()
 	return nil
 }
@@ -79,9 +104,23 @@ func (s *TranslationService) Export() ([]common.Translation, error) {
 	return s.repo.FindAllActive()
 }
 
+// applyDelta merges a single translation into the in-memory cache without
+// re-reading the entire table.
+func (s *TranslationService) applyDelta(t common.Translation) {
+	if t.Locale == "" || t.Key == "" {
+		return
+	}
+	i18n.WarmCache([]struct{ Locale, Key, Value string }{{
+		Locale: t.Locale,
+		Key:    t.Group + "." + t.Key,
+		Value:  t.Value,
+	}})
+}
+
 func (s *TranslationService) refreshCache() {
 	records, err := s.repo.FindAllActive()
 	if err != nil {
+		slog.Warn("translation cache refresh failed", "error", err)
 		return
 	}
 	entries := make([]struct{ Locale, Key, Value string }, len(records))

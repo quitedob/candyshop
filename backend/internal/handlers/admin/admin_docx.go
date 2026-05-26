@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 
 	"candypro/api/internal/pkg/docxgen"
@@ -19,13 +20,45 @@ func sanitizeFilename(s string) string {
 	return safeFilenameRE.ReplaceAllString(s, "_")
 }
 
-// invoiceItemJSON mirrors the JSON blob stored in Invoice.Items.
+// invoiceItemJSON 解析发票行 JSON（兼容订单快照与手工录入两种格式）
 type invoiceItemJSON struct {
-	ProductID string  `json:"productId"`
-	Name      string  `json:"name"`
-	Qty       int     `json:"qty"`
-	UnitPrice float64 `json:"unitPrice"`
-	Total     float64 `json:"total"`
+	ProductID      string  `json:"productId"`
+	Quantity       int     `json:"quantity"`
+	UnitPrice      float64 `json:"unitPrice"`
+	Specifications string  `json:"specifications,omitempty"`
+	Name           string  `json:"name"`
+	Qty            int     `json:"qty"`
+	Total          float64 `json:"total"`
+}
+
+// resolveInvoiceBuyerName 从订单关联用户解析购买方名称
+func (h *Handler) resolveInvoiceBuyerName(c *gin.Context, orderID string, fallback string) string {
+	if orderID == "" || h.services == nil || h.services.Order == nil {
+		return fallback
+	}
+	order, err := h.services.Order.GetOrder(c.Request.Context(), orderID)
+	if err != nil || order == nil {
+		return fallback
+	}
+	name := ""
+	if h.services.User != nil && order.UserID != "" {
+		if user, uerr := h.services.User.GetByID(c.Request.Context(), order.UserID); uerr == nil && user != nil {
+			name = strings.TrimSpace(user.Company)
+			if name == "" {
+				name = strings.TrimSpace(strings.TrimSpace(user.FirstName + " " + user.LastName))
+			}
+			if name == "" {
+				name = strings.TrimSpace(user.Email)
+			}
+		}
+	}
+	if name == "" {
+		name = strings.TrimSpace(order.ShippingAddress.Country)
+	}
+	if name == "" {
+		return fallback
+	}
+	return name
 }
 
 // parseInvoiceItems parses the Invoice.Items JSON text into DOCX line items.
@@ -39,11 +72,27 @@ func parseInvoiceItems(itemsJSON string) []docxgen.InvoiceLineItem {
 	}
 	items := make([]docxgen.InvoiceLineItem, 0, len(raw))
 	for _, r := range raw {
+		qty := r.Quantity
+		if qty == 0 {
+			qty = r.Qty
+		}
+		unitPrice := r.UnitPrice
+		total := r.Total
+		if total == 0 && qty > 0 {
+			total = unitPrice * float64(qty)
+		}
+		name := r.Name
+		if name == "" {
+			name = r.ProductID
+		}
+		if name == "" {
+			name = r.Specifications
+		}
 		items = append(items, docxgen.InvoiceLineItem{
-			ProductName: r.Name,
-			Quantity:    r.Qty,
-			UnitPrice:   r.UnitPrice,
-			TotalPrice:  r.Total,
+			ProductName: name,
+			Quantity:    qty,
+			UnitPrice:   unitPrice,
+			TotalPrice:  total,
 		})
 	}
 	return items
@@ -162,15 +211,9 @@ func (h *Handler) AdminExportInvoice(c *gin.Context) {
 		Items:       parseInvoiceItems(invoice.Items),
 	}
 
-	// If the invoice has an order, try to enrich buyer info
+	// 关联订单时解析真实购买方名称
 	if invoice.OrderID != "" {
-		order, orderErr := h.services.Order.GetOrder(c.Request.Context(), invoice.OrderID)
-		if orderErr == nil && order != nil {
-			data.BuyerName = order.ShippingAddress.Country
-			if order.UserID != "" {
-				data.BuyerName = fmt.Sprintf("Customer %s", order.UserID)
-			}
-		}
+		data.BuyerName = h.resolveInvoiceBuyerName(c, invoice.OrderID, data.BuyerName)
 	}
 
 	docxBytes, err := docxgen.GenerateInvoice(data)
@@ -212,7 +255,7 @@ func (h *Handler) AdminExportInvoiceProforma(c *gin.Context) {
 
 	data := docxgen.InvoiceData{
 		InvoiceNo:   invoice.InvoiceNo,
-		InvoiceType: "proforma",
+		InvoiceType: invoice.Type,
 		OrderID:     invoice.OrderID,
 		BuyerName:   invoice.Notes,
 		SellerName:  "CandyPro Manufacturing",
@@ -227,13 +270,7 @@ func (h *Handler) AdminExportInvoiceProforma(c *gin.Context) {
 	}
 
 	if invoice.OrderID != "" {
-		order, orderErr := h.services.Order.GetOrder(c.Request.Context(), invoice.OrderID)
-		if orderErr == nil && order != nil {
-			data.BuyerName = order.ShippingAddress.Country
-			if order.UserID != "" {
-				data.BuyerName = fmt.Sprintf("Customer %s", order.UserID)
-			}
-		}
+		data.BuyerName = h.resolveInvoiceBuyerName(c, invoice.OrderID, data.BuyerName)
 	}
 
 	docxBytes, err := docxgen.GenerateInvoice(data)

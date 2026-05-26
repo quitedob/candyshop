@@ -22,7 +22,7 @@
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           <tr v-for="inv in invoices" :key="inv.id">
-            <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ inv.invoiceNumber || inv.id }}</td>
+            <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ inv.invoiceNumber || inv.invoiceNo || inv.id }}</td>
             <td class="px-6 py-4 text-sm text-gray-500">{{ enumLabel('invoice_type', inv.invoiceType || inv.type) }}</td>
             <td class="px-6 py-4 text-sm text-gray-900">{{ inv.currency }} {{ formatNumber(inv.totalAmount || 0) }}</td>
             <td class="px-6 py-4">
@@ -42,6 +42,8 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeInvoiceList } from '~/utils/invoiceMapping'
+
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const { t } = useI18n()
@@ -55,7 +57,7 @@ const error = ref('')
 const fetchInvoices = async () => {
   try {
     const res = await api.get('/user/invoices')
-    invoices.value = res.data || []
+    invoices.value = normalizeInvoiceList((res as any)?.data || [])
   } catch (e: any) {
     error.value = e?.message || t('errors.api.load_failed')
   } finally {

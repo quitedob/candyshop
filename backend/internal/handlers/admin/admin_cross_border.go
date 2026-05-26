@@ -177,23 +177,6 @@ func (h *Handler) AdminPutProductMarketProfile(c *gin.Context) {
 		response.ErrorResp(c, http.StatusInternalServerError, "market_profile_save_failed")
 		return
 	}
-	if req.Copilot && h.aiService != nil {
-		out := gin.H{"profile": row}
-		p, err := h.services.Product.GetProductByID(c.Request.Context(), pid)
-		if err == nil && p != nil {
-			q := strings.TrimSpace(p.Name) + " " + strings.TrimSpace(p.Ingredients) + " " + strings.TrimSpace(p.Allergens)
-			cc := strings.TrimSpace(req.MarketCode)
-			if len(req.DestinationCountries) > 0 {
-				cc = strings.TrimSpace(req.DestinationCountries[0])
-			}
-			out["ragAssist"] = gin.H{
-				"disclaimer": "RAG output is not legal advice; hard rules and profiles still govern release.",
-				"lookup":     h.aiService.LookupCompliance(cc, q, 5),
-			}
-		}
-		c.JSON(http.StatusOK, out)
-		return
-	}
 	c.JSON(http.StatusOK, row)
 }
 
@@ -229,8 +212,17 @@ func (h *Handler) AdminPutProductMarketCost(c *gin.Context) {
 		return
 	}
 	now := time.Now()
-	req.CreatedAt = now
 	req.UpdatedAt = now
+	existing, _ := h.services.Product.FindMarketCostStacksForProduct(c.Request.Context(), pid)
+	for _, row := range existing {
+		if row.MarketCode == req.MarketCode {
+			req.CreatedAt = row.CreatedAt
+			break
+		}
+	}
+	if req.CreatedAt.IsZero() {
+		req.CreatedAt = now
+	}
 	if err := h.services.Product.UpsertProductMarketCostStack(c.Request.Context(), &req); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "cost_stack_save_failed")
 		return
@@ -328,35 +320,9 @@ func (h *Handler) AdminPutProductChannelInventory(c *gin.Context) {
 	c.JSON(http.StatusOK, body)
 }
 
-// AdminProductComplianceSuggest POST /products/:id/compliance-suggest（RAG 建议，非法律依据）
+// AdminProductComplianceSuggest 已停用（平台不使用 RAG 合规检索）。
 func (h *Handler) AdminProductComplianceSuggest(c *gin.Context) {
-	if h.services == nil {
-		response.ServiceUnavailableResp(c)
-		return
-	}
-	if h.aiService == nil {
-		response.ErrorResp(c, http.StatusServiceUnavailable, "ai_disabled")
-		return
-	}
-	pid := strings.TrimSpace(c.Param("id"))
-	var req struct {
-		TargetCountry string `json:"targetCountry" binding:"required"`
-	}
-	if !response.BindJSONOrInvalid(c, &req) {
-		return
-	}
-	p, err := h.services.Product.GetProductByID(c.Request.Context(), pid)
-	if err != nil || p == nil {
-		response.ErrorResp(c, http.StatusNotFound, "product_not_found")
-		return
-	}
-	q := strings.TrimSpace(p.Name) + " " + strings.TrimSpace(p.Ingredients) + " " + strings.TrimSpace(p.Allergens)
-	lookup := h.aiService.LookupCompliance(strings.TrimSpace(req.TargetCountry), q, 5)
-	c.JSON(http.StatusOK, gin.H{
-		"disclaimer": "Suggestions are not legal advice; confirm with qualified compliance staff.",
-		"lookup":     lookup,
-		"productId":  pid,
-	})
+	response.ErrorResp(c, http.StatusGone, "feature_disabled")
 }
 
 // AdminCreateInvoiceFromOrder POST /invoices/from-order

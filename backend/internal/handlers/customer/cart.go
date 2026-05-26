@@ -5,10 +5,15 @@ import (
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
 	"candypro/api/internal/pkg/crypto"
+	countrypkg "candypro/api/internal/pkg/country"
 	"candypro/api/internal/pkg/i18n"
 	"candypro/api/internal/pkg/kyb"
+	"candypro/api/internal/pkg/money"
 	"candypro/api/internal/pkg/response"
+	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -27,6 +32,11 @@ func buildProductByIDMap(products []modelsProduct.Product) map[string]modelsProd
 }
 
 // CustomerGetCart returns all cart items for the authenticated customer.
+// @Summary Get customer cart
+// @Tags customer-cart
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Router /user/cart [get]
 func (h *Handler) CustomerGetCart(c *gin.Context) {
 	if h.services == nil {
 		response.ServiceUnavailableResp(c)
@@ -43,7 +53,114 @@ func (h *Handler) CustomerGetCart(c *gin.Context) {
 		return
 	}
 	count, _ := h.services.Cart.ItemCount(c.Request.Context(), userID)
-	c.JSON(http.StatusOK, gin.H{"items": items, "itemCount": count})
+
+	productByID := buildProductByIDMapFromCartItems(c.Request.Context(), h, items)
+	enriched := h.enrichCartItems(c.Request.Context(), items, productByID)
+	resp := gin.H{"items": enriched, "itemCount": count}
+	destination := countrypkg.NormalizeCountryCode(strings.TrimSpace(c.Query("destination")))
+	region := strings.TrimSpace(c.Query("region"))
+	incoterms := strings.TrimSpace(c.Query("incoterms"))
+	var subtotal float64
+	var weightKg float64
+	for _, it := range items {
+		subtotal += float64(it.Quantity) * it.UnitPrice
+	}
+	weightKg = sumCartWeightKg(items, productByID)
+
+	taxEst := h.buildCartTaxEstimate(c.Request.Context(), subtotal, destination, region)
+	shipEst := h.buildCartShippingEstimate(c.Request.Context(), destination, weightKg, incoterms)
+	resp["taxEstimate"] = taxEst
+	resp["shippingEstimate"] = shipEst
+
+	summary := gin.H{
+		"subtotal": subtotal,
+		"pricingScope": "cart_reference", // 购物车阶段均为参考估算
+	}
+	if taxEst["status"] == feeEstimateComputed {
+		summary["taxAmount"] = taxEst["amount"]
+		summary["taxStatus"] = feeEstimateComputed
+	} else {
+		summary["taxStatus"] = taxEst["status"]
+	}
+	if shipEst["status"] == feeEstimateComputed {
+		summary["shippingAmount"] = shipEst["cost"]
+		summary["shippingStatus"] = feeEstimateComputed
+	} else {
+		summary["shippingStatus"] = shipEst["status"]
+	}
+	resp["summary"] = summary
+	c.JSON(http.StatusOK, resp)
+}
+
+// enrichCartItems 批量关联 Product 表，补充缩略图、徽章、MOQ、库存上限等展示字段
+func (h *Handler) enrichCartItems(ctx context.Context, items []modelsOrder.CartItem, productByID map[string]modelsProduct.Product) []modelsOrder.CartItemResponse {
+	if len(items) == 0 {
+		return []modelsOrder.CartItemResponse{}
+	}
+	if productByID == nil {
+		productByID = buildProductByIDMapFromCartItems(ctx, h, items)
+	}
+	productIDs := make([]string, 0, len(items))
+	seen := make(map[string]struct{}, len(items))
+	for _, it := range items {
+		if it.ProductID == "" {
+			continue
+		}
+		if _, ok := seen[it.ProductID]; ok {
+			continue
+		}
+		seen[it.ProductID] = struct{}{}
+		productIDs = append(productIDs, it.ProductID)
+	}
+	sellable := map[string]int{}
+	if h.services.Product != nil && len(productIDs) > 0 {
+		if m, serr := h.services.Product.EffectiveSellableByProducts(ctx, productIDs, modelsProduct.ChannelWebstore); serr == nil {
+			sellable = m
+		}
+	}
+	out := make([]modelsOrder.CartItemResponse, 0, len(items))
+	for _, it := range items {
+		row := modelsOrder.CartItemResponseFromItem(it)
+		if p, ok := productByID[it.ProductID]; ok {
+			if p.Name != "" {
+				row.Name = p.Name
+				if row.ProductName == "" {
+					row.ProductName = p.Name
+				}
+			}
+			row.Thumbnail = p.Thumbnail
+			row.HalalCertified = p.HalalCertified
+			row.OEMAvailable = p.OEMAvailable
+			if p.MOQ > 0 {
+				row.MOQ = p.MOQ
+			}
+			row.Category = p.Category
+			row.Translations = p.Translations
+			row.MaxQuantity = modelsOrder.ResolveCartMaxQuantity(it.Quantity, sellable[it.ProductID])
+		}
+		out = append(out, row)
+	}
+	return out
+}
+
+// buildProductByIDMapFromCartItems 按购物车行批量加载产品（去重）
+func buildProductByIDMapFromCartItems(ctx context.Context, h *Handler, items []modelsOrder.CartItem) map[string]modelsProduct.Product {
+	m := make(map[string]modelsProduct.Product, len(items))
+	if h.services == nil || h.services.Product == nil {
+		return m
+	}
+	for _, it := range items {
+		if it.ProductID == "" {
+			continue
+		}
+		if _, ok := m[it.ProductID]; ok {
+			continue
+		}
+		if p, err := h.services.Product.GetProductByID(ctx, it.ProductID); err == nil && p != nil {
+			m[it.ProductID] = *p
+		}
+	}
+	return m
 }
 
 // CustomerAddToCart adds a product to the cart.
@@ -109,6 +226,7 @@ func (h *Handler) CustomerAddToCart(c *gin.Context) {
 	if strings.TrimSpace(req.DestinationCountry) != "" {
 		unitPrice = h.services.Product.ResolveCheckoutUnitPrice(c.Request.Context(), product, unitPrice, req.DestinationCountry)
 	}
+	unitPrice = h.applyChannelUnitPrice(c, unitPrice)
 
 	productName := req.ProductName
 	if productName == "" {
@@ -250,6 +368,8 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 		Notes             string              `json:"notes"`
 		Currency          string              `json:"currency"`
 		EstimatedWeightKg float64             `json:"estimated_weight_kg"`
+		CouponCode        string              `json:"couponCode"`
+		Incoterms         string              `json:"incoterms"`
 	}
 	if !response.BindJSONOrInvalid(c, &req) {
 		return
@@ -301,9 +421,24 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 			response.ErrorResp(c, http.StatusUnprocessableEntity, "no_price")
 			return
 		}
+		if !h.validateLineMinQuantity(c, item.ProductID, item.Quantity, contractPriceListID) {
+			return
+		}
 		unitPrice = h.services.Product.ResolveCheckoutUnitPrice(c.Request.Context(), product, unitPrice, req.ShippingAddress.Country)
+		unitPrice = h.applyChannelUnitPrice(c, unitPrice)
 		if item.UnitPrice > 0 && unitPrice != item.UnitPrice {
-			priceChangeWarnings = append(priceChangeWarnings, fmt.Sprintf("Price for %s updated from %.2f to %.2f", item.ProductID, item.UnitPrice, unitPrice))
+			productName := strings.TrimSpace(product.Name)
+			if productName == "" {
+				productName = strings.TrimSpace(product.Slug)
+			}
+			if productName == "" {
+				productName = item.ProductID
+			}
+			priceChangeWarnings = append(priceChangeWarnings, i18n.TWithVars(c, "messages.price_updated", map[string]string{
+				"productName": productName,
+				"oldPrice":    fmt.Sprintf("%.2f", item.UnitPrice),
+				"newPrice":    fmt.Sprintf("%.2f", unitPrice),
+			}))
 		}
 
 		orderItems = append(orderItems, modelsOrder.OrderItem{
@@ -360,61 +495,117 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 			Message: i18n.T(c, "errors.inventory_violation"),
 			Details: gin.H{
 				"violations": inventory.Violations,
-				"warnings":   inventory.Warnings,
+				"warnings":   formatInventoryWarnings(c, inventory.Warnings, productByID),
 			},
 		})
 		return
 	}
 
-	// Calculate shipping cost
-	var shippingAmount float64
+	pricing := h.computeCheckoutPricing(c.Request.Context(), checkoutPricingInput{
+		Items:             orderItems,
+		ProductByID:       productByID,
+		ShippingAddress:   req.ShippingAddress,
+		Incoterms:         req.Incoterms,
+		EstimatedWeightKg: req.EstimatedWeightKg,
+		Subtotal:          subtotal,
+		Currency:          currency,
+	})
+	shippingAmount := pricing.ShippingAmount
 	shippingCurrency := currency
-	if req.EstimatedWeightKg > 0 && h.services.Shipping != nil && req.ShippingAddress.Country != "" {
-		if cost, shipCurr, err := h.services.Shipping.CalculateShippingCost(c.Request.Context(), req.ShippingAddress.Country, req.EstimatedWeightKg); err == nil && cost > 0 {
-			shippingAmount = cost
-			if shipCurr != "" {
-				shippingCurrency = shipCurr
+	if pricing.Currency != "" {
+		shippingCurrency = pricing.Currency
+	}
+	taxAmount := pricing.TaxAmount
+	if h.services.Channel != nil {
+		webstoreCh, _ := h.services.Channel.ResolveWebstoreChannel(c.Request.Context())
+		if taxAmount <= 0 {
+			taxAmount = h.services.Channel.ComputeTaxAmount(subtotal, webstoreCh, taxAmount)
+		}
+	}
+	taxAmount = money.RoundMoney(taxAmount)
+	shippingAmount = money.RoundMoney(shippingAmount)
+	checkoutTotal := money.RoundMoney(subtotal + taxAmount + shippingAmount)
+	hasOfficialEvidence := len(compliance.Violations) == 0 && len(compliance.Warnings) == 0
+	couponCode := strings.TrimSpace(req.CouponCode)
+	if couponCode != "" && h.services.Coupon != nil {
+		if _, _, cerr := h.services.Coupon.PreviewCouponDiscount(c.Request.Context(), couponCode, userID, checkoutTotal); cerr != nil {
+			response.ErrorResp(c, http.StatusBadRequest, "coupon_apply_failed")
+			return
+		}
+	}
+	if !h.checkCompanyCreditLimit(c, userID, checkoutTotal) {
+		return
+	}
+	destCountry := countrypkg.NormalizeCountryCode(strings.TrimSpace(req.ShippingAddress.Country))
+	incoterms := strings.ToUpper(strings.TrimSpace(req.Incoterms))
+	if incoterms == "" {
+		incoterms = "FOB"
+	}
+	estimatedWeightKg := req.EstimatedWeightKg
+	if estimatedWeightKg <= 0 {
+		for _, item := range orderItems {
+			if product, ok := productByID[item.ProductID]; ok && product.GrossWeightPerCarton > 0 {
+				estimatedWeightKg += float64(item.Quantity) * product.GrossWeightPerCarton
 			}
 		}
 	}
-		// Calculate tax based on destination country/region
-		var taxAmount float64
-		if h.services.Tax != nil && req.ShippingAddress.Country != "" {
-			if tax, _, _, err := h.services.Tax.CalculateTax(c.Request.Context(), subtotal, req.ShippingAddress.Country, req.ShippingAddress.State); err == nil && tax > 0 {
-				taxAmount = tax
-			}
-		}
-	orderStatus := "pending"
+	orderStatus := modelsOrder.OrderStatusPending
 	if h.services.Approval != nil {
-		totalAmount := subtotal + taxAmount + shippingAmount
-		if needsApproval, _, _ := h.services.Approval.ShouldRequireApproval(c.Request.Context(), userID, totalAmount); needsApproval {
-			orderStatus = "pending_approval"
+		if needsApproval, _, _ := h.services.Approval.ShouldRequireApproval(c.Request.Context(), userID, checkoutTotal); needsApproval {
+			orderStatus = modelsOrder.OrderStatusPendingApproval
 		}
 	}
 
+	now := time.Now()
 	order := &modelsOrder.Order{
-		ID:              generateCartOrderID(),
-		OrderNumber:     generateCartOrderNumber(),
-		UserID:          userID,
-		Status:          orderStatus,
-		PaymentStatus:   "unpaid",
-		StockReserved:   true,
-		Items:           orderItems,
-		Subtotal:        subtotal,
-		TaxAmount:       taxAmount,
-		ShippingAmount:  shippingAmount,
-		TotalAmount:     subtotal + taxAmount + shippingAmount,
-		Currency:        shippingCurrency,
-		ShippingAddress: req.ShippingAddress,
+		ID:                         generateCartOrderID(),
+		OrderNumber:                generateCartOrderNumber(),
+		UserID:                     userID,
+		Source:                     modelsOrder.OrderSourceCart,
+		Status:                     orderStatus,
+		PaymentStatus:              "unpaid",
+		StockReserved:              false,
+		ComplianceOfficialEvidence: hasOfficialEvidence,
+		Items:                      orderItems,
+		Subtotal:                   subtotal,
+		TaxAmount:                  taxAmount,
+		ShippingAmount:             shippingAmount,
+		TotalAmount:                checkoutTotal,
+		Currency:                   shippingCurrency,
+		ShippingAddress:            req.ShippingAddress,
 	}
+	if orderStatus == modelsOrder.OrderStatusPending {
+		order.ConfirmedAt = &now
+	}
+	h.assignOrderWarehouseID(c, &order.WarehouseID)
 
 	if !h.ensureActiveOrKYBBypassForAmount(c, userID, subtotal, kyb.CartLineProductIDs(items)...) {
 		return
 	}
 
-	if err := h.services.Order.CreateOrderWithStockReservation(c.Request.Context(), order); err != nil {
+	var createErr error
+	if orderStatus == modelsOrder.OrderStatusPending {
+		createErr = h.services.Order.CreateOrderWithStockReservation(c.Request.Context(), order)
+	} else {
+		createErr = h.services.Order.CreateOrder(c.Request.Context(), order)
+	}
+	if createErr != nil {
+		if errors.Is(createErr, modelsOrder.ErrInsufficientStock) {
+			response.ErrorResp(c, http.StatusUnprocessableEntity, "insufficient_stock")
+			return
+		}
 		response.ErrorResp(c, http.StatusInternalServerError, "order_create_failed")
 		return
+	}
+
+	if couponCode != "" && h.services.Coupon != nil {
+		if _, cerr := h.services.Coupon.ApplyCouponToCart(c.Request.Context(), order.ID, userID, couponCode); cerr != nil {
+			slog.Warn("checkout coupon apply failed after order create", "orderId", order.ID, "error", cerr)
+		}
+	}
+
+	if orderStatus == modelsOrder.OrderStatusPendingApproval {
+		h.notifyOrderApprovers(c, order)
 	}
 
 	// N-10: Log cart clear errors but don't fail the checkout — order is already created
@@ -422,28 +613,50 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 		c.Header("X-Cart-Clear-Warning", "cart_clear_failed")
 	}
 
+	checkoutTaxSt := checkoutTaxStatus(c.Request.Context(), h, destCountry, req.ShippingAddress.State, subtotal, taxAmount)
+	checkoutShipSt := checkoutShippingStatus(c.Request.Context(), h, destCountry, estimatedWeightKg, incoterms)
+
 	c.JSON(http.StatusCreated, gin.H{
 		"id":          order.ID,
 		"orderNumber": order.OrderNumber,
 		"status":      order.Status,
 		"totalAmount": order.TotalAmount,
 		"currency":    order.Currency,
+		"pricing": gin.H{
+			"scope":          "order_snapshot",
+			"subtotal":       order.Subtotal,
+			"taxAmount":      order.TaxAmount,
+			"shippingAmount": order.ShippingAmount,
+			"totalAmount":    order.TotalAmount,
+			"taxStatus":      checkoutTaxSt,
+			"shippingStatus": checkoutShipSt,
+			"notice":         pricingNoticeForCheckout(checkoutTaxSt, checkoutShipSt),
+		},
 		"compliance": gin.H{
 			"country":  compliance.Country,
 			"warnings": compliance.Warnings,
 		},
-		"inventory": gin.H{"warnings": append(inventory.Warnings, priceChangeWarnings...)},
+		"inventory": gin.H{"warnings": append(formatInventoryWarnings(c, inventory.Warnings, productByID), priceChangeWarnings...)},
 	})
 
 	// Send order confirmation notification
 	if h.services.Notification != nil {
-		_ = h.services.Notification.Create(c.Request.Context(), &modelsCommon.Notification{
+		vars := map[string]string{"orderNumber": order.OrderNumber}
+		// H-24: log notification failures so silent drops are detectable.
+		// We don't fail the checkout because the order is already committed.
+		if err := h.services.Notification.Create(c.Request.Context(), &modelsCommon.Notification{
 			UserID:    userID,
 			Type:      "order",
 			Reference: order.ID,
-			Title:     "Order Placed",
-			Message:   "Your order #" + order.OrderNumber + " has been placed and is pending review.",
-		})
+			Title:     i18n.TWithVars(c, "notifications.order_placed_title", vars),
+			Message:   i18n.TWithVars(c, "notifications.order_placed_message", vars),
+		}); err != nil {
+			slog.Warn("checkout: failed to create order notification",
+				"orderID", order.ID,
+				"userID", userID,
+				"error", err,
+			)
+		}
 	}
 }
 

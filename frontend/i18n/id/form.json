@@ -1,176 +1,177 @@
 {
   "form": {
-    "title": "Send Us an Inquiry",
-    "subtitle": "Get a quote within 24 hours",
-    "company_name": "Company Name",
-    "contact_person": "Contact Person",
-    "email": "Email Address",
-    "whatsapp": "WhatsApp / Phone",
-    "target_country": "Target Country",
-    "estimated_quantity": "Estimated Quantity",
-    "interested_products": "Interested Product(s)",
-    "packaging_requirements": "Packaging Requirements",
-    "flavor_requirements": "Flavor Requirements",
-    "oem_needed": "OEM/Private Label Needed?",
-    "yes": "Yes",
-    "no": "No",
-    "expected_delivery": "Expected Delivery Date",
-    "message": "Additional Requirements",
-    "upload_files": "Upload Reference Images",
-    "remove_file": "Remove file",
-    "submit": "Send Inquiry",
-    "submitting": "Submitting...",
-    "success": "Thank you! Your inquiry has been received. We will contact you within 24 hours.",
-    "error": "Sorry, there was an error submitting your inquiry. Please try again or contact us via WhatsApp.",
-    "files_max": "Maximum {max} files allowed",
-    "file_too_large": "File {name} is too large. Maximum size is {max} MB.",
-    "file_type_unsupported": "File {name} is not a supported type. Use JPG, PNG, WebP, or PDF.",
-    "privacy_note": "Your information is secure and will not be shared.",
-    "message_placeholder": "Tell us more about your requirements...",
-    "summary": "Summary",
-    "not_specified": "Not specified",
-    "interested_products_hint": "Separate multiple products with commas",
+    "title": "Kirim Permintaan Penawaran",
+    "subtitle": "Dapatkan penawaran dalam 24 jam",
+    "company_name": "Nama Perusahaan",
+    "contact_person": "Nama Kontak",
+    "email": "Alamat Email",
+    "whatsapp": "WhatsApp / Telepon",
+    "target_country": "Negara Tujuan",
+    "estimated_quantity": "Perkiraan Kuantitas",
+    "interested_products": "Produk yang Diminati",
+    "packaging_requirements": "Persyaratan Kemasan",
+    "flavor_requirements": "Persyaratan Rasa",
+    "oem_needed": "Butuh Private Label / OEM?",
+    "yes": "Ya",
+    "no": "Tidak",
+    "expected_delivery": "Perkiraan Tanggal Pengiriman",
+    "message": "Persyaratan Tambahan",
+    "upload_files": "Unggah Gambar Referensi",
+    "remove_file": "Hapus file",
+    "submit": "Kirim Permintaan",
+    "submitting": "Mengirim...",
+    "success": "Terima kasih! Permintaan Anda telah kami terima. Kami akan menghubungi Anda dalam 24 jam.",
+    "error": "Maaf, terjadi kesalahan saat mengirim permintaan. Silakan coba lagi atau hubungi kami via WhatsApp.",
+    "files_max": "Maksimal {max} file diizinkan",
+    "file_too_large": "File {name} terlalu besar. Ukuran maksimum {max} MB.",
+    "file_type_unsupported": "File {name} tidak didukung. Gunakan PDF, DOC, DOCX, CSV, XLSX, PNG, JPEG, JPG, MKV, atau MP4.",
+    "privacy_note": "Informasi Anda aman dan tidak akan dibagikan.",
+    "message_placeholder": "Ceritakan lebih lanjut tentang kebutuhan Anda...",
+    "summary": "Ringkasan",
+    "not_specified": "Tidak diisi",
+    "interested_products_hint": "Pisahkan beberapa produk dengan koma",
     "options": {
       "countries": {
-        "US": "United States",
-        "UK": "United Kingdom",
-        "DE": "Germany",
-        "FR": "France",
-        "CA": "Canada",
+        "US": "Amerika Serikat",
+        "UK": "Inggris",
+        "DE": "Jerman",
+        "FR": "Prancis",
+        "CA": "Kanada",
         "AU": "Australia",
-        "JP": "Japan",
-        "KR": "South Korea",
-        "SG": "Singapore",
+        "JP": "Jepang",
+        "KR": "Korea Selatan",
+        "CN": "Tiongkok",
+        "SG": "Singapura",
         "MY": "Malaysia",
         "TH": "Thailand",
         "VN": "Vietnam",
         "ID": "Indonesia",
-        "PH": "Philippines",
-        "OTHER": "Other"
+        "PH": "Filipina",
+        "OTHER": "Lainnya"
       },
       "quantities": {
         "100-500": "100 - 500 pcs",
-        "500-1000": "500 - 1,000 pcs",
-        "1000-5000": "1,000 - 5,000 pcs",
-        "5000-10000": "5,000 - 10,000 pcs",
-        "10000+": "10,000+ pcs"
+        "500-1000": "500 - 1.000 pcs",
+        "1000-5000": "1.000 - 5.000 pcs",
+        "5000-10000": "5.000 - 10.000 pcs",
+        "10000+": "10.000+ pcs"
       }
     }
   },
   "contact": {
-    "title": "Contact Us",
-    "subtitle": "Get in touch with our team",
-    "address": "Address",
-    "phone": "Phone",
+    "title": "Hubungi Kami",
+    "subtitle": "Hubungi tim kami",
+    "address": "Alamat",
+    "phone": "Telepon",
     "email": "Email",
     "whatsapp": "WhatsApp",
-    "hours": "Business Hours",
-    "working_hours": "Monday - Friday: 9:00 AM - 6:00 PM (GMT+8)",
-    "social_media": "Follow Us",
-    "factory_location": "Factory Location",
-    "send_inquiry": "Send Inquiry",
-    "quick_contact": "Quick Contact",
-    "loading_form": "Loading form...",
-    "global_presence_title": "Global Presence",
-    "global_presence_subtitle": "Our offices and representatives around the world",
-    "faq_title": "Frequently Asked Questions",
+    "hours": "Jam Operasional",
+    "working_hours": "Senin - Jumat: 09:00 - 18:00 (GMT+8)",
+    "social_media": "Ikuti Kami",
+    "factory_location": "Lokasi Pabrik",
+    "send_inquiry": "Kirim Permintaan",
+    "quick_contact": "Kontak Cepat",
+    "loading_form": "Memuat formulir...",
+    "global_presence_title": "Kehadiran Global",
+    "global_presence_subtitle": "Kantor dan perwakilan kami di seluruh dunia",
+    "faq_title": "Pertanyaan Umum",
     "offices": {
-      "headquarters_country": "China (Headquarters)",
-      "headquarters_address": "123 Industrial Zone, Sweet City",
-      "us_country": "United States",
+      "headquarters_country": "Tiongkok (Kantor Pusat)",
+      "headquarters_address": "123 Zona Industri, Sweet City",
+      "us_country": "Amerika Serikat",
       "us_address": "456 Market Street, San Francisco, CA",
-      "uk_country": "United Kingdom",
+      "uk_country": "Inggris",
       "uk_address": "789 High Street, London",
-      "uae_country": "UAE",
+      "uae_country": "UEA",
       "uae_address": "321 Business Bay, Dubai"
     },
-    "whatsapp_desc": "Get instant response to your inquiries",
+    "whatsapp_desc": "Dapatkan respons instan untuk permintaan Anda",
     "faq": {
-      "response_time_q": "How quickly will I receive a response?",
-      "response_time_a": "We typically respond to all inquiries within 24 hours during business days. For urgent matters, we recommend contacting us via WhatsApp for immediate assistance.",
-      "visit_factory_q": "Can I visit your factory?",
-      "visit_factory_a": "Yes, we welcome clients to visit our facility. Please contact us in advance to schedule a visit, and we can arrange factory tours and face-to-face meetings."
+      "response_time_q": "Seberapa cepat saya akan mendapat respons?",
+      "response_time_a": "Kami biasanya merespons semua permintaan dalam 24 jam pada hari kerja. Untuk urusan mendesak, hubungi kami via WhatsApp untuk bantuan segera.",
+      "visit_factory_q": "Bisakah saya mengunjungi pabrik Anda?",
+      "visit_factory_a": "Ya, kami menyambut klien untuk mengunjungi fasilitas kami. Hubungi kami terlebih dahulu untuk menjadwalkan kunjungan, termasuk tur pabrik dan pertemuan tatap muka."
     }
   },
   "faq": {
-    "title": "Frequently Asked Questions",
-    "subtitle": "Find answers to common questions about our services",
-    "still_questions": "Still Have Questions?",
-    "contact_description": "Our team is here to help. Contact us for personalized assistance.",
+    "title": "Pertanyaan Umum",
+    "subtitle": "Temukan jawaban pertanyaan umum tentang layanan kami",
+    "still_questions": "Masih Ada Pertanyaan?",
+    "contact_description": "Tim kami siap membantu. Hubungi kami untuk bantuan personal.",
     "categories": {
-      "general": "General",
-      "ordering": "Ordering",
-      "oem": "OEM/Private Label",
-      "shipping": "Shipping"
+      "general": "Umum",
+      "ordering": "Pemesanan",
+      "oem": "OEM / Private Label",
+      "shipping": "Pengiriman"
     },
     "items": [
       {
-        "question": "What is your minimum order quantity (MOQ)?",
-        "answer": "Our MOQ varies by product type. For standard products, MOQ starts from 1,000 pieces. For custom OEM orders, the minimum is typically 3,000 pieces depending on the complexity of customization required."
+        "question": "Berapa minimum order quantity (MOQ) Anda?",
+        "answer": "MOQ bervariasi menurut jenis produk. Produk standar mulai 1.000 pcs. Pesanan OEM kustom biasanya minimal 3.000 pcs, tergantung kompleksitas kustomisasi."
       },
       {
-        "question": "What certifications do you have?",
-        "answer": "We hold multiple international certifications including HACCP, ISO22000, BRC Grade A, Halal, and FDA registration. All our products meet strict international food safety standards."
+        "question": "Sertifikasi apa yang Anda miliki?",
+        "answer": "Kami memiliki sertifikasi internasional termasuk HACCP, ISO22000, BRC Grade A, Halal, dan registrasi FDA. Semua produk kami memenuhi standar keamanan pangan internasional yang ketat."
       },
       {
-        "question": "Can I get samples before placing an order?",
-        "answer": "Yes, we provide samples for quality evaluation. Standard samples are free (you pay shipping), and custom samples require a mold fee which is refundable upon placing a bulk order."
+        "question": "Bisakah saya mendapat sampel sebelum memesan?",
+        "answer": "Ya, kami menyediakan sampel untuk evaluasi kualitas. Sampel standar gratis (ongkir ditanggung pembeli), sampel kustom memerlukan biaya mold yang dapat dikembalikan saat pemesanan massal."
       },
       {
-        "question": "What payment methods do you accept?",
-        "answer": "We accept T/T (bank transfer), L/C (Letter of Credit), PayPal for sample orders, and Western Union. Payment terms are typically 30% deposit and 70% before shipment."
+        "question": "Metode pembayaran apa yang Anda terima?",
+        "answer": "Kami menerima T/T (transfer bank), L/C (Letter of Credit), PayPal (untuk pesanan sampel), dan Western Union. Syarat pembayaran umumnya 30% uang muka dan 70% sebelum pengiriman."
       },
       {
-        "question": "How do I place an order?",
-        "answer": "You can submit an inquiry through our website, email us directly, or contact us via WhatsApp. Our sales team will respond within 24 hours with a quote and order confirmation process."
+        "question": "Bagaimana cara memesan?",
+        "answer": "Anda dapat mengirim permintaan via situs web, email langsung, atau WhatsApp. Tim penjualan kami merespons dalam 24 jam dengan penawaran dan proses konfirmasi pesanan."
       },
       {
-        "question": "What is your lead time?",
-        "answer": "Standard orders: 2-3 weeks after deposit confirmation. Custom OEM orders: 4-6 weeks depending on complexity. Rush orders may be available for an additional fee."
+        "question": "Berapa lead time Anda?",
+        "answer": "Jadwal produksi dan pengiriman diberikan tim penjualan saat pesanan dikonfirmasi. Pesanan mendesak mungkin dikenai biaya tambahan. Situs ini tidak menerbitkan perkiraan minggu/bulan tetap."
       },
       {
-        "question": "Can I modify my order after it's placed?",
-        "answer": "Modifications are possible within 48 hours of order confirmation, provided production hasn't started. Once production begins, changes may incur additional costs."
+        "question": "Bisakah saya mengubah pesanan setelah ditempatkan?",
+        "answer": "Perubahan dimungkinkan dalam 48 jam setelah konfirmasi pesanan, asalkan produksi belum dimulai. Setelah produksi dimulai, perubahan mungkin memerlukan biaya tambahan."
       },
       {
-        "question": "What OEM services do you offer?",
-        "answer": "We offer full OEM/ODM services including custom formula development, private label packaging, custom shapes and flavors, branded packaging design, and turnkey solutions from concept to delivery."
+        "question": "Layanan OEM apa yang Anda tawarkan?",
+        "answer": "Kami menawarkan layanan OEM/ODM lengkap termasuk pengembangan formulasi kustom, kemasan private label, bentuk dan rasa kustom, desain kemasan bermerek, dan solusi turnkey dari konsep hingga pengiriman."
       },
       {
-        "question": "What is the MOQ for custom OEM orders?",
-        "answer": "Custom OEM orders start at 3,000 pieces per SKU. For complex custom molds or unique formulations, higher MOQs may apply. We can discuss specific requirements for your project."
+        "question": "Berapa MOQ untuk pesanan OEM kustom?",
+        "answer": "Pesanan OEM kustom mulai 3.000 pcs per SKU. Untuk mold kustom kompleks atau formulasi unik, MOQ lebih tinggi mungkin berlaku. Kami dapat mendiskusikan kebutuhan spesifik proyek Anda."
       },
       {
-        "question": "How long does custom product development take?",
-        "answer": "Custom formulation: 2-4 weeks. Mold creation: 3-5 weeks. Packaging design: 1-2 weeks. Full production: 4-6 weeks after sample approval. Total timeline is typically 8-12 weeks for new OEM products."
+        "question": "Berapa lama pengembangan produk kustom?",
+        "answer": "Jadwal pengembangan kustom dinilai setelah tinjauan kebutuhan dan hanya diberikan dalam penawaran atau konfirmasi pesanan."
       },
       {
-        "question": "Do you provide design services for packaging?",
-        "answer": "Yes, we have an in-house design team that can create packaging designs, logos, and branding elements. Design services are included for orders meeting minimum quantity requirements."
+        "question": "Apakah Anda menyediakan layanan desain kemasan?",
+        "answer": "Ya, kami memiliki tim desain internal yang dapat membuat desain kemasan, logo, dan elemen branding. Layanan desain gratis untuk pesanan yang memenuhi MOQ."
       },
       {
-        "question": "What shipping methods do you offer?",
-        "answer": "We offer sea freight (FCL/LCL), air freight, and express courier (DHL, FedEx, UPS). Sea freight is most economical for large orders, while air and express are faster for smaller quantities."
+        "question": "Metode pengiriman apa yang Anda tawarkan?",
+        "answer": "Kami menawarkan pengiriman laut (FCL/LCL), udara, dan ekspres (DHL, FedEx, UPS). Pengiriman laut paling ekonomis untuk pesanan besar, sedangkan udara dan ekspres lebih cepat untuk kuantitas kecil."
       },
       {
-        "question": "Do you ship worldwide?",
-        "answer": "Yes, we ship to over 50 countries worldwide. We have experience with various import regulations and can provide necessary documentation for customs clearance."
+        "question": "Apakah Anda mengirim ke seluruh dunia?",
+        "answer": "Ya, kami mengirim ke lebih dari 50 negara. Kami berpengalaman dengan berbagai regulasi impor dan dapat menyediakan dokumen yang diperlukan untuk customs clearance."
       },
       {
-        "question": "What are the shipping costs?",
-        "answer": "Shipping costs depend on order volume, destination, and shipping method. We provide detailed quotes including shipping costs. For large orders, we can offer competitive freight rates through our logistics partners."
+        "question": "Berapa biaya pengiriman?",
+        "answer": "Biaya pengiriman tergantung volume pesanan, pelabuhan tujuan, dan metode pengiriman. Kami memberikan penawaran detail termasuk biaya pengiriman. Untuk pesanan besar, kami dapat menawarkan tarif freight kompetitif melalui mitra logistik."
       },
       {
-        "question": "Can you handle customs clearance?",
-        "answer": "We provide all necessary export documentation (commercial invoice, packing list, certificates of origin, health certificates). For import clearance, we work with experienced freight forwarders who can assist at destination ports."
+        "question": "Bisakah Anda menangani customs clearance?",
+        "answer": "Kami menyediakan semua dokumen ekspor yang diperlukan (commercial invoice, packing list, certificate of origin, health certificate). Untuk clearance impor, kami bekerja dengan freight forwarder berpengalaman di pelabuhan tujuan."
       }
     ]
   },
   "input_file": {
-    "upload": "Click to upload or drag and drop",
-    "max_size": "Max {size} MB per file",
-    "error_too_large": "File \"{name}\" exceeds {max} MB limit",
-    "error_type": "File \"{name}\" is not a supported type",
-    "error_max_files": "Maximum {count} files allowed"
+    "upload": "Klik untuk unggah atau seret file ke sini",
+    "max_size": "Maks {size} MB per file",
+    "error_too_large": "File \"{name}\" melebihi batas {max} MB",
+    "error_type": "File \"{name}\" bukan tipe yang didukung",
+    "error_max_files": "Maksimal {count} file diizinkan"
   }
 }

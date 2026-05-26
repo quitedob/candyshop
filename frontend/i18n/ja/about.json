@@ -1,31 +1,31 @@
 {
-  "story": "Our Story",
-  "story_p1": "Founded in 2008, CandyPro began as a small family-owned candy factory with a simple mission: to create delicious, high-quality confectionery products that bring joy to people of all ages.",
-  "story_p2": "Over the years, we have grown from a local manufacturer to a trusted OEM partner for brands around the world. Today, our 20,000 square meter facility produces over 100 tons of candy daily, serving clients in more than 50 countries across Europe, the Americas, Southeast Asia, and the Middle East.",
-  "story_p3": "What sets us apart is our commitment to quality and innovation. We invest heavily in R&D, continuously improving our formulations and processes to meet the evolving needs of our clients. Our state-of-the-art production lines and rigorous quality control systems ensure that every product that leaves our facility meets the highest standards.",
-  "mission": "Our Mission",
-  "mission_desc": "To be the most trusted OEM candy manufacturing partner for global brands, delivering exceptional quality, innovation, and service that helps our clients succeed in their markets.",
-  "vision": "Our Vision",
-  "vision_desc": "To become the leading candy manufacturer in Asia, known for product excellence, operational efficiency, and sustainable practices that set industry benchmarks.",
-  "values": "Our Values",
-  "values_desc": "Quality, Integrity, Innovation, Partnership, Sustainability — these core values guide everything we do, from product development to customer service.",
-  "team": "Our Team",
-  "team_subtitle": "The experienced professionals behind our success",
-  "team_members": "Employees",
+  "story": "私たちの歩み",
+  "story_p1": "2008年に設立されたCandyProは、小さな家族経営のキャンディ工場として、あらゆる世代に喜びを届ける高品質な菓子を作るというシンプルな使命から始まりました。",
+  "story_p2": "長年にわたり、地域メーカーから世界中のブランドが信頼するOEMパートナーへ成長しました。現在、2万平方メートルの施設で日産100トン以上のキャンディを製造し、ヨーロッパ、南北米、東南アジア、中東の50カ国以上のお客様にサービスを提供しています。",
+  "story_p3": "品質とイノベーションへの取り組みが私たちの強みです。R&Dに積極的に投資し、お客様の進化するニーズに応えるため処方とプロセスを継続的に改善しています。最先端の生産ラインと厳格な品質管理により、出荷されるすべての製品が最高基準を満たします。",
+  "mission": "ミッション",
+  "mission_desc": "グローバルブランドにとって最も信頼されるOEMキャンディ製造パートナーとなり、卓越した品質・イノベーション・サービスで市場での成功を支援すること。",
+  "vision": "ビジョン",
+  "vision_desc": "製品の卓越性、運営効率、持続可能な実践で業界のベンチマークを設定する、アジアを代表するキャンディメーカーになること。",
+  "values": "バリュー",
+  "values_desc": "品質、誠実、イノベーション、パートナーシップ、持続可能性——これらの価値観が、製品開発からカスタマーサービスまですべての活動を導きます。",
+  "team": "チーム",
+  "team_subtitle": "成功を支える経験豊富なプロフェッショナル",
+  "team_members": "従業員",
   "titles": {
-    "ceo": "Founder & CEO",
-    "qa_director": "Director of Quality Assurance",
-    "rd_manager": "R&D Manager",
-    "sales_director": "Sales Director",
-    "production_manager": "Production Manager",
-    "export_manager": "Export Manager"
+    "ceo": "創業者兼CEO",
+    "qa_director": "品質保証ディレクター",
+    "rd_manager": "R&Dマネージャー",
+    "sales_director": "営業ディレクター",
+    "production_manager": "生産マネージャー",
+    "export_manager": "輸出マネージャー"
   },
   "cert_desc": {
-    "haccp": "Hazard Analysis and Critical Control Points",
-    "iso": "Food Safety Management System",
-    "brc": "Grade A Certification",
-    "halal": "Halal Certification"
+    "haccp": "危害分析重要管理点",
+    "iso": "食品安全マネジメントシステム",
+    "brc": "グレードA認証",
+    "halal": "Halal認証"
   },
-  "cta_title": "Let's Build Something Great Together",
-  "cta_subtitle": "We'd love to hear about your project and explore how we can help"
+  "cta_title": "一緒に素晴らしいものを作りましょう",
+  "cta_subtitle": "プロジェクトについてお聞かせください。最適な支援方法をご一緒に検討します"
 }

@@ -43,7 +43,7 @@
         </thead>
         <tbody class="divide-y divide-gray-200">
           <tr v-for="flow in flows" :key="flow.id">
-            <td class="px-4 py-3 text-sm">{{ flow.title }}</td>
+            <td class="px-4 py-3 text-sm">{{ tField(flow, 'title') }}</td>
             <td class="px-4 py-3 text-sm">
               <span :class="flow.type === 'quick_odm' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'" class="px-2 py-0.5 rounded-full text-xs font-medium">
                 {{ flow.type === 'quick_odm' ? t('admin.oem.type_quick_odm') : t('admin.oem.type_full_oem') }}
@@ -81,7 +81,7 @@
         </thead>
         <tbody class="divide-y divide-gray-200">
           <tr v-for="s in solutions" :key="s.id || s.slug">
-            <td class="px-4 py-3 text-sm">{{ s.title }}</td>
+            <td class="px-4 py-3 text-sm">{{ tField(s, 'title') }}</td>
             <td class="px-4 py-3 text-sm text-gray-500">{{ s.category || '—' }}</td>
             <td class="px-4 py-3 text-sm text-gray-500">{{ s.moq || '—' }}</td>
             <td class="px-4 py-3 text-sm space-x-2">
@@ -109,7 +109,7 @@
         </thead>
         <tbody class="divide-y divide-gray-200">
           <tr v-for="p in projects" :key="p.id">
-            <td class="px-4 py-3 text-sm">{{ p.productName }}</td>
+            <td class="px-4 py-3 text-sm">{{ tField(p, 'productName') }}</td>
             <td class="px-4 py-3 text-sm">
               <span :class="statusClass(p.status)" class="px-2 py-0.5 rounded-full text-xs font-medium">{{ enumLabel('oem_status', p.status) }}</span>
             </td>
@@ -212,10 +212,13 @@
 </template>
 
 <script setup lang="ts">
+import { useTranslation } from '~/composables/useTranslation'
+
 definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
+const { tField } = useTranslation()
 const { enumLabel } = useDisplay()
 
 const activeTab = ref('flows')

@@ -6,6 +6,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"candypro/api/internal/pkg/authsession"
 )
 
 // Config holds all configuration for the application
@@ -18,14 +20,30 @@ type Config struct {
 	JWT           JWTConfig
 	AI            AIConfig
 	Stripe        StripeConfig
+	PayPal        PayPalConfig
 	KYB           KYBConfig
+	Order         OrderConfig
 	ExchangeRates map[string]float64
+}
+
+// OrderConfig 订单相关后台行为
+type OrderConfig struct {
+	AutoInvoiceOnPayment bool
 }
 
 // StripeConfig holds Stripe payment gateway configuration.
 type StripeConfig struct {
-	SecretKey     string
-	WebhookSecret string
+	SecretKey      string
+	WebhookSecret  string
+	PublishableKey string
+}
+
+// PayPalConfig holds PayPal payment gateway configuration.
+type PayPalConfig struct {
+	ClientID     string
+	ClientSecret string
+	WebhookID    string
+	Sandbox      bool
 }
 
 // KYBConfig 客户激活与小额免审策略
@@ -89,13 +107,15 @@ type UploadConfig struct {
 
 // SecurityConfig holds security-related configuration
 type SecurityConfig struct {
-	CORSAllowedOrigins []string
-	RateLimitPerMinute int
-	// PublicAIRateLimitPerMinute 针对未登录 /system AI 路由的独立 IP 限流（更严）
-	PublicAIRateLimitPerMinute int
-	// PublicInquiryRateLimitPerMinute 针对 POST /public/inquiry 的独立 IP 限流（防刷询盘）
+	CORSAllowedOrigins              []string
+	RateLimitPerMinute              int
+	PublicAIRateLimitPerMinute      int
 	PublicInquiryRateLimitPerMinute int
 	EnableSwagger                   bool
+	EnableSupplierPortal            bool
+	EnableMultiWarehouse            bool
+	RedisURL                        string
+	FrontendURL                     string
 }
 
 // JWTConfig holds JWT configuration
@@ -112,7 +132,7 @@ func Load() (*Config, error) {
 			Port:         getEnv("PORT", "8080"),
 			Environment:  getEnv("ENVIRONMENT", "development"),
 			ReadTimeout:  getEnvInt("READ_TIMEOUT", 60),
-			WriteTimeout: getEnvInt("WRITE_TIMEOUT", 60),
+			WriteTimeout: getEnvInt("WRITE_TIMEOUT", 660),
 			IdleTimeout:  getEnvInt("IDLE_TIMEOUT", 120),
 		},
 		Database: DatabaseConfig{
@@ -136,7 +156,7 @@ func Load() (*Config, error) {
 			FromName:     getEnv("FROM_NAME", "CandyPro OEM"),
 		},
 		Upload: UploadConfig{
-			MaxFileSize:   int64(getEnvInt("MAX_FILE_SIZE", 5*1024*1024)), // 5MB
+			MaxFileSize:   int64(getEnvInt("MAX_FILE_SIZE", 64*1024*1024)), // 64MB（询价视频附件）
 			AllowedTypes:  []string{"image/jpeg", "image/png", "image/webp", "application/pdf"},
 			UploadPath:    getEnv("UPLOAD_PATH", "./uploads"),
 			UploadURL:     getEnv("UPLOAD_URL", "/uploads"),
@@ -154,6 +174,10 @@ func Load() (*Config, error) {
 			PublicAIRateLimitPerMinute:      getEnvInt("PUBLIC_AI_RATE_LIMIT_PER_MINUTE", 15),
 			PublicInquiryRateLimitPerMinute: getEnvInt("PUBLIC_INQUIRY_RATE_LIMIT_PER_MINUTE", 10),
 			EnableSwagger:                   getEnv("ENABLE_SWAGGER", "true") == "true",
+			EnableSupplierPortal:            getEnv("ENABLE_SUPPLIER_PORTAL", "false") == "true",
+			EnableMultiWarehouse:            getEnv("ENABLE_MULTI_WAREHOUSE", "false") == "true",
+			RedisURL:                        getEnv("REDIS_URL", ""),
+			FrontendURL:                     getEnv("FRONTEND_URL", "http://localhost:3000"),
 		},
 		JWT: JWTConfig{
 			Secret:               getEnv("JWT_SECRET", ""),
@@ -162,14 +186,24 @@ func Load() (*Config, error) {
 		},
 		AI:            LoadAIConfig(),
 		Stripe: StripeConfig{
-			SecretKey:     getEnv("STRIPE_SECRET_KEY", ""),
-			WebhookSecret: getEnv("STRIPE_WEBHOOK_SECRET", ""),
+			SecretKey:      getEnv("STRIPE_SECRET_KEY", ""),
+			WebhookSecret:  getEnv("STRIPE_WEBHOOK_SECRET", ""),
+			PublishableKey: getEnv("STRIPE_PUBLISHABLE_KEY", ""),
+		},
+		PayPal: PayPalConfig{
+			ClientID:     getEnv("PAYPAL_CLIENT_ID", ""),
+			ClientSecret: getEnv("PAYPAL_CLIENT_SECRET", ""),
+			WebhookID:    getEnv("PAYPAL_WEBHOOK_ID", ""),
+			Sandbox:      getEnv("PAYPAL_SANDBOX", "true") == "true",
 		},
 		ExchangeRates: parseExchangeRates(getEnv("EXCHANGE_RATES", "")),
 		KYB: KYBConfig{
 			BypassMaxOrderUSD:       getEnvFloat("KYB_BYPASS_MAX_ORDER_USD", 0),
 			BypassSampleMaxOrderUSD: getEnvFloat("KYB_BYPASS_SAMPLE_MAX_ORDER_USD", 0),
 			SampleProductIDs:        parseCommaSeparated(getEnv("KYB_SAMPLE_PRODUCT_IDS", "")),
+		},
+		Order: OrderConfig{
+			AutoInvoiceOnPayment: getEnv("AUTO_INVOICE_ON_PAYMENT", "true") == "true",
 		},
 	}
 
@@ -194,6 +228,10 @@ func Load() (*Config, error) {
 				return nil, fmt.Errorf("wildcard CORS origin (*) is not allowed in production (credentials are enabled)")
 			}
 		}
+	}
+
+	if err := authsession.EnsureAvailable(cfg.Security.RedisURL); err != nil {
+		return nil, err
 	}
 
 	return cfg, nil
@@ -230,7 +268,10 @@ func parseCORSOrigins() []string {
 			return origins
 		}
 	}
-	// Fallback
+	// Fallback — dev only; production should set CORS_ORIGINS explicitly
+	if getEnv("ENVIRONMENT", "development") == "production" {
+		return []string{getEnv("FRONTEND_URL", "http://localhost:3000")}
+	}
 	return []string{
 		getEnv("FRONTEND_URL", "http://localhost:3000"),
 		"http://localhost:3001",

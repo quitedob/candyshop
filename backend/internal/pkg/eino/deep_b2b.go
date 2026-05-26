@@ -37,7 +37,7 @@ import (
 //
 // chatModel is shared across all sub-agents and the coordinator.
 // persister may be nil for chat-only deployments.
-func NewB2BCoordinatorAgent(ctx context.Context, chatModel model.ToolCallingChatModel, persister einotool.DocumentPersister) (adk.Agent, error) {
+func NewB2BCoordinatorAgent(ctx context.Context, chatModel model.ToolCallingChatModel, persister einotool.DocumentPersister, catalog einotool.ProductCatalogSearcher, quoter einotool.PricingQuoter) (adk.Agent, error) {
 	// ── Common tools (shared across coordinator and sub-agents) ──
 
 	// Document generation graph tool
@@ -80,12 +80,21 @@ func NewB2BCoordinatorAgent(ctx context.Context, chatModel model.ToolCallingChat
 	}
 
 	// ── Sub-agents ──
-	productExpert, err := newProductExpertAgent(ctx, chatModel)
+	var productTools []tool.BaseTool
+	if catalog != nil {
+		if searchTool, err := einotool.NewSearchProductsTool(ctx, catalog); err == nil {
+			productTools = append(productTools, searchTool)
+		}
+		if detailTool, err := einotool.NewGetProductDetailTool(ctx, catalog); err == nil {
+			productTools = append(productTools, detailTool)
+		}
+	}
+	productExpert, err := newProductExpertAgent(ctx, chatModel, productTools)
 	if err != nil {
 		return nil, fmt.Errorf("product expert agent: %w", err)
 	}
 
-	pricingExpert, err := newPricingExpertAgent(ctx, chatModel)
+	pricingExpert, err := newPricingExpertAgent(ctx, chatModel, quoter)
 	if err != nil {
 		return nil, fmt.Errorf("pricing expert agent: %w", err)
 	}
@@ -120,8 +129,8 @@ func NewB2BCoordinatorAgent(ctx context.Context, chatModel model.ToolCallingChat
 }
 
 // newProductExpertAgent creates a sub-agent focused on product matching and catalog queries.
-func newProductExpertAgent(ctx context.Context, chatModel model.ToolCallingChatModel) (adk.Agent, error) {
-	return adk.NewChatModelAgent(ctx, &adk.ChatModelAgentConfig{
+func newProductExpertAgent(ctx context.Context, chatModel model.ToolCallingChatModel, tools []tool.BaseTool) (adk.Agent, error) {
+	cfg := &adk.ChatModelAgentConfig{
 		Name:        "ProductExpert",
 		Description: "Product matching and catalog specialist. Searches the product catalog, matches customer requirements to available products, and recommends suitable options based on specifications, certifications, and market requirements.",
 		Instruction: `You are a Product Expert at CandyPro OEM, a professional B2B candy manufacturer.
@@ -132,20 +141,31 @@ Your role:
 3. Provide product details: MOQ, lead time, certifications (Halal, HACCP, ISO), packaging options
 4. Identify customization opportunities (OEM, flavors, shapes, packaging)
 
-When the coordinator asks you to match products:
-- Analyze the customer's requirements carefully
-- Consider target country regulations and certifications
-- Factor in minimum order quantities and lead times
-- Explain why each product is recommended
+Use search_products and get_product_detail tools when you need live catalog data.
 
 Be concise and specific. Always reference product names and specifications.`,
 		Model: chatModel,
-	})
+	}
+	if len(tools) > 0 {
+		cfg.ToolsConfig = adk.ToolsConfig{
+			ToolsNodeConfig: compose.ToolsNodeConfig{Tools: tools},
+		}
+	}
+	return adk.NewChatModelAgent(ctx, cfg)
 }
 
 // newPricingExpertAgent creates a sub-agent focused on pricing calculations.
-func newPricingExpertAgent(ctx context.Context, chatModel model.ToolCallingChatModel) (adk.Agent, error) {
-	return adk.NewChatModelAgent(ctx, &adk.ChatModelAgentConfig{
+func newPricingExpertAgent(ctx context.Context, chatModel model.ToolCallingChatModel, quoter einotool.PricingQuoter) (adk.Agent, error) {
+	var pricingTools []tool.BaseTool
+	if quoter != nil {
+		if tiersTool, err := einotool.NewGetPriceTiersTool(ctx, quoter); err == nil {
+			pricingTools = append(pricingTools, tiersTool)
+		}
+		if quoteTool, err := einotool.NewComputeQuoteDraftTool(ctx, quoter); err == nil {
+			pricingTools = append(pricingTools, quoteTool)
+		}
+	}
+	cfg := &adk.ChatModelAgentConfig{
 		Name:        "PricingExpert",
 		Description: "Pricing and quotation specialist. Calculates pricing based on quantities, tiers, market costs, and currency conversion. Provides quotation drafts for human review.",
 		Instruction: `You are a Pricing Expert at CandyPro OEM, a professional B2B candy manufacturer.
@@ -155,6 +175,8 @@ Your role:
 2. Factor in target market costs and currency conversion
 3. Prepare quotation drafts with clear pricing assumptions
 4. Flag orders that require human approval (>$10,000)
+
+Use get_price_tiers and compute_quote_draft tools when you need live pricing data.
 
 When the coordinator asks you to calculate pricing:
 - Consider quantity-based tier pricing
@@ -166,31 +188,36 @@ When the coordinator asks you to calculate pricing:
 
 Be precise and structured. Always state assumptions.`,
 		Model: chatModel,
-	})
+	}
+	if len(pricingTools) > 0 {
+		cfg.ToolsConfig = adk.ToolsConfig{
+			ToolsNodeConfig: compose.ToolsNodeConfig{Tools: pricingTools},
+		}
+	}
+	return adk.NewChatModelAgent(ctx, cfg)
 }
 
 // newLogisticsExpertAgent creates a sub-agent focused on logistics coordination.
 func newLogisticsExpertAgent(ctx context.Context, chatModel model.ToolCallingChatModel, trackTool tool.BaseTool) (adk.Agent, error) {
-	return adk.NewChatModelAgent(ctx, &adk.ChatModelAgentConfig{
+	cfg := &adk.ChatModelAgentConfig{
 		Name:        "LogisticsExpert",
-		Description: "Logistics and shipping specialist. Estimates shipping routes, transit times, costs, and provides tracking information. Handles Incoterms and documentation requirements.",
+		Description: "Logistics and shipping specialist. Advises on shipping routes, Incoterms, documentation, and tracking. Does not quote guaranteed transit day counts.",
 		Instruction: `You are a Logistics Expert at CandyPro OEM, a professional B2B candy manufacturer.
 
 Your role:
-1. Estimate shipping routes and transit times based on origin (Shanghai, China) and destination
+1. Advise on shipping routes and methods based on origin (Shanghai, China) and destination — never state specific guaranteed transit day/week counts; say transit varies by method, season, and destination and is confirmed at order time
 2. Advise on Incoterms (FOB, CIF, EXW, DDP) and their implications
 3. Coordinate required shipping documentation
-4. Provide tracking information when available
+4. Provide tracking information when available using track_shipment tool
 5. Consider temperature control for candy products
 
-When the coordinator asks you about logistics:
-- Origin defaults to Shanghai, China
-- Provide estimated transit times by mode (air/sea)
-- List required documents for the destination
-- Note temperature-sensitive considerations for candy
-- Reference Incoterms and their cost allocation
-
-Be practical and specific about timelines and requirements.`,
+Be practical about requirements without promising fixed delivery windows.`,
 		Model: chatModel,
-	})
+	}
+	if trackTool != nil {
+		cfg.ToolsConfig = adk.ToolsConfig{
+			ToolsNodeConfig: compose.ToolsNodeConfig{Tools: []tool.BaseTool{trackTool}},
+		}
+	}
+	return adk.NewChatModelAgent(ctx, cfg)
 }

@@ -76,7 +76,7 @@ func NewS3StorageService(ctx context.Context, cfg S3Config) (*S3StorageService, 
 		allowedPrefixes: map[string]bool{
 			"images/": true, "documents/": true, "products/": true,
 			"certifications/": true, "avatars/": true, "uploads/": true,
-			"payment-proofs/": true, "kyb/": true,
+			"payment-proofs/": true, "kyb/": true, "order-messages/": true,
 		},
 	}, nil
 }
@@ -106,9 +106,13 @@ func (s *S3StorageService) Upload(ctx context.Context, reader io.Reader, opts Up
 	}
 
 	// Validate magic bytes
-	if len(buf) >= 512 {
-		detectedType := http.DetectContentType(buf[:512])
-		if !allowedImageTypes[detectedType] && !allowedDocTypes[detectedType] {
+	if len(buf) > 0 {
+		sample := buf
+		if len(sample) > 512 {
+			sample = sample[:512]
+		}
+		detectedType := http.DetectContentType(sample)
+		if !contentTypeAllowed(detectedType, opts.FileName) {
 			return "", fmt.Errorf("file content type %s is not allowed", detectedType)
 		}
 	}

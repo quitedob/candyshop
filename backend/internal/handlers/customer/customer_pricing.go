@@ -27,29 +27,45 @@ func (h *Handler) CustomerGetMyPriceList(c *gin.Context) {
 		return
 	}
 
-	if user.CompanyID == nil {
-		response.ErrorResp(c, http.StatusNotFound, "no_company_profile")
+	company, err := h.services.Company.EnsureCompanyForUser(c.Request.Context(), user)
+	if err != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "company_provision_failed")
 		return
 	}
-
-	company, err := h.services.Company.GetCompany(c.Request.Context(), *user.CompanyID)
-	if err != nil {
-		response.ErrorResp(c, http.StatusNotFound, "company_not_found")
+	if company == nil {
+		c.JSON(http.StatusOK, gin.H{"priceList": nil, "status": "no_company_profile"})
 		return
 	}
 
 	if company.PriceListID == nil {
-		c.JSON(http.StatusOK, gin.H{"priceList": nil, "message": "No price list assigned to your company"})
+		c.JSON(http.StatusOK, gin.H{"priceList": nil, "status": "no_price_list"})
 		return
 	}
 
 	priceList, err := h.services.Price.GetPriceList(c.Request.Context(), *company.PriceListID)
 	if err != nil {
-		response.ErrorResp(c, http.StatusNotFound, "price_list_not_found")
+		c.JSON(http.StatusOK, gin.H{"priceList": nil, "status": "price_list_not_found"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"priceList": priceList})
+	rules, err := h.services.Price.GetPriceListRules(c.Request.Context(), *company.PriceListID)
+	if err != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "price_rules_fetch_failed")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"priceList": gin.H{
+			"id":          priceList.ID,
+			"name":        priceList.Name,
+			"description": priceList.Description,
+			"currency":    priceList.Currency,
+			"status":      priceList.Status,
+			"createdAt":   priceList.CreatedAt,
+			"updatedAt":   priceList.UpdatedAt,
+			"prices":      rules,
+		},
+	})
 }
 
 // CustomerGetProductPrice returns the applicable price for a product given the user's price list.
@@ -78,13 +94,12 @@ func (h *Handler) CustomerGetProductPrice(c *gin.Context) {
 		return
 	}
 
-	if user.CompanyID == nil {
-		c.JSON(http.StatusOK, gin.H{"unitPrice": nil, "message": "No company profile found"})
+	company, err := h.services.Company.EnsureCompanyForUser(c.Request.Context(), user)
+	if err != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "company_provision_failed")
 		return
 	}
-
-	company, err := h.services.Company.GetCompany(c.Request.Context(), *user.CompanyID)
-	if err != nil || company.PriceListID == nil {
+	if company == nil || company.PriceListID == nil {
 		c.JSON(http.StatusOK, gin.H{"unitPrice": nil, "message": "No price list assigned"})
 		return
 	}

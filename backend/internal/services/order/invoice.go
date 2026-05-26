@@ -21,6 +21,7 @@ type invoiceRepository interface {
 	OverdueCount(ctx context.Context) (int64, error)
 	OverdueTotal(ctx context.Context) (float64, error)
 	FindByStatus(ctx context.Context, status string, page, limit int) ([]modelsOrder.Invoice, int64, error)
+	FindByUserID(ctx context.Context, userID string) ([]modelsOrder.Invoice, error)
 }
 
 // orderByIDReader 按 ID 读取订单（发票从订单派生时用；可传 nil）
@@ -59,6 +60,11 @@ func (s *InvoiceService) ListInvoices(ctx context.Context, page, limit int, stat
 // GetInvoice returns a single invoice by ID.
 func (s *InvoiceService) GetInvoice(ctx context.Context, id string) (*modelsOrder.Invoice, error) {
 	return s.repo.FindByID(ctx, id)
+}
+
+// GetByUserID returns all invoices for a user's orders in one query.
+func (s *InvoiceService) GetByUserID(ctx context.Context, userID string) ([]modelsOrder.Invoice, error) {
+	return s.repo.FindByUserID(ctx, userID)
 }
 
 // GetByOrderID returns all invoices for an order.

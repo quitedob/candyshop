@@ -1,6 +1,5 @@
 <template>
   <div class="legal-page">
-    <!-- Breadcrumb -->
     <div class="container pt-8">
       <Breadcrumb :items="[{ label: t('legal.privacy_title') }]" />
     </div>
@@ -27,6 +26,38 @@
           <li>{{ t('legal.privacy.use_legitimate') }}</li>
           <li>{{ t('legal.privacy.use_legal') }}</li>
         </ul>
+
+        <h2>{{ t('legal.privacy.data_retention_title') }}</h2>
+        <p>{{ t('legal.privacy.data_retention_desc') }}</p>
+
+        <h2>{{ t('legal.privacy.third_party_title') }}</h2>
+        <p>{{ t('legal.privacy.third_party_desc') }}</p>
+
+        <h2>{{ t('legal.privacy.user_rights_title') }}</h2>
+        <p>{{ t('legal.privacy.user_rights_desc') }}</p>
+        <ul>
+          <li>{{ t('legal.privacy.user_rights_access') }}</li>
+          <li>{{ t('legal.privacy.user_rights_correction') }}</li>
+          <li>{{ t('legal.privacy.user_rights_deletion') }}</li>
+          <li>{{ t('legal.privacy.user_rights_portability') }}</li>
+          <li>{{ t('legal.privacy.user_rights_restriction') }}</li>
+          <li>{{ t('legal.privacy.user_rights_objection') }}</li>
+        </ul>
+
+        <h2>{{ t('legal.privacy.cross_border_title') }}</h2>
+        <p>{{ t('legal.privacy.cross_border_desc') }}</p>
+
+        <h2>{{ t('legal.privacy.cookies_title') }}</h2>
+        <p>{{ t('legal.privacy.cookies_desc') }}</p>
+
+        <h2>{{ t('legal.privacy.dpo_contact_title') }}</h2>
+        <p>{{ t('legal.privacy.dpo_contact_desc') }}</p>
+
+        <h2>{{ t('legal.privacy.children_title') }}</h2>
+        <p>{{ t('legal.privacy.children_desc') }}</p>
+
+        <h2>{{ t('legal.privacy.changes_title') }}</h2>
+        <p>{{ t('legal.privacy.changes_desc') }}</p>
       </div>
     </div>
   </div>
@@ -38,8 +69,15 @@ import { useI18n } from '#i18n'
 const { t } = useI18n()
 const { formatDate } = useDisplay()
 
-useSeo({
-  title: `Privacy Policy | ${t('seo.default_title')}`
+usePageOgImage({
+  title: `Privacy Policy | ${t('seo.default_title')}`,
+  description: t('legal.privacy.intro'),
+  schema: {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: t('legal.privacy_title'),
+    description: t('legal.privacy.intro'),
+  },
 })
 </script>
 

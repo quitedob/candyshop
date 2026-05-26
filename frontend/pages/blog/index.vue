@@ -2,7 +2,7 @@
   <div class="blog-page">
     <!-- Breadcrumb -->
     <div class="container">
-      <Breadcrumb :items="[{ label: t('nav.blog') }]" />
+      <Breadcrumb :items="[{ label: t('blog.title') }]" />
     </div>
 
     <!-- Hero -->
@@ -52,17 +52,17 @@
           class="featured-post__inner"
         >
           <div class="featured-post__image">
-            <img :src="featuredPost.thumbnail" :alt="featuredPost.title" />
+            <img :src="featuredPost.thumbnail" :alt="tField(featuredPost, 'title')" />
             <span class="featured-post__badge">{{ t('blog_extra.featured') }}</span>
           </div>
           <div class="featured-post__content">
             <span class="featured-post__category">{{ getCategoryName(featuredPost.category) }}</span>
-            <h2 class="featured-post__title">{{ featuredPost.title }}</h2>
-            <p class="featured-post__excerpt">{{ featuredPost.excerpt }}</p>
+            <h2 class="featured-post__title">{{ tField(featuredPost, 'title') }}</h2>
+            <p class="featured-post__excerpt">{{ tField(featuredPost, 'excerpt') }}</p>
             <div class="featured-post__meta">
               <span class="featured-post__author">
                 <Icon name="lucide:user" size="14" />
-                {{ featuredPost.author.name }}
+                {{ featuredPost.author?.name || 'CandyPro' }}
               </span>
               <span class="featured-post__date">
                 <Icon name="lucide:calendar" size="14" />
@@ -70,7 +70,7 @@
               </span>
               <span class="featured-post__read-time">
                 <Icon name="lucide:clock" size="14" />
-                {{ featuredPost.readTime }} {{ t('blog_extra.min_read') }}
+                {{ t('blog_extra.min_read', { count: featuredPost.readTime }) }}
               </span>
             </div>
           </div>
@@ -99,12 +99,12 @@
           >
             <NuxtLink :to="localePath(`/blog/${post.slug}`)" class="post-card__link">
               <div class="post-card__image">
-                <img :src="post.thumbnail || '/images/blog-placeholder.jpg'" :alt="post.title" />
+                <img :src="post.thumbnail || '/images/blog-placeholder.jpg'" :alt="tField(post, 'title')" />
                 <span class="post-card__category">{{ getCategoryName(post.category) }}</span>
               </div>
               <div class="post-card__content">
-                <h3 class="post-card__title">{{ post.title }}</h3>
-                <p class="post-card__excerpt">{{ post.excerpt }}</p>
+                <h3 class="post-card__title">{{ tField(post, 'title') }}</h3>
+                <p class="post-card__excerpt">{{ tField(post, 'excerpt') }}</p>
                 <div class="post-card__meta">
                   <span>{{ fmtDate(post.publishedAt) }}</span>
                   <span>{{ t('blog_extra.min_read', { count: post.readTime }) }}</span>
@@ -165,12 +165,15 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n, useLocalePath } from '#i18n'
+import { useTranslation } from '~/composables/useTranslation'
 
+const route = useRoute()
 const { t } = useI18n()
 const localePath = useLocalePath()
+const { tField } = useTranslation()
 const { getPosts } = useApi()
 
-const activeCategory = ref('')
+const activeCategory = ref(typeof route.query.category === 'string' ? route.query.category : '')
 const currentPage = ref(1)
 const limit = 9
 
@@ -258,6 +261,7 @@ const fmtDate = (dateString: string) => formatDate(dateString, { month: 'short',
 
 const setCategory = (categoryId: string) => {
   activeCategory.value = categoryId
+  navigateTo({ query: categoryId ? { category: categoryId } : {} })
 }
 
 const goToPage = (page: number) => {
@@ -270,8 +274,8 @@ watch(activeCategory, () => {
 })
 
 // SEO
-useSeo({
-  title: `${t('nav.blog')} | ${t('seo.default_title')}`,
+usePageOgImage({
+  title: `${t('blog.title')} | ${t('seo.default_title')}`,
   description: t('blog_extra.seo_description'),
   ogType: 'website'
 })

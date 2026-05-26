@@ -52,7 +52,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useLocalePath } from '#i18n'
 
 interface BreadcrumbItem {
@@ -146,5 +145,10 @@ const isLast = (index: number) => {
   .breadcrumb__separator {
     margin: 0 var(--spacing-xs);
   }
+}
+
+/* RTL */
+[dir="rtl"] .breadcrumb__separator {
+  transform: scaleX(-1);
 }
 </style>

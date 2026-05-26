@@ -1,10 +1,18 @@
 package public
 
 import (
+	modelsCommon "candypro/api/internal/models/common"
+	modelsProduct "candypro/api/internal/models/product"
 	"candypro/api/internal/pkg/response"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+)
+
+// swag 类型引用（避免 unused import）
+var (
+	_ modelsProduct.Category
+	_ modelsCommon.ErrorResponse
 )
 
 // ===== Categories =====

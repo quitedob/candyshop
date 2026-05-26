@@ -13,6 +13,7 @@ import (
 	"time"
 
 	modelsOrder "candypro/api/internal/models/order"
+	"candypro/api/internal/pkg/safego"
 )
 
 type webhookRepository interface {
@@ -71,7 +72,11 @@ func (s *WebhookService) Dispatch(ctx context.Context, eventType, aggregateKey s
 			log.Printf("webhook: create delivery error: %v", err)
 			continue
 		}
-		go s.deliver(cfg, delivery, payloadBytes)
+		cfgCopy := cfg
+		deliveryRef := delivery
+		safego.Go("webhook.deliver", func() {
+			s.deliver(cfgCopy, deliveryRef, payloadBytes)
+		})
 	}
 }
 

@@ -224,16 +224,53 @@ func (h *Handler) AdminImportInventoryXLSX(c *gin.Context) {
 		return
 	}
 
-	file, _, err := c.Request.FormFile("file")
+	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		response.InvalidResp(c, "xlsx_import_no_file")
 		return
 	}
 	defer file.Close()
 
-	fileBytes, err := io.ReadAll(file)
+	// R2 C-4: cap upload size and validate file type before buffering the whole
+	// payload into memory. Previously a multi-GB non-XLSX upload would be fully
+	// read by io.ReadAll and only rejected at excelize.OpenReader, exhausting
+	// server memory in the meantime.
+	const maxXLSXBytes = 25 * 1024 * 1024 // 25 MiB
+	if header.Size > 0 && header.Size > maxXLSXBytes {
+		response.ErrorResp(c, http.StatusRequestEntityTooLarge, "xlsx_import_too_large")
+		return
+	}
+	// Reject by extension first (cheap), then by Content-Type if the client set
+	// it. Real validation happens when excelize.OpenReader sees the magic
+	// bytes; these checks short-circuit obvious abuse before we buffer.
+	if !strings.HasSuffix(strings.ToLower(header.Filename), ".xlsx") {
+		response.InvalidResp(c, "xlsx_import_bad_extension")
+		return
+	}
+	if ct := header.Header.Get("Content-Type"); ct != "" {
+		// XLSX is a ZIP container — common Content-Types include the official
+		// OOXML mime, the generic ZIP types, and octet-stream from CLI uploads.
+		switch ct {
+		case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+			"application/vnd.ms-excel",
+			"application/zip",
+			"application/x-zip-compressed",
+			"application/octet-stream":
+		default:
+			response.InvalidResp(c, "xlsx_import_bad_content_type")
+			return
+		}
+	}
+
+	// LimitReader caps the buffer size even when the multipart Content-Length
+	// claimed a smaller size (defence against truncated/malicious headers).
+	fileBytes, err := io.ReadAll(io.LimitReader(file, maxXLSXBytes+1))
 	if err != nil {
 		response.InvalidResp(c, "xlsx_import_read_failed")
+		return
+	}
+	if int64(len(fileBytes)) > maxXLSXBytes {
+		response.ErrorResp(c, http.StatusRequestEntityTooLarge, "xlsx_import_too_large")
 		return
 	}
 

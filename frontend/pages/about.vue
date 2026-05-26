@@ -187,9 +187,9 @@ const whatsappUrl = computed(() => {
 })
 
 // SEO
-useSeo({
+usePageOgImage({
   title: `${t('nav.about')} | ${t('seo.default_title')}`,
-  description: 'Learn about our story, mission, and values as a leading OEM candy manufacturer.',
+  description: t('seo.about_description'),
   ogType: 'website'
 })
 </script>

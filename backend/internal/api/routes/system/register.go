@@ -19,14 +19,17 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 	pub.POST("/recommend-products", h.System.RecommendProducts)
 	pub.POST("/search", h.System.AISearch)
 	pub.POST("/stripe-webhook", h.System.HandleStripeWebhook)
+	pub.POST("/paypal-webhook", h.System.HandlePayPalWebhook)
 
 	systemProtected := group.Group("")
-	systemProtected.Use(middleware.AuthMiddleware(cfg))
+	systemProtected.Use(middleware.AuthMiddleware(cfg, h.AuthScope.SessionStore()))
 	{
+		systemProtected.GET("/ai/trade-assistant", h.System.HandleTradeChat)
 		systemProtected.GET("/ai/b2b-coordinator", h.System.HandleB2BCoordinatorChat)
-			systemProtected.GET("/ai/order-processing", h.System.HandleOrderProcessingChat)
+		systemProtected.GET("/ai/order-processing", h.System.HandleOrderProcessingChat)
 			systemProtected.POST("/analyze-inquiry", h.System.AnalyzeInquiry)
 		systemProtected.POST("/generate-quotation", h.System.GenerateQuotation)
+		systemProtected.POST("/chatbot/order", h.System.ChatbotOrderContext)
 		systemProtected.POST("/translate", h.System.Translate)
 		systemProtected.GET("/conversations/:id", h.System.GetConversation)
 	}

@@ -7,6 +7,8 @@ import (
 	"candypro/api/internal/pkg/dberror"
 	"candypro/api/internal/pkg/pagination"
 	"candypro/api/internal/pkg/response"
+	oemSvc "candypro/api/internal/services/oem"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -20,7 +22,9 @@ func (h *Handler) AdminGetOEMProjects(c *gin.Context) {
 		return
 	}
 	page, limit := pagination.ParsePagination(c, 20, 100)
-	projects, total, err := h.services.Project.GetProjects(c.Request.Context(), page, limit)
+	search := strings.TrimSpace(c.Query("search"))
+	status := strings.TrimSpace(c.Query("status"))
+	projects, total, err := h.services.Project.GetProjects(c.Request.Context(), page, limit, search, status)
 	if err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "oem_project_fetch_failed")
 		return
@@ -57,7 +61,7 @@ type adminUpdateOEMProjectRequest struct {
 	CurrentStep  *int                           `json:"currentStep"`
 	Requirements *modelsProduct.OEMRequirements `json:"requirements"`
 	AssignedTo   *string                        `json:"assignedTo"`
-	Notes        *string                        `json:"notes"`
+	AdminNotes   *string                        `json:"adminNotes"`
 }
 
 func (h *Handler) AdminUpdateOEMProject(c *gin.Context) {
@@ -79,7 +83,12 @@ func (h *Handler) AdminUpdateOEMProject(c *gin.Context) {
 		project.ProductName = strings.TrimSpace(*req.ProductName)
 	}
 	if req.Status != nil {
-		project.Status = strings.TrimSpace(*req.Status)
+		newStatus := strings.TrimSpace(*req.Status)
+		if err := modelsProduct.ValidateOEMStatusTransition(project.Status, newStatus); err != nil {
+			response.InvalidResp(c, "oem_status_transition_invalid")
+			return
+		}
+		project.Status = newStatus
 	}
 	if req.CurrentStep != nil {
 		project.CurrentStep = *req.CurrentStep
@@ -95,8 +104,8 @@ func (h *Handler) AdminUpdateOEMProject(c *gin.Context) {
 			project.AssignedTo = &assigned
 		}
 	}
-	if req.Notes != nil {
-		project.Notes = strings.TrimSpace(*req.Notes)
+	if req.AdminNotes != nil {
+		project.AdminNotes = strings.TrimSpace(*req.AdminNotes)
 	}
 	project.UpdatedAt = time.Now()
 	if err := h.services.Project.UpdateProject(c.Request.Context(), project); err != nil {
@@ -119,6 +128,12 @@ func (h *Handler) AdminUpdateOEMStatus(c *gin.Context) {
 		return
 	}
 	if err := h.services.Project.UpdateProjectStatus(c.Request.Context(), id, strings.TrimSpace(req.Status)); err != nil {
+		if errors.Is(err, oemSvc.ErrOEMStatusConflict) {
+			// R2 A-4: surface the lost-race as 409 so the admin UI can refresh
+			// and let the user re-decide instead of silently overwriting.
+			response.ErrorResp(c, http.StatusConflict, "oem_status_conflict")
+			return
+		}
 		response.ErrorResp(c, http.StatusInternalServerError, "oem_status_update_failed")
 		return
 	}

@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"candypro/api/internal/pkg/shipmenttrack"
+
 	einotool "github.com/cloudwego/eino-examples/adk/common/tool"
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
@@ -45,23 +47,6 @@ func parseETA(raw string) (time.Time, bool) {
 	return time.Time{}, false
 }
 
-func resolveShipmentStatus(lastEvent string, eta time.Time, hasETA bool) string {
-	event := strings.ToLower(strings.TrimSpace(lastEvent))
-	if strings.Contains(event, "delivered") || strings.Contains(event, "arrived at destination") {
-		return "DELIVERED"
-	}
-	if strings.Contains(event, "customs hold") || strings.Contains(event, "delay") {
-		return "DELAYED"
-	}
-	if hasETA && time.Now().UTC().After(eta) {
-		return "PAST_ETA"
-	}
-	if event != "" {
-		return "IN_TRANSIT"
-	}
-	return "TRACKING_PENDING"
-}
-
 func NewTrackShipmentTool(ctx context.Context) (tool.BaseTool, error) {
 	baseTool, err := utils.InferTool("track_shipment", "Track shipping container or air freight status globally using B/L or AWB.",
 		func(ctx context.Context, req *TrackShipmentRequest) (*TrackShipmentResponse, error) {
@@ -90,13 +75,18 @@ func NewTrackShipmentTool(ctx context.Context) (tool.BaseTool, error) {
 				location = "UNAVAILABLE"
 			}
 
+			var etaPtr *time.Time
+			if hasETA {
+				etaPtr = &eta
+			}
+
 			etaText := ""
 			if hasETA {
 				etaText = eta.Format("2006-01-02")
 			}
 
 			return &TrackShipmentResponse{
-				Status:           resolveShipmentStatus(lastEvent, eta, hasETA),
+				Status:           shipmenttrack.ResolveTrackingStatus(lastEvent, etaPtr),
 				CurrentLocation:  location,
 				EstimatedArrival: etaText,
 				LastEvent:        lastEvent,

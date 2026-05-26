@@ -19,12 +19,13 @@ var (
 	ErrInvoiceOrderNotFound     = errors.New("order not found")
 )
 
-// invoiceLineSnapshot 发票行快照（与订单行对齐）
+// invoiceLineSnapshot 发票行快照（字段与 admin_docx invoiceItemJSON 对齐）
 type invoiceLineSnapshot struct {
 	ProductID      string  `json:"productId"`
 	Quantity       int     `json:"quantity"`
 	UnitPrice      float64 `json:"unitPrice"`
 	Specifications string  `json:"specifications,omitempty"`
+	Name           string  `json:"name,omitempty"`
 }
 
 // buildInvoiceItemsJSONFromOrder 从订单行生成发票 items JSON
@@ -36,6 +37,7 @@ func buildInvoiceItemsJSONFromOrder(items modelsOrder.OrderItemArray) (string, e
 			Quantity:       it.Quantity,
 			UnitPrice:      it.UnitPrice,
 			Specifications: it.Specifications,
+			Name:           strings.TrimSpace(it.ProductID),
 		})
 	}
 	b, err := json.Marshal(lines)
@@ -82,6 +84,9 @@ func (s *InvoiceService) CreateInvoiceFromOrder(ctx context.Context, orderID str
 	}
 	now := time.Now()
 	hash := OrderFinancialLineageHash(ord)
+	// M-24: invoice total must mirror the order total formula
+	// (subtotal + tax + shipping). Previously this dropped ShippingAmount,
+	// causing derived invoices to under-bill by the freight component.
 	inv := &modelsOrder.Invoice{
 		OrderID:            oid,
 		Type:               modelsOrder.InvoiceTypeCommercial,
@@ -90,7 +95,7 @@ func (s *InvoiceService) CreateInvoiceFromOrder(ctx context.Context, orderID str
 		TaxAmount:          ord.TaxAmount,
 		Currency:           ord.Currency,
 		Items:              items,
-		TotalAmount:        ord.Subtotal + ord.TaxAmount,
+		TotalAmount:        ord.Subtotal + ord.TaxAmount + ord.ShippingAmount,
 		LineageSource:      InvoiceLineageOrderDerived,
 		DerivedAt:          &now,
 		OrderFinancialHash: hash,

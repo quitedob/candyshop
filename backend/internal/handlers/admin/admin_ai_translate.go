@@ -1,10 +1,13 @@
 package admin
 
 import (
+	"encoding/json"
 	"net/http"
+	"strings"
 
 	modelsCommon "candypro/api/internal/models/common"
 	modelsProduct "candypro/api/internal/models/product"
+	"candypro/api/internal/pkg/i18n"
 	"candypro/api/internal/pkg/response"
 	"candypro/api/internal/pkg/sanitize"
 	tradeSvc "candypro/api/internal/services/trade"
@@ -42,7 +45,11 @@ func (h *Handler) AdminAITranslateProduct(c *gin.Context) {
 	}
 
 	sourceData := productFieldsToTranslate(product)
-	transResult, _ := h.aiService.BatchTranslateFields(c.Request.Context(), sourceData, req.TargetLocales)
+	transResult, err := h.batchTranslateContent(c.Request.Context(), sourceData, req.TargetLocales)
+	if err != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "translation_failed")
+		return
+	}
 	if len(transResult.Fields) == 0 && len(transResult.Warnings) > 0 {
 		response.ErrorResp(c, http.StatusInternalServerError, "translation_failed")
 		return
@@ -51,6 +58,7 @@ func (h *Handler) AdminAITranslateProduct(c *gin.Context) {
 	if product.Translations == nil {
 		product.Translations = make(modelsCommon.JSONMap)
 	}
+	ensureSourceLocaleInTranslations(product, sourceData)
 	mergeTranslations(product.Translations, transResult)
 
 	if err := h.services.Product.UpdateProduct(c.Request.Context(), product); err != nil {
@@ -97,13 +105,13 @@ func (h *Handler) translatePost(c *gin.Context, req adminAITranslateRequest) {
 		return
 	}
 
-	sourceData := map[string]string{
-		"title":   post.Title,
-		"excerpt": post.Excerpt,
-		"content": post.Content,
-	}
+	sourceData := postFieldsToTranslate(post)
 
-	transResult, _ := h.aiService.BatchTranslateFields(c.Request.Context(), sourceData, req.TargetLocales)
+	transResult, err := h.batchTranslateContent(c.Request.Context(), sourceData, req.TargetLocales)
+	if err != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "translation_failed")
+		return
+	}
 	if len(transResult.Fields) == 0 && len(transResult.Warnings) > 0 {
 		response.ErrorResp(c, http.StatusInternalServerError, "translation_failed")
 		return
@@ -113,6 +121,7 @@ func (h *Handler) translatePost(c *gin.Context, req adminAITranslateRequest) {
 		post.Translations = make(modelsCommon.JSONMap)
 	}
 	sanitizeHTMLFields(transResult.Fields, "content", "excerpt")
+	ensureSourceLocaleInTranslationsMap(post.Translations, sourceData)
 	mergeTranslations(post.Translations, transResult)
 
 	if err := h.services.Content.UpdatePost(c.Request.Context(), post); err != nil {
@@ -133,14 +142,13 @@ func (h *Handler) translateCase(c *gin.Context, req adminAITranslateRequest) {
 		return
 	}
 
-	sourceData := map[string]string{
-		"title":     caseStudy.Title,
-		"challenge": caseStudy.Challenge,
-		"solution":  caseStudy.Solution,
-		"result":    caseStudy.Result,
-	}
+	sourceData := caseFieldsToTranslate(caseStudy)
 
-	transResult, _ := h.aiService.BatchTranslateFields(c.Request.Context(), sourceData, req.TargetLocales)
+	transResult, err := h.batchTranslateContent(c.Request.Context(), sourceData, req.TargetLocales)
+	if err != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "translation_failed")
+		return
+	}
 	if len(transResult.Fields) == 0 && len(transResult.Warnings) > 0 {
 		response.ErrorResp(c, http.StatusInternalServerError, "translation_failed")
 		return
@@ -150,6 +158,7 @@ func (h *Handler) translateCase(c *gin.Context, req adminAITranslateRequest) {
 		caseStudy.Translations = make(modelsCommon.JSONMap)
 	}
 	sanitizeHTMLFields(transResult.Fields, "challenge", "solution", "result")
+	ensureSourceLocaleInTranslationsMap(caseStudy.Translations, sourceData)
 	mergeTranslations(caseStudy.Translations, transResult)
 
 	if err := h.services.Content.UpdateCase(c.Request.Context(), caseStudy); err != nil {
@@ -164,15 +173,91 @@ func (h *Handler) translateCase(c *gin.Context, req adminAITranslateRequest) {
 }
 
 func productFieldsToTranslate(p *modelsProduct.Product) map[string]string {
-	return map[string]string{
+	sourceLocale := i18n.DefaultLocale()
+	out := map[string]string{}
+
+	scalars := map[string]string{
 		"name":        p.Name,
 		"summary":     p.Summary,
 		"description": p.Description,
+		"category":    p.Category,
 		"ingredients": p.Ingredients,
 		"allergens":   p.Allergens,
 		"shelfLife":   p.ShelfLife,
 		"storage":     p.Storage,
 		"leadTime":    p.LeadTime,
+	}
+	if p.Translations != nil {
+		if tr, ok := p.Translations[sourceLocale]; ok {
+			for k, v := range tr {
+				if strings.TrimSpace(v) != "" {
+					out[k] = v
+				}
+			}
+		}
+	}
+	for k, v := range scalars {
+		if _, exists := out[k]; !exists && strings.TrimSpace(v) != "" {
+			out[k] = v
+		}
+	}
+	if _, ok := out["flavors"]; !ok && len(p.Flavors) > 0 {
+		if b, err := json.Marshal(p.Flavors); err == nil {
+			out["flavors"] = string(b)
+		}
+	}
+	if _, ok := out["shapes"]; !ok && len(p.Shapes) > 0 {
+		if b, err := json.Marshal(p.Shapes); err == nil {
+			out["shapes"] = string(b)
+		}
+	}
+	return out
+}
+
+func postFieldsToTranslate(post *modelsProduct.BlogPost) map[string]string {
+	sourceLocale := i18n.DefaultLocale()
+	out := map[string]string{}
+	scalars := map[string]string{
+		"title": post.Title, "excerpt": post.Excerpt, "content": post.Content,
+		"authorName": post.AuthorName, "authorTitle": post.AuthorTitle, "authorBio": post.AuthorBio,
+	}
+	if post.Author.Name != "" && scalars["authorName"] == "" {
+		scalars["authorName"] = post.Author.Name
+	}
+	if post.Author.Title != "" && scalars["authorTitle"] == "" {
+		scalars["authorTitle"] = post.Author.Title
+	}
+	if post.Author.Bio != "" && scalars["authorBio"] == "" {
+		scalars["authorBio"] = post.Author.Bio
+	}
+	mergeTranslationSource(out, scalars, post.Translations, sourceLocale)
+	return out
+}
+
+func caseFieldsToTranslate(cs *modelsProduct.CaseStudy) map[string]string {
+	sourceLocale := i18n.DefaultLocale()
+	out := map[string]string{}
+	scalars := map[string]string{
+		"title": cs.Title, "challenge": cs.Challenge, "solution": cs.Solution, "result": cs.Result,
+	}
+	mergeTranslationSource(out, scalars, cs.Translations, sourceLocale)
+	return out
+}
+
+func mergeTranslationSource(out, scalars map[string]string, translations modelsCommon.JSONMap, locale string) {
+	if translations != nil {
+		if tr, ok := translations[locale]; ok {
+			for k, v := range tr {
+				if strings.TrimSpace(v) != "" {
+					out[k] = v
+				}
+			}
+		}
+	}
+	for k, v := range scalars {
+		if _, exists := out[k]; !exists && strings.TrimSpace(v) != "" {
+			out[k] = v
+		}
 	}
 }
 
@@ -184,6 +269,27 @@ func mergeTranslations(target modelsCommon.JSONMap, result *tradeSvc.Translation
 		for fieldName, translatedText := range fields {
 			target[locale][fieldName] = translatedText
 		}
+	}
+}
+
+// ensureSourceLocaleInTranslations 将源语言（zh）字段写入 translations，避免 AI 翻译后 zh 丢失。
+func ensureSourceLocaleInTranslations(p *modelsProduct.Product, sourceData map[string]string) {
+	ensureSourceLocaleInTranslationsMap(p.Translations, sourceData)
+}
+
+func ensureSourceLocaleInTranslationsMap(target modelsCommon.JSONMap, sourceData map[string]string) {
+	if target == nil || len(sourceData) == 0 {
+		return
+	}
+	locale := i18n.DefaultLocale()
+	if target[locale] == nil {
+		target[locale] = make(map[string]string)
+	}
+	for k, v := range sourceData {
+		if strings.TrimSpace(v) == "" {
+			continue
+		}
+		target[locale][k] = v
 	}
 }
 

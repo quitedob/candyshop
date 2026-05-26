@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"regexp"
 	"strings"
+	"time"
 
 	"candypro/api/internal/config"
 	"candypro/api/internal/pkg/eino/prompts/agent"
@@ -23,6 +25,9 @@ import (
 
 // ErrDisabled indicates the AI client is not configured (no API key).
 var ErrDisabled = errors.New("ai service is not configured")
+
+// RAGComplianceEnabled 控制合规语料 RAG；产品决策为永久关闭，语料与 rag 包仅保留供将来可选启用。
+const RAGComplianceEnabled = false
 
 // Client is the core AI client managing chat model lifecycle, agent attachment,
 // and generation (plain text + JSON mode). It is shared by all scoped AIService wrappers.
@@ -43,11 +48,20 @@ func NewClient(cfg config.AIConfig) (*Client, error) {
 	}
 
 	ctx := context.Background()
+	httpTimeout := cfg.HTTPTimeout
+	if httpTimeout <= 0 {
+		httpTimeout = 90 * time.Second
+	}
+	translateRetry := cfg.TranslateRetryMax
+	if translateRetry <= 0 {
+		translateRetry = 2
+	}
 
 	rawModel, err := openai.NewChatModel(ctx, &openai.ChatModelConfig{
 		Model:   cfg.OpenAIModel,
 		APIKey:  cfg.OpenAIAPIKey,
 		BaseURL: cfg.OpenAIBaseURL,
+		Timeout: httpTimeout,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize chat model: %w", err)
@@ -61,6 +75,7 @@ func NewClient(cfg config.AIConfig) (*Client, error) {
 		Model:          cfg.OpenAIModel,
 		APIKey:         cfg.OpenAIAPIKey,
 		BaseURL:        cfg.OpenAIBaseURL,
+		Timeout:        httpTimeout,
 		ResponseFormat: &jsonResponseFormat,
 	})
 	var chatModelJSON model.ToolCallingChatModel
@@ -68,18 +83,10 @@ func NewClient(cfg config.AIConfig) (*Client, error) {
 		log.Printf("Warning: failed to initialize JSON chat model, falling back: %v", err)
 		chatModelJSON = chatModel
 	} else {
-		chatModelJSON = retry.New(rawJSONModel, cfg.RetryMaxAttempts, cfg.RetryIntervalSec)
+		chatModelJSON = retry.New(rawJSONModel, translateRetry, cfg.RetryIntervalSec)
 	}
 
-	// RAG compliance lookup is temporarily disabled (Phase 5).
-	// Keep rag package + corpus/ intact; uncomment below to re-enable.
-	/*
-		complianceTool, retriever, toolErr := buildComplianceTool()
-		if toolErr != nil {
-			log.Printf("Warning: compliance_lookup tool disabled: %v", toolErr)
-		}
-	*/
-
+	// 合规 RAG 未启用（RAGComplianceEnabled=false）；runner 不挂载 compliance 工具。
 	runner, err := buildClientRunner(ctx, chatModel, nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build legacy runner: %w", err)
@@ -90,7 +97,7 @@ func NewClient(cfg config.AIConfig) (*Client, error) {
 		chatModel:     chatModel,
 		chatModelJSON: chatModelJSON,
 		runner:        runner,
-		// complianceRetriever: retriever, // RAG — Phase 5
+		// complianceRetriever 仅在 RAGComplianceEnabled=true 时赋值
 	}, nil
 }
 
@@ -125,7 +132,16 @@ func (c *Client) IsEnabled() bool {
 	return c.cfg.IsEnabled()
 }
 
+// thinkTagRegex matches <think>...</think> blocks (including multiline) from reasoning models.
+var thinkTagRegex = regexp.MustCompile(`(?s)<think>.*?</think>`)
+
+// stripThinkBlocks removes reasoning-model think blocks and trims surrounding whitespace.
+func stripThinkBlocks(s string) string {
+	return strings.TrimSpace(thinkTagRegex.ReplaceAllString(s, ""))
+}
+
 // Generate runs the full TradeAgent (or legacy runner) and returns the final text response.
+// Reasoning-model <think> blocks are stripped from the output.
 func (c *Client) Generate(ctx context.Context, prompt string) (string, error) {
 	runner := c.runner
 	if c.agent != nil {
@@ -176,7 +192,30 @@ func (c *Client) Generate(ctx context.Context, prompt string) (string, error) {
 		}
 	}
 
-	return finalResponse, nil
+	return stripThinkBlocks(finalResponse), nil
+}
+
+// HasAgent reports whether the full TradeAgent is attached.
+func (c *Client) HasAgent() bool {
+	return c.agent != nil
+}
+
+// GenerateDirect 直连 ChatModel，不经过 TradeAgent，适用于工具内部等需避免 Agent 递归的场景。
+func (c *Client) GenerateDirect(ctx context.Context, prompt string) (string, error) {
+	if c.chatModel == nil {
+		return "", ErrDisabled
+	}
+	msgs := []*schema.Message{
+		{Role: schema.User, Content: prompt},
+	}
+	resp, err := c.chatModel.Generate(ctx, msgs)
+	if err != nil {
+		return "", fmt.Errorf("direct generation failed: %w", err)
+	}
+	if resp == nil {
+		return "", fmt.Errorf("empty response from chat model")
+	}
+	return stripThinkBlocks(strings.TrimSpace(resp.Content)), nil
 }
 
 // GenerateJSON calls the AI model with response_format=json_object, guaranteeing valid JSON output.
@@ -187,6 +226,11 @@ func (c *Client) GenerateJSON(ctx context.Context, prompt string) (string, error
 	}
 
 	msgs := []*schema.Message{
+		{
+			Role: schema.System,
+			Content: "You are a JSON API assistant. Always respond with valid JSON only. " +
+				"No markdown fences, no explanations, no extra text.",
+		},
 		{Role: schema.User, Content: prompt},
 	}
 
@@ -197,7 +241,7 @@ func (c *Client) GenerateJSON(ctx context.Context, prompt string) (string, error
 	if resp == nil {
 		return "", fmt.Errorf("empty response from json model")
 	}
-	return strings.TrimSpace(resp.Content), nil
+	return stripThinkBlocks(strings.TrimSpace(resp.Content)), nil
 }
 
 // buildClientRunner creates the legacy single-tool agent runner used when no full TradeAgent is attached.
@@ -241,4 +285,3 @@ func buildClientInstruction(hasComplianceTool bool) string {
 	}
 	return instruction
 }
-

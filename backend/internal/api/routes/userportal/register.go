@@ -12,7 +12,7 @@ import (
 
 // Register wires user portal routes under /api/v1/user.
 func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, db *gorm.DB) {
-	group.Use(middleware.AuthMiddleware(cfg))
+	group.Use(middleware.AuthMiddleware(cfg, h.AuthScope.SessionStore()))
 	group.Use(middleware.RequireRole(modelsAuth.UserPortal()...))
 
 	group.GET("/dashboard", h.UserPortal.CustomerGetDashboard)
@@ -44,6 +44,8 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 	group.POST("/orders/ai-assist", h.System.CustomerAIAssistOrder)
 	group.POST("/orders/:id/confirm", h.UserPortal.CustomerConfirmOrder)
 	group.POST("/orders/:id/cancel", h.UserPortal.CustomerCancelOrder)
+	group.POST("/orders/:id/approve", h.UserPortal.CustomerApproveOrder)
+	group.POST("/orders/:id/reject", h.UserPortal.CustomerRejectOrder)
 	group.POST("/orders/:id/nudge", h.UserPortal.CustomerNudgeOrder)
 	group.GET("/orders/:id/messages", h.UserPortal.CustomerGetOrderMessages)
 	group.POST("/orders/:id/messages", h.UserPortal.CustomerSendOrderMessage)
@@ -53,6 +55,7 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 		group.GET("/returns/:id", h.UserPortal.CustomerGetReturn)
 	group.GET("/orders/:id/payments/:paymentId/file", h.UserPortal.CustomerDownloadPaymentProofFile)
 			// Coupons
+		group.POST("/cart/coupon/validate", h.UserPortal.CustomerValidateCartCoupon)
 		group.POST("/cart/coupon", h.UserPortal.CustomerApplyCoupon)
 		group.DELETE("/cart/coupon", h.UserPortal.CustomerRemoveCoupon)
 
@@ -103,6 +106,7 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 	activeGuard.Use(middleware.RequireActiveUser(db))
 	{
 		activeGuard.POST("/orders/:id/payments", h.UserPortal.CustomerUploadPaymentProof)
+		activeGuard.POST("/orders/:id/payments/gateway", h.UserPortal.CustomerCreateGatewayPayment)
 		activeGuard.POST("/inquiries", h.UserPortal.CustomerCreateInquiry)
 		activeGuard.PUT("/inquiries/:id", h.UserPortal.CustomerUpdateInquiry)
 		activeGuard.POST("/inquiries/:id/attachments", h.UserPortal.CustomerUploadInquiryAttachment)
@@ -113,11 +117,15 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 		activeGuard.POST("/inquiries/:id/negotiations/:offerId/reject", h.UserPortal.CustomerRejectNegotiationOffer)
 		activeGuard.POST("/trades", h.UserPortal.CustomerCreateTradeTransaction)
 		activeGuard.POST("/oem-projects", h.UserPortal.CustomerCreateOEMProject)
+		activeGuard.POST("/oem-projects/:id/attachments", h.UserPortal.CustomerUploadOEMProjectAttachment)
+		activeGuard.POST("/trades/:id/shipments/:shipmentId/nudge", h.UserPortal.CustomerNudgeShipment)
+		activeGuard.POST("/trades/:id/shipments/:shipmentId/attachments", h.UserPortal.CustomerUploadShipmentAttachment)
 
 		// Bulk orders & requisition lists
 		activeGuard.POST("/orders/bulk", h.UserPortal.CustomerCreateBulkOrder)
 		activeGuard.POST("/orders/:id/reorder", h.UserPortal.CustomerReorderFromHistory)
 		activeGuard.POST("/requisition-lists", h.UserPortal.CustomerCreateRequisitionList)
+		activeGuard.PUT("/requisition-lists/:id", h.UserPortal.CustomerUpdateRequisitionList)
 		activeGuard.DELETE("/requisition-lists/:id", h.UserPortal.CustomerDeleteRequisitionList)
 		activeGuard.POST("/requisition-lists/:id/convert", h.UserPortal.CustomerConvertRequisitionToOrder)
 

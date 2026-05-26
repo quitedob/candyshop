@@ -13,6 +13,7 @@ import (
 	"candypro/api/internal/pkg/money"
 	"candypro/api/internal/pkg/response"
 	"candypro/api/internal/pkg/storage"
+	"candypro/api/internal/pkg/upload"
 	"candypro/api/internal/pkg/uploadpath"
 
 	"github.com/gin-gonic/gin"
@@ -149,6 +150,19 @@ func (h *Handler) CustomerUploadPaymentProof(c *gin.Context) {
 			response.InvalidResp(c, "payment_proof_required")
 			return
 		}
+		if fileHeader.Size > upload.PaymentProofMaxBytes {
+			response.ErrorRespDetail(c, http.StatusBadRequest, "file_size_exceeded", gin.H{
+				"filename": fileHeader.Filename, "maxBytes": upload.PaymentProofMaxBytes,
+			})
+			return
+		}
+		proofCT := fileHeader.Header.Get("Content-Type")
+		if !upload.IsAllowedPaymentProof(proofCT, fileHeader.Filename) {
+			response.ErrorRespDetail(c, http.StatusBadRequest, "file_type_not_allowed", gin.H{
+				"contentType": proofCT, "filename": fileHeader.Filename,
+			})
+			return
+		}
 		file, oerr := fileHeader.Open()
 		if oerr != nil {
 			response.InvalidResp(c, "file_open_failed")
@@ -206,7 +220,13 @@ func (h *Handler) CustomerUploadPaymentProof(c *gin.Context) {
 		UpdatedAt: time.Now(),
 	}
 
-	if err := h.services.Payment.CreatePayment(c.Request.Context(), payment); err != nil {
+	// Use atomic balance-check create to prevent TOCTOU: two concurrent uploads
+	// reading the same `remaining` and both inserting full-balance payments.
+	if err := h.services.Payment.CreatePaymentWithBalanceCheck(c.Request.Context(), order.TotalAmount, payment); err != nil {
+		if strings.Contains(err.Error(), "exceeds remaining balance") {
+			response.ErrorResp(c, http.StatusBadRequest, "payment_no_balance")
+			return
+		}
 		response.ErrorResp(c, http.StatusInternalServerError, "payment_create_failed")
 		return
 	}
@@ -264,18 +284,4 @@ func (h *Handler) CustomerDownloadPaymentProofFile(c *gin.Context) {
 		return
 	}
 	c.File(local)
-}
-
-func isAllowedPaymentProofType(ct string) bool {
-	ct = strings.TrimSpace(strings.ToLower(ct))
-	switch {
-	case strings.HasPrefix(ct, "application/pdf"):
-		return true
-	case strings.HasPrefix(ct, "image/jpeg"):
-		return true
-	case strings.HasPrefix(ct, "image/png"):
-		return true
-	default:
-		return false
-	}
 }

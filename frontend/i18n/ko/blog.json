@@ -1,35 +1,35 @@
 {
   "blog": {
-    "title": "Blog & Resources",
+    "title": "블로그 및 인사이트",
     "categories": {
-      "compliance": "Compliance",
-      "product_knowledge": "Product Knowledge",
-      "packaging": "Packaging Trends",
-      "market_insights": "Market Insights"
+      "compliance": "규정 준수",
+      "product_knowledge": "제품 지식",
+      "packaging": "패키징 트렌드",
+      "market_insights": "시장 인사이트"
     },
-    "read_more": "Read More",
-    "related_articles": "Related Articles",
-    "share": "Share Article",
-    "table_of_contents": "Table of Contents"
+    "read_more": "더 읽기",
+    "related_articles": "관련 기사",
+    "share": "기사 공유",
+    "table_of_contents": "목차"
   },
   "blog_extra": {
-    "featured": "Featured",
-    "stay_updated": "Stay Updated",
-    "subscribe_desc": "Get the latest industry insights and compliance updates delivered to your inbox",
-    "email_placeholder": "Enter your email",
-    "all_posts": "All Posts",
-    "loading_posts": "Loading posts...",
-    "no_posts": "No posts found in this category.",
-    "newsletter_invalid": "Please enter a valid email address.",
-    "newsletter_redirect": "Opening the contact form…",
-    "cta_questions": "Have questions about our candy manufacturing capabilities?",
-    "cta_heading": "Learn More About Our Services",
-    "min_read": "{count} min read",
+    "featured": "추천",
+    "stay_updated": "최신 정보 받기",
+    "subscribe_desc": "최신 업계 인사이트와 규정 준수 업데이트를 이메일로 받아보세요",
+    "email_placeholder": "이메일을 입력하세요",
+    "all_posts": "전체 게시물",
+    "loading_posts": "게시물 로딩 중...",
+    "no_posts": "이 카테고리에 게시물이 없습니다.",
+    "newsletter_invalid": "유효한 이메일 주소를 입력해 주세요.",
+    "newsletter_redirect": "문의 양식을 여는 중…",
+    "cta_questions": "캔디 제조 역량에 대해 궁금한 점이 있으신가요?",
+    "cta_heading": "서비스에 대해 더 알아보기",
+    "min_read": "{count}분 읽기",
     "share_twitter": "Twitter",
     "share_linkedin": "LinkedIn",
     "share_facebook": "Facebook",
-    "share_copy_link": "Copy Link",
-    "share_copied": "Copied!",
-    "seo_description": "Industry insights, compliance knowledge, and product expertise for candy manufacturers."
+    "share_copy_link": "링크 복사",
+    "share_copied": "복사됨!",
+    "seo_description": "캔디 제조업체를 위한 업계 인사이트, 규정 준수 지식, 제품 전문성."
   }
 }

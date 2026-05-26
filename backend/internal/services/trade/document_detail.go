@@ -145,6 +145,15 @@ func (s *TradeDocumentDetailService) CreateSettlement(ctx context.Context, recor
 }
 
 func (s *TradeDocumentDetailService) UpdateSettlement(ctx context.Context, record *modelsTrade.SettlementRecord) error {
+	// M-13: enforce settlement status transitions before persisting. Previously
+	// this passed the record straight through, allowing direct PAID→UNPAID flips
+	// or arbitrary string values to land in the DB.
+	current, err := s.repo.GetSettlement(ctx, record.ID)
+	if err == nil && current != nil {
+		if err := modelsTrade.ValidateSettlementStatusTransition(current.Status, record.Status); err != nil {
+			return err
+		}
+	}
 	return s.repo.UpdateSettlement(ctx, record)
 }
 

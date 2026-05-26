@@ -4,7 +4,9 @@ import (
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
 	"context"
+	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -62,6 +64,16 @@ func (r *SupplierRepository) DeleteSupplier(ctx context.Context, id string) erro
 func (r *SupplierRepository) FindByAPIKey(ctx context.Context, key string) (*modelsProduct.Supplier, error) {
 	var s modelsProduct.Supplier
 	err := r.db.WithContext(ctx).Where("api_key = ? AND is_active = true", key).First(&s).Error
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
+// FindByEmail 按联系邮箱查找供应商（JWT 登录用）
+func (r *SupplierRepository) FindByEmail(ctx context.Context, email string) (*modelsProduct.Supplier, error) {
+	var s modelsProduct.Supplier
+	err := r.db.WithContext(ctx).Where("LOWER(email) = LOWER(?) AND is_active = true", strings.TrimSpace(email)).First(&s).Error
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +206,7 @@ func (r *SupplierRepository) ReceivePO(ctx context.Context, id, warehouseID stri
 					Change:      qty,
 					StockBefore: 0,
 					StockAfter:  qty,
-					Reason:      modelsOrder.StockReasonGoodsIssued,
+					Reason:      modelsOrder.StockReasonGoodsReceived,
 					ReferenceID: id,
 					OperatorID:  "system",
 					CreatedAt:   now,
@@ -226,39 +238,38 @@ func (r *SupplierRepository) ReceivePO(ctx context.Context, id, warehouseID stri
 
 // recomputeWeightedAvgCost calculates the weighted average unit cost for a product
 // from all non-expired batches and updates Product.WeightedAvgCost.
+//
+// R2 E-11: pushes the SUM/SUM aggregation into PostgreSQL instead of folding
+// in Go memory. NULLIF guards the divide-by-zero case.
 func recomputeWeightedAvgCost(tx *gorm.DB, productID string) {
-	var batches []modelsProduct.ProductBatch
-	if err := tx.Where("product_id = ? AND quantity > 0 AND is_expired = false", productID).Find(&batches).Error; err != nil {
+	var avg sql.NullFloat64
+	if err := tx.Model(&modelsProduct.ProductBatch{}).
+		Where("product_id = ? AND quantity > 0 AND is_expired = false", productID).
+		Select("SUM(quantity * unit_cost) / NULLIF(SUM(quantity), 0)").
+		Scan(&avg).Error; err != nil {
 		return
 	}
-	var totalCost float64
-	var totalQty int
-	for _, b := range batches {
-		totalCost += float64(b.Quantity) * b.UnitCost
-		totalQty += b.Quantity
-	}
-	if totalQty == 0 {
+	if !avg.Valid {
 		return
 	}
-	avgCost := totalCost / float64(totalQty)
-	tx.Model(&modelsProduct.Product{}).Where("id = ?", productID).Update("weighted_avg_cost", avgCost)
+	tx.Model(&modelsProduct.Product{}).Where("id = ?", productID).Update("weighted_avg_cost", avg.Float64)
 }
 
 // ComputeWeightedAvgCost returns the weighted average unit cost for a product
 // across all non-expired, in-stock batches. Returns 0 if no batches exist.
 func (r *SupplierRepository) ComputeWeightedAvgCost(ctx context.Context, productID string) float64 {
-	var batches []modelsProduct.ProductBatch
-	if err := r.db.WithContext(ctx).Where("product_id = ? AND quantity > 0 AND is_expired = false", productID).Find(&batches).Error; err != nil {
-		return 0
+	var avg sql.NullFloat64
+	err := r.db.WithContext(ctx).
+		Model(&modelsProduct.ProductBatch{}).
+		Where("product_id = ? AND quantity > 0 AND is_expired = false", productID).
+		Select("SUM(quantity * unit_cost) / NULLIF(SUM(quantity), 0)").
+		Scan(&avg).Error
+	if err == nil && avg.Valid {
+		return avg.Float64
 	}
-	var totalCost float64
-	var totalQty int
-	for _, b := range batches {
-		totalCost += float64(b.Quantity) * b.UnitCost
-		totalQty += b.Quantity
+	var product modelsProduct.Product
+	if err := r.db.WithContext(ctx).Select("weighted_avg_cost").Where("id = ?", productID).First(&product).Error; err == nil {
+		return product.WeightedAvgCost
 	}
-	if totalQty == 0 {
-		return 0
-	}
-	return totalCost / float64(totalQty)
+	return 0
 }

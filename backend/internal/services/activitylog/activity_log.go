@@ -9,6 +9,7 @@ type activityLogRepository interface {
 	Create(ctx context.Context, log *modelsCommon.ActivityLog) error
 	FindByUser(ctx context.Context, userID string, page, limit int) ([]modelsCommon.ActivityLog, int64, error)
 	FindAll(ctx context.Context, page, limit int) ([]modelsCommon.ActivityLog, int64, error)
+	FindByEntity(ctx context.Context, entityType, entityID string) ([]modelsCommon.ActivityLog, error)
 }
 
 // ActivityLogService handles activity log business logic.
@@ -44,4 +45,9 @@ func (s *ActivityLogService) FindByUser(ctx context.Context, userID string, page
 // FindAll returns paginated activity logs for all users (alias for handler compatibility).
 func (s *ActivityLogService) FindAll(ctx context.Context, page, limit int) ([]modelsCommon.ActivityLog, int64, error) {
 	return s.repo.FindAll(ctx, page, limit)
+}
+
+// FindByEntity returns chronological activity logs for an entity.
+func (s *ActivityLogService) FindByEntity(ctx context.Context, entityType, entityID string) ([]modelsCommon.ActivityLog, error) {
+	return s.repo.FindByEntity(ctx, entityType, entityID)
 }

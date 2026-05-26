@@ -8,6 +8,7 @@ import (
 	"time"
 
 	modelsOrder "candypro/api/internal/models/order"
+	"candypro/api/internal/pkg/safego"
 )
 
 type eventRepo interface {
@@ -89,9 +90,16 @@ func (eb *EventBus) Emit(ctx context.Context, eventName string, payload any) (*m
 		switch hook.Type {
 		case "webhook":
 			eb.webhookSvc.Dispatch(ctx, eventName, fmt.Sprintf("event_%d", event.ID), payload)
-		case "internal":
+		case "internal", "plugin":
 			if eb.internalFunc != nil {
-				go eb.executeInternal(ctx, exec, eventName, payloadBytes)
+				execRef := exec
+				eventNameCopy := eventName
+				payloadCopy := payloadBytes
+				safego.Go("eventbus.executeInternal", func() {
+					eb.executeInternal(ctx, execRef, eventNameCopy, payloadCopy)
+				})
+			} else if hook.Type == "plugin" {
+				log.Printf("eventbus: plugin hook %d has no registered handler", hook.ID)
 			}
 		default:
 			log.Printf("eventbus: unknown hook type %q for hook %d", hook.Type, hook.ID)

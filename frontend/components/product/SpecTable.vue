@@ -1,9 +1,10 @@
 <template>
   <div class="spec-table" :class="`spec-table--${variant}`">
     <table>
+      <caption v-if="caption" class="sr-only">{{ caption }}</caption>
       <tbody>
         <tr v-for="row in rows" :key="row.label">
-          <th class="spec-table__label">{{ row.label }}</th>
+          <th scope="row" class="spec-table__label">{{ row.label }}</th>
           <td class="spec-table__value">
             <template v-if="row.type === 'badge'">
               <span
@@ -57,6 +58,8 @@ interface SpecRow {
 interface Props {
   rows: SpecRow[]
   variant?: 'default' | 'compact' | 'bordered'
+  /** 无障碍：屏幕阅读器用表格标题（视觉隐藏） */
+  caption?: string
 }
 
 defineProps<Props>()

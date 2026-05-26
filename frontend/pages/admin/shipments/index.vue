@@ -221,20 +221,45 @@
             </button>
           </div>
           <div v-if="selectedShipment" class="p-6">
+            <!-- Actions -->
+            <div class="mb-6 flex flex-wrap gap-2">
+              <button
+                v-if="['pending', 'picked', 'packed'].includes(selectedShipment.rawStatus || selectedShipment.status)"
+                type="button"
+                class="px-3 py-1.5 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 disabled:opacity-50"
+                :disabled="logisticsActing"
+                @click="dispatchShipment"
+              >
+                {{ t('admin.shipments.dispatch') }}
+              </button>
+              <button
+                v-if="['pending', 'in_transit', 'shipped'].includes(selectedShipment.status) || selectedShipment.rawStatus === 'shipped'"
+                type="button"
+                class="px-3 py-1.5 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+                :disabled="logisticsActing"
+                @click="confirmDelivery"
+              >
+                {{ t('admin.shipments.confirm_delivery') }}
+              </button>
+            </div>
+            <p v-if="logisticsMessage" class="mb-4 text-sm" :class="logisticsError ? 'text-red-600' : 'text-green-600'">{{ logisticsMessage }}</p>
+
             <!-- Timeline -->
             <div class="mb-6">
               <h4 class="text-sm font-semibold text-gray-900 mb-4">{{ t('admin.shipments.tracking_history') }}</h4>
-              <div class="relative">
-                <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+              <div v-if="timelineLoading" class="text-sm text-gray-500">{{ t('admin.shipments.loading_timeline') }}</div>
+              <div v-else class="relative">
+                <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200" />
                 <div class="space-y-6">
-                  <div v-for="(event, idx) in selectedShipment.events || []" :key="idx" class="relative flex items-start gap-4 pl-10">
-                    <div class="absolute left-2.5 w-3 h-3 rounded-full bg-orange-600 border-2 border-white"></div>
+                  <div v-for="(event, idx) in timelineEvents" :key="idx" class="relative flex items-start gap-4 pl-10">
+                    <div class="absolute left-2.5 w-3 h-3 rounded-full bg-orange-600 border-2 border-white" />
                     <div>
-                      <p class="font-medium text-gray-900">{{ enumLabel('shipment_status', event.status) }}</p>
-                      <p class="text-sm text-gray-500">{{ event.location }}</p>
-                      <p class="text-xs text-gray-400 mt-1">{{ formatDate(event.timestamp, { dateStyle: 'medium', timeStyle: 'short' }) }}</p>
+                      <p class="font-medium text-gray-900">{{ event.eventType || event.status || '—' }}</p>
+                      <p class="text-sm text-gray-500">{{ event.location || event.description || '' }}</p>
+                      <p class="text-xs text-gray-400 mt-1">{{ formatDate(event.eventTime || event.timestamp, { dateStyle: 'medium', timeStyle: 'short' }) }}</p>
                     </div>
                   </div>
+                  <p v-if="!timelineEvents.length" class="text-sm text-gray-500 pl-10">{{ t('admin.shipments.no_data') }}</p>
                 </div>
               </div>
             </div>
@@ -274,6 +299,11 @@ const saving = ref(false)
 const formError = ref('')
 const showDetailsModal = ref(false)
 const selectedShipment = ref<any>(null)
+const timelineEvents = ref<any[]>([])
+const timelineLoading = ref(false)
+const logisticsActing = ref(false)
+const logisticsMessage = ref('')
+const logisticsError = ref(false)
 
 const form = reactive({
   orderId: '', carrier: '', trackingNumber: '', status: 'pending',
@@ -295,17 +325,48 @@ const statsCards = computed(() => {
 
 const filteredShipments = computed(() => shipments.value.filter(s => {
   const matchesSearch = !searchQuery.value ||
-    s.trackingNumber?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    s.orderNumber?.toLowerCase().includes(searchQuery.value.toLowerCase())
+    (s.trackingNumber || '').toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    (s.orderNumber || '').toLowerCase().includes(searchQuery.value.toLowerCase())
   const matchesStatus = statusFilter.value === 'all' || s.status === statusFilter.value
   return matchesSearch && matchesStatus
 }))
 
+const mapFulfillmentStatus = (status: string) => {
+  if (status === 'shipped') return 'in_transit'
+  if (status === 'cancelled') return 'exception'
+  if (status === 'picked' || status === 'packed') return 'pending'
+  return status
+}
+
+const apiStatusFromFilter = (filter: string) => {
+  if (filter === 'in_transit') return 'shipped'
+  if (filter === 'exception') return 'cancelled'
+  return filter
+}
+
+const normalizeFulfillment = (row: any) => ({
+  id: row.id,
+  trackingNumber: row.trackingNumber || '',
+  carrier: row.carrier || '',
+  orderId: row.orderId,
+  orderNumber: row.orderNumber,
+  status: mapFulfillmentStatus(row.status || 'pending'),
+  rawStatus: row.status,
+  estimatedDelivery: row.shippedAt,
+  actualDelivery: row.deliveredAt,
+  notes: row.notes || '',
+  destination: null,
+})
+
 const fetchShipments = async () => {
   pending.value = true; error.value = ''
   try {
-    const res = await api.get<any>('/admin/shipments', { page: page.value, limit: pageSize })
-    shipments.value = res.data || []
+    const params: Record<string, any> = { page: page.value, limit: pageSize }
+    if (statusFilter.value !== 'all') {
+      params.status = apiStatusFromFilter(statusFilter.value)
+    }
+    const res = await api.get<any>('/admin/fulfillments', params)
+    shipments.value = (res.data || []).map(normalizeFulfillment)
     pagination.value = res.pagination
   } catch (err: any) {
     error.value = err?.message || t('errors.api.load_failed')
@@ -340,20 +401,70 @@ const openEditModal = (shipment: any) => {
 const closeModal = () => { showModal.value = false; saving.value = false }
 
 const saveShipment = async () => {
+  if (!editingId.value) {
+    formError.value = t('admin.shipments.create_from_order')
+    return
+  }
   saving.value = true; formError.value = ''
   try {
-    if (editingId.value) {
-      await api.put(`/admin/shipments/${editingId.value}`, form)
-    } else {
-      await api.post('/admin/shipments', form)
-    }
+    await api.put(`/admin/fulfillments/${editingId.value}/ship`, {
+      trackingNumber: form.trackingNumber || `TRK-${editingId.value}`,
+      carrier: form.carrier,
+    })
     closeModal(); await fetchShipments()
   } catch (err: any) {
     formError.value = err?.message || t('errors.api.save_failed')
   } finally { saving.value = false }
 }
 
-const viewDetails = (shipment: any) => { selectedShipment.value = shipment; showDetailsModal.value = true }
+const viewDetails = async (shipment: any) => {
+  selectedShipment.value = shipment
+  showDetailsModal.value = true
+  logisticsMessage.value = ''
+  logisticsError.value = false
+  timelineEvents.value = []
+  timelineLoading.value = false
+}
+
+const dispatchShipment = async () => {
+  if (!selectedShipment.value?.id) return
+  logisticsActing.value = true
+  logisticsMessage.value = ''
+  logisticsError.value = false
+  try {
+    const tracking = selectedShipment.value.trackingNumber || `TRK-${selectedShipment.value.id}`
+    await api.put(`/admin/fulfillments/${selectedShipment.value.id}/ship`, {
+      trackingNumber: tracking,
+      carrier: selectedShipment.value.carrier || 'standard',
+    })
+    logisticsMessage.value = t('admin.shipments.dispatch_success')
+    await fetchShipments()
+    selectedShipment.value = shipments.value.find(s => s.id === selectedShipment.value.id) || selectedShipment.value
+  } catch (err: any) {
+    logisticsError.value = true
+    logisticsMessage.value = err?.message || t('errors.api.action_failed')
+  } finally {
+    logisticsActing.value = false
+  }
+}
+
+const confirmDelivery = async () => {
+  if (!selectedShipment.value?.id) return
+  logisticsActing.value = true
+  logisticsMessage.value = ''
+  logisticsError.value = false
+  try {
+    await api.put(`/admin/fulfillments/${selectedShipment.value.id}/deliver`, {})
+    logisticsMessage.value = t('admin.shipments.delivery_success')
+    await fetchShipments()
+    selectedShipment.value = shipments.value.find(s => s.id === selectedShipment.value.id) || selectedShipment.value
+  } catch (err: any) {
+    logisticsError.value = true
+    logisticsMessage.value = err?.message || t('errors.api.action_failed')
+  } finally {
+    logisticsActing.value = false
+  }
+}
 
 const exportShipments = () => {
   const shipmentStatusMap: Record<string, string> = {

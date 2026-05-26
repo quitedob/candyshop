@@ -82,15 +82,15 @@
             <div class="oem-path__timeline">
               <div class="timeline-item">
                 <span class="timeline-item__label">{{ t('oem.timeline_design') }}</span>
-                <span class="timeline-item__time">3-5 {{ t('oem.days') }}</span>
+                <span class="timeline-item__time">{{ t('oem.durations.1_day') }}</span>
               </div>
               <div class="timeline-item">
                 <span class="timeline-item__label">{{ t('oem.timeline_sample') }}</span>
-                <span class="timeline-item__time">5-7 {{ t('oem.days') }}</span>
+                <span class="timeline-item__time">{{ t('oem.durations.3_7_days') }}</span>
               </div>
               <div class="timeline-item">
                 <span class="timeline-item__label">{{ t('oem.timeline_production') }}</span>
-                <span class="timeline-item__time">10-14 {{ t('oem.days') }}</span>
+                <span class="timeline-item__time">{{ t('oem.durations.based_on_order') }}</span>
               </div>
             </div>
 
@@ -133,15 +133,15 @@
             <div class="oem-path__timeline">
               <div class="timeline-item">
                 <span class="timeline-item__label">{{ t('oem.timeline_rd') }}</span>
-                <span class="timeline-item__time">1-2 {{ t('oem.weeks') }}</span>
+                <span class="timeline-item__time">{{ t('oem.durations.1_day') }}</span>
               </div>
               <div class="timeline-item">
                 <span class="timeline-item__label">{{ t('oem.timeline_sample') }}</span>
-                <span class="timeline-item__time">1-2 {{ t('oem.weeks') }}</span>
+                <span class="timeline-item__time">{{ t('oem.durations.3_7_days') }}</span>
               </div>
               <div class="timeline-item">
                 <span class="timeline-item__label">{{ t('oem.timeline_production') }}</span>
-                <span class="timeline-item__time">2-4 {{ t('oem.weeks') }}</span>
+                <span class="timeline-item__time">{{ t('oem.durations.based_on_order') }}</span>
               </div>
             </div>
 
@@ -335,8 +335,10 @@
 
 <script setup lang="ts">
 import { useI18n, useLocalePath } from '#i18n'
+import { useTranslation } from '~/composables/useTranslation'
 
 const { t, locale } = useI18n()
+const { tField } = useTranslation()
 const localePath = useLocalePath()
 const config = useRuntimeConfig()
 const { getOEMFlows, getOEMSolutions, customerCreateOemProject } = useApi()
@@ -362,8 +364,9 @@ onMounted(async () => {
 
 // Process steps: prefer API, fallback to i18n
 const processSteps = computed(() => {
-  const steps = apiFlows.value.flatMap((f: any) => f.steps || [])
-  if (steps.length > 0) return steps.map((s: any) => ({ title: s.title, description: s.description }))
+  const flows = apiFlows.value
+  const steps = Array.isArray(flows) ? flows.flatMap((f: any) => f.steps || []) : []
+  if (steps.length > 0) return steps.map((s: any) => ({ title: tField(s, 'title'), description: tField(s, 'description') }))
   return [
     { title: t('oem.steps.consultation'), description: t('oem.steps.consultation_desc') },
     { title: t('oem.steps.proposal'), description: t('oem.steps.proposal_desc') },
@@ -375,10 +378,10 @@ const processSteps = computed(() => {
 
 // Solutions: prefer API, fallback to i18n
 const solutions = computed(() => {
-  if (apiSolutions.value.length > 0) return apiSolutions.value.map((s: any) => ({
+  if (Array.isArray(apiSolutions.value) && apiSolutions.value.length > 0) return apiSolutions.value.map((s: any) => ({
     id: s.id || s.slug,
-    title: s.title,
-    description: s.description,
+    title: tField(s, 'title'),
+    description: tField(s, 'description'),
     image: s.thumbnail || '/images/oem/gift-sets.jpg',
     moq: s.moq ? `${s.moq.toLocaleString()} pcs` : '—',
     applications: s.applications || [],
@@ -440,7 +443,7 @@ const whatsappUrl = computed(() => {
   return `https://wa.me/${number}?text=${message}`
 })
 
-useSeo({
+usePageOgImage({
   title: `${t('nav.oem')} | ${t('seo.default_title')}`,
   description: t('oem.subtitle'),
   ogType: 'website'
@@ -510,8 +513,8 @@ useSeo({
 }
 
 .process-step__content p {
-  font-size: var(--text-sm);
-  color: var(--color-text-light);
+  font-size: var(--text-base);
+  color: var(--color-text);
   margin: 0;
 }
 
@@ -603,8 +606,8 @@ useSeo({
 
 .timeline-item__label {
   display: block;
-  font-size: var(--text-xs);
-  color: var(--color-text-light);
+  font-size: var(--text-sm);
+  color: var(--color-text);
   margin-bottom: var(--spacing-xs);
 }
 
@@ -683,7 +686,8 @@ useSeo({
   margin-bottom: var(--spacing-xs);
   background-color: var(--color-bg-alt);
   border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
+  color: var(--color-text);
 }
 
 .solution-card__cta {

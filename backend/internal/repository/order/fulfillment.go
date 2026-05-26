@@ -113,6 +113,40 @@ func (r *FulfillmentRepository) Create(ctx context.Context, fulfillment *modelsO
 	})
 }
 
+// FulfillmentListRow 履约列表行（含订单号）
+type FulfillmentListRow struct {
+	modelsOrder.Fulfillment
+	OrderNumber string `json:"orderNumber"`
+}
+
+// ListPaginated 分页查询履约记录并关联订单号
+func (r *FulfillmentRepository) ListPaginated(ctx context.Context, page, limit int, status string) ([]FulfillmentListRow, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit <= 0 {
+		limit = 20
+	}
+	base := r.db.WithContext(ctx).
+		Table("fulfillments AS f").
+		Joins("LEFT JOIN orders AS o ON o.id = f.order_id")
+	if status != "" {
+		base = base.Where("f.status = ?", status)
+	}
+	var total int64
+	if err := base.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	var rows []FulfillmentListRow
+	offset := (page - 1) * limit
+	err := base.
+		Select("f.*, o.order_number AS order_number").
+		Order("f.created_at DESC").
+		Offset(offset).Limit(limit).
+		Scan(&rows).Error
+	return rows, total, err
+}
+
 // FindByOrder returns all fulfillments for an order.
 func (r *FulfillmentRepository) FindByOrder(ctx context.Context, orderID string) ([]modelsOrder.Fulfillment, error) {
 	var fulfillments []modelsOrder.Fulfillment

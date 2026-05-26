@@ -1,15 +1,18 @@
 package public
 
 import (
+	"log/slog"
 	"mime/multipart"
 	"net/http"
-	"regexp"
 	"strings"
 	"time"
 
 	"candypro/api/internal/pkg/crypto"
+	"candypro/api/internal/pkg/i18n"
 	"candypro/api/internal/pkg/response"
 	"candypro/api/internal/pkg/storage"
+	"candypro/api/internal/pkg/upload"
+	"candypro/api/internal/pkg/validation"
 
 	"github.com/gin-gonic/gin"
 
@@ -44,8 +47,8 @@ func (h *Handler) SubmitInquiry(c *gin.Context) {
 		return
 	}
 
-	// Parse multipart form
-	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
+	// Parse multipart form（64MB，支持视频附件）
+	if err := c.Request.ParseMultipartForm(64 << 20); err != nil {
 		response.ErrorResp(c, http.StatusBadRequest, "form_parse_failed")
 		return
 	}
@@ -63,16 +66,15 @@ func (h *Handler) SubmitInquiry(c *gin.Context) {
 		return
 	}
 
-	// Validate email format
-	emailRegex := `^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`
-	matched, _ := regexp.MatchString(emailRegex, email)
-	if !matched {
+	// Validate email format (aligned with binding:"email" / frontend useInquiry)
+	if !validation.IsValidEmail(email) {
 		response.ErrorResp(c, http.StatusBadRequest, "invalid_email_format")
 		return
 	}
 
 	// Extract optional fields
 	interestedProducts := getFormValues(form, "interestedProducts")
+	productIDs := getFormValues(form, "productIds")
 	oemNeeded := getFormValue(form, "oemNeeded") == "true"
 
 	// Handle file uploads
@@ -88,7 +90,7 @@ func (h *Handler) SubmitInquiry(c *gin.Context) {
 			}
 
 			contentType := fileHeader.Header.Get("Content-Type")
-			if !isAllowedType(contentType, h.cfg.Upload.AllowedTypes) {
+			if !upload.IsAllowedInquiryAttachment(contentType, fileHeader.Filename, h.cfg.Upload.AllowedTypes) {
 				response.ErrorRespDetail(c, http.StatusBadRequest, "file_type_not_allowed", gin.H{
 					"contentType": contentType,
 				})
@@ -135,6 +137,7 @@ func (h *Handler) SubmitInquiry(c *gin.Context) {
 		TargetCountry:         getFormValue(form, "targetCountry"),
 		EstimatedQuantity:     getFormValue(form, "estimatedQuantity"),
 		InterestedProducts:    interestedProducts,
+		ProductIDs:            productIDs,
 		PackagingRequirements: getFormValue(form, "packagingRequirements"),
 		FlavorRequirements:    getFormValue(form, "flavorRequirements"),
 		OEMNeeded:             oemNeeded,
@@ -147,7 +150,8 @@ func (h *Handler) SubmitInquiry(c *gin.Context) {
 	}
 
 	// Submit inquiry (saves to database and sends email)
-	if err := h.services.Inquiry.SubmitInquiry(c.Request.Context(), inquiry); err != nil {
+	locale := c.GetString("locale")
+	if err := h.services.Inquiry.SubmitInquiry(c.Request.Context(), inquiry, locale); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "inquiry_create_failed")
 		return
 	}
@@ -156,12 +160,16 @@ func (h *Handler) SubmitInquiry(c *gin.Context) {
 	// This is advisory only — it does not block inquiry submission.
 	var complianceWarnings []string
 	targetCountry := inquiry.TargetCountry
-	if targetCountry != "" && len(interestedProducts) > 0 && h.services.Product != nil {
+	if targetCountry != "" && len(productIDs) > 0 && h.services.Product != nil {
 		var checkProducts []modelsProduct.Product
-		for _, pid := range interestedProducts {
-			if p, err := h.services.Product.GetProductByID(c.Request.Context(), pid); err == nil {
-				checkProducts = append(checkProducts, *p)
+		for _, pid := range productIDs {
+			p, err := h.services.Product.GetProductByID(c.Request.Context(), pid)
+			if err != nil {
+				slog.Warn("compliance pre-check: product lookup failed",
+					"productId", pid, "error", err)
+				continue
 			}
+			checkProducts = append(checkProducts, *p)
 		}
 		if len(checkProducts) > 0 {
 			result := h.services.Product.ValidateComplianceWithMarketProfiles(c.Request.Context(), targetCountry, checkProducts)
@@ -172,7 +180,7 @@ func (h *Handler) SubmitInquiry(c *gin.Context) {
 
 	response := gin.H{
 		"success":   true,
-		"message":   "Thank you for your inquiry. We will contact you within 24 hours.",
+		"message":   i18n.T(c, "messages.inquiry_submit_success"),
 		"inquiryId": inquiry.ID,
 	}
 	if len(complianceWarnings) > 0 {
@@ -204,14 +212,4 @@ func getFormValues(form *multipart.Form, key string) []string {
 		return result
 	}
 	return []string{}
-}
-
-// isAllowedType checks if content type is allowed
-func isAllowedType(contentType string, allowedTypes []string) bool {
-	for _, t := range allowedTypes {
-		if t == contentType {
-			return true
-		}
-	}
-	return false
 }

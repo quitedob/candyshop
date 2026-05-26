@@ -14,3 +14,13 @@ type ContentGenResult = eino.ContentGenResult
 func (s *AIService) GenerateContent(ctx context.Context, topic, contentType, language string) (*ContentGenResult, string, error) {
 	return s.Client.GenerateContent(ctx, topic, contentType, language)
 }
+
+// ReviseContent applies targeted edits to an existing draft based on admin feedback.
+func (s *AIService) ReviseContent(ctx context.Context, contentType, language, instruction, selectedText string, focusFields []string, current map[string]string) (*eino.ContentReviseResult, string, error) {
+	return s.Client.ReviseContent(ctx, contentType, language, instruction, selectedText, focusFields, current)
+}
+
+// InlineEditContent rewrites only the selected excerpt (Cursor-style inline edit).
+func (s *AIService) InlineEditContent(ctx context.Context, language, instruction, selectedText, selectedHTML, contextBefore, contextAfter, fieldType string) (*eino.InlineEditResult, string, error) {
+	return s.Client.InlineEditContent(ctx, language, instruction, selectedText, selectedHTML, contextBefore, contextAfter, fieldType)
+}

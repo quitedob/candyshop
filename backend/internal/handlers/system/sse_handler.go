@@ -8,11 +8,15 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
+	modelsOrder "candypro/api/internal/models/order"
 	"candypro/api/internal/pkg/eino"
 	"candypro/api/internal/pkg/eino/retry"
 	"candypro/api/internal/pkg/response"
+	tradeSvc "candypro/api/internal/services/trade"
 
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/adk"
@@ -86,10 +90,10 @@ func (h *Handler) HandleTradeChat(c *gin.Context) {
 		query = string([]rune(query)[:maxQueryLen])
 	}
 
-	// Enrich query with trade context if tradeId is provided
-	tradeID := c.Query("tradeId")
+	// Enrich query with trade + linked order context when tradeId is provided
+	tradeID := strings.TrimSpace(c.Query("tradeId"))
 	if tradeID != "" {
-		query = fmt.Sprintf("[Trade ID: %s] %s", tradeID, query)
+		query = h.enrichTradeQuery(c.Request.Context(), tradeID, query)
 	}
 
 	ctx := c.Request.Context()
@@ -112,7 +116,6 @@ func (h *Handler) HandleTradeChat(c *gin.Context) {
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")
 	c.Writer.Header().Set("Connection", "keep-alive")
-	c.Writer.Header().Set("Transfer-Encoding", "chunked")
 	// Flush headers immediately
 	c.Writer.Flush()
 
@@ -164,7 +167,6 @@ func (h *Handler) HandleB2BCoordinatorChat(c *gin.Context) {
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")
 	c.Writer.Header().Set("Connection", "keep-alive")
-	c.Writer.Header().Set("Transfer-Encoding", "chunked")
 	c.Writer.Flush()
 
 	iter := runner.Query(ctx, query)
@@ -197,6 +199,10 @@ func (h *Handler) HandleOrderProcessingChat(c *gin.Context) {
 		query = string([]rune(query)[:maxQueryLen])
 	}
 
+	if orderID := strings.TrimSpace(c.Query("orderId")); orderID != "" {
+		query = h.enrichOrderQuery(c, orderID, query)
+	}
+
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Minute)
 	defer cancel()
 
@@ -212,7 +218,6 @@ func (h *Handler) HandleOrderProcessingChat(c *gin.Context) {
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")
 	c.Writer.Header().Set("Connection", "keep-alive")
-	c.Writer.Header().Set("Transfer-Encoding", "chunked")
 	c.Writer.Flush()
 
 	iter := runner.Query(ctx, query)
@@ -333,4 +338,27 @@ func sendSSEEvent(w gin.ResponseWriter, event SSEEvent) error {
 	_, err = fmt.Fprintf(w, "data: %s\n\n", data)
 	w.Flush()
 	return err
+}
+
+// enrichTradeQuery 注入贸易头信息及关联订单行项目，供 TradeAgent 使用。
+func (h *Handler) enrichTradeQuery(ctx context.Context, tradeIDStr, query string) string {
+	if h.services == nil || h.services.Trade == nil {
+		return fmt.Sprintf("[Trade ID: %s] %s", tradeIDStr, query)
+	}
+	id, err := strconv.ParseUint(tradeIDStr, 10, 64)
+	if err != nil {
+		return fmt.Sprintf("[Trade ID: %s] %s", tradeIDStr, query)
+	}
+	trade, err := h.services.Trade.GetTransaction(ctx, uint(id))
+	if err != nil {
+		return fmt.Sprintf("[Trade ID: %s] %s", tradeIDStr, query)
+	}
+	var order *modelsOrder.Order
+	if h.services.Order != nil && trade.OrderID != nil && strings.TrimSpace(*trade.OrderID) != "" {
+		order, _ = h.services.Order.GetOrder(ctx, strings.TrimSpace(*trade.OrderID))
+	}
+	if block := tradeSvc.BuildTradeOrderContextBlock(trade, order); block != "" {
+		return block + "\n\nUser question:\n" + query
+	}
+	return fmt.Sprintf("[Trade ID: %s] %s", tradeIDStr, query)
 }

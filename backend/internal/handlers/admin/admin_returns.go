@@ -56,6 +56,7 @@ func (h *Handler) AdminApproveReturn(c *gin.Context) {
 		response.ErrorResp(c, http.StatusInternalServerError, "return_approve_failed")
 		return
 	}
+	h.logActivityAudit(c, "return_approve", "return", id, "", "approved")
 	c.JSON(http.StatusOK, gin.H{"status": "approved"})
 }
 
@@ -71,6 +72,7 @@ func (h *Handler) AdminReceiveReturn(c *gin.Context) {
 		response.ErrorResp(c, http.StatusInternalServerError, "return_receive_failed")
 		return
 	}
+	h.logActivityAudit(c, "return_receive", "return", id, "", "received")
 	c.JSON(http.StatusOK, gin.H{"status": "received"})
 }
 
@@ -86,6 +88,7 @@ func (h *Handler) AdminRefundReturn(c *gin.Context) {
 		response.ErrorResp(c, http.StatusInternalServerError, "return_refund_failed")
 		return
 	}
+	h.logActivityAudit(c, "return_refund", "return", id, "", "refunded")
 	c.JSON(http.StatusOK, gin.H{"status": "refunded"})
 }
 
@@ -100,11 +103,14 @@ func (h *Handler) AdminRejectReturn(c *gin.Context) {
 	var req struct {
 		Reason string `json:"reason"`
 	}
-	response.BindJSONOrInvalid(c, &req)
+	if !response.BindJSONOrInvalid(c, &req) {
+		return
+	}
 	if err := h.services.Return.UpdateStatus(c.Request.Context(), id, modelsOrder.ReturnStatusRejected, userID, req.Reason); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "return_reject_failed")
 		return
 	}
+	h.logActivityAudit(c, "return_reject", "return", id, "", req.Reason)
 	c.JSON(http.StatusOK, gin.H{"status": "rejected"})
 }
 

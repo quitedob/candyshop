@@ -15,11 +15,14 @@
         v-if="open"
         class="fixed inset-y-0 right-0 z-50 flex w-full sm"
         :class="widthClass"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="drawer-title"
       >
         <div class="flex h-full w-full flex-col bg-white shadow-xl">
           <!-- Header -->
           <div class="flex items-center justify-between border-b px-6 py-4">
-            <h2 class="text-lg font-semibold text-gray-900">
+            <h2 id="drawer-title" class="text-lg font-semibold text-gray-900">
               <slot name="title" />
             </h2>
             <button
@@ -48,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from 'vue'
+import { watch, onBeforeUnmount } from 'vue'
 
 const props = withDefaults(defineProps<{
   open: boolean
@@ -84,6 +87,11 @@ watch(() => props.open, (val) => {
     document.body.style.overflow = ''
     document.removeEventListener('keydown', onEscape)
   }
+})
+
+onBeforeUnmount(() => {
+  document.body.style.overflow = ''
+  document.removeEventListener('keydown', onEscape)
 })
 </script>
 

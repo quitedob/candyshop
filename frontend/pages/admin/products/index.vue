@@ -1,130 +1,156 @@
 <template>
   <div>
-    <div class="sm:flex sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-2xl font-semibold text-gray-900">{{ t('admin.products.title') }}</h1>
-        <p class="mt-2 text-sm text-gray-700">{{ t('admin.products.description') }}</p>
-      </div>
-      <div class="mt-4 sm:mt-0 flex items-center gap-3">
+    <PageHeader :title="t('admin.products.title')" :description="t('admin.products.description')">
+      <template #actions>
         <button type="button" class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50" @click="openCreateModal">
           {{ t('admin.products.add_product') }}
+        </button>
+        <button type="button" :disabled="batchTranslating || !products.length" class="inline-flex items-center gap-2 justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50" @click="batchTranslateMissing">
+          <Icon name="heroicons:language" class="h-4 w-4" aria-hidden="true" />
+          {{ batchTranslating ? t('admin.products.translating') : t('admin.products.batch_translate') }}
         </button>
         <button type="button" class="inline-flex items-center gap-2 justify-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-700" @click="openCreateDrawer">
           <Icon name="heroicons:sparkles" class="h-4 w-4" />
           {{ t('admin.products.ai_import') }}
         </button>
+        <AiHelpHint topic="products_import" />
+      </template>
+    </PageHeader>
+
+    <!-- 搜索与筛选 -->
+    <div class="mb-4 flex flex-wrap items-end gap-4">
+      <div class="min-w-[200px] flex-1">
+        <label for="products-search" class="block text-xs font-medium text-gray-700">{{ t('admin.products.search') }}</label>
+        <input
+          id="products-search"
+          v-model="searchQuery"
+          name="search"
+          type="search"
+          autocomplete="off"
+          class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          :placeholder="t('admin.products.search_placeholder')"
+          @keyup.enter="fetchProducts"
+        />
       </div>
+      <div class="min-w-[140px]">
+        <label for="products-status" class="block text-xs font-medium text-gray-700">{{ t('admin.products.status_filter') }}</label>
+        <select
+          id="products-status"
+          v-model="statusFilter"
+          class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          @change="page = 1; fetchProducts()"
+        >
+          <option value="">{{ t('admin.products.status_published') }}</option>
+          <option value="all">{{ t('admin.products.status_all') }}</option>
+          <option value="draft">{{ t('admin.products.status_draft') }}</option>
+          <option value="inactive">{{ t('admin.products.status_inactive') }}</option>
+        </select>
+      </div>
+      <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" @click="fetchProducts">
+        {{ t('admin.products.search') }}
+      </button>
     </div>
 
-    <div class="mt-8 overflow-hidden rounded-lg bg-white shadow ring-1 ring-black ring-opacity-5">
-      <table class="min-w-full divide-y divide-gray-300">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">{{ t('admin.products.col_product') }}</th>
-            <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ t('admin.products.col_category') }}</th>
-            <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ t('admin.products.col_moq') }}</th>
-            <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ t('admin.products.col_stock') }}</th>
-            <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ t('admin.products.col_status') }}</th>
-            <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">{{ $t('common.actions') }}</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200 bg-white">
-          <tr v-if="pending">
-            <td colspan="6" class="py-5 text-center text-sm text-gray-500">{{ t('admin.products.loading') }}</td>
-          </tr>
-          <tr v-else-if="error">
-            <td colspan="6" class="py-5 text-center text-sm text-red-600">{{ error }}</td>
-          </tr>
-          <tr v-else-if="products.length === 0">
-            <td colspan="6" class="py-5 text-center text-sm text-gray-500">{{ t('admin.products.no_data') }}</td>
-          </tr>
-          <tr v-else v-for="product in products" :key="product.id">
-            <td class="py-4 pl-4 pr-3 text-sm sm:pl-6">
-              <div class="flex items-center">
-                <div class="h-10 w-10 flex-shrink-0">
-                  <img v-if="product.thumbnail" class="h-10 w-10 rounded-full object-cover" :src="product.thumbnail" alt="" />
-                  <div v-else class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 font-bold text-gray-500">
-                    {{ product.name?.charAt(0) }}
-                  </div>
-                </div>
-                <div class="ml-4">
-                  <div class="font-medium text-gray-900">{{ product.name }}</div>
-                  <div class="text-gray-500">{{ product.slug }}</div>
-                </div>
-              </div>
-            </td>
-            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ product.category || '-' }}</td>
-            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ product.moq || 0 }}</td>
-            <td class="whitespace-nowrap px-3 py-4 text-sm" :class="(product.stockQuantity || 0) > 0 ? 'text-light' : 'text-error'">
-              {{ product.stockQuantity || 0 }}
-            </td>
-            <td class="whitespace-nowrap px-3 py-4 text-sm text-light">
-              <span class="badge" :class="product.status === 'active' ? 'badge-success' : 'badge-default'">
-                {{ enumLabel('product_status', product.status, 'active') }}
-              </span>
-            </td>
-            <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-              <button type="button" class="text-orange-600 hover:text-orange-900" @click="openEditModal(product)">{{ t('admin.products.edit') }}</button>
-              <button type="button" class="ml-4 text-red-600 hover:text-red-900" @click="deleteProduct(product.id)">{{ t('admin.products.delete') }}</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div v-if="pagination" class="mt-4 flex items-center justify-between rounded-lg border-t border-gray-200 bg-white px-4 py-3 shadow sm:px-6">
-      <div class="text-sm text-gray-700">
-        {{ t('admin.products.showing', { from: ((page - 1) * pageSize) + 1, to: Math.min(page * pageSize, pagination.total), total: pagination.total }) }}
-      </div>
-      <div class="flex items-center gap-2">
-        <button type="button" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 disabled:opacity-50" :disabled="page <= 1" @click="prevPage">
-          {{ t('admin.products.previous') }}
-        </button>
-        <button type="button" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 disabled:opacity-50" :disabled="page >= pagination.totalPages" @click="nextPage">
-          {{ t('admin.products.next') }}
-        </button>
-      </div>
-    </div>
-
-    <div v-if="showModal" class="fixed inset-0 z-10 overflow-y-auto" role="dialog" aria-modal="true">
-      <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closeModal" :aria-label="t('close')"></button>
-        <span class="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
-        <div class="inline-block w-full transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left align-bottom shadow-xl sm:my-8 sm:max-w-3xl sm:p-6 sm:align-middle">
-          <h3 class="text-lg font-medium leading-6 text-gray-900">{{ editingId ? t('admin.products.edit_product') : t('admin.products.create_product') }}</h3>
-
-          <form class="mt-4" @submit.prevent="saveProduct">
-            <ProductFormFields
-              :form="form"
-              :editing-id="editingId"
-              :ai-translating="aiTranslating"
-              :translation-locale="translationLocale"
-              :uploading-image="uploadingImage"
-              @trigger-upload="triggerUpload"
-              @cancel-upload="cancelImageUpload"
-              @ai-translate="aiTranslateAll"
-              @update:translation-locale="translationLocale = $event"
-            />
-            <div v-if="formError" class="mt-4 text-sm text-red-600">{{ formError }}</div>
-            <div class="mt-4 flex justify-end gap-3">
-              <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700" @click="closeModal">
-                {{ t('admin.products.cancel') }}
-              </button>
-              <button type="submit" :disabled="saving" class="rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm text-white disabled:opacity-50">
-                {{ saving ? t('admin.products.saving') : (editingId ? t('admin.products.update') : t('admin.products.create')) }}
-              </button>
+    <AdminTable
+      :columns="columns"
+      :rows="products"
+      :loading="pending"
+      :error="!!error"
+      :error-message="error"
+      :empty-text="t('admin.products.no_data')"
+      @retry="fetchProducts"
+    >
+      <template #cell-product="{ row }">
+        <div class="flex items-center">
+          <div class="h-10 w-10 flex-shrink-0">
+            <img v-if="row.thumbnail" class="h-10 w-10 rounded-full object-cover" :src="row.thumbnail" alt="" />
+            <div v-else class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 font-bold text-gray-500">
+              {{ tField(row, 'name')?.charAt(0) }}
             </div>
-          </form>
+          </div>
+          <div class="ms-4">
+            <div class="font-medium text-gray-900">{{ tField(row, 'name') }}</div>
+            <div class="text-gray-500">{{ row.slug }}</div>
+          </div>
         </div>
-      </div>
-    </div>
+      </template>
+
+      <template #cell-category="{ row }">
+        {{ categoryLabel(row) }}
+      </template>
+
+      <template #cell-moq="{ row }">
+        {{ row.moq || 0 }}
+      </template>
+
+      <template #cell-stock="{ row }">
+        <span :class="(row.stockQuantity || 0) > 0 ? 'text-green-600' : 'text-red-600'">
+          {{ row.stockQuantity || 0 }}
+        </span>
+      </template>
+
+      <template #cell-status="{ row }">
+        <StatusBadge :status="row.status" type="product" />
+      </template>
+
+      <template #cell-actions="{ row }">
+        <button type="button" class="text-orange-600 hover:text-orange-900" @click="openEditModal(row)">{{ t('admin.products.edit') }}</button>
+        <button type="button" class="ms-4 text-red-600 hover:text-red-900" @click="deleteProduct(row.id)">{{ t('admin.products.delete') }}</button>
+      </template>
+
+      <template #bottom>
+        <div v-if="pagination" class="flex items-center justify-between">
+          <div class="text-sm text-gray-700">
+            {{ t('admin.products.showing', { from: ((page - 1) * pageSize) + 1, to: Math.min(page * pageSize, pagination.total), total: pagination.total }) }}
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 disabled:opacity-50" :disabled="page <= 1" @click="prevPage">
+              {{ t('admin.products.previous') }}
+            </button>
+            <button type="button" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 disabled:opacity-50" :disabled="page >= pagination.totalPages" @click="nextPage">
+              {{ t('admin.products.next') }}
+            </button>
+          </div>
+        </div>
+      </template>
+    </AdminTable>
+
+    <!-- Editor Modal -->
+    <AdminModal :open="showModal" :title="editingId ? t('admin.products.edit_product') : t('admin.products.create_product')" width="xl" @close="closeModal">
+      <form @submit.prevent="saveProduct">
+        <ProductFormFields
+          :form="form"
+          :editing-id="editingId"
+          :ai-translating="aiTranslating"
+          :translation-locale="translationLocale"
+          :uploading-image="uploadingImage"
+          @trigger-upload="triggerUpload"
+          @cancel-upload="cancelImageUpload"
+          @ai-translate="aiTranslateAll"
+          @update:translation-locale="translationLocale = $event"
+        />
+        <div v-if="formError" class="mt-4 text-sm text-red-600">{{ formError }}</div>
+        <div class="mt-4 flex justify-end gap-3">
+          <button type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700" @click="closeModal">
+            {{ t('admin.products.cancel') }}
+          </button>
+          <button type="submit" :disabled="saving" class="rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm text-white disabled:opacity-50">
+            {{ saving ? t('admin.products.saving') : (editingId ? t('admin.products.update') : t('admin.products.create')) }}
+          </button>
+        </div>
+      </form>
+    </AdminModal>
 
     <!-- AI Generate Drawer -->
     <Drawer :open="showCreateDrawer" width="2xl" @close="showCreateDrawer = false">
-      <template #title>{{ t('admin.products.add_product') }} — AI</template>
+      <template #title>
+        <span class="inline-flex items-center">
+          {{ t('admin.products.add_product') }} — AI
+          <AiHelpHint topic="products_import" size="sm" />
+        </span>
+      </template>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6" style="min-height: 60vh;">
-        <!-- LEFT: Input panel -->
         <div class="lg:col-span-5 space-y-4">
           <div>
             <label for="ai-product-desc" class="block text-sm font-medium text-gray-700">{{ t('admin.products.ai_description_label') }}</label>
@@ -134,7 +160,7 @@
               rows="12"
               class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               :placeholder="t('admin.products.ai_description_placeholder')"
-            ></textarea>
+            />
           </div>
           <div>
             <label for="ai-product-lang" class="block text-sm font-medium text-gray-700">{{ t('admin.products.ai_language_label') }}</label>
@@ -158,7 +184,6 @@
           <p v-if="formError" class="text-sm text-red-600">{{ formError }}</p>
         </div>
 
-        <!-- RIGHT: Existing form template auto-filled by AI -->
         <div class="lg:col-span-7 lg:border-l lg:pl-6 overflow-y-auto" style="max-height: 65vh;">
           <div v-if="!aiHasData && !aiGenerating" class="flex flex-col items-center justify-center h-48 text-gray-400 text-sm">
             <Icon name="heroicons:sparkles" class="h-10 w-10 mb-2 text-gray-300" />
@@ -213,7 +238,8 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch, onMounted } from 'vue'
+import { reactive, ref, computed, watch, onMounted } from 'vue'
+import { useTranslation } from '~/composables/useTranslation'
 
 definePageMeta({
   layout: 'admin',
@@ -221,21 +247,62 @@ definePageMeta({
 })
 
 const api = useApi()
+const route = useRoute()
 const { t } = useI18n()
+const { tField } = useTranslation()
 const { enumLabel } = useDisplay()
 
+const columns = [
+  { key: 'product', label: t('admin.products.col_product') },
+  { key: 'category', label: t('admin.products.col_category') },
+  { key: 'moq', label: t('admin.products.col_moq') },
+  { key: 'stock', label: t('admin.products.col_stock') },
+  { key: 'status', label: t('admin.products.col_status') },
+  { key: 'actions', label: '' },
+]
+
 const products = ref<any[]>([])
+const categoryCatalog = ref<any[]>([])
 const pagination = ref<any>(null)
 const pending = ref(true)
 const error = ref('')
 const page = ref(1)
 const pageSize = 20
+const searchQuery = ref('')
+const statusFilter = ref('')
 
 const showModal = ref(false)
 const editingId = ref('')
 const saving = ref(false)
-const translationLocale = ref('en')
+const translationLocale = ref(SOURCE_LOCALE)
 const aiTranslating = ref(false)
+let aiTranslateSlowTimer: ReturnType<typeof setTimeout> | null = null
+
+const categoryBySlug = computed(() => {
+  const map = new Map<string, any>()
+  for (const cat of categoryCatalog.value) map.set(cat.slug, cat)
+  return map
+})
+
+const categoryLabel = (row: any) => {
+  const fromProduct = tField(row, 'category')
+  if (fromProduct) return fromProduct
+  const slug = row?.categorySlug
+  if (slug && categoryBySlug.value.has(slug)) {
+    const cat = categoryBySlug.value.get(slug)
+    return tField(cat, 'name') || cat?.name || '-'
+  }
+  return row?.category || '-'
+}
+
+const fetchCategories = async () => {
+  try {
+    categoryCatalog.value = await api.adminGetCategories()
+  } catch {
+    categoryCatalog.value = []
+  }
+}
+const batchTranslating = ref(false)
 const formError = ref('')
 const actionMessage = ref('')
 const actionError = ref(false)
@@ -250,7 +317,7 @@ const aiGenerating = ref(false)
 const aiHasData = ref(false)
 let uploadAbortController: AbortController | null = null
 
-const triggerUpload = async (field: 'thumbnail' | 'images') => {
+const triggerUpload = async (field: 'thumbnail' | 'ogImage' | 'images') => {
   const input = document.createElement('input')
   input.type = 'file'
   input.accept = 'image/jpeg,image/png,image/webp,image/gif'
@@ -266,6 +333,8 @@ const triggerUpload = async (field: 'thumbnail' | 'images') => {
       const result = await api.post<any>('/admin/upload/image', formData)
       if (field === 'thumbnail') {
         form.thumbnail = result.url
+      } else if (field === 'ogImage') {
+        form.ogImage = result.url
       } else {
         const existing = form.imagesInput ? form.imagesInput.split(',').filter(Boolean) : []
         existing.push(result.url)
@@ -291,97 +360,53 @@ const cancelImageUpload = () => {
   uploadingImage.value = false
 }
 
-const translationLocales = ['en', 'zh', 'ko', 'ar', 'ja', 'th', 'vi', 'id', 'ms']
+// ALL_LOCALES 由 Nuxt 自动导入
+const translationLocales = ALL_LOCALES
+
+const translationFieldKeys = ['name', 'alias', 'summary', 'description', 'category', 'categoryAlias', 'ingredients', 'allergens', 'storage', 'leadTime', 'shelfLife'] as const
+
+function emptyTranslationEntry() {
+  return {
+    name: '', alias: '', summary: '', description: '', category: '', categoryAlias: '',
+    ingredients: '', allergens: '', storage: '', leadTime: '', shelfLife: '',
+    flavorsInput: '', shapesInput: '',
+  }
+}
 
 function emptyTranslations() {
-  const result: Record<string, { name: string; summary: string; description: string }> = {}
+  const result: Record<string, ReturnType<typeof emptyTranslationEntry>> = {}
   for (const loc of translationLocales) {
-    result[loc] = { name: '', summary: '', description: '' }
+    result[loc] = emptyTranslationEntry()
   }
   return result
 }
 
 const form = reactive({
-  name: '',
-  slug: '',
-  summary: '',
-  description: '',
-  category: '',
-  categorySlug: '',
-  thumbnail: '',
-  moq: 0,
-  basePrice: 0,
-  stockQuantity: 0,
-  leadTime: '',
-  oemAvailable: false,
-  halalCertified: false,
-  featured: false,
-  status: 'active',
-  imagesInput: '',
-  flavorsInput: '',
-  shapesInput: '',
-  certificationsInput: '',
-  ingredients: '',
-  allergens: '',
-  shelfLife: '',
-  storage: '',
-  // Weight & Measurement
-  netWeightPerPiece: 0,
-  netWeightPerPack: 0,
-  grossWeightPerCarton: 0,
-  piecesPerPack: 0,
-  packsPerCarton: 0,
-  // Dimensions
-  productLengthMM: 0,
-  productWidthMM: 0,
-  productHeightMM: 0,
-  // Nutrition
-  energyKj: 0,
-  energyKcal: 0,
-  totalFatG: 0,
-  saturatedFatG: 0,
-  carbohydratesG: 0,
-  sugarsG: 0,
-  proteinG: 0,
-  saltG: 0,
-  fiberG: 0,
-  // Ingredient Compliance
-  additivesInput: '',
-  sweetenerType: '',
-  cocoaSolidsPct: 0,
-  milkSolidsPct: 0,
-  gmoStatus: '',
-  mayContainInput: '',
-  waterActivity: 0,
-  // Trade & Barcode
-  gtin: '',
-  hsCode: '',
-  // Packaging
-  primaryPackaging: '',
-  innerPackConfig: '',
-  palletConfig: '',
-  // Dietary
-  isVegan: false,
-  isGlutenFree: false,
-  isSugarFree: false,
-  isKosher: false,
-  isOrganic: false,
-  // Sample Specs
-  sampleMOQ: 0,
-  sampleLeadTime: '',
-  samplePrice: 0,
+  name: '', slug: '', summary: '', description: '',
+  category: '', categorySlug: '', thumbnail: '', ogImage: '',
+  moq: 0, basePrice: 0, stockQuantity: 0, leadTime: '',
+  oemAvailable: false, halalCertified: false, featured: false, status: 'active',
+  imagesInput: '', flavorsInput: '', shapesInput: '', certificationsInput: '',
+  ingredients: '', allergens: '', shelfLife: '', storage: '',
+  netWeightPerPiece: 0, netWeightPerPack: 0, grossWeightPerCarton: 0,
+  piecesPerPack: 0, packsPerCarton: 0,
+  productLengthMM: 0, productWidthMM: 0, productHeightMM: 0,
+  energyKj: 0, energyKcal: 0, totalFatG: 0, saturatedFatG: 0,
+  carbohydratesG: 0, sugarsG: 0, proteinG: 0, saltG: 0, fiberG: 0,
+  additivesInput: '', sweetenerType: '', cocoaSolidsPct: 0, milkSolidsPct: 0,
+  gmoStatus: '', mayContainInput: '', waterActivity: 0,
+  gtin: '', hsCode: '',
+  primaryPackaging: '', innerPackConfig: '', palletConfig: '',
+  isVegan: false, isGlutenFree: false, isSugarFree: false, isKosher: false, isOrganic: false,
+  sampleMOQ: 0, sampleLeadTime: '', samplePrice: 0,
   translations: emptyTranslations()
 } as any)
 
 const localeTabLabelMap: Record<string, string> = {
-  en: 'admin.products.locale_tab_en',
-  zh: 'admin.products.locale_tab_zh',
-  ko: 'admin.products.locale_tab_ko',
-  ar: 'admin.products.locale_tab_ar',
-  ja: 'admin.products.locale_tab_ja',
-  th: 'admin.products.locale_tab_th',
-  vi: 'admin.products.locale_tab_vi',
-  id: 'admin.products.locale_tab_id',
+  en: 'admin.products.locale_tab_en', zh: 'admin.products.locale_tab_zh',
+  ko: 'admin.products.locale_tab_ko', ar: 'admin.products.locale_tab_ar',
+  ja: 'admin.products.locale_tab_ja', th: 'admin.products.locale_tab_th',
+  vi: 'admin.products.locale_tab_vi', id: 'admin.products.locale_tab_id',
   ms: 'admin.products.locale_tab_ms',
 }
 
@@ -389,121 +414,236 @@ const localeTabLabel = (loc: string) => t(localeTabLabelMap[loc] || loc)
 
 const parseCSV = (value: string) => value.split(',').map(v => v.trim()).filter(Boolean)
 
+/** 将主语言翻译字段同步到标量列（后端搜索/兼容用） */
+const syncScalarsFromSourceLocale = () => {
+  const src = form.translations[SOURCE_LOCALE]
+  if (!src) return
+  form.name = src.name?.trim?.() || form.name
+  form.summary = src.summary?.trim?.() || form.summary
+  form.description = src.description?.trim?.() || form.description
+  form.category = src.category?.trim?.() || form.category
+  form.ingredients = src.ingredients?.trim?.() || form.ingredients
+  form.allergens = src.allergens?.trim?.() || form.allergens
+  form.storage = src.storage?.trim?.() || form.storage
+  form.shelfLife = src.shelfLife?.trim?.() || form.shelfLife
+  form.leadTime = src.leadTime?.trim?.() || form.leadTime
+  form.flavorsInput = src.flavorsInput?.trim?.() || form.flavorsInput
+  form.shapesInput = src.shapesInput?.trim?.() || form.shapesInput
+}
+
+/** 旧单语产品：标量字段仅回填 en，禁止写入 zh（标量多为英文遗留） */
+const hydrateTranslationsFromLegacyScalars = () => {
+  const hasAnyTranslation = translationLocales.some((loc) => {
+    const tr = form.translations[loc]
+    if (!tr) return false
+    return translationFieldKeys.some((k) => String(tr[k] ?? '').trim() !== '')
+      || String(tr.flavorsInput ?? '').trim() !== ''
+      || String(tr.shapesInput ?? '').trim() !== ''
+  })
+  if (hasAnyTranslation) return
+
+  const en = form.translations.en
+  if (!en) return
+  if (!en.name?.trim() && form.name) en.name = form.name
+  if (!en.summary?.trim() && form.summary) en.summary = form.summary
+  if (!en.description?.trim() && form.description) en.description = form.description
+  if (!en.category?.trim() && form.category) en.category = form.category
+  if (!en.ingredients?.trim() && form.ingredients) en.ingredients = form.ingredients
+  if (!en.allergens?.trim() && form.allergens) en.allergens = form.allergens
+  if (!en.storage?.trim() && form.storage) en.storage = form.storage
+  if (!en.shelfLife?.trim() && form.shelfLife) en.shelfLife = form.shelfLife
+  if (!en.leadTime?.trim() && form.leadTime) en.leadTime = form.leadTime
+  if (!en.flavorsInput?.trim() && form.flavorsInput) en.flavorsInput = form.flavorsInput
+  if (!en.shapesInput?.trim() && form.shapesInput) en.shapesInput = form.shapesInput
+}
+
+/** 清除 zh 中与 en 完全相同的字段（多为误从 en/标量复制） */
+const repairEnglishDuplicatesInZh = () => {
+  const zh = form.translations[SOURCE_LOCALE]
+  const en = form.translations.en
+  if (!zh || !en) return
+  for (const key of [...translationFieldKeys, 'flavorsInput', 'shapesInput'] as const) {
+    const zhVal = String(zh[key] ?? '').trim()
+    const enVal = String(en[key] ?? '').trim()
+    if (zhVal && enVal && zhVal === enVal) {
+      zh[key] = ''
+    }
+  }
+}
+
+const applyTranslationFields = (loc: string, fields: Record<string, any>) => {
+  if (!fields || typeof fields !== 'object' || !form.translations[loc]) return
+  for (const key of translationFieldKeys) {
+    if (fields[key]) form.translations[loc][key] = fields[key]
+  }
+  if (Array.isArray(fields.flavors)) {
+    form.translations[loc].flavorsInput = fields.flavors.join(', ')
+  } else if (typeof fields.flavors === 'string' && fields.flavors) {
+    try {
+      const arr = JSON.parse(fields.flavors)
+      form.translations[loc].flavorsInput = Array.isArray(arr) ? arr.join(', ') : fields.flavors
+    } catch {
+      form.translations[loc].flavorsInput = fields.flavors
+    }
+  }
+  if (Array.isArray(fields.shapes)) {
+    form.translations[loc].shapesInput = fields.shapes.join(', ')
+  } else if (typeof fields.shapes === 'string' && fields.shapes) {
+    try {
+      const arr = JSON.parse(fields.shapes)
+      form.translations[loc].shapesInput = Array.isArray(arr) ? arr.join(', ') : fields.shapes
+    } catch {
+      form.translations[loc].shapesInput = fields.shapes
+    }
+  }
+}
+
 const buildTranslationsPayload = () => {
   const result: Record<string, Record<string, string>> = {}
   for (const loc of translationLocales) {
-    const t = form.translations[loc]
-    if (!t) continue
+    const tr = form.translations[loc]
+    if (!tr) continue
     const entry: Record<string, string> = {}
-    if (t.name?.trim()) entry.name = t.name.trim()
-    if (t.summary?.trim()) entry.summary = t.summary.trim()
-    if (t.description?.trim()) entry.description = t.description.trim()
+    for (const key of translationFieldKeys) {
+      const val = tr[key]?.trim?.() ?? tr[key]
+      if (typeof val === 'string' && val.trim()) entry[key] = val.trim()
+    }
+    if (tr.flavorsInput?.trim()) {
+      entry.flavors = JSON.stringify(parseCSV(tr.flavorsInput))
+    }
+    if (tr.shapesInput?.trim()) {
+      entry.shapes = JSON.stringify(parseCSV(tr.shapesInput))
+    }
     if (Object.keys(entry).length > 0) result[loc] = entry
   }
   return Object.keys(result).length > 0 ? result : null
 }
 
+/** 标量列回填到 zh 翻译 tab（DB 中 translations.zh 可能缺失） */
+const hydrateSourceLocaleFromScalars = () => {
+  const zh = form.translations[SOURCE_LOCALE]
+  if (!zh) return
+  if (!String(zh.name ?? '').trim() && form.name) zh.name = form.name
+  if (!String(zh.summary ?? '').trim() && form.summary) zh.summary = form.summary
+  if (!String(zh.description ?? '').trim() && form.description) zh.description = form.description
+  if (!String(zh.category ?? '').trim() && form.category) zh.category = form.category
+  if (!String(zh.ingredients ?? '').trim() && form.ingredients) zh.ingredients = form.ingredients
+  if (!String(zh.allergens ?? '').trim() && form.allergens) zh.allergens = form.allergens
+  if (!String(zh.storage ?? '').trim() && form.storage) zh.storage = form.storage
+  if (!String(zh.shelfLife ?? '').trim() && form.shelfLife) zh.shelfLife = form.shelfLife
+  if (!String(zh.leadTime ?? '').trim() && form.leadTime) zh.leadTime = form.leadTime
+  if (!String(zh.flavorsInput ?? '').trim() && form.flavorsInput) zh.flavorsInput = form.flavorsInput
+  if (!String(zh.shapesInput ?? '').trim() && form.shapesInput) zh.shapesInput = form.shapesInput
+}
+
+/** 从服务端重新加载 translations 并应用到表单（AI 翻译超时兜底） */
+const reloadProductTranslations = async (productId: string) => {
+  const detail = await api.get<any>(`/admin/products/${productId}`)
+  if (!detail?.translations || typeof detail.translations !== 'object') return false
+  for (const loc of translationLocales) {
+    if (detail.translations[loc] && typeof detail.translations[loc] === 'object') {
+      applyTranslationFields(loc, detail.translations[loc])
+    }
+  }
+  hydrateSourceLocaleFromScalars()
+  return true
+}
+
 const aiTranslateAll = async () => {
   if (!editingId.value || aiTranslating.value) return
   aiTranslating.value = true
+  formError.value = ''
+  let requestFailed = false
+  if (aiTranslateSlowTimer) clearTimeout(aiTranslateSlowTimer)
+  aiTranslateSlowTimer = setTimeout(() => {
+    if (aiTranslating.value) {
+      formError.value = t('admin.products.ai_translate_slow')
+    }
+  }, 30_000)
   try {
-    const targetLocales = translationLocales.filter(l => l !== 'zh')
-    const res = await api.post<any>(`/admin/products/${editingId.value}/ai-translate`, {
-      productId: editingId.value,
-      targetLocales,
+    const targetLocales = translationLocales.filter(l => l !== SOURCE_LOCALE)
+    const res = await api.adminAITranslateProduct(editingId.value, {
+      productId: editingId.value, targetLocales,
     })
     if (res?.translations && typeof res.translations === 'object') {
-      for (const loc of targetLocales) {
-        const fields = res.translations[loc]
-        if (fields && typeof fields === 'object') {
-          if (fields.name) form.translations[loc].name = fields.name
-          if (fields.summary) form.translations[loc].summary = fields.summary
-          if (fields.description) form.translations[loc].description = fields.description
+      for (const loc of translationLocales) {
+        if (res.translations[loc] && typeof res.translations[loc] === 'object') {
+          applyTranslationFields(loc, res.translations[loc])
         }
       }
+      hydrateSourceLocaleFromScalars()
     }
+  } catch (err: any) {
+    requestFailed = true
+    // 服务端可能已保存但响应超时，尝试从 DB 拉取最新 translations
+    try {
+      const reloaded = await reloadProductTranslations(editingId.value)
+      if (reloaded) {
+        actionMessage.value = t('admin.products.ai_translate_reloaded')
+        actionError.value = false
+        return
+      }
+    } catch { /* fall through */ }
+    formError.value = err?.message || t('errors.api.request_failed')
+  } finally {
+    if (aiTranslateSlowTimer) {
+      clearTimeout(aiTranslateSlowTimer)
+      aiTranslateSlowTimer = null
+    }
+    aiTranslating.value = false
+  }
+  if (!requestFailed) {
+    actionMessage.value = t('admin.products.ai_translate_done')
+    actionError.value = false
+  }
+}
+
+const batchTranslateMissing = async () => {
+  if (batchTranslating.value || !products.value.length) return
+  batchTranslating.value = true
+  formError.value = ''
+  try {
+    const targetLocales = translationLocales.filter(l => l !== SOURCE_LOCALE)
+    for (const row of products.value.slice(0, 20)) {
+      await api.adminAITranslateProduct(row.id, {
+        productId: row.id, targetLocales,
+      })
+    }
+    await fetchProducts()
   } catch (err: any) {
     formError.value = err?.message || t('errors.api.request_failed')
   } finally {
-    aiTranslating.value = false
+    batchTranslating.value = false
   }
 }
 
 const resetForm = () => {
-  form.name = ''
-  form.slug = ''
-  form.summary = ''
-  form.description = ''
-  form.category = ''
-  form.categorySlug = ''
-  form.thumbnail = ''
-  form.moq = 0
-  form.basePrice = 0
-  form.stockQuantity = 0
-  form.leadTime = ''
-  form.oemAvailable = false
-  form.halalCertified = false
-  form.featured = false
-  form.status = 'active'
-  form.imagesInput = ''
-  form.flavorsInput = ''
-  form.shapesInput = ''
-  form.certificationsInput = ''
-  form.ingredients = ''
-  form.allergens = ''
-  form.shelfLife = ''
-  form.storage = ''
-  form.netWeightPerPiece = 0
-  form.netWeightPerPack = 0
-  form.grossWeightPerCarton = 0
-  form.piecesPerPack = 0
-  form.packsPerCarton = 0
-  form.productLengthMM = 0
-  form.productWidthMM = 0
-  form.productHeightMM = 0
-  form.energyKj = 0
-  form.energyKcal = 0
-  form.totalFatG = 0
-  form.saturatedFatG = 0
-  form.carbohydratesG = 0
-  form.sugarsG = 0
-  form.proteinG = 0
-  form.saltG = 0
-  form.fiberG = 0
-  form.additivesInput = ''
-  form.sweetenerType = ''
-  form.cocoaSolidsPct = 0
-  form.milkSolidsPct = 0
-  form.gmoStatus = ''
-  form.mayContainInput = ''
-  form.waterActivity = 0
-  form.gtin = ''
-  form.hsCode = ''
-  form.primaryPackaging = ''
-  form.innerPackConfig = ''
-  form.palletConfig = ''
-  form.isVegan = false
-  form.isGlutenFree = false
-  form.isSugarFree = false
-  form.isKosher = false
-  form.isOrganic = false
-  form.sampleMOQ = 0
-  form.sampleLeadTime = ''
-  form.samplePrice = 0
+  form.name = ''; form.slug = ''; form.summary = ''; form.description = ''
+  form.category = ''; form.categorySlug = ''; form.thumbnail = ''; form.ogImage = ''
+  form.moq = 0; form.basePrice = 0; form.stockQuantity = 0; form.leadTime = ''
+  form.oemAvailable = false; form.halalCertified = false; form.featured = false; form.status = 'active'
+  form.imagesInput = ''; form.flavorsInput = ''; form.shapesInput = ''; form.certificationsInput = ''
+  form.ingredients = ''; form.allergens = ''; form.shelfLife = ''; form.storage = ''
+  form.netWeightPerPiece = 0; form.netWeightPerPack = 0; form.grossWeightPerCarton = 0
+  form.piecesPerPack = 0; form.packsPerCarton = 0
+  form.productLengthMM = 0; form.productWidthMM = 0; form.productHeightMM = 0
+  form.energyKj = 0; form.energyKcal = 0; form.totalFatG = 0; form.saturatedFatG = 0
+  form.carbohydratesG = 0; form.sugarsG = 0; form.proteinG = 0; form.saltG = 0; form.fiberG = 0
+  form.additivesInput = ''; form.sweetenerType = ''; form.cocoaSolidsPct = 0; form.milkSolidsPct = 0
+  form.gmoStatus = ''; form.mayContainInput = ''; form.waterActivity = 0
+  form.gtin = ''; form.hsCode = ''
+  form.primaryPackaging = ''; form.innerPackConfig = ''; form.palletConfig = ''
+  form.isVegan = false; form.isGlutenFree = false; form.isSugarFree = false; form.isKosher = false; form.isOrganic = false
+  form.sampleMOQ = 0; form.sampleLeadTime = ''; form.samplePrice = 0
   form.translations = emptyTranslations()
 }
 
 const fillFormFromProduct = (product: any) => {
-  form.name = product.name || ''
-  form.slug = product.slug || ''
-  form.summary = product.summary || ''
-  form.description = product.description || ''
-  form.category = product.category || ''
-  form.categorySlug = product.categorySlug || ''
-  form.thumbnail = product.thumbnail || ''
-  form.moq = product.moq || 0
-  form.basePrice = product.basePrice || 0
-  form.stockQuantity = product.stockQuantity || 0
+  form.name = product.name || ''; form.slug = product.slug || ''
+  form.summary = product.summary || ''; form.description = product.description || ''
+  form.category = product.category || ''; form.categorySlug = product.categorySlug || ''
+  form.thumbnail = product.thumbnail || ''; form.ogImage = product.ogImage || ''; form.moq = product.moq || 0
+  form.basePrice = product.basePrice || 0; form.stockQuantity = product.stockQuantity || 0
   form.leadTime = product.leadTime || ''
   form.oemAvailable = Boolean(product.oemAvailable)
   form.halalCertified = Boolean(product.halalCertified)
@@ -513,10 +653,8 @@ const fillFormFromProduct = (product: any) => {
   form.flavorsInput = Array.isArray(product.flavors) ? product.flavors.join(', ') : ''
   form.shapesInput = Array.isArray(product.shapes) ? product.shapes.join(', ') : ''
   form.certificationsInput = Array.isArray(product.certifications) ? product.certifications.join(', ') : ''
-  form.ingredients = product.ingredients || ''
-  form.allergens = product.allergens || ''
-  form.shelfLife = product.shelfLife || ''
-  form.storage = product.storage || ''
+  form.ingredients = product.ingredients || ''; form.allergens = product.allergens || ''
+  form.shelfLife = product.shelfLife || ''; form.storage = product.storage || ''
   form.netWeightPerPiece = product.netWeightPerPiece || 0
   form.netWeightPerPack = product.netWeightPerPack || 0
   form.grossWeightPerCarton = product.grossWeightPerCarton || 0
@@ -525,14 +663,10 @@ const fillFormFromProduct = (product: any) => {
   form.productLengthMM = product.productLengthMM || 0
   form.productWidthMM = product.productWidthMM || 0
   form.productHeightMM = product.productHeightMM || 0
-  form.energyKj = product.energyKj || 0
-  form.energyKcal = product.energyKcal || 0
-  form.totalFatG = product.totalFatG || 0
-  form.saturatedFatG = product.saturatedFatG || 0
-  form.carbohydratesG = product.carbohydratesG || 0
-  form.sugarsG = product.sugarsG || 0
-  form.proteinG = product.proteinG || 0
-  form.saltG = product.saltG || 0
+  form.energyKj = product.energyKj || 0; form.energyKcal = product.energyKcal || 0
+  form.totalFatG = product.totalFatG || 0; form.saturatedFatG = product.saturatedFatG || 0
+  form.carbohydratesG = product.carbohydratesG || 0; form.sugarsG = product.sugarsG || 0
+  form.proteinG = product.proteinG || 0; form.saltG = product.saltG || 0
   form.fiberG = product.fiberG || 0
   form.additivesInput = Array.isArray(product.additives) ? product.additives.join(', ') : ''
   form.sweetenerType = product.sweetenerType || ''
@@ -541,38 +675,51 @@ const fillFormFromProduct = (product: any) => {
   form.gmoStatus = product.gmoStatus || ''
   form.mayContainInput = Array.isArray(product.mayContain) ? product.mayContain.join(', ') : ''
   form.waterActivity = product.waterActivity || 0
-  form.gtin = product.gtin || ''
-  form.hsCode = product.hsCode || ''
+  form.gtin = product.gtin || ''; form.hsCode = product.hsCode || ''
   form.primaryPackaging = product.primaryPackaging || ''
   form.innerPackConfig = product.innerPackConfig || ''
   form.palletConfig = product.palletConfig || ''
-  form.isVegan = Boolean(product.isVegan)
-  form.isGlutenFree = Boolean(product.isGlutenFree)
-  form.isSugarFree = Boolean(product.isSugarFree)
-  form.isKosher = Boolean(product.isKosher)
+  form.isVegan = Boolean(product.isVegan); form.isGlutenFree = Boolean(product.isGlutenFree)
+  form.isSugarFree = Boolean(product.isSugarFree); form.isKosher = Boolean(product.isKosher)
   form.isOrganic = Boolean(product.isOrganic)
   form.sampleMOQ = product.sampleMOQ || 0
   form.sampleLeadTime = product.sampleLeadTime || ''
   form.samplePrice = product.samplePrice || 0
   if (product.translations && typeof product.translations === 'object') {
-    const src = product.translations
     form.translations = emptyTranslations()
+    const src = product.translations
     for (const loc of translationLocales) {
       if (src[loc] && typeof src[loc] === 'object') {
-        form.translations[loc].name = src[loc].name || ''
-        form.translations[loc].summary = src[loc].summary || ''
-        form.translations[loc].description = src[loc].description || ''
+        for (const key of translationFieldKeys) {
+          form.translations[loc][key] = src[loc][key] || ''
+        }
+        if (src[loc].flavors) {
+          try {
+            const arr = JSON.parse(src[loc].flavors)
+            form.translations[loc].flavorsInput = Array.isArray(arr) ? arr.join(', ') : src[loc].flavors
+          } catch { form.translations[loc].flavorsInput = src[loc].flavors }
+        }
+        if (src[loc].shapes) {
+          try {
+            const arr = JSON.parse(src[loc].shapes)
+            form.translations[loc].shapesInput = Array.isArray(arr) ? arr.join(', ') : src[loc].shapes
+          } catch { form.translations[loc].shapesInput = src[loc].shapes }
+        }
       }
     }
-  } else {
-    form.translations = emptyTranslations()
-  }
+  } else { form.translations = emptyTranslations() }
+  hydrateSourceLocaleFromScalars()
+  repairEnglishDuplicatesInZh()
+  hydrateTranslationsFromLegacyScalars()
 }
 
 const fetchProducts = async () => {
   pending.value = true; error.value = ''
   try {
-    const res = await api.get<any>(`/admin/products?page=${page.value}&limit=${pageSize}`)
+    const q = searchQuery.value.trim()
+    const searchParam = q ? `&search=${encodeURIComponent(q)}` : ''
+    const statusParam = statusFilter.value ? `&status=${encodeURIComponent(statusFilter.value)}` : ''
+    const res = await api.get<any>(`/admin/products?page=${page.value}&limit=${pageSize}${searchParam}${statusParam}`)
     products.value = res.data || []; pagination.value = res.pagination
   } catch (err: any) { error.value = err?.message || t('errors.api.load_failed') }
   finally { pending.value = false }
@@ -581,56 +728,37 @@ const fetchProducts = async () => {
 const nextPage = () => { if (pagination.value && page.value < pagination.value.totalPages) page.value += 1 }
 const prevPage = () => { if (page.value > 1) page.value -= 1 }
 
-const openCreateModal = () => { editingId.value = ''; translationLocale.value = 'en'; resetForm(); formError.value = ''; actionMessage.value = ''; actionError.value = false; showModal.value = true }
+const openCreateModal = () => { editingId.value = ''; translationLocale.value = SOURCE_LOCALE; resetForm(); formError.value = ''; actionMessage.value = ''; actionError.value = false; showModal.value = true }
 
 const openCreateDrawer = () => {
-  showCreateDrawer.value = true
-  aiDescription.value = ''
-  aiLanguage.value = 'zh'
-  aiGenerating.value = false
-  aiHasData.value = false
-  formError.value = ''
-  translationLocale.value = 'en'
+  editingId.value = ''; showCreateDrawer.value = true
+  aiDescription.value = ''; aiLanguage.value = 'zh'
+  aiGenerating.value = false; aiHasData.value = false
+  formError.value = ''; translationLocale.value = SOURCE_LOCALE
   resetForm()
 }
 
 const generateProduct = async () => {
   if (!aiDescription.value.trim() || aiGenerating.value) return
-  aiGenerating.value = true
-  formError.value = ''
+  aiGenerating.value = true; formError.value = ''; aiHasData.value = false
   try {
     const res = await api.adminAIGenerateProduct({ description: aiDescription.value, language: aiLanguage.value })
-    if (res?.parseError) {
-      formError.value = t('admin.products.ai_generate_failed')
-      return
-    }
+    if (res?.parseError) { formError.value = t('admin.products.ai_generate_failed'); return }
     const p = res.product
-    if (!p) {
-      formError.value = t('admin.products.ai_generate_failed')
-      return
-    }
-    // Fill form from AI result
-    form.name = p.name || ''
-    form.slug = p.slug || ''
-    form.summary = p.summary || ''
-    form.description = p.description || ''
-    form.category = p.category || ''
-    form.categorySlug = p.categorySlug || ''
-    form.moq = Number(p.moq) || 0
-    form.basePrice = Math.max(0, Number(p.basePrice) || 0)
+    if (!p) { formError.value = t('admin.products.ai_generate_failed'); return }
+    form.name = p.name || ''; form.slug = p.slug || ''
+    form.summary = p.summary || ''; form.description = p.description || ''
+    form.category = p.category || ''; form.categorySlug = p.categorySlug || ''
+    form.moq = Number(p.moq) || 0; form.basePrice = Math.max(0, Number(p.basePrice) || 0)
     form.stockQuantity = Math.max(0, Number(p.stockQuantity) || 0)
     form.leadTime = p.leadTime || ''
-    form.oemAvailable = Boolean(p.oemAvailable)
-    form.halalCertified = Boolean(p.halalCertified)
-    form.featured = Boolean(p.featured)
-    form.status = 'active'
+    form.oemAvailable = Boolean(p.oemAvailable); form.halalCertified = Boolean(p.halalCertified)
+    form.featured = Boolean(p.featured); form.status = 'active'
     form.flavorsInput = Array.isArray(p.flavors) ? p.flavors.join(', ') : ''
     form.shapesInput = Array.isArray(p.shapes) ? p.shapes.join(', ') : ''
     form.certificationsInput = Array.isArray(p.certifications) ? p.certifications.join(', ') : ''
-    form.ingredients = p.ingredients || ''
-    form.allergens = p.allergens || ''
-    form.shelfLife = p.shelfLife || ''
-    form.storage = p.storage || ''
+    form.ingredients = p.ingredients || ''; form.allergens = p.allergens || ''
+    form.shelfLife = p.shelfLife || ''; form.storage = p.storage || ''
     form.netWeightPerPiece = Number(p.netWeightPerPiece) || 0
     form.netWeightPerPack = Number(p.netWeightPerPack) || 0
     form.grossWeightPerCarton = Number(p.grossWeightPerCarton) || 0
@@ -639,14 +767,10 @@ const generateProduct = async () => {
     form.productLengthMM = Number(p.productLengthMM) || 0
     form.productWidthMM = Number(p.productWidthMM) || 0
     form.productHeightMM = Number(p.productHeightMM) || 0
-    form.energyKj = Number(p.energyKj) || 0
-    form.energyKcal = Number(p.energyKcal) || 0
-    form.totalFatG = Number(p.totalFatG) || 0
-    form.saturatedFatG = Number(p.saturatedFatG) || 0
-    form.carbohydratesG = Number(p.carbohydratesG) || 0
-    form.sugarsG = Number(p.sugarsG) || 0
-    form.proteinG = Number(p.proteinG) || 0
-    form.saltG = Number(p.saltG) || 0
+    form.energyKj = Number(p.energyKj) || 0; form.energyKcal = Number(p.energyKcal) || 0
+    form.totalFatG = Number(p.totalFatG) || 0; form.saturatedFatG = Number(p.saturatedFatG) || 0
+    form.carbohydratesG = Number(p.carbohydratesG) || 0; form.sugarsG = Number(p.sugarsG) || 0
+    form.proteinG = Number(p.proteinG) || 0; form.saltG = Number(p.saltG) || 0
     form.fiberG = Number(p.fiberG) || 0
     form.additivesInput = Array.isArray(p.additives) ? p.additives.join(', ') : ''
     form.sweetenerType = p.sweetenerType || ''
@@ -655,58 +779,64 @@ const generateProduct = async () => {
     form.gmoStatus = p.gmoStatus || ''
     form.mayContainInput = Array.isArray(p.mayContain) ? p.mayContain.join(', ') : ''
     form.waterActivity = Number(p.waterActivity) || 0
-    form.gtin = p.gtin || ''
-    form.hsCode = p.hsCode || ''
+    form.gtin = p.gtin || ''; form.hsCode = p.hsCode || ''
     form.primaryPackaging = p.primaryPackaging || ''
     form.innerPackConfig = p.innerPackConfig || ''
     form.palletConfig = p.palletConfig || ''
-    form.isVegan = Boolean(p.isVegan)
-    form.isGlutenFree = Boolean(p.isGlutenFree)
-    form.isSugarFree = Boolean(p.isSugarFree)
-    form.isKosher = Boolean(p.isKosher)
+    form.isVegan = Boolean(p.isVegan); form.isGlutenFree = Boolean(p.isGlutenFree)
+    form.isSugarFree = Boolean(p.isSugarFree); form.isKosher = Boolean(p.isKosher)
     form.isOrganic = Boolean(p.isOrganic)
     form.sampleMOQ = Number(p.sampleMOQ) || 0
     form.sampleLeadTime = p.sampleLeadTime || ''
     form.samplePrice = Number(p.samplePrice) || 0
 
-    // Fill AI translations into form.translations
     const transMap = res.translations || {}
     form.translations = emptyTranslations()
-    // Populate source locale from the generated content
     const sourceLoc = aiLanguage.value
-    if (sourceLoc && form.translations[sourceLoc]) {
-      form.translations[sourceLoc].name = form.name
-      form.translations[sourceLoc].summary = form.summary
-      form.translations[sourceLoc].description = form.description
-    }
-    // Populate translations from backend
+    applyTranslationFields(sourceLoc, {
+      name: p.name,
+      summary: p.summary,
+      description: p.description,
+      category: p.category,
+      ingredients: p.ingredients,
+      allergens: p.allergens,
+      storage: p.storage,
+      shelfLife: p.shelfLife,
+      leadTime: p.leadTime,
+      flavors: p.flavors,
+      shapes: p.shapes,
+    })
     for (const loc of translationLocales) {
+      if (loc === sourceLoc) continue
       if (transMap[loc] && typeof transMap[loc] === 'object') {
-        form.translations[loc].name = transMap[loc].name || form.translations[loc].name
-        form.translations[loc].summary = transMap[loc].summary || form.translations[loc].summary
-        form.translations[loc].description = transMap[loc].description || form.translations[loc].description
+        applyTranslationFields(loc, transMap[loc])
       }
     }
-
+    syncScalarsFromSourceLocale()
     aiHasData.value = true
-  } catch (err: any) {
-    formError.value = err?.message || t('errors.api.request_failed')
-  } finally {
-    aiGenerating.value = false
-  }
+  } catch (err: any) { formError.value = err?.message || t('errors.api.request_failed') }
+  finally { aiGenerating.value = false }
 }
 
 const openEditModal = async (product: any) => {
   editingId.value = product.id; formError.value = ''; actionMessage.value = ''; actionError.value = false
+  translationLocale.value = SOURCE_LOCALE
   try { const detail = await api.get<any>(`/admin/products/${product.id}`); fillFormFromProduct(detail); showModal.value = true }
-  catch { fillFormFromProduct(product); showModal.value = true }
+  catch (err: any) {
+    console.warn(`[products] Failed to load detail for product ${product.id}, falling back to list data`)
+    fillFormFromProduct(product); showModal.value = true
+    actionMessage.value = err?.message || t('errors.api.load_failed')
+    actionError.value = true
+  }
 }
 
-const closeModal = () => { showModal.value = false; saving.value = false; formError.value = '' }
+const closeModal = () => { showModal.value = false; saving.value = false; formError.value = ''; uploadingImage.value = false; uploadError.value = '' }
 
-const buildPayload = () => ({
+const buildPayload = () => {
+  syncScalarsFromSourceLocale()
+  return {
   name: form.name, slug: form.slug, summary: form.summary, description: form.description,
-  category: form.category, categorySlug: form.categorySlug, thumbnail: form.thumbnail,
+  category: form.category, categorySlug: form.categorySlug, thumbnail: form.thumbnail, ogImage: form.ogImage,
   moq: form.moq, basePrice: Math.max(0, Number(form.basePrice) || 0), stockQuantity: Math.max(0, Number(form.stockQuantity) || 0), leadTime: form.leadTime,
   oemAvailable: form.oemAvailable, halalCertified: form.halalCertified, featured: form.featured, status: form.status,
   images: parseCSV(form.imagesInput), flavors: parseCSV(form.flavorsInput), shapes: parseCSV(form.shapesInput),
@@ -724,18 +854,18 @@ const buildPayload = () => ({
   isVegan: form.isVegan, isGlutenFree: form.isGlutenFree, isSugarFree: form.isSugarFree, isKosher: form.isKosher, isOrganic: form.isOrganic,
   sampleMOQ: form.sampleMOQ, sampleLeadTime: form.sampleLeadTime, samplePrice: form.samplePrice,
   translations: buildTranslationsPayload()
-})
+  }
+}
 
 const saveProduct = async () => {
-  if (!form.name.trim()) { formError.value = t('admin.products.name_required'); return }
+  const sourceName = form.translations[SOURCE_LOCALE]?.name?.trim?.() || ''
+  if (!sourceName) { formError.value = t('admin.products.name_required'); return }
   saving.value = true; formError.value = ''; actionMessage.value = ''; actionError.value = false
   const payload = buildPayload()
   try {
     if (editingId.value) { await api.put(`/admin/products/${editingId.value}`, payload); actionMessage.value = t('admin.products.updated_success') }
     else { await api.post('/admin/products', payload); actionMessage.value = t('admin.products.created_success') }
-    showModal.value = false
-    showCreateDrawer.value = false
-    aiHasData.value = false
+    showModal.value = false; showCreateDrawer.value = false; aiHasData.value = false
     await fetchProducts()
   } catch (err: any) { formError.value = err?.message || t('errors.api.save_failed') }
   finally { saving.value = false }
@@ -749,202 +879,10 @@ const deleteProduct = async (id: string) => {
 }
 
 watch(page, fetchProducts)
-onMounted(fetchProducts)
+onMounted(async () => {
+  const q = route.query.search as string
+  if (q) searchQuery.value = q
+  await fetchCategories()
+  await fetchProducts()
+})
 </script>
-
-<style scoped>
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--spacing-xl);
-}
-
-.page-title {
-  font-size: var(--text-2xl);
-  font-weight: 600;
-  color: var(--color-primary);
-}
-
-.page-subtitle {
-  margin-top: var(--spacing-xs);
-  font-size: var(--text-sm);
-  color: var(--color-text-light);
-}
-
-.table-container {
-  overflow: hidden;
-  border-radius: var(--radius-lg);
-  background: white;
-  box-shadow: var(--shadow-md);
-  margin-top: var(--spacing-xl);
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.data-table th {
-  padding: var(--spacing-md);
-  text-align: left;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--color-primary);
-  background: var(--color-bg-alt);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.data-table td {
-  padding: var(--spacing-md);
-  font-size: var(--text-sm);
-  color: var(--color-text);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.data-table tbody tr:hover {
-  background: var(--color-bg);
-}
-
-.data-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: var(--spacing-lg);
-  padding: var(--spacing-md) var(--spacing-lg);
-  background: white;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-}
-
-.link {
-  color: var(--color-highlight);
-  font-weight: 500;
-  transition: color var(--transition-fast);
-}
-
-.link:hover {
-  color: var(--color-highlight-hover);
-}
-
-.link-danger {
-  color: var(--color-error);
-}
-
-.link-danger:hover {
-  color: var(--color-error);
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--spacing-lg);
-  margin-top: var(--spacing-lg);
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.form-group.col-span-2 {
-  grid-column: span 2;
-}
-
-.form-label {
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--color-text);
-}
-
-.form-input {
-  width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--text-base);
-  color: var(--color-text);
-  background: var(--color-bg);
-  border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-md);
-  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: var(--color-highlight);
-  box-shadow: 0 0 0 3px rgba(var(--color-highlight-rgb), 0.1);
-}
-
-.form-textarea {
-  width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--text-base);
-  color: var(--color-text);
-  background: var(--color-bg);
-  border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-md);
-  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
-  resize: vertical;
-}
-
-.form-textarea:focus {
-  outline: none;
-  border-color: var(--color-highlight);
-  box-shadow: 0 0 0 3px rgba(var(--color-highlight-rgb), 0.1);
-}
-
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-xl);
-}
-
-.modal-container {
-  position: relative;
-  width: 100%;
-  max-width: 800px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-}
-
-.modal-content {
-  position: relative;
-  background: white;
-  border-radius: var(--radius-xl);
-  padding: var(--spacing-xl);
-  box-shadow: var(--shadow-xl);
-  animation: modalIn 0.3s ease forwards;
-}
-
-@keyframes modalIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.modal-title {
-  font-size: var(--text-lg);
-  font-weight: 600;
-  color: var(--color-primary);
-}
-</style>

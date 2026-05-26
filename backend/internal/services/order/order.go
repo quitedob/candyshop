@@ -21,6 +21,7 @@ type orderRepository interface {
 	CreateWithStockReservation(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error
 	Update(ctx context.Context, order *modelsOrder.Order) error
 	UpdateWithOutbox(ctx context.Context, order *modelsOrder.Order, outbox *modelsOrder.EventOutbox) error
+	UpdateWithOptionalStockReservationAndOutbox(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int, reserve bool, outbox *modelsOrder.EventOutbox) error
 	ListPendingOutbox(ctx context.Context, eventType string, limit int) ([]modelsOrder.EventOutbox, error)
 	IncrementOutboxAttempt(ctx context.Context, id uint) error
 	UpdateOutboxResult(ctx context.Context, id uint, status, lastErr string, processedAt *time.Time) error
@@ -187,6 +188,23 @@ func (s *OrderService) ConfirmAndReserveOrder(ctx context.Context, id string, it
 	return s.repo.ConfirmAndReserveStock(ctx, id, stockDeltas, confirmedAt)
 }
 
+// ConfirmAndReserveOrderWithFinancials extends ConfirmAndReserveOrder so COGS,
+// tax, shipping, total amount and currency are committed atomically with the
+// status flip and stock reservation (H-15).
+func (s *OrderService) ConfirmAndReserveOrderWithFinancials(ctx context.Context, id string, items []modelsOrder.OrderItem, confirmedAt time.Time, fin *orderRepo.OrderConfirmFinancials) error {
+	if confirmedAt.IsZero() {
+		confirmedAt = time.Now()
+	}
+	stockDeltas := buildOrderStockDeltas(items)
+	if extRepo, ok := s.repo.(interface {
+		ConfirmAndReserveStockWithFinancials(ctx context.Context, id string, stockDeltas map[string]int, confirmedAt time.Time, fin *orderRepo.OrderConfirmFinancials) error
+	}); ok {
+		return extRepo.ConfirmAndReserveStockWithFinancials(ctx, id, stockDeltas, confirmedAt, fin)
+	}
+	// Fallback for tests / mocks that don't implement the extended method.
+	return s.repo.ConfirmAndReserveStock(ctx, id, stockDeltas, confirmedAt)
+}
+
 // ReleaseExpiredPendingConfirmationOrders cancels expired pending_confirmation orders and releases reserved stock.
 func (s *OrderService) ReleaseExpiredPendingConfirmationOrders(ctx context.Context, olderThan time.Time, limit int) (int, error) {
 	return s.repo.ReleaseExpiredPendingConfirmationOrders(ctx, olderThan, limit)
@@ -257,7 +275,19 @@ func (s *OrderService) SendOrderStatusEmail(order *modelsOrder.Order, userEmail,
 }
 
 func (s *OrderService) buildOrderStatusEmail(order *modelsOrder.Order, userName, status string) (string, string) {
-	orderLink := fmt.Sprintf("https://candypro-oem.com/customer/orders/%s", order.ID)
+	// L-2: prefer the configured frontend URL; fall back to a generic placeholder
+	// rather than http://localhost:3000, which leaks dev environment defaults
+	// into production status emails when FrontendURL is unset.
+	frontendURL := ""
+	if s.cfg != nil && s.cfg.Security.FrontendURL != "" {
+		frontendURL = strings.TrimRight(s.cfg.Security.FrontendURL, "/")
+	}
+	var orderLink string
+	if frontendURL != "" {
+		orderLink = fmt.Sprintf("%s/customer/orders/%s", frontendURL, order.ID)
+	} else {
+		orderLink = fmt.Sprintf("/customer/orders/%s", order.ID)
+	}
 	greeting := "Dear Customer"
 	if userName != "" {
 		greeting = fmt.Sprintf("Dear %s", userName)
@@ -354,17 +384,62 @@ Best regards,
 CandyPro OEM Team`,
 			greeting, order.OrderNumber)
 		return subject, body
+
+	case "pending_approval":
+		subject := fmt.Sprintf("Order %s Awaiting Your Approval - CandyPro OEM", order.OrderNumber)
+		body := fmt.Sprintf(`%s,
+
+Order #%s requires your approval before it can proceed.
+
+Order Details:
+- Order Number: %s
+- Total Amount: %.2f %s
+- Items: %d product(s)
+
+Review and approve at: %s
+
+Best regards,
+CandyPro OEM Team`,
+			greeting, order.OrderNumber, order.OrderNumber,
+			order.TotalAmount, order.Currency, len(order.Items), orderLink)
+		return subject, body
+
+	case "approval_approved":
+		subject := fmt.Sprintf("Order %s Approved - CandyPro OEM", order.OrderNumber)
+		body := fmt.Sprintf(`%s,
+
+Your order #%s has been approved and is ready for confirmation.
+
+Order Details:
+- Order Number: %s
+- Total Amount: %.2f %s
+
+View your order at: %s
+
+Best regards,
+CandyPro OEM Team`,
+			greeting, order.OrderNumber, order.OrderNumber,
+			order.TotalAmount, order.Currency, orderLink)
+		return subject, body
+
+	case "approval_rejected":
+		subject := fmt.Sprintf("Order %s Rejected - CandyPro OEM", order.OrderNumber)
+		body := fmt.Sprintf(`%s,
+
+Your order #%s was rejected by an approver and has been cancelled.
+
+If you have questions, please contact our team.
+
+Best regards,
+CandyPro OEM Team`,
+			greeting, order.OrderNumber)
+		return subject, body
 	}
 
 	return "", ""
 }
 
-// GetRevenueByMonth returns monthly revenue for the last N months.
-func (s *OrderService) GetRevenueByMonth(ctx context.Context, months int) ([]map[string]interface{}, error) {
-	return s.repo.RevenueByMonth(ctx, months)
-}
-
-// RevenueByMonth returns monthly revenue for the last N months (alias for handler compatibility).
+// RevenueByMonth returns monthly revenue for the last N months.
 func (s *OrderService) RevenueByMonth(ctx context.Context, months int) ([]map[string]interface{}, error) {
 	return s.repo.RevenueByMonth(ctx, months)
 }

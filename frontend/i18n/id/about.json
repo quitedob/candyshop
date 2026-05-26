@@ -1,31 +1,31 @@
 {
-  "story": "Our Story",
-  "story_p1": "Founded in 2008, CandyPro began as a small family-owned candy factory with a simple mission: to create delicious, high-quality confectionery products that bring joy to people of all ages.",
-  "story_p2": "Over the years, we have grown from a local manufacturer to a trusted OEM partner for brands around the world. Today, our 20,000 square meter facility produces over 100 tons of candy daily, serving clients in more than 50 countries across Europe, the Americas, Southeast Asia, and the Middle East.",
-  "story_p3": "What sets us apart is our commitment to quality and innovation. We invest heavily in R&D, continuously improving our formulations and processes to meet the evolving needs of our clients. Our state-of-the-art production lines and rigorous quality control systems ensure that every product that leaves our facility meets the highest standards.",
-  "mission": "Our Mission",
-  "mission_desc": "To be the most trusted OEM candy manufacturing partner for global brands, delivering exceptional quality, innovation, and service that helps our clients succeed in their markets.",
-  "vision": "Our Vision",
-  "vision_desc": "To become the leading candy manufacturer in Asia, known for product excellence, operational efficiency, and sustainable practices that set industry benchmarks.",
-  "values": "Our Values",
-  "values_desc": "Quality, Integrity, Innovation, Partnership, Sustainability — these core values guide everything we do, from product development to customer service.",
-  "team": "Our Team",
-  "team_subtitle": "The experienced professionals behind our success",
-  "team_members": "Employees",
+  "story": "Cerita Kami",
+  "story_p1": "Didirikan pada 2008, CandyPro bermula sebagai pabrik permen keluarga kecil dengan misi sederhana: menciptakan produk permen lezat dan berkualitas tinggi yang membawa kebahagiaan bagi semua usia.",
+  "story_p2": "Selama bertahun-tahun, kami berkembang dari produsen lokal menjadi mitra OEM terpercaya bagi merek global. Kini, fasilitas seluas 20.000 m² kami memproduksi lebih dari 100 ton permen setiap hari, melayani klien di lebih dari 50 negara di Eropa, Amerika, Asia Tenggara, dan Timur Tengah.",
+  "story_p3": "Yang membedakan kami adalah komitmen terhadap kualitas dan inovasi. Kami berinvestasi besar dalam R&D, terus meningkatkan formulasi dan proses untuk memenuhi kebutuhan klien yang terus berkembang. Lini produksi mutakhir dan sistem kontrol kualitas ketat kami memastikan setiap produk memenuhi standar tertinggi.",
+  "mission": "Misi Kami",
+  "mission_desc": "Menjadi mitra manufaktur permen OEM paling terpercaya bagi merek global, memberikan kualitas, inovasi, dan layanan luar biasa yang membantu klien sukses di pasar mereka.",
+  "vision": "Visi Kami",
+  "vision_desc": "Menjadi produsen permen terkemuka di Asia, dikenal karena keunggulan produk, efisiensi operasional, dan praktik berkelanjutan yang menjadi tolok ukur industri.",
+  "values": "Nilai-Nilai Kami",
+  "values_desc": "Kualitas, Integritas, Inovasi, Kemitraan, Keberlanjutan — nilai-nilai inti ini memandu segala yang kami lakukan, dari pengembangan produk hingga layanan pelanggan.",
+  "team": "Tim Kami",
+  "team_subtitle": "Profesional berpengalaman di balik kesuksesan kami",
+  "team_members": "Karyawan",
   "titles": {
-    "ceo": "Founder & CEO",
-    "qa_director": "Director of Quality Assurance",
-    "rd_manager": "R&D Manager",
-    "sales_director": "Sales Director",
-    "production_manager": "Production Manager",
-    "export_manager": "Export Manager"
+    "ceo": "Pendiri & CEO",
+    "qa_director": "Direktur Jaminan Kualitas",
+    "rd_manager": "Manajer R&D",
+    "sales_director": "Direktur Penjualan",
+    "production_manager": "Manajer Produksi",
+    "export_manager": "Manajer Ekspor"
   },
   "cert_desc": {
-    "haccp": "Hazard Analysis and Critical Control Points",
-    "iso": "Food Safety Management System",
-    "brc": "Grade A Certification",
-    "halal": "Halal Certification"
+    "haccp": "Analisis Bahaya dan Titik Kontrol Kritis",
+    "iso": "Sistem Manajemen Keamanan Pangan",
+    "brc": "Sertifikasi Grade A",
+    "halal": "Sertifikasi Halal"
   },
-  "cta_title": "Let's Build Something Great Together",
-  "cta_subtitle": "We'd love to hear about your project and explore how we can help"
+  "cta_title": "Mari Wujudkan Kesuksesan Bersama",
+  "cta_subtitle": "Kami ingin mendengar tentang proyek Anda dan mengeksplorasi bagaimana kami dapat membantu"
 }

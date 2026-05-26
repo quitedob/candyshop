@@ -1,35 +1,35 @@
 {
   "blog": {
-    "title": "Blog & Resources",
+    "title": "المدونة والرؤى",
     "categories": {
-      "compliance": "Compliance",
-      "product_knowledge": "Product Knowledge",
-      "packaging": "Packaging Trends",
-      "market_insights": "Market Insights"
+      "compliance": "معرفة الامتثال",
+      "product_knowledge": "معرفة المنتجات",
+      "packaging": "اتجاهات التغليف",
+      "market_insights": "رؤى السوق"
     },
-    "read_more": "Read More",
-    "related_articles": "Related Articles",
-    "share": "Share Article",
-    "table_of_contents": "Table of Contents"
+    "read_more": "اقرأ المزيد",
+    "related_articles": "مقالات ذات صلة",
+    "share": "مشاركة المقال",
+    "table_of_contents": "جدول المحتويات"
   },
   "blog_extra": {
-    "featured": "Featured",
-    "stay_updated": "Stay Updated",
-    "subscribe_desc": "Get the latest industry insights and compliance updates delivered to your inbox",
-    "email_placeholder": "Enter your email",
-    "all_posts": "All Posts",
-    "loading_posts": "Loading posts...",
-    "no_posts": "No posts found in this category.",
-    "newsletter_invalid": "Please enter a valid email address.",
-    "newsletter_redirect": "Opening the contact form…",
-    "cta_questions": "Have questions about our candy manufacturing capabilities?",
-    "cta_heading": "Learn More About Our Services",
-    "min_read": "{count} min read",
+    "featured": "مميز",
+    "stay_updated": "ابقَ على اطلاع",
+    "subscribe_desc": "رؤى صناعية وتحديثات امتثال ومعرفة منتجات لعملاء B2B.",
+    "email_placeholder": "أدخل بريدك الإلكتروني",
+    "all_posts": "جميع المقالات",
+    "loading_posts": "جارٍ تحميل المقالات...",
+    "no_posts": "لا توجد مقالات في هذه الفئة.",
+    "newsletter_invalid": "يرجى إدخال عنوان بريد إلكتروني صالح.",
+    "newsletter_redirect": "جارٍ فتح نموذج الاتصال…",
+    "cta_questions": "هل لديك أسئلة حول قدراتنا في تصنيع الحلويات؟",
+    "cta_heading": "تعرّف على المزيد حول خدماتنا",
+    "min_read": "{count} دقائق للقراءة",
     "share_twitter": "Twitter",
     "share_linkedin": "LinkedIn",
     "share_facebook": "Facebook",
-    "share_copy_link": "Copy Link",
-    "share_copied": "Copied!",
-    "seo_description": "Industry insights, compliance knowledge, and product expertise for candy manufacturers."
+    "share_copy_link": "نسخ الرابط",
+    "share_copied": "تم النسخ!",
+    "seo_description": "رؤى صناعية ومعرفة امتثال وخبرة منتجات في صناعة تصنيع الحلويات."
   }
 }

@@ -12,6 +12,7 @@ type priceRepository interface {
 	UpdatePriceList(ctx context.Context, list *modelsProduct.PriceList) error
 	DeletePriceList(ctx context.Context, id string) error
 	FindPriceRulesByProduct(ctx context.Context, productID string) ([]modelsProduct.PriceRule, error)
+	FindPriceRulesByPriceListID(ctx context.Context, priceListID string) ([]modelsProduct.PriceRule, error)
 	FindPriceRule(ctx context.Context, id string) (*modelsProduct.PriceRule, error)
 	CreatePriceRule(ctx context.Context, rule *modelsProduct.PriceRule) error
 	UpdatePriceRule(ctx context.Context, rule *modelsProduct.PriceRule) error
@@ -84,6 +85,11 @@ func (s *PriceService) GetProductPrices(ctx context.Context, productID string) (
 	return s.repo.FindPriceRulesByProduct(ctx, productID)
 }
 
+// GetPriceListRules returns all price rules belonging to a price list.
+func (s *PriceService) GetPriceListRules(ctx context.Context, priceListID string) ([]modelsProduct.PriceRule, error) {
+	return s.repo.FindPriceRulesByPriceListID(ctx, priceListID)
+}
+
 // SetProductPrice creates or updates a price rule.
 func (s *PriceService) SetProductPrice(ctx context.Context, rule *modelsProduct.PriceRule) error {
 	// Check if a rule already exists for this product/priceList/minQuantity combo
@@ -103,6 +109,27 @@ func (s *PriceService) GetPriceForProduct(ctx context.Context, productID, priceL
 		return 0, err
 	}
 	return rule.UnitPrice, nil
+}
+
+// MinQuantityForPriceList returns the lowest tier minimum quantity for a product on a price list.
+func (s *PriceService) MinQuantityForPriceList(ctx context.Context, productID, priceListID string) (int, error) {
+	rules, err := s.repo.FindPriceRulesByProduct(ctx, productID)
+	if err != nil {
+		return 1, err
+	}
+	minQty := 0
+	for _, r := range rules {
+		if r.PriceListID != priceListID {
+			continue
+		}
+		if minQty == 0 || r.MinQuantity < minQty {
+			minQty = r.MinQuantity
+		}
+	}
+	if minQty <= 0 {
+		return 1, nil
+	}
+	return minQty, nil
 }
 
 // DeleteProductPrice deletes a specific price rule by ID.

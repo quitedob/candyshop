@@ -1,0 +1,27 @@
+/**
+ * 自动生成：orval tags-split 聚合入口，勿手动编辑
+ * 由 scripts/generate-api-index.mjs 维护
+ */
+export * from './admin-certifications/admin-certifications'
+export * from './admin-content/admin-content'
+export * from './admin-inquiries/admin-inquiries'
+export * from './admin-orders/admin-orders'
+export * from './admin-products/admin-products'
+export * from './admin-upload/admin-upload'
+export * from './admin-users/admin-users'
+export * from './auth/auth'
+export * from './blog/blog'
+export * from './cases/cases'
+export * from './categories/categories'
+export * from './certifications/certifications'
+export * from './customer-cart/customer-cart'
+export * from './customer-inquiries/customer-inquiries'
+export * from './customer-orders/customer-orders'
+export * from './customer-profile/customer-profile'
+export * from './dashboard/dashboard'
+export * from './exchange-rates/exchange-rates'
+export * from './factory/factory'
+export * from './inquiry/inquiry'
+export * from './oem/oem'
+export * from './products/products'
+export * from './search/search'

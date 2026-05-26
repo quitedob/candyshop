@@ -11,10 +11,12 @@ import (
 
 // Register wires admin portal routes under /api/v1/admin.
 func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) {
-	group.Use(middleware.AuthMiddleware(cfg))
+	group.Use(middleware.AuthMiddleware(cfg, h.AuthScope.SessionStore()))
 	group.Use(middleware.RequireRole(modelsAuth.AdminPortal()...))
+	group.Use(middleware.AttachAdminPermissions())
+	group.Use(middleware.RequireAdminWritePermission())
 
-	// Dashboard
+	// Dashboard — @frontend: admin/index
 	group.GET("/dashboard", h.AdminPortal.GetDashboard)
 	group.GET("/dashboard/stats", h.AdminPortal.GetDashboardStats)
 	group.GET("/reports/sales", h.AdminPortal.GetSalesReport)
@@ -47,7 +49,8 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 		group.PUT("/fulfillments/:id/ship", h.AdminPortal.AdminShipFulfillment)
 		group.PUT("/fulfillments/:id/deliver", h.AdminPortal.AdminDeliverFulfillment)
 		group.PUT("/fulfillments/:id/cancel", h.AdminPortal.AdminCancelFulfillment)
-		// Returns (admin)
+		group.GET("/fulfillments", h.AdminPortal.AdminGetFulfillments)
+		// Returns — @frontend: admin/returns (admin)
 		group.GET("/returns", h.AdminPortal.AdminListReturns)
 		group.GET("/returns/:id", h.AdminPortal.AdminGetReturn)
 		group.PUT("/returns/:id/approve", h.AdminPortal.AdminApproveReturn)
@@ -90,12 +93,23 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.GET("/products/:id", h.AdminPortal.AdminGetProduct)
 	group.PUT("/products/:id", h.AdminPortal.AdminUpdateProduct)
 	group.DELETE("/products/:id", h.AdminPortal.AdminDeleteProduct)
+
+	// Categories — @frontend: admin/categories
+	group.GET("/categories", h.AdminPortal.AdminGetCategories)
+	group.GET("/categories/:slug", h.AdminPortal.AdminGetCategory)
+	group.POST("/categories", h.AdminPortal.AdminCreateCategory)
+	group.PUT("/categories/:slug", h.AdminPortal.AdminUpdateCategory)
+	group.DELETE("/categories/:slug", h.AdminPortal.AdminDeleteCategory)
+
 	group.PUT("/products/:id/status", h.AdminPortal.AdminUpdateProductStatus)
 	group.POST("/products/:id/ai-translate", h.AdminPortal.AdminAITranslateProduct)
 
 	// Content
 	group.GET("/content", h.AdminPortal.AdminGetContent)
 	group.POST("/content/ai-generate", h.AdminPortal.AdminAIGenerateContent)
+	group.POST("/content/ai-revise", h.AdminPortal.AdminAIReviseContentDraft)
+	group.POST("/content/ai-inline-edit", h.AdminPortal.AdminAIInlineEditContent)
+	group.POST("/content/ai-translate-fields", h.AdminPortal.AdminAITranslateContentFields)
 	group.GET("/content/:id", h.AdminPortal.AdminGetContentByID)
 	group.POST("/content", h.AdminPortal.AdminCreateContent)
 	group.PUT("/content/:id", h.AdminPortal.AdminUpdateContent)
@@ -121,6 +135,7 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.PUT("/companies/:id", h.AdminPortal.AdminUpdateCompany)
 	group.PUT("/companies/:id/verify", h.AdminPortal.AdminVerifyCompany)
 		// Buyer Organizations (B2B Approval)
+		// @frontend: admin/organizations
 		group.GET("/organizations", h.AdminPortal.AdminGetOrganizations)
 		group.POST("/organizations", h.AdminPortal.AdminCreateOrganization)
 		group.PUT("/organizations/:id", h.AdminPortal.AdminUpdateOrganization)
@@ -130,6 +145,7 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 
 
 	// Trade
+	// @frontend: admin/trades
 	group.GET("/trades", h.AdminPortal.AdminGetTradeTransactions)
 	group.GET("/trades/:id", h.AdminPortal.AdminGetTradeTransaction)
 	group.PUT("/trades/:id/status", h.AdminPortal.AdminUpdateTradeStatus)
@@ -186,12 +202,20 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.POST("/shipments/:id/confirm-delivery", h.AdminPortal.AdminConfirmDelivery)
 
 	// Shipping Rates
+	// @frontend: admin/shipping-rates
 	group.GET("/shipping-rates", h.AdminPortal.AdminGetShippingRates)
 	group.POST("/shipping-rates", h.AdminPortal.AdminCreateShippingRate)
 	group.PUT("/shipping-rates/:id", h.AdminPortal.AdminUpdateShippingRate)
 	group.DELETE("/shipping-rates/:id", h.AdminPortal.AdminDeleteShippingRate)
 
+	// Tax Rates
+	group.GET("/tax-rates", h.AdminPortal.AdminGetTaxRates)
+	group.POST("/tax-rates", h.AdminPortal.AdminCreateTaxRate)
+	group.PUT("/tax-rates/:id", h.AdminPortal.AdminUpdateTaxRate)
+	group.DELETE("/tax-rates/:id", h.AdminPortal.AdminDeleteTaxRate)
+
 	// Invoices（from-order 须在 :id 之前注册）
+	// @frontend: admin/invoices
 	group.GET("/invoices", h.AdminPortal.AdminGetInvoices)
 	group.POST("/invoices/from-order", h.AdminPortal.AdminCreateInvoiceFromOrder)
 	group.POST("/invoices", h.AdminPortal.AdminCreateInvoice)
@@ -204,6 +228,7 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.DELETE("/invoices/:id", h.AdminPortal.AdminDeleteInvoice)
 
 	// Inventory
+	// @frontend: admin/inventory
 	group.GET("/inventory", h.AdminPortal.AdminGetInventory)
 	group.PUT("/inventory/:productId", h.AdminPortal.AdminUpdateInventory)
 	group.GET("/inventory/:productId/history", h.AdminPortal.AdminGetInventoryHistory)
@@ -212,14 +237,16 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.POST("/inventory/import-xlsx/apply", h.AdminPortal.AdminApplyInventoryImport)
 	group.POST("/inventory/batch-update", h.AdminPortal.AdminBatchUpdateInventory)
 	group.POST("/inventory/batch-delete", h.AdminPortal.AdminBatchDeleteInventory)
+	if cfg.Security.EnableMultiWarehouse {
 		group.POST("/inventory/transfer", h.AdminPortal.AdminCreateStockTransfer)
 		group.GET("/inventory/transfers", h.AdminPortal.AdminListStockTransfers)
 		group.GET("/inventory/transfers/:id", h.AdminPortal.AdminGetStockTransfer)
 
-	// 跨境：仓库、市场画像、成本栈、OEM 预留、合规 Copilot
-	group.GET("/warehouses", h.AdminPortal.AdminListWarehouses)
-	group.POST("/warehouses", h.AdminPortal.AdminUpsertWarehouse)
-	group.PUT("/warehouses/:id/stock", h.AdminPortal.AdminUpsertWarehouseStock)
+		// 跨境：仓库、市场画像、成本栈、OEM 预留、合规 Copilot
+		group.GET("/warehouses", h.AdminPortal.AdminListWarehouses)
+		group.POST("/warehouses", h.AdminPortal.AdminUpsertWarehouse)
+		group.PUT("/warehouses/:id/stock", h.AdminPortal.AdminUpsertWarehouseStock)
+	}
 	group.GET("/products/:id/market-profile", h.AdminPortal.AdminGetProductMarketProfile)
 	group.PUT("/products/:id/market-profile", h.AdminPortal.AdminPutProductMarketProfile)
 	group.GET("/products/:id/market-costs", h.AdminPortal.AdminGetProductMarketCosts)
@@ -231,22 +258,25 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.POST("/products/:id/compliance-suggest", h.AdminPortal.AdminProductComplianceSuggest)
 
 			// Coupons & Gift Cards
+		// @frontend: admin/coupons
 		group.POST("/coupons", h.AdminPortal.AdminCreateCoupon)
 		group.GET("/coupons", h.AdminPortal.AdminListCoupons)
 		group.DELETE("/coupons/:id", h.AdminPortal.AdminDeleteCoupon)
 		group.POST("/gift-cards", h.AdminPortal.AdminCreateGiftCard)
 		group.GET("/gift-cards", h.AdminPortal.AdminListGiftCards)
 
-			// Suppliers & Purchase Orders
-		group.GET("/suppliers", h.AdminPortal.AdminListSuppliers)
-		group.POST("/suppliers", h.AdminPortal.AdminCreateSupplier)
-		group.GET("/suppliers/:id", h.AdminPortal.AdminGetSupplier)
-		group.PUT("/suppliers/:id", h.AdminPortal.AdminUpdateSupplier)
-		group.DELETE("/suppliers/:id", h.AdminPortal.AdminDeleteSupplier)
-		group.GET("/purchase-orders", h.AdminPortal.AdminListPOs)
-		group.POST("/purchase-orders", h.AdminPortal.AdminCreatePO)
-		group.GET("/purchase-orders/:id", h.AdminPortal.AdminGetPO)
-		group.PUT("/purchase-orders/:id/receive", h.AdminPortal.AdminReceivePO)
+		// Suppliers & Purchase Orders（需 ENABLE_SUPPLIER_PORTAL=true）
+		if cfg.Security.EnableSupplierPortal {
+			group.GET("/suppliers", h.AdminPortal.AdminListSuppliers)
+			group.POST("/suppliers", h.AdminPortal.AdminCreateSupplier)
+			group.GET("/suppliers/:id", h.AdminPortal.AdminGetSupplier)
+			group.PUT("/suppliers/:id", h.AdminPortal.AdminUpdateSupplier)
+			group.DELETE("/suppliers/:id", h.AdminPortal.AdminDeleteSupplier)
+			group.GET("/purchase-orders", h.AdminPortal.AdminListPOs)
+			group.POST("/purchase-orders", h.AdminPortal.AdminCreatePO)
+			group.GET("/purchase-orders/:id", h.AdminPortal.AdminGetPO)
+			group.PUT("/purchase-orders/:id/receive", h.AdminPortal.AdminReceivePO)
+		}
 
 	// Pricing
 	group.GET("/price-lists", h.AdminPortal.AdminGetPriceLists)
@@ -309,6 +339,7 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.POST("/xlsx/translate-batch", h.AdminPortal.AdminBatchTranslateXLSX)
 
 		// Hooks (Plugin/Event System)
+		// @frontend: admin/hooks
 		group.GET("/hooks", h.AdminPortal.AdminListHooks)
 		group.GET("/hooks/:id", h.AdminPortal.AdminGetHook)
 		group.POST("/hooks", h.AdminPortal.AdminCreateHook)
@@ -318,6 +349,7 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 		group.GET("/events", h.AdminPortal.AdminListEvents)
 
 		// Sales Channels
+		// @frontend: admin/channels
 		group.GET("/channels", h.AdminPortal.AdminListChannels)
 		group.POST("/channels", h.AdminPortal.AdminCreateChannel)
 		group.GET("/channels/:id", h.AdminPortal.AdminGetChannel)
@@ -325,6 +357,7 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 		group.DELETE("/channels/:id", h.AdminPortal.AdminDeleteChannel)
 
 		// Webhooks
+		// @frontend: admin/webhooks
 		group.GET("/webhooks", h.AdminPortal.AdminListWebhooks)
 		group.POST("/webhooks", h.AdminPortal.AdminCreateWebhook)
 		group.PUT("/webhooks/:id", h.AdminPortal.AdminUpdateWebhook)

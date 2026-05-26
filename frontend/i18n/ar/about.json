@@ -1,31 +1,31 @@
 {
-  "story": "Our Story",
-  "story_p1": "Founded in 2008, CandyPro began as a small family-owned candy factory with a simple mission: to create delicious, high-quality confectionery products that bring joy to people of all ages.",
-  "story_p2": "Over the years, we have grown from a local manufacturer to a trusted OEM partner for brands around the world. Today, our 20,000 square meter facility produces over 100 tons of candy daily, serving clients in more than 50 countries across Europe, the Americas, Southeast Asia, and the Middle East.",
-  "story_p3": "What sets us apart is our commitment to quality and innovation. We invest heavily in R&D, continuously improving our formulations and processes to meet the evolving needs of our clients. Our state-of-the-art production lines and rigorous quality control systems ensure that every product that leaves our facility meets the highest standards.",
-  "mission": "Our Mission",
-  "mission_desc": "To be the most trusted OEM candy manufacturing partner for global brands, delivering exceptional quality, innovation, and service that helps our clients succeed in their markets.",
-  "vision": "Our Vision",
-  "vision_desc": "To become the leading candy manufacturer in Asia, known for product excellence, operational efficiency, and sustainable practices that set industry benchmarks.",
-  "values": "Our Values",
-  "values_desc": "Quality, Integrity, Innovation, Partnership, Sustainability — these core values guide everything we do, from product development to customer service.",
-  "team": "Our Team",
-  "team_subtitle": "The experienced professionals behind our success",
-  "team_members": "Employees",
+  "story": "قصتنا",
+  "story_p1": "تأسست CandyPro عام 2008 كمصنع حلويات عائلي صغير، بمهمة بسيطة: ابتكار منتجات حلويات لذيذة وعالية الجودة تُدخل الفرح إلى قلوب جميع الأعمار.",
+  "story_p2": "على مر السنوات، نمونا من مصنع محلي إلى شريك OEM موثوق للعلامات التجارية العالمية. اليوم، يُنتج مصنعنا البالغ مساحته 20,000 متر مربع أكثر من 100 طن من الحلويات يومياً، ونخدم عملاء في أكثر من 50 دولة عبر أوروبا والأمريكتين وآسيا الوسطى والشرق الأوسط.",
+  "story_p3": "ما يميزنا هو التزامنا بالجودة والابتكار. نستثمر بكثافة في البحث والتطوير، ونحسّن باستمرار تركيباتنا وعملياتنا لتلبية احتياجات عملائنا المتغيرة. تضمن خطوط الإنتاج المتطورة وأنظمة مراقبة الجودة الصارمة أن كل منتج يغادر منشأتنا وفق أعلى المعايير.",
+  "mission": "مهمتنا",
+  "mission_desc": "أن نكون شريك تصنيع OEM الأكثر موثوقية للعلامات التجارية العالمية، من خلال تقديم جودة وابتكار وخدمة استثنائية تساعد عملاءنا على النجاح في أسواقهم.",
+  "vision": "رؤيتنا",
+  "vision_desc": "أن نصبح الشركة الرائدة في تصنيع الحلويات في آسيا، معروفين بالتميز في المنتجات والكفاءة التشغيلية والممارسات المستدامة التي تضع معايير الصناعة.",
+  "values": "قيمنا",
+  "values_desc": "الجودة، النزاهة، الابتكار، الشراكة، الاستدامة — هذه القيم الأساسية توجه كل ما نقوم به، من تطوير المنتجات إلى خدمة العملاء.",
+  "team": "فريقنا",
+  "team_subtitle": "المحترفون ذوو الخبرة وراء نجاحنا",
+  "team_members": "موظف",
   "titles": {
-    "ceo": "Founder & CEO",
-    "qa_director": "Director of Quality Assurance",
-    "rd_manager": "R&D Manager",
-    "sales_director": "Sales Director",
-    "production_manager": "Production Manager",
-    "export_manager": "Export Manager"
+    "ceo": "المؤسس والرئيس التنفيذي",
+    "qa_director": "مدير ضمان الجودة",
+    "rd_manager": "مدير البحث والتطوير",
+    "sales_director": "مدير المبيعات",
+    "production_manager": "مدير الإنتاج",
+    "export_manager": "مدير التصدير"
   },
   "cert_desc": {
-    "haccp": "Hazard Analysis and Critical Control Points",
-    "iso": "Food Safety Management System",
-    "brc": "Grade A Certification",
-    "halal": "Halal Certification"
+    "haccp": "تحليل المخاطر ونقاط التحكم الحرجة",
+    "iso": "نظام إدارة سلامة الأغذية",
+    "brc": "شهادة الدرجة A",
+    "halal": "شهادة حلال"
   },
-  "cta_title": "Let's Build Something Great Together",
-  "cta_subtitle": "We'd love to hear about your project and explore how we can help"
+  "cta_title": "لنبني معاً شيئاً عظيماً",
+  "cta_subtitle": "يسعدنا سماع تفاصيل مشروعكم واستكشاف كيف يمكننا المساعدة"
 }

@@ -51,17 +51,29 @@
         <!-- Right Side Actions -->
         <div class="header__actions">
           <!-- Language Switcher -->
-          <div class="header__lang hide-mobile" role="group" :aria-label="t('a11y.language')">
-            <button
-              v-for="loc in localeCodes"
-              :key="loc"
-              :class="['header__lang-btn', { 'header__lang-btn--active': locale === loc }]"
-              :aria-pressed="locale === loc"
-              @click="switchLocale(loc)"
-            >
-              {{ $t(`languages.${loc}_short`) }}
-            </button>
+          <div class="header__lang hide-mobile">
+            <LanguageSwitcher />
           </div>
+          <ClientOnly>
+            <button
+              type="button"
+              class="header__theme-toggle hide-mobile"
+              :aria-label="isDark ? t('a11y.light_mode') : t('a11y.dark_mode')"
+              @click="toggleDark"
+            >
+              <Icon :name="isDark ? 'heroicons:sun' : 'heroicons:moon'" class="h-5 w-5" aria-hidden="true" />
+            </button>
+            <template #fallback>
+              <button
+                type="button"
+                class="header__theme-toggle hide-mobile"
+                :aria-label="t('a11y.dark_mode')"
+                disabled
+              >
+                <Icon name="heroicons:moon" class="h-5 w-5" aria-hidden="true" />
+              </button>
+            </template>
+          </ClientOnly>
 
           <!-- WhatsApp -->
           <a
@@ -177,15 +189,8 @@
         </ul>
 
         <div class="header__drawer-footer">
-          <div class="header__drawer-lang" role="group" :aria-label="t('a11y.language')">
-            <button
-              v-for="loc in localeCodes"
-              :key="loc"
-              :class="['header__lang-btn', { 'header__lang-btn--active': locale === loc }]"
-              @click="switchLocale(loc)"
-            >
-              {{ $t(`languages.${loc}_short`) }}
-            </button>
+          <div class="header__drawer-lang">
+            <LanguageSwitcher />
           </div>
           <ClientOnly>
             <template v-if="!isAuthenticated">
@@ -220,15 +225,13 @@
 </template>
 
 <script setup lang="ts">
-const LOCALE_KEY = 'user-locale'
-
-const { t, locale, setLocale, locales } = useI18n()
+const { t, locale } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
 const config = useRuntimeConfig()
 const { isAuthenticated, isAdmin, initAuth } = useAuth()
+const { isDark, toggle: toggleDark } = useDarkMode()
 
-const localeCodes = computed(() => locales.value.map(l => l.code))
 const isScrolled = ref(false)
 const isMenuOpen = ref(false)
 const openMobileSub = ref<string | null>(null)
@@ -266,14 +269,6 @@ const isActive = (to: string): boolean => {
   return path.startsWith(to) || path.startsWith(`/${locale.value}${to}`)
 }
 
-const switchLocale = async (code: string) => {
-  if (import.meta.client) {
-    localStorage.setItem(LOCALE_KEY, code)
-    document.cookie = `user-locale=${code}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`
-  }
-  await setLocale(code)
-}
-
 const handleScroll = () => { isScrolled.value = window.scrollY > 50 }
 
 const toggleMenu = () => {
@@ -290,8 +285,6 @@ const closeMenu = () => {
 
 onMounted(() => {
   initAuth()
-  const saved = import.meta.client && localStorage.getItem(LOCALE_KEY)
-  if (saved && saved !== locale.value) setLocale(saved)
   window.addEventListener('scroll', handleScroll, { passive: true })
 })
 

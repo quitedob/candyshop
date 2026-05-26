@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // Order Statuses
@@ -40,10 +42,15 @@ var ValidOrderStatusTransitions = map[string]map[string]bool{
 	OrderStatusPendingConfirm:     {OrderStatusPending: true, OrderStatusConfirmed: true, OrderStatusCancelled: true, OrderStatusExpired: true},
 	OrderStatusPendingApproval:    {OrderStatusPendingConfirm: true, OrderStatusCancelled: true},
 	OrderStatusConfirmed:          {OrderStatusProduction: true, OrderStatusCancelled: true},
-	OrderStatusProduction:         {OrderStatusShipped: true, OrderStatusCancelled: true},
-	OrderStatusShipped:            {OrderStatusDelivered: true, OrderStatusPartiallyReturned: true, OrderStatusReturned: true},
-	OrderStatusDelivered:          {OrderStatusReturned: true},
-	OrderStatusPartiallyReturned:  {},
+	OrderStatusProduction:         {OrderStatusShipped: true, OrderStatusPartiallyShipped: true, OrderStatusCancelled: true},
+	OrderStatusPartiallyShipped:   {OrderStatusShipped: true, OrderStatusPartiallyDelivered: true, OrderStatusDelivered: true, OrderStatusPartiallyReturned: true, OrderStatusReturned: true},
+	OrderStatusShipped:            {OrderStatusDelivered: true, OrderStatusPartiallyDelivered: true, OrderStatusPartiallyReturned: true, OrderStatusReturned: true},
+	OrderStatusPartiallyDelivered: {OrderStatusDelivered: true, OrderStatusPartiallyReturned: true, OrderStatusReturned: true},
+	OrderStatusDelivered:          {OrderStatusReturned: true, OrderStatusPartiallyReturned: true},
+	// partially_returned must be able to escalate to fully returned — otherwise
+	// orders that started with a partial return get stuck and can never be
+	// finalized, blocking COGS reversal and refund accounting (R2 A-6).
+	OrderStatusPartiallyReturned:  {OrderStatusReturned: true},
 	OrderStatusReturned:           {},
 	OrderStatusCancelled:          {},
 	OrderStatusExpired:            {},
@@ -109,6 +116,28 @@ type Address struct {
 	Country string `json:"country"`
 }
 
+// UnmarshalJSON accepts zipCode as well as common aliases zip / postalCode.
+func (a *Address) UnmarshalJSON(data []byte) error {
+	type addressAlias Address
+	var raw struct {
+		addressAlias
+		Zip        string `json:"zip"`
+		PostalCode string `json:"postalCode"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	*a = Address(raw.addressAlias)
+	if strings.TrimSpace(a.ZipCode) == "" {
+		if z := strings.TrimSpace(raw.Zip); z != "" {
+			a.ZipCode = z
+		} else if z := strings.TrimSpace(raw.PostalCode); z != "" {
+			a.ZipCode = z
+		}
+	}
+	return nil
+}
+
 // Value implements driver.Valuer interface
 func (a Address) Value() (driver.Value, error) {
 	return json.Marshal(a)
@@ -153,16 +182,27 @@ func (OrderInquirySnapshot) TableName() string {
 	return "inquiries"
 }
 
+// Order Source values — 订单创建来源
+const (
+	OrderSourceCart     = "cart"
+	OrderSourceAIAssist = "ai_assist"
+	OrderSourceBulk     = "bulk"
+	OrderSourceInquiry  = "inquiry"
+)
+
 // Order represents a customer order
 type Order struct {
 	ID                         string                `json:"id" gorm:"primaryKey"`
 	OrderNumber                string                `json:"orderNumber" gorm:"uniqueIndex;not null"`
-	UserID                     string                `json:"userId" gorm:"not null;index"`
+	UserID                     string                `json:"userId" gorm:"not null;index;index:idx_orders_user_status,priority:1"`
 	User                       *OrderUserSnapshot    `json:"user,omitempty" gorm:"foreignKey:UserID;references:ID"`
 	InquiryID                  *string               `json:"inquiryId" gorm:"index"`
 	Inquiry                    *OrderInquirySnapshot `json:"inquiry,omitempty" gorm:"foreignKey:InquiryID;references:ID"`
-	Status                     string                `json:"status" gorm:"default:'pending'"`
-	PaymentStatus              string                `json:"paymentStatus" gorm:"default:'unpaid'"`
+	Source                     string                `json:"source" gorm:"type:varchar(32);default:'';index"`
+	Status                     string                `json:"status" gorm:"default:'pending';index;index:idx_orders_user_status,priority:2"`
+	// PaymentStatus indexed for financial dashboards / payment-status filters
+	// that previously triggered full table scans (R2 E-7).
+	PaymentStatus              string                `json:"paymentStatus" gorm:"default:'unpaid';index"`
 	Items                      OrderItemArray        `json:"items" gorm:"type:jsonb;not null"`
 	WarehouseID                *string               `json:"warehouseId"`
 	StockReserved              bool                  `json:"stockReserved" gorm:"default:false"`
@@ -181,6 +221,16 @@ type Order struct {
 	ConfirmedAt                *time.Time            `json:"confirmedAt"`
 	ShippedAt                  *time.Time            `json:"shippedAt"`
 	DeliveredAt                *time.Time            `json:"deliveredAt"`
-	CreatedAt                  time.Time             `json:"createdAt"`
+	CreatedAt                  time.Time             `json:"createdAt" gorm:"index"`
 	UpdatedAt                  time.Time             `json:"updatedAt"`
+	// Version supports optimistic concurrency. GORM increments this on Updates(map)
+	// or via the gorm.io/plugin/optimisticlock plugin. We hand-roll the conflict
+	// guard in repository helpers (see UpdateWithVersionGuard) so non-state writes
+	// can't silently overwrite each other (C-5).
+	Version int64 `json:"version" gorm:"default:0"`
+	// DeletedAt enables GORM soft-delete on orders. Cancellation already covers
+	// the user-facing "remove" semantics; DeletedAt is reserved for compliance/
+	// retention scrubbing where the row must be hidden but auditable history
+	// preserved (C-9).
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 }

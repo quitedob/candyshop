@@ -16,7 +16,9 @@
             <input id="auditlog-search" v-model="searchQuery" name="search" type="text" autocomplete="off" :placeholder="t('admin.auditLog.search')" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </div>
         </div>
-        <select id="auditlog-entityType" name="entityTypeFilter" v-model="entityTypeFilter" @change="resetAndFetch" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+        <div>
+          <label for="auditlog-entityType" class="sr-only">{{ t('admin.auditLog.filter_entity_type') }}</label>
+          <select id="auditlog-entityType" name="entityTypeFilter" v-model="entityTypeFilter" @change="resetAndFetch" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
           <option value="">{{ t('admin.auditLog.filter_all_types') }}</option>
           <option value="order">{{ t('admin.auditLog.entity_order') }}</option>
           <option value="inquiry">{{ t('admin.auditLog.entity_inquiry') }}</option>
@@ -24,13 +26,17 @@
           <option value="user">{{ t('admin.auditLog.entity_user') }}</option>
           <option value="trade">{{ t('admin.auditLog.entity_trade') }}</option>
         </select>
-        <select id="auditlog-action" name="actionFilter" v-model="actionFilter" @change="resetAndFetch" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+        </div>
+        <div>
+          <label for="auditlog-action" class="sr-only">{{ t('admin.auditLog.filter_action') }}</label>
+          <select id="auditlog-action" name="actionFilter" v-model="actionFilter" @change="resetAndFetch" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
           <option value="">{{ t('admin.auditLog.filter_all_actions') }}</option>
           <option value="create">{{ t('admin.auditLog.action_create') }}</option>
           <option value="update">{{ t('admin.auditLog.action_update') }}</option>
           <option value="delete">{{ t('admin.auditLog.action_delete') }}</option>
           <option value="status_change">{{ t('admin.auditLog.action_status_change') }}</option>
         </select>
+        </div>
       </div>
     </div>
 
@@ -124,10 +130,10 @@ const actionFilter = ref('')
 
 const filteredLogs = computed(() => logs.value.filter(log => {
   const matchesSearch = !searchQuery.value ||
-    log.userName?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    log.userEmail?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    log.entityType?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    log.entityId?.toLowerCase().includes(searchQuery.value.toLowerCase())
+    (log.userName || '').toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    (log.userEmail || '').toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    (log.entityType || '').toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    (log.entityId || '').toLowerCase().includes(searchQuery.value.toLowerCase())
   return matchesSearch
 }))
 

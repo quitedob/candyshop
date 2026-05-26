@@ -38,3 +38,24 @@ func TestRequiresPaidBeforeExecution(t *testing.T) {
 		t.Fatalf("expected cancelled to not require paid status")
 	}
 }
+
+func TestIsPaidOrPartial(t *testing.T) {
+	if !isPaidOrPartial("paid") || !isPaidOrPartial("partial") {
+		t.Fatal("expected paid/partial to pass")
+	}
+	if isPaidOrPartial("unpaid") || isPaidOrPartial("refunded") {
+		t.Fatal("expected unpaid/refunded to fail")
+	}
+}
+
+func TestPaymentInsufficientForExecution_NETTermsStillBlocked(t *testing.T) {
+	if !paymentInsufficientForExecution("production", "unpaid") {
+		t.Fatal("unpaid orders must not enter production even with NET terms")
+	}
+	if paymentInsufficientForExecution("production", "partial") {
+		t.Fatal("partial payment should allow production")
+	}
+	if paymentInsufficientForExecution("pending", "unpaid") {
+		t.Fatal("pending status should not require payment")
+	}
+}

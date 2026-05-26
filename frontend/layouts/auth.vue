@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-useSeo({ noindex: true })
+useHead({ meta: [{ name: 'robots', content: 'noindex, nofollow' }] })
 </script>
 
 <style scoped>

@@ -61,12 +61,23 @@ func (h *Handler) CustomerGetOrder(c *gin.Context) {
 		return
 	}
 
-	if order.UserID != userID {
+	isOwner := order.UserID == userID
+	canApprove := false
+	if h.services.Approval != nil {
+		if can, cerr := h.services.Approval.UserCanApproveOrder(c.Request.Context(), userID, order); cerr == nil {
+			canApprove = can
+		}
+	}
+	if !isOwner && !canApprove {
 		response.ErrorResp(c, http.StatusForbidden, "forbidden")
 		return
 	}
 
-	c.JSON(http.StatusOK, order)
+	c.JSON(http.StatusOK, gin.H{
+		"order": order,
+		"canApprove": canApprove,
+		"isOwner":    isOwner,
+	})
 }
 
 // CustomerGetInquiries returns the logged-in customer's inquiries.

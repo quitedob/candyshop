@@ -2,6 +2,7 @@ package order
 
 import (
 	modelsOrder "candypro/api/internal/models/order"
+	"candypro/api/internal/pkg/crypto"
 	"context"
 	"fmt"
 	"time"
@@ -46,6 +47,17 @@ func (r *InvoiceRepository) FindByID(ctx context.Context, id string) (*modelsOrd
 	return &invoice, nil
 }
 
+// FindByUserID returns all invoices for orders owned by a user (single query, no N+1).
+func (r *InvoiceRepository) FindByUserID(ctx context.Context, userID string) ([]modelsOrder.Invoice, error) {
+	var invoices []modelsOrder.Invoice
+	err := r.db.WithContext(ctx).
+		Joins("JOIN orders ON orders.id = invoices.order_id").
+		Where("orders.user_id = ?", userID).
+		Order("invoices.created_at DESC").
+		Find(&invoices).Error
+	return invoices, err
+}
+
 // FindByOrderID returns all invoices linked to an order.
 func (r *InvoiceRepository) FindByOrderID(ctx context.Context, orderID string) ([]modelsOrder.Invoice, error) {
 	var invoices []modelsOrder.Invoice
@@ -75,8 +87,11 @@ func (r *InvoiceRepository) Create(ctx context.Context, invoice *modelsOrder.Inv
 	return r.db.WithContext(ctx).Create(invoice).Error
 }
 
-// Update saves changes to an invoice.
+// Update saves changes to an invoice. M-9: bumps Version on every save.
 func (r *InvoiceRepository) Update(ctx context.Context, invoice *modelsOrder.Invoice) error {
+	if invoice != nil {
+		invoice.Version++
+	}
 	return r.db.WithContext(ctx).Save(invoice).Error
 }
 
@@ -106,7 +121,7 @@ func (r *InvoiceRepository) Stats(ctx context.Context) (map[string]int64, error)
 }
 
 func generateInvoiceID() string {
-	return fmt.Sprintf("inv-%d", time.Now().UnixNano())
+	return crypto.GenerateID()
 }
 
 func generateInvoiceNo(invoiceType string) string {

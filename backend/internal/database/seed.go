@@ -7,6 +7,7 @@ import (
 	modelsUser "candypro/api/internal/models/user"
 	"candypro/api/internal/pkg/crypto"
 	"candypro/api/internal/pkg/password"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -259,7 +260,7 @@ func seedProducts(db *gorm.DB) error {
 			Certifications: modelsCommon.StringArray{"HACCP", "ISO 22000", "Halal"},
 			MOQ:            5000,
 			StockQuantity:  260000,
-			LeadTime:       "15-20 days",
+			LeadTime:       "",
 			Featured:       true,
 			Flavors:        modelsCommon.StringArray{"Strawberry", "Orange", "Grape", "Apple", "Mango"},
 			Shapes:         modelsCommon.StringArray{"Bear", "Worm", "Fruit", "Custom"},
@@ -282,10 +283,10 @@ func seedProducts(db *gorm.DB) error {
 			Images:         modelsCommon.StringArray{"/images/products/crystal-hard-candy.jpg", "/images/products/crystal-hard-candy-2.jpg"},
 			OEMAvailable:   true,
 			HalalCertified: true,
-			Certifications: modelsCommon.StringArray{"HACCP", "ISO 22000"},
+			Certifications: modelsCommon.StringArray{"HACCP", "ISO 22000", "Halal"},
 			MOQ:            10000,
 			StockQuantity:  180000,
-			LeadTime:       "20-25 days",
+			LeadTime:       "",
 			Featured:       true,
 			Flavors:        modelsCommon.StringArray{"Strawberry", "Lemon", "Mint", "Grape", "Melon"},
 			Shapes:         modelsCommon.StringArray{"Round", "Oval", "Square", "Custom"},
@@ -302,8 +303,8 @@ func seedProducts(db *gorm.DB) error {
 			Name:           "Rainbow Swirl Lollipop",
 			Summary:        "Colorful swirl lollipops with multi-layered flavors",
 			Description:    "Our Rainbow Swirl Lollipop is a visual and taste sensation. Each lollipop features beautiful color swirls with complementary flavors that create a unique taste experience.",
-			Category:       "Aerated Candy",
-			CategorySlug:   "aerated-candy",
+			Category:       "Hard Candy",
+			CategorySlug:   "hard-candy",
 			Thumbnail:      "/images/products/rainbow-lollipop.jpg",
 			Images:         modelsCommon.StringArray{"/images/products/rainbow-lollipop.jpg"},
 			OEMAvailable:   true,
@@ -311,7 +312,7 @@ func seedProducts(db *gorm.DB) error {
 			Certifications: modelsCommon.StringArray{"HACCP", "Halal"},
 			MOQ:            8000,
 			StockQuantity:  140000,
-			LeadTime:       "18-22 days",
+			LeadTime:       "",
 			Featured:       true,
 			Flavors:        modelsCommon.StringArray{"Rainbow Mix", "Berry Blast", "Tropical", "Sour Mix"},
 			Shapes:         modelsCommon.StringArray{"Round", "Heart", "Star", "Custom"},
@@ -328,8 +329,8 @@ func seedProducts(db *gorm.DB) error {
 			Name:           "Sour Belt Candy",
 			Summary:        "Tangy sour belt candies with intense fruit flavors",
 			Description:    "Sour Belt Candy delivers the perfect balance of sweet and sour. These long, chewy belts are coated with sour sugar crystals for an extra zesty kick.",
-			Category:       "Compound Chocolate",
-			CategorySlug:   "compound-chocolate",
+			Category:       "Sour Candies",
+			CategorySlug:   "sour-candies",
 			Thumbnail:      "/images/products/sour-belt.jpg",
 			Images:         modelsCommon.StringArray{"/images/products/sour-belt.jpg", "/images/products/sour-belt-2.jpg"},
 			OEMAvailable:   true,
@@ -337,7 +338,7 @@ func seedProducts(db *gorm.DB) error {
 			Certifications: modelsCommon.StringArray{"HACCP", "ISO 22000"},
 			MOQ:            5000,
 			StockQuantity:  120000,
-			LeadTime:       "15-18 days",
+			LeadTime:       "",
 			Featured:       false,
 			Flavors:        modelsCommon.StringArray{"Strawberry", "Apple", "Watermelon", "Blue Raspberry"},
 			Shapes:         modelsCommon.StringArray{"Belt", "Strip"},
@@ -354,8 +355,8 @@ func seedProducts(db *gorm.DB) error {
 			Name:           "Fruit Jelly Cups",
 			Summary:        "Soft jelly cups with real fruit pieces and natural juice",
 			Description:    "Fruit Jelly Cups combine the smooth texture of premium jelly with real fruit pieces. Each cup delivers a burst of natural fruit flavor in a convenient single-serve format.",
-			Category:       "Toffee Candy",
-			CategorySlug:   "toffee-candy",
+			Category:       "Gummy Candy",
+			CategorySlug:   "gummy-candy",
 			Thumbnail:      "/images/products/jelly-fruits.jpg",
 			Images:         modelsCommon.StringArray{"/images/products/jelly-fruits.jpg"},
 			OEMAvailable:   true,
@@ -363,7 +364,7 @@ func seedProducts(db *gorm.DB) error {
 			Certifications: modelsCommon.StringArray{"HACCP", "ISO 22000", "Halal"},
 			MOQ:            10000,
 			StockQuantity:  100000,
-			LeadTime:       "20-25 days",
+			LeadTime:       "",
 			Featured:       false,
 			Flavors:        modelsCommon.StringArray{"Mango", "Lychee", "Strawberry", "Peach", "Grape"},
 			Shapes:         modelsCommon.StringArray{"Cup", "Sachet"},
@@ -389,7 +390,7 @@ func seedProducts(db *gorm.DB) error {
 			Certifications: modelsCommon.StringArray{"HACCP", "ISO 22000"},
 			MOQ:            5000,
 			StockQuantity:  90000,
-			LeadTime:       "18-22 days",
+			LeadTime:       "",
 			Featured:       false,
 			Flavors:        modelsCommon.StringArray{"Classic Toffee", "Salted Caramel", "Coffee", "Chocolate"},
 			Shapes:         modelsCommon.StringArray{"Square", "Rectangle", "Bar"},
@@ -415,7 +416,7 @@ func seedProducts(db *gorm.DB) error {
 			Certifications: modelsCommon.StringArray{"HACCP", "ISO 22000", "Halal"},
 			MOQ:            5000,
 			StockQuantity:  300000,
-			LeadTime:       "15-20 days",
+			LeadTime:       "",
 			Featured:       true,
 			Flavors:        modelsCommon.StringArray{"Strawberry", "Orange", "Lemon", "Apple", "Grape"},
 			Shapes:         modelsCommon.StringArray{"Bear"},
@@ -441,7 +442,7 @@ func seedProducts(db *gorm.DB) error {
 			Certifications: modelsCommon.StringArray{"HACCP", "ISO 22000"},
 			MOQ:            5000,
 			StockQuantity:  250000,
-			LeadTime:       "15-20 days",
+			LeadTime:       "",
 			Featured:       true,
 			Flavors:        modelsCommon.StringArray{"Cherry-Lemon", "Orange-Grape", "Strawberry-Green Apple", "Blue Raspberry-Watermelon"},
 			Shapes:         modelsCommon.StringArray{"Worm"},
@@ -467,7 +468,7 @@ func seedProducts(db *gorm.DB) error {
 			Certifications: modelsCommon.StringArray{"HACCP", "Halal"},
 			MOQ:            8000,
 			StockQuantity:  160000,
-			LeadTime:       "18-22 days",
+			LeadTime:       "",
 			Featured:       false,
 			Flavors:        modelsCommon.StringArray{"Orange", "Lemon", "Lime", "Grapefruit"},
 			Shapes:         modelsCommon.StringArray{"Slice", "Wedge"},
@@ -493,7 +494,7 @@ func seedProducts(db *gorm.DB) error {
 			Certifications: modelsCommon.StringArray{"HACCP", "ISO 22000", "Halal"},
 			MOQ:            10000,
 			StockQuantity:  200000,
-			LeadTime:       "20-25 days",
+			LeadTime:       "",
 			Featured:       true,
 			Flavors:        modelsCommon.StringArray{"Strawberry", "Orange", "Grape", "Apple", "Pineapple", "Mango"},
 			Shapes:         modelsCommon.StringArray{"Round", "Oval", "Diamond"},
@@ -519,7 +520,7 @@ func seedProducts(db *gorm.DB) error {
 			Certifications: modelsCommon.StringArray{"HACCP", "ISO 22000"},
 			MOQ:            8000,
 			StockQuantity:  150000,
-			LeadTime:       "18-22 days",
+			LeadTime:       "",
 			Featured:       false,
 			Flavors:        modelsCommon.StringArray{"Strawberry Cream", "Orange Cream", "Lemon Cream", "Blueberry Cream"},
 			Shapes:         modelsCommon.StringArray{"Round", "Square"},
@@ -545,7 +546,7 @@ func seedProducts(db *gorm.DB) error {
 			Certifications: modelsCommon.StringArray{"HACCP", "ISO 22000"},
 			MOQ:            5000,
 			StockQuantity:  100000,
-			LeadTime:       "20-25 days",
+			LeadTime:       "",
 			Featured:       true,
 			Flavors:        modelsCommon.StringArray{"Dark Chocolate", "Milk Chocolate", "White Chocolate", "Hazelnut"},
 			Shapes:         modelsCommon.StringArray{"Round", "Heart", "Square"},
@@ -571,7 +572,7 @@ func seedProducts(db *gorm.DB) error {
 			Certifications: modelsCommon.StringArray{"HACCP", "ISO 22000"},
 			MOQ:            3000,
 			StockQuantity:  80000,
-			LeadTime:       "22-28 days",
+			LeadTime:       "",
 			Featured:       false,
 			Flavors:        modelsCommon.StringArray{"Dark Ganache", "Milk Caramel", "White Raspberry", "Hazelnut Praline"},
 			Shapes:         modelsCommon.StringArray{"Assorted"},
@@ -597,7 +598,7 @@ func seedProducts(db *gorm.DB) error {
 			Certifications: modelsCommon.StringArray{"HACCP", "ISO 22000", "Halal"},
 			MOQ:            5000,
 			StockQuantity:  120000,
-			LeadTime:       "18-22 days",
+			LeadTime:       "",
 			Featured:       false,
 			Flavors:        modelsCommon.StringArray{"Classic Anise", "Salted", "Sweet"},
 			Shapes:         modelsCommon.StringArray{"Twist", "Strip", "Custom"},
@@ -623,7 +624,7 @@ func seedProducts(db *gorm.DB) error {
 			Certifications: modelsCommon.StringArray{"HACCP", "Halal"},
 			MOQ:            5000,
 			StockQuantity:  100000,
-			LeadTime:       "18-22 days",
+			LeadTime:       "",
 			Featured:       false,
 			Flavors:        modelsCommon.StringArray{"Strawberry", "Cherry", "Raspberry", "Watermelon"},
 			Shapes:         modelsCommon.StringArray{"Rope", "Twist"},
@@ -649,7 +650,7 @@ func seedProducts(db *gorm.DB) error {
 			Certifications: modelsCommon.StringArray{"HACCP", "ISO 22000"},
 			MOQ:            5000,
 			StockQuantity:  180000,
-			LeadTime:       "15-20 days",
+			LeadTime:       "",
 			Featured:       true,
 			Flavors:        modelsCommon.StringArray{"Extreme Lemon", "Warhead Apple", "Sour Watermelon", "Blue Raspberry Blast"},
 			Shapes:         modelsCommon.StringArray{"Bear", "Worm", "Belt"},
@@ -675,7 +676,7 @@ func seedProducts(db *gorm.DB) error {
 			Certifications: modelsCommon.StringArray{"HACCP", "ISO 22000"},
 			MOQ:            5000,
 			StockQuantity:  140000,
-			LeadTime:       "15-18 days",
+			LeadTime:       "",
 			Featured:       false,
 			Flavors:        modelsCommon.StringArray{"Strawberry-Banana", "Blue Raspberry-Lemon", "Watermelon-Green Apple", "Grape-Orange"},
 			Shapes:         modelsCommon.StringArray{"Belt", "Strip"},
@@ -701,7 +702,7 @@ func seedProducts(db *gorm.DB) error {
 			Certifications: modelsCommon.StringArray{"HACCP", "Halal"},
 			MOQ:            5000,
 			StockQuantity:  170000,
-			LeadTime:       "15-20 days",
+			LeadTime:       "",
 			Featured:       false,
 			Flavors:        modelsCommon.StringArray{"Sour Cherry", "Sour Lemon", "Sour Apple", "Sour Grape"},
 			Shapes:         modelsCommon.StringArray{"Bear"},
@@ -743,6 +744,12 @@ func seedProducts(db *gorm.DB) error {
 	for slug, price := range basePrices {
 		db.Model(&modelsProduct.Product{}).Where("slug = ? AND (base_price = 0 OR base_price IS NULL)", slug).Update("base_price", price)
 	}
+	for slug, cost := range defaultProductWeightedAvgCosts {
+		db.Model(&modelsProduct.Product{}).Where("slug = ? AND (weighted_avg_cost = 0 OR weighted_avg_cost IS NULL)", slug).Update("weighted_avg_cost", cost)
+	}
+	for slug, weight := range productGrossWeightDefaults {
+		db.Model(&modelsProduct.Product{}).Where("slug = ? AND (gross_weight_per_carton = 0 OR gross_weight_per_carton IS NULL)", slug).Update("gross_weight_per_carton", weight)
+	}
 
 	return nil
 }
@@ -764,7 +771,7 @@ func seedProductTranslations(db *gorm.DB) error {
 				"allergens":   "可能含微量乳制品",
 				"storage":     "阴凉干燥处保存，温度低于25°C",
 				"shelfLife":   "18个月",
-				"leadTime":    "15-20天",
+				"leadTime":    "",
 			},
 		},
 		"crystal-hard-candy": {
@@ -779,7 +786,7 @@ func seedProductTranslations(db *gorm.DB) error {
 				"allergens":   "无",
 				"storage":     "阴凉干燥处保存，温度低于25°C",
 				"shelfLife":   "24个月",
-				"leadTime":    "20-25天",
+				"leadTime":    "",
 			},
 		},
 		"rainbow-lollipop": {
@@ -787,14 +794,14 @@ func seedProductTranslations(db *gorm.DB) error {
 				"name":        "彩虹漩涡棒棒糖",
 				"summary":     "彩色漩涡棒棒糖，多层次风味",
 				"description": "彩虹漩涡棒棒糖是视觉与味觉的双重享受。每一支棒棒糖呈现精美的彩色漩涡纹路，搭配互补的风味层次，带来独特的品尝体验。",
-				"category":    "充气糖果",
+				"category":    "硬糖",
 				"flavors":     `["彩虹混合","浆果爆发","热带风情","酸味混合"]`,
 				"shapes":      `["圆形","心形","星形","定制"]`,
 				"ingredients": "白砂糖、葡萄糖浆、食用天然香精、柠檬酸、天然色素",
 				"allergens":   "无",
 				"storage":     "阴凉干燥处保存，温度低于25°C",
 				"shelfLife":   "18个月",
-				"leadTime":    "18-22天",
+				"leadTime":    "",
 			},
 		},
 		"sour-belt": {
@@ -802,14 +809,14 @@ func seedProductTranslations(db *gorm.DB) error {
 				"name":        "酸条糖",
 				"summary":     "浓郁酸味果味条形软糖",
 				"description": "酸条糖完美平衡甜与酸的滋味。长条嚼感软糖外覆酸砂糖晶粒，带来绝妙的刺激口感。",
-				"category":    "代可可脂巧克力",
+				"category":    "酸糖",
 				"flavors":     `["草莓","苹果","西瓜","蓝覆盆子"]`,
 				"shapes":      `["条状","带状"]`,
 				"ingredients": "白砂糖、葡萄糖浆、小麦粉、柠檬酸、苹果酸、食用天然香精",
 				"allergens":   "含小麦",
 				"storage":     "阴凉干燥处保存，温度低于25°C",
 				"shelfLife":   "12个月",
-				"leadTime":    "15-18天",
+				"leadTime":    "",
 			},
 		},
 		"marshmallow-pops": {
@@ -844,14 +851,78 @@ func seedProductTranslations(db *gorm.DB) error {
 				p.Translations[locale][k] = v
 			}
 		}
-		db.Model(&p).Update("translations", p.Translations)
+		seedEnglishProductTranslation(&p)
+		syncProductScalarsFromZh(&p)
+		db.Model(&p).Select(
+			"Translations", "Name", "Summary", "Description", "Category",
+			"Ingredients", "Allergens", "Storage", "ShelfLife", "LeadTime",
+		).Updates(&p)
+	}
+
+	// 为所有已有产品补全英文翻译（来自标量字段）
+	var allProducts []modelsProduct.Product
+	if err := db.Find(&allProducts).Error; err == nil {
+		for i := range allProducts {
+			if allProducts[i].Translations == nil {
+				allProducts[i].Translations = make(modelsCommon.JSONMap)
+			}
+			seedEnglishProductTranslation(&allProducts[i])
+			repairProductZhCopiedFromEN(&allProducts[i])
+			syncProductScalarsFromZh(&allProducts[i])
+			db.Model(&allProducts[i]).Select(
+				"Translations", "Name", "Summary", "Description", "Category",
+				"Ingredients", "Allergens", "Storage", "ShelfLife", "LeadTime",
+			).Updates(&allProducts[i])
+		}
 	}
 	return nil
 }
 
+// seedEnglishProductTranslation 用产品标量字段填充 en 翻译（若尚未存在）。
+func seedEnglishProductTranslation(p *modelsProduct.Product) {
+	if p.Translations == nil {
+		p.Translations = make(modelsCommon.JSONMap)
+	}
+	en, ok := p.Translations["en"]
+	if !ok {
+		en = make(map[string]string)
+		p.Translations["en"] = en
+	}
+	setIfEmpty := func(key, val string) {
+		if strings.TrimSpace(en[key]) == "" && strings.TrimSpace(val) != "" {
+			en[key] = strings.TrimSpace(val)
+		}
+	}
+	setIfEmpty("name", p.Name)
+	setIfEmpty("summary", p.Summary)
+	setIfEmpty("description", p.Description)
+	setIfEmpty("category", p.Category)
+	setIfEmpty("ingredients", p.Ingredients)
+	setIfEmpty("allergens", p.Allergens)
+	setIfEmpty("storage", p.Storage)
+	setIfEmpty("shelfLife", p.ShelfLife)
+	setIfEmpty("leadTime", p.LeadTime)
+	if strings.TrimSpace(en["flavors"]) == "" && len(p.Flavors) > 0 {
+		if b, err := json.Marshal(p.Flavors); err == nil {
+			en["flavors"] = string(b)
+		}
+	}
+	if strings.TrimSpace(en["shapes"]) == "" && len(p.Shapes) > 0 {
+		if b, err := json.Marshal(p.Shapes); err == nil {
+			en["shapes"] = string(b)
+		}
+	}
+}
+
 // SeedProductTranslations is the exported wrapper for seeding product translations.
 func SeedProductTranslations(db *gorm.DB) error {
-	return seedProductTranslations(db)
+	if err := seedProductTranslations(db); err != nil {
+		return err
+	}
+	if err := seedProductMissingLocales(db); err != nil {
+		return err
+	}
+	return seedAllCategoryTranslations(db)
 }
 
 // seedOEMFlows seeds OEM flow data
@@ -863,12 +934,12 @@ func seedOEMFlows(db *gorm.DB) error {
 			Description: "Fast-track product development using our existing formulations with custom branding",
 			Type:        "quick_odm",
 			Steps: modelsProduct.OEMStepArray{
-				modelsProduct.OEMStep{Order: 1, Title: "Product Selection", Description: "Choose from our catalog of proven formulations", Duration: "1-2 days", Deliverables: modelsCommon.StringArray{"Product samples", "Specification sheet"}},
-				modelsProduct.OEMStep{Order: 2, Title: "Branding Design", Description: "Custom packaging and label design", Duration: "5-7 days", Deliverables: modelsCommon.StringArray{"Design mockups", "Artwork files"}},
-				modelsProduct.OEMStep{Order: 3, Title: "Sample Approval", Description: "Review and approve final samples", Duration: "3-5 days", Deliverables: modelsCommon.StringArray{"Final samples", "Production specs"}},
-				modelsProduct.OEMStep{Order: 4, Title: "Production", Description: "Manufacturing and quality control", Duration: "15-20 days", Deliverables: modelsCommon.StringArray{"Finished products", "QC reports"}},
+				modelsProduct.OEMStep{Order: 1, Title: "Product Selection", Description: "Choose from our catalog of proven formulations", Duration: "", Deliverables: modelsCommon.StringArray{"Product samples", "Specification sheet"}},
+				modelsProduct.OEMStep{Order: 2, Title: "Branding Design", Description: "Custom packaging and label design", Duration: "", Deliverables: modelsCommon.StringArray{"Design mockups", "Artwork files"}},
+				modelsProduct.OEMStep{Order: 3, Title: "Sample Approval", Description: "Review and approve final samples", Duration: "", Deliverables: modelsCommon.StringArray{"Final samples", "Production specs"}},
+				modelsProduct.OEMStep{Order: 4, Title: "Production", Description: "Manufacturing and quality control", Duration: "", Deliverables: modelsCommon.StringArray{"Finished products", "QC reports"}},
 			},
-			Timeline:  "25-35 days",
+			Timeline:  "",
 			MOQ:       3000,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -879,13 +950,13 @@ func seedOEMFlows(db *gorm.DB) error {
 			Description: "Complete custom product development from formulation to packaging",
 			Type:        "full_oem",
 			Steps: modelsProduct.OEMStepArray{
-				modelsProduct.OEMStep{Order: 1, Title: "Requirement Analysis", Description: "Define product specifications and target market", Duration: "3-5 days", Deliverables: modelsCommon.StringArray{"Product brief", "Market analysis"}},
-				modelsProduct.OEMStep{Order: 2, Title: "R&D Development", Description: "Formulation development and testing", Duration: "14-21 days", Deliverables: modelsCommon.StringArray{"Prototype samples", "Formulation specs"}},
-				modelsProduct.OEMStep{Order: 3, Title: "Design & Packaging", Description: "Custom packaging design and engineering", Duration: "10-14 days", Deliverables: modelsCommon.StringArray{"Packaging design", "Mold specifications"}},
-				modelsProduct.OEMStep{Order: 4, Title: "Compliance Testing", Description: "Quality and safety certification", Duration: "7-10 days", Deliverables: modelsCommon.StringArray{"Lab reports", "Certificates"}},
-				modelsProduct.OEMStep{Order: 5, Title: "Production", Description: "Mass production and quality control", Duration: "20-30 days", Deliverables: modelsCommon.StringArray{"Finished products", "QC reports", "Documentation"}},
+				modelsProduct.OEMStep{Order: 1, Title: "Requirement Analysis", Description: "Define product specifications and target market", Duration: "", Deliverables: modelsCommon.StringArray{"Product brief", "Market analysis"}},
+				modelsProduct.OEMStep{Order: 2, Title: "R&D Development", Description: "Formulation development and testing", Duration: "", Deliverables: modelsCommon.StringArray{"Prototype samples", "Formulation specs"}},
+				modelsProduct.OEMStep{Order: 3, Title: "Design & Packaging", Description: "Custom packaging design and engineering", Duration: "", Deliverables: modelsCommon.StringArray{"Packaging design", "Mold specifications"}},
+				modelsProduct.OEMStep{Order: 4, Title: "Compliance Testing", Description: "Quality and safety certification", Duration: "", Deliverables: modelsCommon.StringArray{"Lab reports", "Certificates"}},
+				modelsProduct.OEMStep{Order: 5, Title: "Production", Description: "Mass production and quality control", Duration: "", Deliverables: modelsCommon.StringArray{"Finished products", "QC reports", "Documentation"}},
 			},
-			Timeline:  "60-90 days",
+			Timeline:  "",
 			MOQ:       10000,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -893,7 +964,25 @@ func seedOEMFlows(db *gorm.DB) error {
 	}
 
 	for _, flow := range flows {
-		if err := db.FirstOrCreate(&flow, modelsProduct.OEMFlow{ID: flow.ID}).Error; err != nil {
+		var existing modelsProduct.OEMFlow
+		err := db.Where("id = ?", flow.ID).First(&existing).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			if err := db.Create(&flow).Error; err != nil {
+				return err
+			}
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		existing.Title = flow.Title
+		existing.Description = flow.Description
+		existing.Type = flow.Type
+		existing.Steps = flow.Steps
+		existing.Timeline = flow.Timeline
+		existing.MOQ = flow.MOQ
+		existing.UpdatedAt = time.Now()
+		if err := db.Save(&existing).Error; err != nil {
 			return err
 		}
 	}
@@ -1124,7 +1213,7 @@ func seedCaseStudies(db *gorm.DB) error {
 			Challenge: "EuroCandy Mart needed to develop a premium private label gummy line to compete with established brands while maintaining competitive pricing and meeting strict EU food safety standards.",
 			Solution:  "We developed a custom gummy formulation using natural colors and flavors, created unique fruit shapes representing European fruits, and designed eco-friendly packaging that highlighted the natural ingredients.",
 			Result:    "The product line launched in 500+ stores across Germany, France, and Benelux. First-year sales exceeded projections by 40%, and the line has since expanded to include seasonal varieties.",
-			Timeline:  "4 months",
+			Timeline:  "",
 			Services:  modelsCommon.StringArray{"Product Development", "Packaging Design", "Compliance Support", "Production"},
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -1141,7 +1230,7 @@ func seedCaseStudies(db *gorm.DB) error {
 			Challenge: "NutriLife wanted to enter the growing functional gummy market with a line of vitamin-infused gummies that tasted great while delivering effective dosages of vitamins and minerals.",
 			Solution:  "Our R&D team developed a sugar-free formulation using pectin instead of gelatin, incorporated targeted vitamin blends, and created a clean-label product with natural sweeteners.",
 			Result:    "The product line achieved 300% growth in the first year, received positive reviews for taste, and helped establish NutriLife as a leader in the functional gummy segment.",
-			Timeline:  "6 months",
+			Timeline:  "",
 			Services:  modelsCommon.StringArray{"R&D", "Formulation", "Regulatory Support", "Production"},
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -1158,7 +1247,7 @@ func seedCaseStudies(db *gorm.DB) error {
 			Challenge: "Gulf Trading Company needed a diverse range of halal-certified candies to expand their product portfolio for the Middle East market, with specific requirements for halal compliance and Arabic packaging.",
 			Solution:  "We developed a complete halal-certified candy range including gummies, hard candies, and lollipops with Arabic and English packaging, and obtained halal certification from recognized authorities.",
 			Result:    "Successfully launched across 8 Middle Eastern countries with distribution in major retail chains. The halal certification and quality helped capture 15% market share in the first year.",
-			Timeline:  "5 months",
+			Timeline:  "",
 			Services:  modelsCommon.StringArray{"Product Development", "Halal Certification", "Localization", "Production"},
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),

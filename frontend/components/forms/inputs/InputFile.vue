@@ -78,14 +78,22 @@ const inputRef = ref<HTMLInputElement>()
 const isDragover = ref(false)
 
 const acceptText = computed(() => {
-  const extensions = props.accept.split(',').map(ext => {
+  const extensions = props.accept.split(',').map((ext) => {
+    const trimmed = ext.trim()
     const map: Record<string, string> = {
       'image/jpeg': 'JPG',
       'image/png': 'PNG',
       'image/webp': 'WebP',
-      'application/pdf': 'PDF'
+      'application/pdf': 'PDF',
+      'application/msword': 'DOC',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'DOCX',
+      'text/csv': 'CSV',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'XLSX',
+      'video/mp4': 'MP4',
+      'video/x-matroska': 'MKV'
     }
-    return map[ext] || ext
+    if (trimmed.startsWith('.')) return trimmed.slice(1).toUpperCase()
+    return map[trimmed] || trimmed
   })
   return `${t('input_file.max_size', { size: props.maxSize })}, ${extensions.join(', ')}`
 })
@@ -98,10 +106,13 @@ const validateFile = (file: File): boolean => {
     return false
   }
 
-  // Check file type
+  // Check file type（MIME 或扩展名）
   if (props.accept) {
-    const acceptedTypes = props.accept.split(',')
-    if (!acceptedTypes.includes(file.type)) {
+    const accepted = props.accept.split(',').map((item) => item.trim().toLowerCase())
+    const mimeOk = file.type && accepted.includes(file.type.toLowerCase())
+    const ext = file.name.toLowerCase().match(/\.[^.]+$/)?.[0] ?? ''
+    const extOk = ext !== '' && accepted.includes(ext)
+    if (!mimeOk && !extOk) {
       emit('error', t('input_file.error_type', { name: file.name }))
       return false
     }
@@ -141,7 +152,9 @@ const processFiles = (files: FileList) => {
   }
 
   if (validFiles.length > 0) {
-    emit('files-selected', files)
+    const dt = new DataTransfer()
+    validFiles.forEach((f) => dt.items.add(f))
+    emit('files-selected', dt.files)
   }
 }
 

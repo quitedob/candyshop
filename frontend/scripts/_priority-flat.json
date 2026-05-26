@@ -1,0 +1,1982 @@
+[
+  {
+    "path": "admin.products.title",
+    "en": "Products",
+    "zh": "产品管理"
+  },
+  {
+    "path": "admin.products.description",
+    "en": "Manage product catalog with complete CRUD operations.",
+    "zh": "管理产品目录，支持完整的增删改查操作。"
+  },
+  {
+    "path": "admin.products.add_product",
+    "en": "Add Product",
+    "zh": "添加产品"
+  },
+  {
+    "path": "admin.products.batch_translate",
+    "en": "Translate missing locales",
+    "zh": "批量翻译缺失语言"
+  },
+  {
+    "path": "admin.products.translating",
+    "en": "Translating…",
+    "zh": "翻译中…"
+  },
+  {
+    "path": "admin.products.search",
+    "en": "Search",
+    "zh": "搜索"
+  },
+  {
+    "path": "admin.products.search_placeholder",
+    "en": "Search by product name or SKU...",
+    "zh": "按产品名称或 SKU 搜索..."
+  },
+  {
+    "path": "admin.products.status_filter",
+    "en": "Status",
+    "zh": "状态筛选"
+  },
+  {
+    "path": "admin.products.status_published",
+    "en": "Published (default)",
+    "zh": "已发布（默认）"
+  },
+  {
+    "path": "admin.products.status_all",
+    "en": "All statuses",
+    "zh": "全部状态"
+  },
+  {
+    "path": "admin.products.status_draft",
+    "en": "Draft",
+    "zh": "草稿"
+  },
+  {
+    "path": "admin.products.status_inactive",
+    "en": "Inactive",
+    "zh": "已下架"
+  },
+  {
+    "path": "admin.products.loading",
+    "en": "Loading products...",
+    "zh": "正在加载产品..."
+  },
+  {
+    "path": "admin.products.no_data",
+    "en": "No products found.",
+    "zh": "暂无产品。"
+  },
+  {
+    "path": "admin.products.col_product",
+    "en": "Product",
+    "zh": "产品"
+  },
+  {
+    "path": "admin.products.col_category",
+    "en": "Category",
+    "zh": "分类"
+  },
+  {
+    "path": "admin.products.col_moq",
+    "en": "MOQ",
+    "zh": "最小起订量"
+  },
+  {
+    "path": "admin.products.col_stock",
+    "en": "Stock",
+    "zh": "库存"
+  },
+  {
+    "path": "admin.products.col_status",
+    "en": "Status",
+    "zh": "状态"
+  },
+  {
+    "path": "admin.products.edit",
+    "en": "Edit",
+    "zh": "编辑"
+  },
+  {
+    "path": "admin.products.delete",
+    "en": "Delete",
+    "zh": "删除"
+  },
+  {
+    "path": "admin.products.edit_product",
+    "en": "Edit Product",
+    "zh": "编辑产品"
+  },
+  {
+    "path": "admin.products.create_product",
+    "en": "Create Product",
+    "zh": "创建产品"
+  },
+  {
+    "path": "admin.products.name",
+    "en": "Name",
+    "zh": "名称"
+  },
+  {
+    "path": "admin.products.slug",
+    "en": "Slug",
+    "zh": "URL 别名"
+  },
+  {
+    "path": "admin.products.alias",
+    "en": "Alias",
+    "zh": "别名"
+  },
+  {
+    "path": "admin.products.category",
+    "en": "Category",
+    "zh": "分类"
+  },
+  {
+    "path": "admin.products.category_slug",
+    "en": "Category Slug",
+    "zh": "分类 Slug"
+  },
+  {
+    "path": "admin.products.category_alias",
+    "en": "Category Alias",
+    "zh": "分类别名"
+  },
+  {
+    "path": "admin.products.moq",
+    "en": "MOQ",
+    "zh": "最小起订量"
+  },
+  {
+    "path": "admin.products.base_price",
+    "en": "Base Price (USD)",
+    "zh": "基础价格 (美元)"
+  },
+  {
+    "path": "admin.products.lead_time",
+    "en": "Lead Time",
+    "zh": "交货周期"
+  },
+  {
+    "path": "admin.products.lead_time_hint",
+    "en": "Enter after sales verification for catalog display. You may state a specific reference (e.g. \"25 business days after order confirmation\") — do not use vague promises like \"approx. X weeks\". Leave blank or use \"confirmed at order time\" until verified.",
+    "zh": "销售核实后填写，用于目录展示。可写订单级参考（如「订单确认后 25 个工作日」），勿使用「约 X 周」等模糊承诺；尚未核实时写「下单时确认」。"
+  },
+  {
+    "path": "admin.products.stock_quantity",
+    "en": "Stock Quantity",
+    "zh": "库存数量"
+  },
+  {
+    "path": "admin.products.status",
+    "en": "Status",
+    "zh": "状态"
+  },
+  {
+    "path": "admin.products.oem",
+    "en": "OEM",
+    "zh": "OEM"
+  },
+  {
+    "path": "admin.products.halal",
+    "en": "Halal",
+    "zh": "清真"
+  },
+  {
+    "path": "admin.products.featured",
+    "en": "Featured",
+    "zh": "推荐"
+  },
+  {
+    "path": "admin.products.summary",
+    "en": "Summary",
+    "zh": "摘要"
+  },
+  {
+    "path": "admin.products.description_label",
+    "en": "Description",
+    "zh": "描述"
+  },
+  {
+    "path": "admin.products.thumbnail",
+    "en": "Thumbnail",
+    "zh": "缩略图"
+  },
+  {
+    "path": "admin.products.og_image",
+    "en": "OG Image (Social Share)",
+    "zh": "OG 分享图"
+  },
+  {
+    "path": "admin.products.og_image_hint",
+    "en": "Optional. Overrides thumbnail for Facebook/LinkedIn previews. 1200×630 recommended.",
+    "zh": "可选。覆盖缩略图用于 Facebook/LinkedIn 预览，建议 1200×630。"
+  },
+  {
+    "path": "admin.products.upload_image",
+    "en": "Upload Image",
+    "zh": "上传图片"
+  },
+  {
+    "path": "admin.products.upload_images",
+    "en": "Upload Images",
+    "zh": "上传图片"
+  },
+  {
+    "path": "admin.products.images",
+    "en": "Images (comma separated)",
+    "zh": "图片（逗号分隔）"
+  },
+  {
+    "path": "admin.products.flavors",
+    "en": "Flavors (comma separated)",
+    "zh": "口味（逗号分隔）"
+  },
+  {
+    "path": "admin.products.shapes",
+    "en": "Shapes (comma separated)",
+    "zh": "形状（逗号分隔）"
+  },
+  {
+    "path": "admin.products.certifications",
+    "en": "Certifications (comma separated)",
+    "zh": "认证（逗号分隔）"
+  },
+  {
+    "path": "admin.products.ingredients",
+    "en": "Ingredients",
+    "zh": "配料"
+  },
+  {
+    "path": "admin.products.allergens",
+    "en": "Allergens",
+    "zh": "过敏原"
+  },
+  {
+    "path": "admin.products.shelf_life",
+    "en": "Shelf Life",
+    "zh": "保质期"
+  },
+  {
+    "path": "admin.products.storage",
+    "en": "Storage",
+    "zh": "储存条件"
+  },
+  {
+    "path": "admin.products.cancel",
+    "en": "Cancel",
+    "zh": "取消"
+  },
+  {
+    "path": "admin.products.saving",
+    "en": "Saving...",
+    "zh": "保存中..."
+  },
+  {
+    "path": "admin.products.update",
+    "en": "Update",
+    "zh": "更新"
+  },
+  {
+    "path": "admin.products.create",
+    "en": "Create",
+    "zh": "创建"
+  },
+  {
+    "path": "admin.products.name_required",
+    "en": "Product name is required.",
+    "zh": "产品名称为必填项。"
+  },
+  {
+    "path": "admin.products.confirm_delete",
+    "en": "Delete this product?",
+    "zh": "确定删除此产品？"
+  },
+  {
+    "path": "admin.products.created_success",
+    "en": "Product created successfully.",
+    "zh": "产品创建成功。"
+  },
+  {
+    "path": "admin.products.updated_success",
+    "en": "Product updated successfully.",
+    "zh": "产品更新成功。"
+  },
+  {
+    "path": "admin.products.deleted_success",
+    "en": "Product deleted successfully.",
+    "zh": "产品删除成功。"
+  },
+  {
+    "path": "admin.products.showing",
+    "en": "Showing {from} to {to} of {total}",
+    "zh": "显示第 {from} 到 {to} 条，共 {total} 条"
+  },
+  {
+    "path": "admin.products.previous",
+    "en": "Previous",
+    "zh": "上一页"
+  },
+  {
+    "path": "admin.products.next",
+    "en": "Next",
+    "zh": "下一页"
+  },
+  {
+    "path": "admin.products.section_weight",
+    "en": "Weight & Measurement",
+    "zh": "重量与规格"
+  },
+  {
+    "path": "admin.products.section_dimensions",
+    "en": "Product Dimensions (mm)",
+    "zh": "产品尺寸 (mm)"
+  },
+  {
+    "path": "admin.products.section_dietary",
+    "en": "Dietary Labels",
+    "zh": "饮食标签"
+  },
+  {
+    "path": "admin.products.section_nutrition",
+    "en": "Nutrition (per 100g)",
+    "zh": "营养成分 (每100g)"
+  },
+  {
+    "path": "admin.products.section_compliance",
+    "en": "Ingredient Compliance",
+    "zh": "成分合规"
+  },
+  {
+    "path": "admin.products.section_trade",
+    "en": "Trade & Packaging",
+    "zh": "贸易与包装"
+  },
+  {
+    "path": "admin.products.section_sample",
+    "en": "Sample Specs",
+    "zh": "样品规格"
+  },
+  {
+    "path": "admin.products.field_net_weight_per_piece",
+    "en": "Net Weight/Piece (g)",
+    "zh": "单颗净重 (g)"
+  },
+  {
+    "path": "admin.products.field_net_weight_per_pack",
+    "en": "Net Weight/Pack (g)",
+    "zh": "每包净重 (g)"
+  },
+  {
+    "path": "admin.products.field_gross_weight_per_carton",
+    "en": "Gross Weight/Carton (kg)",
+    "zh": "每箱毛重 (kg)"
+  },
+  {
+    "path": "admin.products.field_pieces_per_pack",
+    "en": "Pieces/Pack",
+    "zh": "每包颗数"
+  },
+  {
+    "path": "admin.products.field_packs_per_carton",
+    "en": "Packs/Carton",
+    "zh": "每箱包数"
+  },
+  {
+    "path": "admin.products.field_length_mm",
+    "en": "Length (mm)",
+    "zh": "长度 (mm)"
+  },
+  {
+    "path": "admin.products.field_width_mm",
+    "en": "Width (mm)",
+    "zh": "宽度 (mm)"
+  },
+  {
+    "path": "admin.products.field_height_mm",
+    "en": "Height (mm)",
+    "zh": "高度 (mm)"
+  },
+  {
+    "path": "admin.products.field_vegan",
+    "en": "Vegan",
+    "zh": "纯素"
+  },
+  {
+    "path": "admin.products.field_gluten_free",
+    "en": "Gluten-Free",
+    "zh": "无麸质"
+  },
+  {
+    "path": "admin.products.field_sugar_free",
+    "en": "Sugar-Free",
+    "zh": "无糖"
+  },
+  {
+    "path": "admin.products.field_kosher",
+    "en": "Kosher",
+    "zh": "犹太洁食"
+  },
+  {
+    "path": "admin.products.field_organic",
+    "en": "Organic",
+    "zh": "有机"
+  },
+  {
+    "path": "admin.products.field_energy_kj",
+    "en": "Energy (kJ)",
+    "zh": "能量 (kJ)"
+  },
+  {
+    "path": "admin.products.field_energy_kcal",
+    "en": "Energy (kcal)",
+    "zh": "能量 (kcal)"
+  },
+  {
+    "path": "admin.products.field_fat_g",
+    "en": "Fat (g)",
+    "zh": "脂肪 (g)"
+  },
+  {
+    "path": "admin.products.field_saturated_fat_g",
+    "en": "Saturated Fat (g)",
+    "zh": "饱和脂肪 (g)"
+  },
+  {
+    "path": "admin.products.field_carbohydrates_g",
+    "en": "Carbohydrates (g)",
+    "zh": "碳水化合物 (g)"
+  },
+  {
+    "path": "admin.products.field_sugars_g",
+    "en": "Sugars (g)",
+    "zh": "糖 (g)"
+  },
+  {
+    "path": "admin.products.field_protein_g",
+    "en": "Protein (g)",
+    "zh": "蛋白质 (g)"
+  },
+  {
+    "path": "admin.products.field_salt_g",
+    "en": "Salt (g)",
+    "zh": "盐 (g)"
+  },
+  {
+    "path": "admin.products.field_fiber_g",
+    "en": "Fiber (g)",
+    "zh": "膳食纤维 (g)"
+  },
+  {
+    "path": "admin.products.field_additives",
+    "en": "Additives (E-numbers)",
+    "zh": "添加剂 (E编码)"
+  },
+  {
+    "path": "admin.products.field_sweetener_type",
+    "en": "Sweetener Type",
+    "zh": "甜味剂类型"
+  },
+  {
+    "path": "admin.products.field_cocoa_solids_pct",
+    "en": "Cocoa Solids %",
+    "zh": "可可固形物 %"
+  },
+  {
+    "path": "admin.products.field_milk_solids_pct",
+    "en": "Milk Solids %",
+    "zh": "乳固形物 %"
+  },
+  {
+    "path": "admin.products.field_gmo_status",
+    "en": "GMO Status",
+    "zh": "转基因状态"
+  },
+  {
+    "path": "admin.products.field_may_contain",
+    "en": "May Contain",
+    "zh": "可能含有"
+  },
+  {
+    "path": "admin.products.field_water_activity",
+    "en": "Water Activity (aʷ)",
+    "zh": "水分活度 (aʷ)"
+  },
+  {
+    "path": "admin.products.field_gtin",
+    "en": "GTIN / Barcode",
+    "zh": "GTIN / 条形码"
+  },
+  {
+    "path": "admin.products.field_hs_code",
+    "en": "HS Code",
+    "zh": "HS 编码"
+  },
+  {
+    "path": "admin.products.field_primary_packaging",
+    "en": "Primary Packaging",
+    "zh": "初级包装"
+  },
+  {
+    "path": "admin.products.field_inner_pack_config",
+    "en": "Inner Pack Config",
+    "zh": "内包装配置"
+  },
+  {
+    "path": "admin.products.field_pallet_config",
+    "en": "Pallet Config",
+    "zh": "托盘配置"
+  },
+  {
+    "path": "admin.products.field_sample_moq",
+    "en": "Sample MOQ",
+    "zh": "样品起订量"
+  },
+  {
+    "path": "admin.products.field_sample_lead_time",
+    "en": "Sample Lead Time",
+    "zh": "样品交期"
+  },
+  {
+    "path": "admin.products.field_sample_lead_time_hint",
+    "en": "Sample lead time reference — confirmed by sales in the sample quote; do not use \"approx. X weeks\".",
+    "zh": "样品参考交期，由销售在报价/样品订单中确认；勿写「约 X 周」。"
+  },
+  {
+    "path": "admin.products.field_sample_price",
+    "en": "Sample Price",
+    "zh": "样品价格"
+  },
+  {
+    "path": "admin.products.packaging_placeholder",
+    "en": "flow-wrap, foil, box, bag, jar",
+    "zh": "流包装、铝箔、盒装、袋装、罐装"
+  },
+  {
+    "path": "admin.products.inner_pack_placeholder",
+    "en": "e.g. 12 units per display box",
+    "zh": "例：每展示盒 12 个单位"
+  },
+  {
+    "path": "admin.products.pallet_config_placeholder",
+    "en": "e.g. 48 cases/layer × 5 layers",
+    "zh": "例：48 箱/层 × 5 层"
+  },
+  {
+    "path": "admin.products.gmo_option_gmo",
+    "en": "GMO",
+    "zh": "含转基因"
+  },
+  {
+    "path": "admin.products.gmo_option_non_gmo",
+    "en": "Non-GMO",
+    "zh": "非转基因"
+  },
+  {
+    "path": "admin.products.gmo_option_gmo_free_certified",
+    "en": "GMO-Free Certified",
+    "zh": "无转基因认证"
+  },
+  {
+    "path": "admin.products.translations_label",
+    "en": "Translations",
+    "zh": "多语言翻译"
+  },
+  {
+    "path": "admin.products.translations_hint",
+    "en": "All customer-facing text lives here only. Chinese is the source locale; scalar fields sync on save.",
+    "zh": "所有面向用户的文案仅在此填写；中文为主语言，保存时自动同步到系统字段。"
+  },
+  {
+    "path": "admin.products.locale_tab_en",
+    "en": "English",
+    "zh": "英文"
+  },
+  {
+    "path": "admin.products.locale_tab_zh",
+    "en": "Chinese",
+    "zh": "中文"
+  },
+  {
+    "path": "admin.products.locale_tab_ar",
+    "en": "Arabic",
+    "zh": "阿拉伯文"
+  },
+  {
+    "path": "admin.products.locale_tab_ko",
+    "en": "Korean",
+    "zh": "韩文"
+  },
+  {
+    "path": "admin.products.locale_tab_ja",
+    "en": "Japanese",
+    "zh": "日文"
+  },
+  {
+    "path": "admin.products.locale_tab_zh-tw",
+    "en": "Traditional Chinese",
+    "zh": "繁体中文"
+  },
+  {
+    "path": "admin.products.locale_tab_th",
+    "en": "Thai",
+    "zh": "泰文"
+  },
+  {
+    "path": "admin.products.locale_tab_vi",
+    "en": "Vietnamese",
+    "zh": "越南文"
+  },
+  {
+    "path": "admin.products.locale_tab_id",
+    "en": "Indonesian",
+    "zh": "印尼文"
+  },
+  {
+    "path": "admin.products.locale_tab_ms",
+    "en": "Malay",
+    "zh": "马来文"
+  },
+  {
+    "path": "admin.products.trans_name_placeholder",
+    "en": "Leave empty to use default name",
+    "zh": "留空则使用主名称"
+  },
+  {
+    "path": "admin.products.ai_translate",
+    "en": "AI Translate All",
+    "zh": "AI 一键翻译"
+  },
+  {
+    "path": "admin.products.ai_translating",
+    "en": "Translating...",
+    "zh": "翻译中..."
+  },
+  {
+    "path": "admin.products.ai_translate_done",
+    "en": "Translation saved successfully",
+    "zh": "翻译已完成并已保存"
+  },
+  {
+    "path": "admin.products.ai_translate_reloaded",
+    "en": "Translation completed on server; loaded latest translations from database",
+    "zh": "翻译已在服务端完成，已从数据库加载最新译文"
+  },
+  {
+    "path": "admin.products.ai_generate",
+    "en": "Generate with AI",
+    "zh": "AI 智能生成"
+  },
+  {
+    "path": "admin.products.ai_generating",
+    "en": "Generating product data...",
+    "zh": "正在生成产品数据..."
+  },
+  {
+    "path": "admin.products.ai_description_label",
+    "en": "Describe your product",
+    "zh": "用自然语言描述您的产品"
+  },
+  {
+    "path": "admin.products.ai_description_placeholder",
+    "en": "e.g., 150g milk chocolate bar with almonds, vegan, 12-month shelf life, individually flow-wrapped, 24 pieces per display box, halal certified...",
+    "zh": "例如：150g牛奶巧克力棒，含杏仁，纯素，12个月保质期，独立流包装，每展示盒24片，清真认证..."
+  },
+  {
+    "path": "admin.products.ai_language_label",
+    "en": "Source Language",
+    "zh": "输入语言"
+  },
+  {
+    "path": "admin.products.ai_empty_preview",
+    "en": "Enter a product description on the left and click Generate to see AI-filled fields here.",
+    "zh": "在左侧输入产品描述，点击 AI 生成即可在此看到自动填充的字段。"
+  },
+  {
+    "path": "admin.products.ai_section_basic",
+    "en": "Basic Information",
+    "zh": "基本信息"
+  },
+  {
+    "path": "admin.products.ai_section_weight",
+    "en": "Weight & Measurement",
+    "zh": "重量与规格"
+  },
+  {
+    "path": "admin.products.ai_section_dimensions",
+    "en": "Dimensions",
+    "zh": "尺寸"
+  },
+  {
+    "path": "admin.products.ai_section_nutrition",
+    "en": "Nutrition (per 100g)",
+    "zh": "营养成分（每100g）"
+  },
+  {
+    "path": "admin.products.ai_section_compliance",
+    "en": "Ingredient Compliance",
+    "zh": "成分合规"
+  },
+  {
+    "path": "admin.products.ai_section_trade",
+    "en": "Trade & Packaging",
+    "zh": "贸易与包装"
+  },
+  {
+    "path": "admin.products.ai_section_dietary",
+    "en": "Dietary Labels",
+    "zh": "膳食标签"
+  },
+  {
+    "path": "admin.products.ai_section_sample",
+    "en": "Sample Specs",
+    "zh": "样品规格"
+  },
+  {
+    "path": "admin.products.ai_save",
+    "en": "Save Product",
+    "zh": "保存产品"
+  },
+  {
+    "path": "admin.products.ai_import",
+    "en": "AI Import",
+    "zh": "AI 导入"
+  },
+  {
+    "path": "admin.products.ai_generate_failed",
+    "en": "AI generation failed. Try a more detailed description.",
+    "zh": "AI 生成失败，请尝试更详细的描述。"
+  },
+  {
+    "path": "admin.products.section_market",
+    "en": "Market Profile",
+    "zh": "市场画像"
+  },
+  {
+    "path": "admin.products.section_cost_stack",
+    "en": "Cost Stack",
+    "zh": "成本栈"
+  },
+  {
+    "path": "admin.products.market_code",
+    "en": "Market Code",
+    "zh": "市场代码"
+  },
+  {
+    "path": "admin.products.label_template",
+    "en": "Label Template ID",
+    "zh": "标签模板 ID"
+  },
+  {
+    "path": "admin.products.destination_countries",
+    "en": "Destination Countries",
+    "zh": "目的国"
+  },
+  {
+    "path": "admin.products.required_certs",
+    "en": "Required Cert Keywords",
+    "zh": "必需认证关键词"
+  },
+  {
+    "path": "admin.products.csv_hint",
+    "en": "Comma-separated",
+    "zh": "逗号分隔"
+  },
+  {
+    "path": "admin.products.save_market_profile",
+    "en": "Save Market Profile",
+    "zh": "保存市场画像"
+  },
+  {
+    "path": "admin.products.reload_market",
+    "en": "Reload",
+    "zh": "重新加载"
+  },
+  {
+    "path": "admin.products.save_cost_stack",
+    "en": "Save Cost Stack",
+    "zh": "保存成本栈"
+  },
+  {
+    "path": "admin.products.market_saved",
+    "en": "Market profile saved.",
+    "zh": "市场画像已保存。"
+  },
+  {
+    "path": "admin.products.cost_saved",
+    "en": "Cost stack saved.",
+    "zh": "成本栈已保存。"
+  },
+  {
+    "path": "admin.products.market_load_failed",
+    "en": "Failed to load market data.",
+    "zh": "加载市场数据失败。"
+  },
+  {
+    "path": "admin.products.cost_material",
+    "en": "Material",
+    "zh": "材料"
+  },
+  {
+    "path": "admin.products.cost_labor",
+    "en": "Labor",
+    "zh": "人工"
+  },
+  {
+    "path": "admin.products.cost_logistics",
+    "en": "Logistics",
+    "zh": "物流"
+  },
+  {
+    "path": "admin.products.ai_translate_slow",
+    "en": "Translation is taking longer than usual. Please wait or try again later.",
+    "zh": "翻译耗时较长，请稍候或稍后重试。"
+  },
+  {
+    "path": "admin.inventory.title",
+    "en": "Inventory",
+    "zh": "库存管理"
+  },
+  {
+    "path": "admin.inventory.description",
+    "en": "Track and manage product stock levels, values, and adjustments.",
+    "zh": "追踪和管理产品库存水平、价值和调整记录。"
+  },
+  {
+    "path": "admin.inventory.export",
+    "en": "Export",
+    "zh": "导出"
+  },
+  {
+    "path": "admin.inventory.adjust_stock",
+    "en": "Adjust Stock",
+    "zh": "调整库存"
+  },
+  {
+    "path": "admin.inventory.total_products",
+    "en": "Total Products",
+    "zh": "产品总数"
+  },
+  {
+    "path": "admin.inventory.low_stock",
+    "en": "Low Stock",
+    "zh": "低库存"
+  },
+  {
+    "path": "admin.inventory.out_of_stock",
+    "en": "Out of Stock",
+    "zh": "缺货"
+  },
+  {
+    "path": "admin.inventory.in_stock",
+    "en": "In Stock",
+    "zh": "有库存"
+  },
+  {
+    "path": "admin.inventory.total_value",
+    "en": "Total Value",
+    "zh": "总价值"
+  },
+  {
+    "path": "admin.inventory.search",
+    "en": "Search by product name or SKU...",
+    "zh": "按产品名称或SKU搜索..."
+  },
+  {
+    "path": "admin.inventory.filter_stock",
+    "en": "Filter by stock status",
+    "zh": "按库存状态筛选"
+  },
+  {
+    "path": "admin.inventory.filter_category",
+    "en": "Filter by category",
+    "zh": "按分类筛选"
+  },
+  {
+    "path": "admin.inventory.filter_all",
+    "en": "All Stock",
+    "zh": "全部库存"
+  },
+  {
+    "path": "admin.inventory.filter_low",
+    "en": "Low Stock",
+    "zh": "低库存"
+  },
+  {
+    "path": "admin.inventory.filter_out",
+    "en": "Out of Stock",
+    "zh": "缺货"
+  },
+  {
+    "path": "admin.inventory.filter_in",
+    "en": "In Stock",
+    "zh": "有库存"
+  },
+  {
+    "path": "admin.inventory.all_categories",
+    "en": "All Categories",
+    "zh": "全部分类"
+  },
+  {
+    "path": "admin.inventory.col_product",
+    "en": "Product",
+    "zh": "产品"
+  },
+  {
+    "path": "admin.inventory.col_category",
+    "en": "Category",
+    "zh": "分类"
+  },
+  {
+    "path": "admin.inventory.col_sku",
+    "en": "SKU",
+    "zh": "SKU"
+  },
+  {
+    "path": "admin.inventory.col_stock",
+    "en": "Stock",
+    "zh": "库存"
+  },
+  {
+    "path": "admin.inventory.col_moq",
+    "en": "MOQ",
+    "zh": "最小起订量"
+  },
+  {
+    "path": "admin.inventory.col_unit_value",
+    "en": "Unit Value",
+    "zh": "单价"
+  },
+  {
+    "path": "admin.inventory.col_total_value",
+    "en": "Total Value",
+    "zh": "总价值"
+  },
+  {
+    "path": "admin.inventory.col_status",
+    "en": "Status",
+    "zh": "状态"
+  },
+  {
+    "path": "admin.inventory.col_actions",
+    "en": "Actions",
+    "zh": "操作"
+  },
+  {
+    "path": "admin.inventory.loading",
+    "en": "Loading inventory...",
+    "zh": "正在加载库存..."
+  },
+  {
+    "path": "admin.inventory.no_data",
+    "en": "No inventory data found.",
+    "zh": "暂无库存数据。"
+  },
+  {
+    "path": "admin.inventory.showing",
+    "en": "Showing {from} to {to} of {total}",
+    "zh": "显示第 {from} 至 {to} 条，共 {total} 条"
+  },
+  {
+    "path": "admin.inventory.previous",
+    "en": "Previous",
+    "zh": "上一页"
+  },
+  {
+    "path": "admin.inventory.next",
+    "en": "Next",
+    "zh": "下一页"
+  },
+  {
+    "path": "admin.inventory.history",
+    "en": "History",
+    "zh": "历史记录"
+  },
+  {
+    "path": "admin.inventory.adjust_title",
+    "en": "Adjust Stock",
+    "zh": "调整库存"
+  },
+  {
+    "path": "admin.inventory.current_stock",
+    "en": "Current Stock",
+    "zh": "当前库存"
+  },
+  {
+    "path": "admin.inventory.new_stock",
+    "en": "New Stock",
+    "zh": "新库存"
+  },
+  {
+    "path": "admin.inventory.adjustment_type",
+    "en": "Adjustment Type",
+    "zh": "调整类型"
+  },
+  {
+    "path": "admin.inventory.type_set",
+    "en": "Set To",
+    "zh": "设置为"
+  },
+  {
+    "path": "admin.inventory.type_add",
+    "en": "Add",
+    "zh": "增加"
+  },
+  {
+    "path": "admin.inventory.type_subtract",
+    "en": "Subtract",
+    "zh": "减少"
+  },
+  {
+    "path": "admin.inventory.reason",
+    "en": "Reason",
+    "zh": "原因"
+  },
+  {
+    "path": "admin.inventory.reason_restock",
+    "en": "Restock",
+    "zh": "补货"
+  },
+  {
+    "path": "admin.inventory.reason_correction",
+    "en": "Correction",
+    "zh": "修正"
+  },
+  {
+    "path": "admin.inventory.reason_damage",
+    "en": "Damage/Loss",
+    "zh": "损耗/损坏"
+  },
+  {
+    "path": "admin.inventory.reason_return",
+    "en": "Customer Return",
+    "zh": "客户退货"
+  },
+  {
+    "path": "admin.inventory.reason_audit",
+    "en": "Inventory Audit",
+    "zh": "库存盘点"
+  },
+  {
+    "path": "admin.inventory.reason_other",
+    "en": "Other",
+    "zh": "其他"
+  },
+  {
+    "path": "admin.inventory.notes",
+    "en": "Notes",
+    "zh": "备注"
+  },
+  {
+    "path": "admin.inventory.cancel",
+    "en": "Cancel",
+    "zh": "取消"
+  },
+  {
+    "path": "admin.inventory.save",
+    "en": "Save",
+    "zh": "保存"
+  },
+  {
+    "path": "admin.inventory.history_title",
+    "en": "Stock History",
+    "zh": "库存历史"
+  },
+  {
+    "path": "admin.inventory.from_to",
+    "en": "{from} → {to}",
+    "zh": "{from} → {to}"
+  },
+  {
+    "path": "admin.inventory.no_history",
+    "en": "No adjustment history found.",
+    "zh": "暂无调整记录。"
+  },
+  {
+    "path": "admin.inventory.select_all",
+    "en": "Select All",
+    "zh": "全选"
+  },
+  {
+    "path": "admin.inventory.selected_count",
+    "en": "{count} selected",
+    "zh": "已选 {count} 项"
+  },
+  {
+    "path": "admin.inventory.export_selected",
+    "en": "Export Selected",
+    "zh": "导出选中"
+  },
+  {
+    "path": "admin.inventory.import_xlsx",
+    "en": "Import XLSX",
+    "zh": "导入 XLSX"
+  },
+  {
+    "path": "admin.inventory.import_title",
+    "en": "Import Products from XLSX",
+    "zh": "从 XLSX 导入产品"
+  },
+  {
+    "path": "admin.inventory.import_drop_zone",
+    "en": "Click or drag XLSX file here",
+    "zh": "点击或拖拽 XLSX 文件到此处"
+  },
+  {
+    "path": "admin.inventory.import_preview",
+    "en": "Preview Import Data",
+    "zh": "导入数据预览"
+  },
+  {
+    "path": "admin.inventory.import_apply",
+    "en": "Apply Import",
+    "zh": "确认导入"
+  },
+  {
+    "path": "admin.inventory.import_applying",
+    "en": "Importing...",
+    "zh": "正在导入..."
+  },
+  {
+    "path": "admin.inventory.import_column_mapping",
+    "en": "Column Mapping",
+    "zh": "列映射"
+  },
+  {
+    "path": "admin.inventory.import_ai_mapping",
+    "en": "AI Suggested Mapping",
+    "zh": "AI 建议映射"
+  },
+  {
+    "path": "admin.inventory.import_image_detected",
+    "en": "Image URLs detected - will be auto-uploaded on import",
+    "zh": "检测到图片URL - 导入时将自动上传"
+  },
+  {
+    "path": "admin.inventory.import_created",
+    "en": "Created",
+    "zh": "新建"
+  },
+  {
+    "path": "admin.inventory.import_updated",
+    "en": "Updated",
+    "zh": "更新"
+  },
+  {
+    "path": "admin.inventory.import_errors",
+    "en": "Errors",
+    "zh": "错误"
+  },
+  {
+    "path": "admin.inventory.import_select_file",
+    "en": "Please select an XLSX file",
+    "zh": "请选择 XLSX 文件"
+  },
+  {
+    "path": "admin.inventory.import_download_template",
+    "en": "Download Template",
+    "zh": "下载模板"
+  },
+  {
+    "path": "admin.inventory.import_result",
+    "en": "Import complete: {created} created, {updated} updated, {errors} errors",
+    "zh": "导入完成：新建 {created} 项，更新 {updated} 项，错误 {errors} 项"
+  },
+  {
+    "path": "admin.inventory.select_rows_to_export",
+    "en": "Select items to export",
+    "zh": "请选择要导出的产品"
+  },
+  {
+    "path": "admin.inventory.clear_filters",
+    "en": "Clear filters",
+    "zh": "清除筛选"
+  },
+  {
+    "path": "admin.inventory.clear_selection",
+    "en": "Clear",
+    "zh": "清除选择"
+  },
+  {
+    "path": "admin.inventory.import_parsing",
+    "en": "Parsing file...",
+    "zh": "正在解析文件..."
+  },
+  {
+    "path": "admin.inventory.batch_edit",
+    "en": "Batch Edit",
+    "zh": "批量编辑"
+  },
+  {
+    "path": "admin.inventory.batch_edit_title",
+    "en": "Batch Edit Products",
+    "zh": "批量编辑产品"
+  },
+  {
+    "path": "admin.inventory.batch_edit_selected_count",
+    "en": "Editing {count} products",
+    "zh": "正在编辑 {count} 个产品"
+  },
+  {
+    "path": "admin.inventory.batch_edit_field",
+    "en": "Field",
+    "zh": "字段"
+  },
+  {
+    "path": "admin.inventory.batch_edit_value",
+    "en": "Value",
+    "zh": "值"
+  },
+  {
+    "path": "admin.inventory.batch_edit_apply",
+    "en": "Apply Changes",
+    "zh": "应用更改"
+  },
+  {
+    "path": "admin.inventory.batch_edit_applying",
+    "en": "Applying...",
+    "zh": "正在应用..."
+  },
+  {
+    "path": "admin.inventory.batch_edit_result",
+    "en": "Updated {updated}, {errors} errors",
+    "zh": "更新 {updated} 项，{errors} 项错误"
+  },
+  {
+    "path": "admin.inventory.batch_edit_select_field",
+    "en": "Select a field...",
+    "zh": "选择字段..."
+  },
+  {
+    "path": "admin.inventory.batch_edit_field_category",
+    "en": "Category",
+    "zh": "分类"
+  },
+  {
+    "path": "admin.inventory.batch_edit_field_categorySlug",
+    "en": "Category Slug",
+    "zh": "分类标识"
+  },
+  {
+    "path": "admin.inventory.batch_edit_field_status",
+    "en": "Status",
+    "zh": "状态"
+  },
+  {
+    "path": "admin.inventory.batch_edit_field_stockQuantity",
+    "en": "Stock Quantity",
+    "zh": "库存数量"
+  },
+  {
+    "path": "admin.inventory.batch_edit_field_basePrice",
+    "en": "Base Price",
+    "zh": "基础价格"
+  },
+  {
+    "path": "admin.inventory.batch_edit_field_moq",
+    "en": "MOQ",
+    "zh": "最小起订量"
+  },
+  {
+    "path": "admin.inventory.batch_edit_field_leadTime",
+    "en": "Lead Time",
+    "zh": "交货期"
+  },
+  {
+    "path": "admin.inventory.batch_edit_field_halalCertified",
+    "en": "Halal Certified",
+    "zh": "清真认证"
+  },
+  {
+    "path": "admin.inventory.batch_edit_field_oemAvailable",
+    "en": "OEM Available",
+    "zh": "可OEM定制"
+  },
+  {
+    "path": "admin.inventory.batch_edit_field_hsCode",
+    "en": "HS Code",
+    "zh": "海关编码"
+  },
+  {
+    "path": "admin.inventory.batch_edit_field_shelfLife",
+    "en": "Shelf Life",
+    "zh": "保质期"
+  },
+  {
+    "path": "admin.inventory.batch_edit_field_storage",
+    "en": "Storage",
+    "zh": "存储条件"
+  },
+  {
+    "path": "admin.inventory.batch_delete",
+    "en": "Batch Delete",
+    "zh": "批量删除"
+  },
+  {
+    "path": "admin.inventory.batch_delete_title",
+    "en": "Confirm Batch Delete",
+    "zh": "确认批量删除"
+  },
+  {
+    "path": "admin.inventory.batch_delete_confirm",
+    "en": "Are you sure you want to delete {count} selected products? This action cannot be undone.",
+    "zh": "确定要删除选中的 {count} 个产品吗？该操作不可撤销。"
+  },
+  {
+    "path": "admin.inventory.batch_delete_applying",
+    "en": "Deleting...",
+    "zh": "正在删除..."
+  },
+  {
+    "path": "admin.inventory.batch_delete_result",
+    "en": "{deleted} deleted, {errors} errors",
+    "zh": "删除 {deleted} 项，{errors} 项错误"
+  },
+  {
+    "path": "admin.inventory.import_preview_more",
+    "en": "... and {n} more rows",
+    "zh": "... 还有 {n} 行"
+  },
+  {
+    "path": "admin.inventory.export_filename",
+    "en": "inventory",
+    "zh": "库存"
+  },
+  {
+    "path": "admin.inventory.csv_headers",
+    "en": "SKU,Product Name,Stock,Min Stock,Status,Location,Batch,Expiry Date",
+    "zh": "SKU,产品名称,库存,最低库存,状态,库位,批次,过期日"
+  },
+  {
+    "path": "admin.inventory.tab_stock",
+    "en": "Stock",
+    "zh": "库存"
+  },
+  {
+    "path": "admin.inventory.tab_warehouses",
+    "en": "Warehouses",
+    "zh": "仓库"
+  },
+  {
+    "path": "admin.inventory.tab_transfers",
+    "en": "Transfers",
+    "zh": "调拨"
+  },
+  {
+    "path": "admin.inventory.add_warehouse",
+    "en": "Add Warehouse",
+    "zh": "添加仓库"
+  },
+  {
+    "path": "admin.inventory.no_warehouses",
+    "en": "No warehouses.",
+    "zh": "暂无仓库。"
+  },
+  {
+    "path": "admin.inventory.no_transfers",
+    "en": "No transfers.",
+    "zh": "暂无调拨记录。"
+  },
+  {
+    "path": "admin.inventory.wh_id",
+    "en": "Warehouse ID",
+    "zh": "仓库 ID"
+  },
+  {
+    "path": "admin.inventory.wh_code",
+    "en": "Code",
+    "zh": "代码"
+  },
+  {
+    "path": "admin.inventory.wh_name",
+    "en": "Name",
+    "zh": "名称"
+  },
+  {
+    "path": "admin.inventory.wh_country",
+    "en": "Country",
+    "zh": "国家"
+  },
+  {
+    "path": "admin.inventory.update_stock",
+    "en": "Update Stock",
+    "zh": "更新库存"
+  },
+  {
+    "path": "admin.inventory.create_transfer",
+    "en": "Create Transfer",
+    "zh": "创建调拨"
+  },
+  {
+    "path": "admin.inventory.transfer_no",
+    "en": "Transfer #",
+    "zh": "调拨单号"
+  },
+  {
+    "path": "admin.inventory.from_wh",
+    "en": "From Warehouse",
+    "zh": "源仓库"
+  },
+  {
+    "path": "admin.inventory.to_wh",
+    "en": "To Warehouse",
+    "zh": "目标仓库"
+  },
+  {
+    "path": "admin.inventory.product_id",
+    "en": "Product ID",
+    "zh": "产品 ID"
+  },
+  {
+    "path": "admin.inventory.qty",
+    "en": "Quantity",
+    "zh": "数量"
+  },
+  {
+    "path": "admin.categories.title",
+    "en": "Categories",
+    "zh": "分类管理"
+  },
+  {
+    "path": "admin.categories.description",
+    "en": "Manage product categories with multilingual names, aliases, and descriptions.",
+    "zh": "管理产品分类及多语言名称、别名与描述。"
+  },
+  {
+    "path": "admin.categories.add_category",
+    "en": "Add Category",
+    "zh": "新增分类"
+  },
+  {
+    "path": "admin.categories.edit_category",
+    "en": "Edit Category",
+    "zh": "编辑分类"
+  },
+  {
+    "path": "admin.categories.create_category",
+    "en": "Create Category",
+    "zh": "创建分类"
+  },
+  {
+    "path": "admin.categories.col_name",
+    "en": "Name",
+    "zh": "名称"
+  },
+  {
+    "path": "admin.categories.col_slug",
+    "en": "Slug",
+    "zh": "Slug"
+  },
+  {
+    "path": "admin.categories.col_products",
+    "en": "Products",
+    "zh": "产品数"
+  },
+  {
+    "path": "admin.categories.loading",
+    "en": "Loading...",
+    "zh": "加载中..."
+  },
+  {
+    "path": "admin.categories.no_data",
+    "en": "No categories found",
+    "zh": "暂无分类"
+  },
+  {
+    "path": "admin.categories.edit",
+    "en": "Edit",
+    "zh": "编辑"
+  },
+  {
+    "path": "admin.categories.delete",
+    "en": "Delete",
+    "zh": "删除"
+  },
+  {
+    "path": "admin.categories.slug",
+    "en": "Slug",
+    "zh": "Slug"
+  },
+  {
+    "path": "admin.categories.icon",
+    "en": "Icon",
+    "zh": "图标"
+  },
+  {
+    "path": "admin.categories.thumbnail",
+    "en": "Thumbnail URL",
+    "zh": "缩略图 URL"
+  },
+  {
+    "path": "admin.categories.translations_label",
+    "en": "Translations",
+    "zh": "多语言翻译"
+  },
+  {
+    "path": "admin.categories.translations_hint",
+    "en": "Category name, alias, and description are maintained here only. Chinese is the source locale.",
+    "zh": "分类名称、别名与描述仅在此维护；中文为主语言。"
+  },
+  {
+    "path": "admin.categories.field_name",
+    "en": "Name",
+    "zh": "名称"
+  },
+  {
+    "path": "admin.categories.field_alias",
+    "en": "Alias",
+    "zh": "别名"
+  },
+  {
+    "path": "admin.categories.field_description",
+    "en": "Description",
+    "zh": "描述"
+  },
+  {
+    "path": "admin.categories.cancel",
+    "en": "Cancel",
+    "zh": "取消"
+  },
+  {
+    "path": "admin.categories.saving",
+    "en": "Saving...",
+    "zh": "保存中..."
+  },
+  {
+    "path": "admin.categories.create",
+    "en": "Create",
+    "zh": "创建"
+  },
+  {
+    "path": "admin.categories.update",
+    "en": "Update",
+    "zh": "更新"
+  },
+  {
+    "path": "admin.categories.name_required",
+    "en": "Chinese category name is required",
+    "zh": "请填写中文分类名称"
+  },
+  {
+    "path": "admin.categories.slug_required",
+    "en": "Slug is required",
+    "zh": "请填写 Slug"
+  },
+  {
+    "path": "admin.categories.confirm_delete",
+    "en": "Delete this category?",
+    "zh": "确定删除此分类？"
+  },
+  {
+    "path": "admin.categories.created_success",
+    "en": "Category created",
+    "zh": "分类创建成功"
+  },
+  {
+    "path": "admin.categories.updated_success",
+    "en": "Category updated",
+    "zh": "分类更新成功"
+  },
+  {
+    "path": "admin.categories.deleted_success",
+    "en": "Category deleted",
+    "zh": "分类已删除"
+  },
+  {
+    "path": "admin.categories.load_failed",
+    "en": "Failed to load categories",
+    "zh": "加载分类失败"
+  },
+  {
+    "path": "admin.categories.save_failed",
+    "en": "Save failed",
+    "zh": "保存失败"
+  },
+  {
+    "path": "admin.coupons.title",
+    "en": "Coupons & Gift Cards",
+    "zh": "优惠券与礼品卡"
+  },
+  {
+    "path": "admin.coupons.description",
+    "en": "Promotional codes and prepaid credits.",
+    "zh": "促销码与预付余额。"
+  },
+  {
+    "path": "admin.coupons.create",
+    "en": "Create Coupon",
+    "zh": "创建优惠券"
+  },
+  {
+    "path": "admin.coupons.create_giftcard",
+    "en": "Create Gift Card",
+    "zh": "创建礼品卡"
+  },
+  {
+    "path": "admin.coupons.delete",
+    "en": "Delete",
+    "zh": "删除"
+  },
+  {
+    "path": "admin.coupons.save",
+    "en": "Save",
+    "zh": "保存"
+  },
+  {
+    "path": "admin.coupons.cancel",
+    "en": "Cancel",
+    "zh": "取消"
+  },
+  {
+    "path": "admin.coupons.tab_coupons",
+    "en": "Coupons",
+    "zh": "优惠券"
+  },
+  {
+    "path": "admin.coupons.tab_giftcards",
+    "en": "Gift Cards",
+    "zh": "礼品卡"
+  },
+  {
+    "path": "admin.coupons.no_data",
+    "en": "No coupons.",
+    "zh": "暂无优惠券。"
+  },
+  {
+    "path": "admin.coupons.no_giftcards",
+    "en": "No gift cards.",
+    "zh": "暂无礼品卡。"
+  },
+  {
+    "path": "admin.coupons.code",
+    "en": "Code",
+    "zh": "代码"
+  },
+  {
+    "path": "admin.coupons.type",
+    "en": "Type",
+    "zh": "类型"
+  },
+  {
+    "path": "admin.coupons.value",
+    "en": "Value",
+    "zh": "面值"
+  },
+  {
+    "path": "admin.coupons.min_order",
+    "en": "Min Order",
+    "zh": "最低订单"
+  },
+  {
+    "path": "admin.coupons.starts_at",
+    "en": "Starts At",
+    "zh": "开始时间"
+  },
+  {
+    "path": "admin.coupons.expires_at",
+    "en": "Expires At",
+    "zh": "过期时间"
+  },
+  {
+    "path": "admin.coupons.balance",
+    "en": "Balance",
+    "zh": "余额"
+  },
+  {
+    "path": "admin.coupons.currency",
+    "en": "Currency",
+    "zh": "货币"
+  },
+  {
+    "path": "admin.coupons.type_percentage",
+    "en": "Percentage",
+    "zh": "百分比"
+  },
+  {
+    "path": "admin.coupons.type_fixed",
+    "en": "Fixed Amount",
+    "zh": "固定金额"
+  },
+  {
+    "path": "admin.coupons.col_code",
+    "en": "Code",
+    "zh": "代码"
+  },
+  {
+    "path": "admin.coupons.col_type",
+    "en": "Type",
+    "zh": "类型"
+  },
+  {
+    "path": "admin.coupons.col_value",
+    "en": "Value",
+    "zh": "面值"
+  },
+  {
+    "path": "admin.coupons.col_used",
+    "en": "Used",
+    "zh": "已用"
+  },
+  {
+    "path": "admin.coupons.col_status",
+    "en": "Status",
+    "zh": "状态"
+  },
+  {
+    "path": "admin.coupons.col_initial",
+    "en": "Initial",
+    "zh": "初始"
+  },
+  {
+    "path": "admin.coupons.col_balance",
+    "en": "Balance",
+    "zh": "余额"
+  },
+  {
+    "path": "admin.coupons.col_currency",
+    "en": "Currency",
+    "zh": "货币"
+  },
+  {
+    "path": "admin.coupons.actions",
+    "en": "Actions",
+    "zh": "操作"
+  },
+  {
+    "path": "admin.coupons.showing",
+    "en": "{total} total",
+    "zh": "共 {total} 条"
+  },
+  {
+    "path": "admin.coupons.previous",
+    "en": "Previous",
+    "zh": "上一页"
+  },
+  {
+    "path": "admin.coupons.next",
+    "en": "Next",
+    "zh": "下一页"
+  },
+  {
+    "path": "admin.shippingRates.title",
+    "en": "Shipping Rates",
+    "zh": "运费费率"
+  },
+  {
+    "path": "admin.shippingRates.description",
+    "en": "Destination-based freight rate tables. Estimated days are reference values for quoting — not guaranteed transit times.",
+    "zh": "按目的地的运费表。预计天数仅供报价参考，非承诺运输时效。"
+  },
+  {
+    "path": "admin.shippingRates.create",
+    "en": "Add Rate",
+    "zh": "添加费率"
+  },
+  {
+    "path": "admin.shippingRates.edit",
+    "en": "Edit",
+    "zh": "编辑"
+  },
+  {
+    "path": "admin.shippingRates.delete",
+    "en": "Delete",
+    "zh": "删除"
+  },
+  {
+    "path": "admin.shippingRates.save",
+    "en": "Save",
+    "zh": "保存"
+  },
+  {
+    "path": "admin.shippingRates.cancel",
+    "en": "Cancel",
+    "zh": "取消"
+  },
+  {
+    "path": "admin.shippingRates.no_data",
+    "en": "No shipping rates.",
+    "zh": "暂无运费费率。"
+  },
+  {
+    "path": "admin.shippingRates.destination",
+    "en": "Destination",
+    "zh": "目的地"
+  },
+  {
+    "path": "admin.shippingRates.carrier",
+    "en": "Carrier",
+    "zh": "承运商"
+  },
+  {
+    "path": "admin.shippingRates.min_weight",
+    "en": "Min Weight (kg)",
+    "zh": "最小重量 (kg)"
+  },
+  {
+    "path": "admin.shippingRates.max_weight",
+    "en": "Max Weight (kg)",
+    "zh": "最大重量 (kg)"
+  },
+  {
+    "path": "admin.shippingRates.base_cost",
+    "en": "Base Cost",
+    "zh": "基础运费"
+  },
+  {
+    "path": "admin.shippingRates.cost_per_kg",
+    "en": "Cost per kg",
+    "zh": "每公斤费用"
+  },
+  {
+    "path": "admin.shippingRates.currency",
+    "en": "Currency",
+    "zh": "货币"
+  },
+  {
+    "path": "admin.shippingRates.estimated_days",
+    "en": "Est. Days",
+    "zh": "预计天数"
+  },
+  {
+    "path": "admin.shippingRates.estimated_days_hint",
+    "en": "Reference transit estimate for internal quoting. Subject to change; confirm at order time.",
+    "zh": "内部报价用的参考运输天数，可能变动，下单时确认。"
+  },
+  {
+    "path": "admin.shippingRates.active",
+    "en": "Active",
+    "zh": "启用"
+  },
+  {
+    "path": "admin.shippingRates.col_destination",
+    "en": "Destination",
+    "zh": "目的地"
+  },
+  {
+    "path": "admin.shippingRates.col_carrier",
+    "en": "Carrier",
+    "zh": "承运商"
+  },
+  {
+    "path": "admin.shippingRates.col_base_cost",
+    "en": "Base Cost",
+    "zh": "基础运费"
+  },
+  {
+    "path": "admin.shippingRates.col_days",
+    "en": "Days",
+    "zh": "天数"
+  },
+  {
+    "path": "admin.shippingRates.col_status",
+    "en": "Status",
+    "zh": "状态"
+  },
+  {
+    "path": "admin.shippingRates.actions",
+    "en": "Actions",
+    "zh": "操作"
+  },
+  {
+    "path": "admin.taxRates.title",
+    "en": "Tax Rates",
+    "zh": "税率管理"
+  },
+  {
+    "path": "admin.taxRates.description",
+    "en": "Destination country/region tax rates applied at cart checkout.",
+    "zh": "按目的国/地区配置的税率，用于购物车结账估算。"
+  },
+  {
+    "path": "admin.taxRates.create",
+    "en": "Add Tax Rate",
+    "zh": "添加税率"
+  },
+  {
+    "path": "admin.taxRates.edit",
+    "en": "Edit",
+    "zh": "编辑"
+  },
+  {
+    "path": "admin.taxRates.delete",
+    "en": "Delete",
+    "zh": "删除"
+  },
+  {
+    "path": "admin.taxRates.save",
+    "en": "Save",
+    "zh": "保存"
+  },
+  {
+    "path": "admin.taxRates.cancel",
+    "en": "Cancel",
+    "zh": "取消"
+  },
+  {
+    "path": "admin.taxRates.no_data",
+    "en": "No tax rates configured.",
+    "zh": "暂无税率配置。"
+  },
+  {
+    "path": "admin.taxRates.country",
+    "en": "Country (ISO)",
+    "zh": "国家 (ISO)"
+  },
+  {
+    "path": "admin.taxRates.region",
+    "en": "Region / State",
+    "zh": "地区/州"
+  },
+  {
+    "path": "admin.taxRates.rate",
+    "en": "Rate",
+    "zh": "税率"
+  },
+  {
+    "path": "admin.taxRates.rate_hint",
+    "en": "Decimal fraction, e.g. 0.08875 = 8.875%",
+    "zh": "小数值，如 0.08875 = 8.875%"
+  },
+  {
+    "path": "admin.taxRates.name",
+    "en": "Name",
+    "zh": "名称"
+  },
+  {
+    "path": "admin.taxRates.active",
+    "en": "Active",
+    "zh": "启用"
+  },
+  {
+    "path": "admin.taxRates.col_country",
+    "en": "Country",
+    "zh": "国家"
+  },
+  {
+    "path": "admin.taxRates.col_region",
+    "en": "Region",
+    "zh": "地区"
+  },
+  {
+    "path": "admin.taxRates.col_name",
+    "en": "Name",
+    "zh": "名称"
+  },
+  {
+    "path": "admin.taxRates.col_rate",
+    "en": "Rate",
+    "zh": "税率"
+  },
+  {
+    "path": "admin.taxRates.col_status",
+    "en": "Status",
+    "zh": "状态"
+  },
+  {
+    "path": "admin.taxRates.actions",
+    "en": "Actions",
+    "zh": "操作"
+  }
+]

@@ -67,6 +67,24 @@ func isPaidInFull(paymentStatus string) bool {
 	return strings.EqualFold(strings.TrimSpace(paymentStatus), "paid")
 }
 
+// isPaidOrPartial 已付款或部分付款视为满足执行阶段付款要求
+func isPaidOrPartial(paymentStatus string) bool {
+	switch strings.ToLower(strings.TrimSpace(paymentStatus)) {
+	case "paid", "partial":
+		return true
+	default:
+		return false
+	}
+}
+
+// paymentInsufficientForExecution 进入 confirmed/production/shipped/delivered 前须 paid 或 partial
+func paymentInsufficientForExecution(targetStatus, paymentStatus string) bool {
+	if !requiresPaidBeforeExecution(targetStatus) {
+		return false
+	}
+	return !isPaidOrPartial(paymentStatus)
+}
+
 func requiresPaidBeforeExecution(status string) bool {
 	switch strings.ToLower(strings.TrimSpace(status)) {
 	case "confirmed", "production", "shipped", "delivered":

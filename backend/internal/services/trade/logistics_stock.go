@@ -27,6 +27,17 @@ func logisticsSumActiveOEMHolds(tx *gorm.DB, productID string) (int, error) {
 	return int(sum), nil
 }
 
+func logisticsResolveWarehouseID(tx *gorm.DB, warehouseID string) (string, error) {
+	if warehouseID != "" {
+		var w modelsProduct.Warehouse
+		if err := tx.Where("id = ? AND is_active = ?", warehouseID, true).First(&w).Error; err != nil {
+			return "", err
+		}
+		return w.ID, nil
+	}
+	return logisticsResolveDefaultWarehouseID(tx)
+}
+
 func logisticsResolveDefaultWarehouseID(tx *gorm.DB) (string, error) {
 	var w modelsProduct.Warehouse
 	if err := tx.Where("is_default = ? AND is_active = ?", true, true).First(&w).Error; err == nil {
@@ -217,9 +228,60 @@ func logisticsDeductFEFOFromBatches(tx *gorm.DB, productID string, qty int, reas
 	return records, nil
 }
 
-func logisticsDeductStockForProductLine(tx *gorm.DB, productID string, qty int, reason, refID, operatorID string, t time.Time) ([]*modelsOrder.StockTransaction, error) {
+// logisticsDeductReservedWarehouseStock deducts shipped qty from warehouse (quantity + reserved) after prior reservation.
+func logisticsDeductReservedWarehouseStock(tx *gorm.DB, warehouseID, productID string, qty int, reason, refID, operatorID string, t time.Time) ([]*modelsOrder.StockTransaction, error) {
 	if qty <= 0 {
 		return nil, nil
+	}
+	wid, err := logisticsResolveWarehouseID(tx, warehouseID)
+	if err != nil {
+		return nil, err
+	}
+	var ws modelsProduct.WarehouseStock
+	if err := tx.Where("warehouse_id = ? AND product_id = ?", wid, productID).First(&ws).Error; err != nil {
+		return nil, err
+	}
+	if ws.Quantity < qty {
+		return nil, fmt.Errorf("insufficient warehouse quantity for product %s", productID)
+	}
+	res := tx.Model(&modelsProduct.WarehouseStock{}).
+		Where("id = ? AND quantity >= ?", ws.ID, qty).
+		Updates(map[string]interface{}{
+			"quantity": gorm.Expr("quantity - ?", qty),
+			"reserved": gorm.Expr("GREATEST(reserved - ?, 0)", qty),
+		})
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return nil, fmt.Errorf("insufficient warehouse stock for product %s (concurrent dispatch)", productID)
+	}
+	var p modelsProduct.Product
+	if err := tx.Where("id = ?", productID).First(&p).Error; err != nil {
+		return nil, err
+	}
+	beforeP := p.StockQuantity
+	widCopy := wid
+	rec := &modelsOrder.StockTransaction{
+		ProductID:   productID,
+		Change:      -qty,
+		StockBefore: beforeP,
+		StockAfter:  beforeP,
+		Reason:      reason,
+		ReferenceID: refID,
+		OperatorID:  operatorID,
+		WarehouseID: &widCopy,
+		CreatedAt:   t,
+	}
+	return []*modelsOrder.StockTransaction{rec}, nil
+}
+
+func logisticsDeductStockForProductLine(tx *gorm.DB, warehouseID, productID string, qty int, reserved bool, reason, refID, operatorID string, t time.Time) ([]*modelsOrder.StockTransaction, error) {
+	if qty <= 0 {
+		return nil, nil
+	}
+	if reserved {
+		return logisticsDeductReservedWarehouseStock(tx, warehouseID, productID, qty, reason, refID, operatorID, t)
 	}
 	var batchCount int64
 	if err := tx.Model(&modelsProduct.ProductBatch{}).Where("product_id = ?", productID).Count(&batchCount).Error; err != nil {

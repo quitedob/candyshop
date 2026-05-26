@@ -14,6 +14,7 @@ import (
 	"candypro/api/internal/pkg/pagination"
 	"candypro/api/internal/pkg/response"
 	"candypro/api/internal/pkg/storage"
+	"candypro/api/internal/pkg/upload"
 
 	"github.com/gin-gonic/gin"
 )
@@ -76,8 +77,8 @@ func (h *Handler) CustomerCreateInquiry(c *gin.Context) {
 		return
 	}
 
-	// Parse multipart form (32MB max)
-	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
+	// Parse multipart form (64MB max，支持视频附件)
+	if err := c.Request.ParseMultipartForm(64 << 20); err != nil {
 		response.ErrorResp(c, http.StatusBadRequest, "form_parse_failed")
 		return
 	}
@@ -124,7 +125,7 @@ func (h *Handler) CustomerCreateInquiry(c *gin.Context) {
 				return
 			}
 			contentType := fileHeader.Header.Get("Content-Type")
-			if !isAllowedInquiryType(contentType, cfg.Upload.AllowedTypes) {
+			if !upload.IsAllowedInquiryAttachment(contentType, fileHeader.Filename, cfg.Upload.AllowedTypes) {
 				response.ErrorRespDetail(c, http.StatusBadRequest, "file_type_not_allowed", gin.H{
 					"contentType": contentType,
 				})
@@ -163,6 +164,7 @@ func (h *Handler) CustomerCreateInquiry(c *gin.Context) {
 		TargetCountry:         getVal("targetCountry"),
 		EstimatedQuantity:     getVal("estimatedQuantity"),
 		InterestedProducts:    modelsCommon.StringArray(getValues("interestedProducts")),
+		ProductIDs:            modelsCommon.StringArray(getValues("productIds")),
 		PackagingRequirements: getVal("packagingRequirements"),
 		FlavorRequirements:    getVal("flavorRequirements"),
 		OEMNeeded:             oemNeeded,
@@ -174,7 +176,7 @@ func (h *Handler) CustomerCreateInquiry(c *gin.Context) {
 		UpdatedAt:             time.Now(),
 	}
 
-	if err := h.services.Inquiry.SubmitInquiry(c.Request.Context(), inquiry); err != nil {
+	if err := h.services.Inquiry.SubmitInquiry(c.Request.Context(), inquiry, c.GetString("locale")); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "inquiry_create_failed")
 		return
 	}
@@ -186,36 +188,7 @@ func (h *Handler) CustomerCreateInquiry(c *gin.Context) {
 	})
 }
 
-// isAllowedInquiryType checks if content type is in the allowed list.
-// Also accepts additional document/media types for inquiry attachments.
-func isAllowedInquiryType(contentType string, allowedTypes []string) bool {
-	for _, t := range allowedTypes {
-		if t == contentType {
-			return true
-		}
-	}
-	// Additional inquiry attachment types
-	inquiryAllowed := []string{
-		"application/msword",
-		"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-		"application/pdf",
-		"image/png",
-		"image/jpeg",
-		"video/x-matroska",
-		"video/mp4",
-		"audio/mpeg",
-		"audio/mp3",
-		"text/plain",
-		"image/svg+xml",
-	}
-	for _, t := range inquiryAllowed {
-		if t == contentType {
-			return true
-		}
-	}
-	return false
-}
-
+// isAllowedInquiryType 已迁移至 pkg/upload.IsAllowedInquiryAttachment
 
 // CustomerUpdateInquiry updates an existing inquiry that belongs to current user.
 func (h *Handler) CustomerUpdateInquiry(c *gin.Context) {
@@ -245,6 +218,7 @@ func (h *Handler) CustomerUpdateInquiry(c *gin.Context) {
 	var req struct {
 		EstimatedQuantity     *string  `json:"estimatedQuantity"`
 		InterestedProducts    []string `json:"interestedProducts"`
+		ProductIDs            []string `json:"productIds"`
 		PackagingRequirements *string  `json:"packagingRequirements"`
 		FlavorRequirements    *string  `json:"flavorRequirements"`
 		ExpectedDelivery      *string  `json:"expectedDelivery"`
@@ -262,6 +236,9 @@ func (h *Handler) CustomerUpdateInquiry(c *gin.Context) {
 	}
 	if req.InterestedProducts != nil {
 		inquiry.InterestedProducts = modelsCommon.StringArray(req.InterestedProducts)
+	}
+	if req.ProductIDs != nil {
+		inquiry.ProductIDs = modelsCommon.StringArray(req.ProductIDs)
 	}
 	if req.PackagingRequirements != nil {
 		inquiry.PackagingRequirements = *req.PackagingRequirements
@@ -503,7 +480,7 @@ func (h *Handler) CustomerUploadInquiryAttachment(c *gin.Context) {
 				return
 			}
 			contentType := fh.Header.Get("Content-Type")
-			if !isAllowedInquiryType(contentType, h.cfg.Upload.AllowedTypes) {
+			if !upload.IsAllowedInquiryAttachment(contentType, fh.Filename, h.cfg.Upload.AllowedTypes) {
 				response.ErrorRespDetail(c, http.StatusBadRequest, "file_type_not_allowed", gin.H{
 					"contentType": contentType,
 				})

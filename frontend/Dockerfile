@@ -20,6 +20,9 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# dumb-init 用于正确转发 SIGTERM
+RUN apk --no-cache add dumb-init wget
+
 # R4-19: Run as non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
@@ -37,5 +40,9 @@ EXPOSE 3000
 ENV NUXT_HOST=0.0.0.0
 ENV NUXT_PORT=3000
 
-# Start the application
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
+
+# Start the application (dumb-init forwards signals)
+ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", ".output/server/index.mjs"]

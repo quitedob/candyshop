@@ -54,7 +54,7 @@ func NewHandler(cfg *config.Config, svcs *servicesCommon.SystemServices) *Handle
 // IsAgentReady reports whether the TradeAgent initialized successfully.
 func (h *Handler) IsAgentReady() bool { return h.agentReady }
 
-// TradeAgent returns the 13-tool TradeAgent for cross-handler wiring.
+// TradeAgent returns the TradeAgent for cross-handler wiring.
 func (h *Handler) TradeAgent() adk.Agent { return h.tradeAgent }
 
 // IsB2BCoordinatorReady reports whether the B2B DeepAgent initialized successfully.
@@ -70,25 +70,33 @@ func (h *Handler) IsOrderProcessingReady() bool { return h.orderProcessingReady 
 func (h *Handler) OrderProcessingAgent() adk.Agent { return h.orderProcessingAgent }
 
 // AttachAgentToAIService wires the TradeAgent into the AIService so Generate() calls
-// benefit from the full 13-tool agent instead of the single-tool legacy agent.
+// benefit from the full TradeAgent toolset instead of the single-tool legacy agent.
 func (h *Handler) AttachAgentToAIService(agent adk.Agent) {
 	if h.aiService != nil {
 		h.aiService.AttachAgent(agent)
 	}
 }
 
-// translateFunc returns a TranslateFunc for wiring into Eino agents, or nil if AI is disabled.
-func (h *Handler) translateFunc() einotool.TranslateFunc {
+// translateBatchFunc 返回 translate_content 工具同源的批量翻译回调。
+func (h *Handler) translateBatchFunc() einotool.TranslateBatchFunc {
 	if h.aiService == nil {
 		return nil
 	}
-	return func(ctx context.Context, sourceData map[string]string, targetLocales []string) (map[string]map[string]string, error) {
+	return einotool.NewTranslateBatchFunc(func(ctx context.Context, sourceData map[string]string, targetLocales []string) (map[string]map[string]string, []string, error) {
 		result, err := h.aiService.BatchTranslateFields(ctx, sourceData, targetLocales)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		return result.Fields, nil
-	}
+		if result == nil {
+			return map[string]map[string]string{}, nil, nil
+		}
+		return result.Fields, result.Warnings, nil
+	})
+}
+
+// translateFunc returns a TranslateFunc for wiring into Eino agents, or nil if AI is disabled.
+func (h *Handler) translateFunc() einotool.TranslateFunc {
+	return einotool.TranslateFuncFromBatch(h.translateBatchFunc())
 }
 
 // InitCheckPointStore creates a PostgreSQL-backed checkpoint store and sets it on the AI service.
@@ -125,7 +133,7 @@ func (h *Handler) InitDeepAgent() error {
 		persister = h.services.Trade
 	}
 
-	a, err := eino.NewB2BCoordinatorAgent(ctx, chatModel, persister)
+	a, err := eino.NewB2BCoordinatorAgent(ctx, chatModel, persister, newProductCatalogAdapter(h), newPricingAdapter(h))
 	if err != nil {
 		return err
 	}

@@ -2,6 +2,7 @@ package order
 
 import (
 	modelsOrder "candypro/api/internal/models/order"
+	"candypro/api/internal/pkg/money"
 	"context"
 	"fmt"
 	"time"
@@ -72,8 +73,12 @@ func (r *PaymentRepository) CreateWithBalanceCheck(ctx context.Context, orderTot
 	})
 }
 
-// Update updates a payment record.
+// Update updates a payment record. M-9: bumps Version on every save so
+// any concurrent guarded write fails loudly instead of silently overwriting.
 func (r *PaymentRepository) Update(ctx context.Context, payment *modelsOrder.Payment) error {
+	if payment != nil {
+		payment.Version++
+	}
 	return r.db.WithContext(ctx).Save(payment).Error
 }
 
@@ -88,6 +93,177 @@ func (r *PaymentRepository) ConfirmPayment(ctx context.Context, id, confirmedBy 
 			"confirmed_by": confirmedBy,
 			"confirmed_at": now,
 			"updated_at":   now,
+		})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrPaymentStateMismatch
+	}
+	return nil
+}
+
+// ConfirmPaymentAndRecomputeOrderStatus atomically confirms a pending payment and
+// recomputes the parent order's payment_status (paid / partial / unpaid / refunded)
+// inside a single transaction. Replaces the previous two-step pattern where
+// ConfirmPayment committed first and then a separate updateOrderPaymentStatus call
+// could fail and leave the order out of sync (H-13).
+func (r *PaymentRepository) ConfirmPaymentAndRecomputeOrderStatus(ctx context.Context, id, confirmedBy string) (orderID, newStatus string, err error) {
+	err = r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		now := time.Now()
+		res := tx.Model(&modelsOrder.Payment{}).
+			Where("id = ? AND status = ?", id, "pending").
+			Updates(map[string]interface{}{
+				"status":       "confirmed",
+				"confirmed_by": confirmedBy,
+				"confirmed_at": now,
+				"updated_at":   now,
+			})
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return ErrPaymentStateMismatch
+		}
+		var p modelsOrder.Payment
+		if err := tx.Where("id = ?", id).First(&p).Error; err != nil {
+			return err
+		}
+		recomputed, err := recomputeOrderPaymentStatusTx(tx, p.OrderID)
+		if err != nil {
+			return err
+		}
+		orderID = p.OrderID
+		newStatus = recomputed
+		return nil
+	})
+	return
+}
+
+// MarkPaymentRefundedAndRecomputeOrderStatus atomically refunds a confirmed payment
+// and recomputes the parent order's payment_status. See H-13.
+func (r *PaymentRepository) MarkPaymentRefundedAndRecomputeOrderStatus(ctx context.Context, id string) (orderID, newStatus string, err error) {
+	err = r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		now := time.Now()
+		res := tx.Model(&modelsOrder.Payment{}).
+			Where("id = ? AND status = ?", id, "confirmed").
+			Updates(map[string]interface{}{
+				"status":     "refunded",
+				"updated_at": now,
+			})
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return ErrPaymentStateMismatch
+		}
+		var p modelsOrder.Payment
+		if err := tx.Where("id = ?", id).First(&p).Error; err != nil {
+			return err
+		}
+		recomputed, err := recomputeOrderPaymentStatusTx(tx, p.OrderID)
+		if err != nil {
+			return err
+		}
+		orderID = p.OrderID
+		newStatus = recomputed
+		return nil
+	})
+	return
+}
+
+// ConfirmAuthorizedPaymentAndRecomputeOrderStatus is the atomic variant of
+// ConfirmAuthorizedPayment that also recomputes the parent order status. See H-13.
+func (r *PaymentRepository) ConfirmAuthorizedPaymentAndRecomputeOrderStatus(ctx context.Context, id, confirmedBy string, capturedAmount float64) (orderID, newStatus string, err error) {
+	err = r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		now := time.Now()
+		res := tx.Model(&modelsOrder.Payment{}).
+			Where("id = ? AND status = ?", id, modelsOrder.PaymentRecordStatusAuthorized).
+			Updates(map[string]interface{}{
+				"status":          modelsOrder.PaymentRecordStatusConfirmed,
+				"confirmed_by":    confirmedBy,
+				"confirmed_at":    now,
+				"captured_amount": capturedAmount,
+				"updated_at":      now,
+			})
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return ErrPaymentStateMismatch
+		}
+		var p modelsOrder.Payment
+		if err := tx.Where("id = ?", id).First(&p).Error; err != nil {
+			return err
+		}
+		recomputed, err := recomputeOrderPaymentStatusTx(tx, p.OrderID)
+		if err != nil {
+			return err
+		}
+		orderID = p.OrderID
+		newStatus = recomputed
+		return nil
+	})
+	return
+}
+
+// recomputeOrderPaymentStatusTx loads the order and its payments inside the given
+// transaction, applies the same business rules as PaymentService.updateOrderPaymentStatus,
+// and persists the result. Returns the computed status (or the unchanged status if no
+// update was needed).
+func recomputeOrderPaymentStatusTx(tx *gorm.DB, orderID string) (string, error) {
+	var order modelsOrder.Order
+	if err := tx.Where("id = ?", orderID).First(&order).Error; err != nil {
+		return "", err
+	}
+	var payments []modelsOrder.Payment
+	if err := tx.Where("order_id = ?", orderID).Find(&payments).Error; err != nil {
+		return "", err
+	}
+	confirmedTotal := 0.0
+	hasRefunded := false
+	for _, p := range payments {
+		if p.Status == "confirmed" {
+			confirmedTotal += p.Amount
+		}
+		if p.Status == "refunded" {
+			hasRefunded = true
+		}
+	}
+	newStatus := "unpaid"
+	if hasRefunded && confirmedTotal == 0 {
+		newStatus = "refunded"
+	} else if money.MoneyCoversTotal(confirmedTotal, order.TotalAmount) {
+		newStatus = "paid"
+	} else if confirmedTotal > 0 {
+		newStatus = "partial"
+	}
+	if order.PaymentStatus == newStatus {
+		return newStatus, nil
+	}
+	res := tx.Model(&modelsOrder.Order{}).
+		Where("id = ?", orderID).
+		Updates(map[string]interface{}{
+			"payment_status": newStatus,
+			"updated_at":     time.Now(),
+		})
+	if res.Error != nil {
+		return "", res.Error
+	}
+	return newStatus, nil
+}
+
+// ConfirmAuthorizedPayment sets an authorized payment to confirmed with capture amount.
+func (r *PaymentRepository) ConfirmAuthorizedPayment(ctx context.Context, id, confirmedBy string, capturedAmount float64) error {
+	now := time.Now()
+	res := r.db.WithContext(ctx).Model(&modelsOrder.Payment{}).
+		Where("id = ? AND status = ?", id, modelsOrder.PaymentRecordStatusAuthorized).
+		Updates(map[string]interface{}{
+			"status":          modelsOrder.PaymentRecordStatusConfirmed,
+			"confirmed_by":    confirmedBy,
+			"confirmed_at":    now,
+			"captured_amount": capturedAmount,
+			"updated_at":      now,
 		})
 	if res.Error != nil {
 		return res.Error

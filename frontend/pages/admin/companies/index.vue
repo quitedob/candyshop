@@ -91,12 +91,10 @@ definePageMeta({
   middleware: ['auth']
 })
 
-const { token } = useAuth()
 const { t } = useI18n()
 const localePath = useLocalePath()
 const { currencyOrDefault: cur, cell, enumLabel, formatNumber, formatDate } = useDisplay()
-const config = useRuntimeConfig()
-const baseURL = config.public.apiBase || '/api/v1'
+const { adminGetCompanies, adminVerifyCompany } = useApi()
 
 const companies = ref<any[]>([])
 const pagination = ref<any>(null)
@@ -117,10 +115,7 @@ const fetchCompanies = async () => {
     if (searchInput.value.trim()) params.search = searchInput.value.trim()
     if (statusFilter.value) params.status = statusFilter.value
 
-    const res = await $fetch<any>(`${baseURL}/admin/companies`, {
-      headers: { Authorization: `Bearer ${token.value}` },
-      params
-    })
+    const res = await adminGetCompanies(params)
     companies.value = res.data || []
     pagination.value = res.pagination
   } catch (err: any) {
@@ -132,11 +127,7 @@ const fetchCompanies = async () => {
 
 const verifyCompany = async (id: string, status: string) => {
   try {
-    await $fetch(`${baseURL}/admin/companies/${id}/verify`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${token.value}` },
-      body: { status }
-    })
+    await adminVerifyCompany(id, status)
     await fetchCompanies()
   } catch (err: any) {
     alert(err?.data?.message || err.message || t('errors.api.company_verify_failed'))

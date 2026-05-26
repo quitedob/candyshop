@@ -54,18 +54,18 @@
             class="case-card"
           >
             <div class="case-card__image">
-              <img :src="item.thumbnail" :alt="item.title" />
+              <img :src="item.thumbnail" :alt="tField(item, 'title')" />
               <div class="case-card__overlay">
                 <span class="case-card__view">{{ t('cases.view_case') }}</span>
               </div>
             </div>
             <div class="case-card__content">
-              <span class="case-card__industry">{{ item.industry }}</span>
-              <h3 class="case-card__title">{{ item.client }}</h3>
-              <p class="case-card__project">{{ item.project }}</p>
+              <span class="case-card__industry">{{ tField(item, 'industry') }}</span>
+              <h3 class="case-card__title">{{ tField(item, 'client') }}</h3>
+              <p class="case-card__project">{{ tField(item, 'title') }}</p>
               <div class="case-card__result">
                 <Icon name="lucide:trending-up" size="16" />
-                <span>{{ item.result }}</span>
+                <span>{{ tField(item, 'result') }}</span>
               </div>
             </div>
           </NuxtLink>
@@ -97,9 +97,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n, useLocalePath } from '#i18n'
+import { useTranslation } from '~/composables/useTranslation'
 
 const { t } = useI18n()
 const localePath = useLocalePath()
+const { tField } = useTranslation()
 const config = useRuntimeConfig()
 const { getCases } = useApi()
 
@@ -136,7 +138,7 @@ const whatsappUrl = computed(() => {
   return `https://wa.me/${number}?text=${message}`
 })
 
-useSeo({
+usePageOgImage({
   title: `${t('nav.cases')} | ${t('seo.default_title')}`,
   description: t('cases.subtitle'),
   ogType: 'website'

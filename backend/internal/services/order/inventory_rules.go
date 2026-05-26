@@ -7,10 +7,27 @@ import (
 	"strings"
 )
 
+// InventoryWarning 结构化库存警告，供 handler 层 i18n 翻译
+type InventoryWarning struct {
+	Code      string `json:"code"`
+	ProductID string `json:"productId"`
+	Remaining int    `json:"remaining,omitempty"`
+	Available int    `json:"available,omitempty"`
+	Ordered   int    `json:"ordered,omitempty"`
+	MOQ       int    `json:"moq,omitempty"`
+}
+
+const (
+	InventoryWarningSoldOut           = "inventory_warning_sold_out"
+	InventoryWarningLowStock          = "inventory_warning_low_stock"
+	InventoryWarningSoldOutAdmin      = "inventory_warning_sold_out_admin"
+	InventoryWarningBelowMOQAfterOrder = "inventory_warning_below_moq_after_order"
+)
+
 // InventoryValidationResult contains validation output for inventory checks.
 type InventoryValidationResult struct {
-	Warnings   []string `json:"warnings"`
-	Violations []string `json:"violations"`
+	Warnings   []InventoryWarning `json:"warnings"`
+	Violations []string           `json:"violations"`
 }
 
 // ValidateInventory validates quantities against current product inventory and MOQ.
@@ -25,7 +42,7 @@ func (s *OrderService) ValidateInventoryWithSellable(items []modelsOrder.OrderIt
 
 func validateInventoryWithSellable(items []modelsOrder.OrderItem, productsByID map[string]modelsProduct.Product, sellable map[string]int) InventoryValidationResult {
 	result := InventoryValidationResult{
-		Warnings:   make([]string, 0, 8),
+		Warnings:   make([]InventoryWarning, 0, 8),
 		Violations: make([]string, 0, 8),
 	}
 	if len(items) == 0 {
@@ -77,13 +94,22 @@ func validateInventoryWithSellable(items []modelsOrder.OrderItem, productsByID m
 		remaining := stock - qty
 		switch {
 		case remaining == 0:
-			result.Warnings = append(result.Warnings, fmt.Sprintf("Product %s will be sold out after this order.", productID))
+			result.Warnings = append(result.Warnings, InventoryWarning{
+				Code: InventoryWarningSoldOut, ProductID: productID,
+			})
+		case product.MOQ > 0 && remaining > 0 && remaining < product.MOQ:
+			result.Warnings = append(result.Warnings, InventoryWarning{
+				Code: InventoryWarningBelowMOQAfterOrder, ProductID: productID,
+				Remaining: remaining, MOQ: product.MOQ,
+			})
 		case remaining <= lowStockThreshold(product.MOQ):
-			result.Warnings = append(result.Warnings, fmt.Sprintf("Product %s has low remaining stock %d after this order.", productID, remaining))
+			result.Warnings = append(result.Warnings, InventoryWarning{
+				Code: InventoryWarningLowStock, ProductID: productID, Remaining: remaining,
+			})
 		}
 	}
 
-	result.Warnings = dedupeLower(result.Warnings)
+	result.Warnings = dedupeInventoryWarnings(result.Warnings)
 	result.Violations = dedupeLower(result.Violations)
 	return result
 }
@@ -94,4 +120,18 @@ func lowStockThreshold(moq int) int {
 		threshold = moq
 	}
 	return threshold
+}
+
+func dedupeInventoryWarnings(warnings []InventoryWarning) []InventoryWarning {
+	seen := make(map[string]struct{}, len(warnings))
+	out := make([]InventoryWarning, 0, len(warnings))
+	for _, w := range warnings {
+		key := w.Code + "|" + w.ProductID
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, w)
+	}
+	return out
 }

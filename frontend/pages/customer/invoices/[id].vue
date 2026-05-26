@@ -12,7 +12,7 @@
     <div v-else-if="invoice" class="bg-white shadow rounded-lg p-6 space-y-4">
       <div class="flex items-start justify-between">
         <div>
-          <h2 class="text-xl font-bold text-gray-900">{{ invoice.invoiceNumber || invoice.id }}</h2>
+          <h2 class="text-xl font-bold text-gray-900">{{ invoice.invoiceNumber || invoice.invoiceNo || invoice.id }}</h2>
           <p class="text-sm text-gray-500 mt-1">{{ enumLabel('invoice_type', invoice.invoiceType || invoice.type) }}</p>
         </div>
         <span :class="statusClass(invoice.status)" class="px-3 py-1 text-sm font-medium rounded-full">{{ enumLabel('invoice_status', invoice.status) }}</span>
@@ -44,6 +44,8 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeInvoice } from '~/utils/invoiceMapping'
+
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const { t } = useI18n()
@@ -57,7 +59,8 @@ const error = ref('')
 
 const fetchInvoice = async () => {
   try {
-    invoice.value = await api.get(`/user/invoices/${route.params.id}`)
+    const raw = await api.get(`/user/invoices/${route.params.id}`)
+    invoice.value = normalizeInvoice(raw as any)
   } catch (e: any) {
     error.value = e?.message || t('customer.invoices.not_found')
   } finally {

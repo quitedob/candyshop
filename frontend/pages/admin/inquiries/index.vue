@@ -1,213 +1,206 @@
 <template>
   <div>
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">{{ t('admin.inquiries.title') }}</h1>
-        <p class="page-subtitle">{{ t('admin.inquiries.description') }}</p>
-      </div>
-      <div>
+    <PageHeader :title="t('admin.inquiries.title')" :description="t('admin.inquiries.description')">
+      <template #actions>
         <button type="button" class="btn btn-highlight" @click="openCreateModal">
           {{ t('admin.inquiries.new_inquiry') }}
         </button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
-    <div class="table-container">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>{{ t('admin.inquiries.col_date') }}</th>
-            <th>{{ t('admin.inquiries.col_company_contact') }}</th>
-            <th>{{ t('admin.inquiries.col_products') }}</th>
-            <th>{{ t('admin.inquiries.col_status') }}</th>
-            <th class="text-sm font-semibold text-gray-900">{{ $t('common.actions') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="pending">
-            <td colspan="5" class="text-center py-5">{{ t('admin.inquiries.loading') }}</td>
-          </tr>
-          <tr v-else-if="error">
-            <td colspan="5" class="text-center py-5 text-error">{{ error }}</td>
-          </tr>
-          <tr v-else-if="inquiries.length === 0">
-            <td colspan="5" class="text-center py-5">{{ t('admin.inquiries.no_data') }}</td>
-          </tr>
-          <tr v-else v-for="inquiry in inquiries" :key="inquiry.id">
-            <td>
-              {{ formatDate(inquiry.createdAt) }}
-            </td>
-            <td>
-              <div class="font-medium">{{ inquiry.companyName }}</div>
-              <div class="text-light">{{ inquiry.contactPerson }} ({{ inquiry.email }})</div>
-            </td>
-            <td>{{ formatProducts(inquiry.interestedProducts) }}</td>
-            <td>
-              <span class="badge" :class="statusClass(inquiry.status)">
-                {{ enumLabel('inquiry_status', inquiry.status) }}
-              </span>
-            </td>
-            <td class="text-right">
-              <NuxtLink :to="localePath(`/admin/inquiries/${inquiry.id}`)" class="link mr-3">{{ t('admin.inquiries.view') }}</NuxtLink>
-              <button type="button" class="link mr-3" @click="openEditModal(inquiry.id)">{{ t('admin.inquiries.edit') }}</button>
-              <button type="button" class="link link-danger" @click="deleteInquiry(inquiry.id)">{{ t('admin.inquiries.delete') }}</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <AdminTable
+      :columns="columns"
+      :rows="inquiries"
+      :loading="pending"
+      :error="!!error"
+      :error-message="error"
+      :empty-text="t('admin.inquiries.no_data')"
+      @retry="fetchInquiries"
+    >
+      <template #cell-createdAt="{ row }">
+        {{ formatDate(row.createdAt) }}
+      </template>
 
-    <div v-if="pagination" class="pagination">
-      <div class="text-sm text-light">
-        {{ t('admin.inquiries.showing', { from: ((page - 1) * pageSize) + 1, to: Math.min(page * pageSize, pagination.total), total: pagination.total }) }}
-      </div>
-      <div class="flex items-center gap-2">
-        <button type="button" class="btn btn-outline btn-sm" :disabled="page <= 1" @click="prevPage">
-          {{ t('common.previous') }}
-        </button>
-        <button type="button" class="btn btn-outline btn-sm" :disabled="page >= pagination.totalPages" @click="nextPage">
-          {{ t('common.next') }}
-        </button>
-      </div>
-    </div>
+      <template #cell-company="{ row }">
+        <div class="font-medium">{{ row.companyName }}</div>
+        <div class="text-light">{{ row.contactPerson }} ({{ row.email }})</div>
+      </template>
 
-    <div v-if="showModal" class="modal-overlay" role="dialog" aria-modal="true">
-      <div class="modal-container">
-        <button type="button" class="modal-backdrop w-full border-0 cursor-pointer" @click="closeModal" :aria-label="t('close')"></button>
-        <div class="modal-content">
-          <h3 class="modal-title">{{ editingId ? t('admin.inquiries.edit_inquiry') : t('admin.inquiries.create_inquiry') }}</h3>
+      <template #cell-products="{ row }">
+        {{ formatProducts(row.interestedProducts) }}
+        <span v-if="row.productIds?.length" class="block text-xs text-gray-400 font-mono mt-0.5">
+          ID: {{ row.productIds.join(', ') }}
+        </span>
+      </template>
 
-          <form class="form-grid" @submit.prevent="saveInquiry">
-            <div class="form-group">
-              <label for="inquiry-userId" class="form-label">{{ t('admin.inquiries.user_id') }}</label>
-              <input id="inquiry-userId" v-model="form.userId" name="userId" autocomplete="off" class="form-input" />
-            </div>
-            <div class="form-group">
-              <label for="inquiry-companyName" class="form-label">{{ t('admin.inquiries.company_name') }}</label>
-              <input id="inquiry-companyName" v-model="form.companyName" name="companyName" autocomplete="organization" required class="form-input" />
-            </div>
-            <div class="form-group">
-              <label for="inquiry-contactPerson" class="form-label">{{ t('admin.inquiries.contact_person') }}</label>
-              <input id="inquiry-contactPerson" v-model="form.contactPerson" name="contactPerson" autocomplete="name" required class="form-input" />
-            </div>
-            <div class="form-group">
-              <label for="inquiry-email" class="form-label">{{ t('admin.inquiries.email') }}</label>
-              <input id="inquiry-email" v-model="form.email" name="email" type="email" autocomplete="email" required class="form-input" />
-            </div>
-            <div class="form-group">
-              <label for="inquiry-whatsApp" class="form-label">{{ t('admin.inquiries.whatsapp') }}</label>
-              <input id="inquiry-whatsApp" v-model="form.whatsApp" name="whatsApp" autocomplete="tel" class="form-input" />
-            </div>
-            <div class="form-group">
-              <label for="inquiry-targetCountry" class="form-label">{{ t('admin.inquiries.target_country') }}</label>
-              <input id="inquiry-targetCountry" v-model="form.targetCountry" name="targetCountry" autocomplete="country-name" class="form-input" />
-            </div>
-            <div class="form-group">
-              <label for="inquiry-estimatedQuantity" class="form-label">{{ t('admin.inquiries.estimated_quantity') }}</label>
-              <input id="inquiry-estimatedQuantity" v-model="form.estimatedQuantity" name="estimatedQuantity" autocomplete="off" class="form-input" />
-            </div>
-            <div class="form-group">
-              <label for="inquiry-expectedDelivery" class="form-label">{{ t('admin.inquiries.expected_delivery') }}</label>
-              <input id="inquiry-expectedDelivery" v-model="form.expectedDelivery" name="expectedDelivery" autocomplete="off" class="form-input" />
-            </div>
-            <div class="form-group">
-              <label for="inquiry-status" class="form-label">{{ t('admin.inquiries.status') }}</label>
-              <select id="inquiry-status" v-model="form.status" name="status" class="form-input">
-                <option value="pending">{{ enumLabel('inquiry_status', 'pending') }}</option>
-                <option value="contacted">{{ enumLabel('inquiry_status', 'contacted') }}</option>
-                <option value="quoted">{{ enumLabel('inquiry_status', 'quoted') }}</option>
-                <option value="negotiating">{{ enumLabel('inquiry_status', 'negotiating') }}</option>
-                <option value="won">{{ enumLabel('inquiry_status', 'won') }}</option>
-                <option value="lost">{{ enumLabel('inquiry_status', 'lost') }}</option>
-                <option value="closed">{{ enumLabel('inquiry_status', 'closed') }}</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="inquiry-priority" class="form-label">{{ t('admin.inquiries.priority') }}</label>
-              <select id="inquiry-priority" v-model="form.priority" name="priority" class="form-input">
+      <template #cell-status="{ row }">
+        <StatusBadge :status="row.status" type="inquiry" />
+      </template>
+
+      <template #cell-actions="{ row }">
+        <NuxtLink :to="localePath(`/admin/inquiries/${row.id}`)" class="text-orange-600 hover:text-orange-900 mr-3">{{ t('admin.inquiries.view') }}</NuxtLink>
+        <button type="button" class="text-orange-600 hover:text-orange-900 mr-3" @click="openEditModal(row.id)">{{ t('admin.inquiries.edit') }}</button>
+        <button type="button" class="text-red-600 hover:text-red-900" @click="deleteInquiry(row.id)">{{ t('admin.inquiries.delete') }}</button>
+      </template>
+
+      <template #bottom>
+        <div v-if="pagination" class="flex items-center justify-between">
+          <div class="text-sm text-light">
+            {{ t('admin.inquiries.showing', { from: ((page - 1) * pageSize) + 1, to: Math.min(page * pageSize, pagination.total), total: pagination.total }) }}
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" class="btn btn-outline btn-sm" :disabled="page <= 1" @click="prevPage">
+              {{ t('common.previous') }}
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" :disabled="page >= pagination.totalPages" @click="nextPage">
+              {{ t('common.next') }}
+            </button>
+          </div>
+        </div>
+      </template>
+    </AdminTable>
+
+    <!-- Editor Modal -->
+    <AdminModal :open="showModal" :title="editingId ? t('admin.inquiries.edit_inquiry') : t('admin.inquiries.create_inquiry')" width="xl" @close="closeModal">
+      <form class="grid grid-cols-1 gap-4 sm:grid-cols-2" @submit.prevent="saveInquiry">
+        <div>
+          <label for="inquiry-userId" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiries.user_id') }}</label>
+          <input id="inquiry-userId" v-model="form.userId" name="userId" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label for="inquiry-companyName" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiries.company_name') }}</label>
+          <input id="inquiry-companyName" v-model="form.companyName" name="companyName" autocomplete="organization" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label for="inquiry-contactPerson" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiries.contact_person') }}</label>
+          <input id="inquiry-contactPerson" v-model="form.contactPerson" name="contactPerson" autocomplete="name" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label for="inquiry-email" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiries.email') }}</label>
+          <input id="inquiry-email" v-model="form.email" name="email" type="email" autocomplete="email" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label for="inquiry-whatsApp" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiries.whatsapp') }}</label>
+          <input id="inquiry-whatsApp" v-model="form.whatsApp" name="whatsApp" autocomplete="tel" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label for="inquiry-targetCountry" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiries.target_country') }}</label>
+          <input id="inquiry-targetCountry" v-model="form.targetCountry" name="targetCountry" autocomplete="country-name" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label for="inquiry-estimatedQuantity" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiries.estimated_quantity') }}</label>
+          <input id="inquiry-estimatedQuantity" v-model="form.estimatedQuantity" name="estimatedQuantity" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label for="inquiry-expectedDelivery" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiries.expected_delivery') }}</label>
+          <input id="inquiry-expectedDelivery" v-model="form.expectedDelivery" name="expectedDelivery" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label for="inquiry-status" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiries.status') }}</label>
+          <select id="inquiry-status" v-model="form.status" name="status" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+            <option value="pending">{{ enumLabel('inquiry_status', 'pending') }}</option>
+            <option value="contacted">{{ enumLabel('inquiry_status', 'contacted') }}</option>
+            <option value="quoted">{{ enumLabel('inquiry_status', 'quoted') }}</option>
+            <option value="negotiating">{{ enumLabel('inquiry_status', 'negotiating') }}</option>
+            <option value="won">{{ enumLabel('inquiry_status', 'won') }}</option>
+            <option value="lost">{{ enumLabel('inquiry_status', 'lost') }}</option>
+            <option value="closed">{{ enumLabel('inquiry_status', 'closed') }}</option>
+          </select>
+        </div>
+        <div>
+          <label for="inquiry-priority" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiries.priority') }}</label>
+          <select id="inquiry-priority" v-model="form.priority" name="priority" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+            <option value="low">{{ enumLabel('inquiry_priority', 'low') }}</option>
+            <option value="normal">{{ enumLabel('inquiry_priority', 'normal') }}</option>
+            <option value="high">{{ enumLabel('inquiry_priority', 'high') }}</option>
+            <option value="urgent">{{ enumLabel('inquiry_priority', 'urgent') }}</option>
+          </select>
+        </div>
+        <div class="sm:col-span-2">
+          <label for="inquiry-interestedProductsInput" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiries.interested_products') }}</label>
+          <input id="inquiry-interestedProductsInput" v-model="form.interestedProductsInput" name="interestedProductsInput" autocomplete="off" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        </div>
+        <div class="sm:col-span-2">
+          <label for="inquiry-productIdsInput" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiries.product_ids') }}</label>
+          <input id="inquiry-productIdsInput" v-model="form.productIdsInput" name="productIdsInput" autocomplete="off" :placeholder="t('admin.inquiries.product_ids_placeholder')" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono text-xs" />
+          <p class="mt-1 text-xs text-gray-500">{{ t('admin.inquiries.product_ids_hint') }}</p>
+        </div>
+        <div class="sm:col-span-2">
+          <label class="inline-flex items-center gap-2">
+            <input id="inquiry-oemNeeded" v-model="form.oemNeeded" name="oemNeeded" type="checkbox" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500" />
+            <span class="text-sm">{{ t('admin.inquiries.oem_needed') }}</span>
+          </label>
+        </div>
+        <div class="sm:col-span-2">
+          <label for="inquiry-message" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiries.message') }}</label>
+          <textarea id="inquiry-message" v-model="form.message" name="message" rows="3" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea>
+        </div>
+        <div class="sm:col-span-2">
+          <label for="inquiry-customerNotes" class="block text-sm font-medium text-gray-700">{{ t('admin.inquiries.customer_notes') }}</label>
+          <textarea id="inquiry-customerNotes" v-model="form.customerNotes" name="customerNotes" rows="3" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea>
+        </div>
+
+        <!-- Assignment section (edit only) -->
+        <template v-if="editingId">
+          <div class="sm:col-span-2 pt-4 border-t border-gray-200">
+            <h4 class="text-sm font-semibold text-gray-900 mb-3">{{ t('admin.inquiries.assignment') }}</h4>
+            <div class="grid grid-cols-3 gap-3">
+              <input id="inquiry-assignedTo" v-model="assignment.assignedTo" name="assignedTo" autocomplete="off" :placeholder="t('admin.inquiries.assignee_placeholder')" class="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <select id="inquiry-assignmentPriority" v-model="assignment.priority" name="assignmentPriority" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
                 <option value="low">{{ enumLabel('inquiry_priority', 'low') }}</option>
                 <option value="normal">{{ enumLabel('inquiry_priority', 'normal') }}</option>
                 <option value="high">{{ enumLabel('inquiry_priority', 'high') }}</option>
                 <option value="urgent">{{ enumLabel('inquiry_priority', 'urgent') }}</option>
               </select>
-            </div>
-            <div class="form-group col-span-2">
-              <label for="inquiry-interestedProductsInput" class="form-label">{{ t('admin.inquiries.interested_products') }}</label>
-              <input id="inquiry-interestedProductsInput" v-model="form.interestedProductsInput" name="interestedProductsInput" autocomplete="off" class="form-input" />
-            </div>
-            <div class="form-group col-span-2">
-              <label class="inline-flex items-center gap-2">
-                <input id="inquiry-oemNeeded" v-model="form.oemNeeded" name="oemNeeded" type="checkbox" class="form-checkbox" />
-                <span class="text-sm">{{ t('admin.inquiries.oem_needed') }}</span>
-              </label>
-            </div>
-            <div class="form-group col-span-2">
-              <label for="inquiry-message" class="form-label">{{ t('admin.inquiries.message') }}</label>
-              <textarea id="inquiry-message" v-model="form.message" name="message" rows="3" class="form-textarea"></textarea>
-            </div>
-            <div class="form-group col-span-2">
-              <label for="inquiry-customerNotes" class="form-label">{{ t('admin.inquiries.customer_notes') }}</label>
-              <textarea id="inquiry-customerNotes" v-model="form.customerNotes" name="customerNotes" rows="3" class="form-textarea"></textarea>
-            </div>
-
-            <div v-if="editingId" class="col-span-2 form-section">
-              <h4 class="form-section-title">{{ t('admin.inquiries.assignment') }}</h4>
-              <div class="grid grid-cols-3 gap-3">
-                <input id="inquiry-assignedTo" v-model="assignment.assignedTo" name="assignedTo" autocomplete="off" :placeholder="t('admin.inquiries.assignee_placeholder')" class="form-input" />
-                <select id="inquiry-assignmentPriority" v-model="assignment.priority" name="assignmentPriority" class="form-input">
-                  <option value="low">{{ enumLabel('inquiry_priority', 'low') }}</option>
-                  <option value="normal">{{ enumLabel('inquiry_priority', 'normal') }}</option>
-                  <option value="high">{{ enumLabel('inquiry_priority', 'high') }}</option>
-                  <option value="urgent">{{ enumLabel('inquiry_priority', 'urgent') }}</option>
-                </select>
-                <button type="button" class="btn btn-primary" :disabled="assigning" @click="assignInquiry">
-                  {{ assigning ? t('admin.inquiries.assigning') : t('admin.inquiries.assign') }}
-                </button>
-              </div>
-            </div>
-
-            <div v-if="editingId" class="col-span-2 form-section">
-              <div class="flex items-center justify-between">
-                <h4 class="form-section-title">{{ t('admin.inquiries.ai_analysis') }}</h4>
-                <button type="button" class="btn btn-accent" :disabled="analyzing" @click="analyzeInquiry">
-                  {{ analyzing ? t('admin.inquiries.analyzing') : t('admin.inquiries.analyze') }}
-                </button>
-              </div>
-              <div v-if="analysisResult" class="mt-3 p-3 bg-accent/10 rounded-md text-sm">
-                <p><strong>{{ t('admin.inquiries.risk') }}:</strong> {{ analysisResult.riskLevel }}</p>
-                <p><strong>{{ t('admin.inquiries.action') }}:</strong> {{ analysisResult.recommendedAction }}</p>
-                <p><strong>{{ t('admin.inquiries.summary') }}:</strong> {{ analysisResult.summary }}</p>
-              </div>
-            </div>
-
-            <div v-if="editingId" class="col-span-2 form-section">
-              <h4 class="form-section-title">{{ t('admin.inquiries.quote') }}</h4>
-              <div class="grid grid-cols-2 gap-3">
-                <input id="inquiry-quotedAmount" v-model.number="quote.quotedAmount" name="quotedAmount" type="number" min="0" step="0.01" :placeholder="t('admin.inquiries.quoted_amount_placeholder')" class="form-input" />
-                <input id="inquiry-validUntil" v-model="quote.validUntil" name="validUntil" type="datetime-local" class="form-input" />
-                <input id="inquiry-quoteProducts" v-model="quote.products" name="quoteProducts" :placeholder="t('admin.inquiries.products_placeholder')" class="col-span-2 form-input" />
-                <textarea id="inquiry-quoteCustomerNotes" v-model="quote.customerNotes" name="quoteCustomerNotes" rows="2" :placeholder="t('admin.inquiries.notes_placeholder')" class="col-span-2 form-textarea"></textarea>
-                <button type="button" class="btn btn-highlight col-span-2" :disabled="quoting" @click="submitQuote">
-                  {{ quoting ? t('admin.inquiries.submitting') : t('admin.inquiries.submit_quote') }}
-                </button>
-              </div>
-            </div>
-
-            <div v-if="formError" class="col-span-2 text-sm text-error">{{ formError }}</div>
-            <div class="col-span-2 flex justify-end gap-3">
-              <button type="button" class="btn btn-outline" @click="closeModal">
-                {{ t('admin.inquiries.cancel') }}
-              </button>
-              <button type="submit" :disabled="saving" class="btn btn-highlight">
-                {{ saving ? t('admin.inquiries.saving') : (editingId ? t('admin.inquiries.update') : t('admin.inquiries.create')) }}
+              <button type="button" class="btn btn-primary" :disabled="assigning" @click="assignInquiry">
+                {{ assigning ? t('admin.inquiries.assigning') : t('admin.inquiries.assign') }}
               </button>
             </div>
-          </form>
+          </div>
+
+          <!-- AI Analysis section -->
+          <div class="sm:col-span-2 pt-4 border-t border-gray-200">
+            <div class="flex items-center justify-between">
+              <h4 class="text-sm font-semibold text-gray-900">{{ t('admin.inquiries.ai_analysis') }}</h4>
+              <button type="button" class="btn btn-accent" :disabled="analyzing" @click="analyzeInquiry">
+                {{ analyzing ? t('admin.inquiries.analyzing') : t('admin.inquiries.analyze') }}
+              </button>
+            </div>
+            <div v-if="analysisResult" class="mt-3 p-3 bg-accent/10 rounded-md text-sm">
+              <p><strong>{{ t('admin.inquiries.risk') }}:</strong> {{ analysisResult.riskLevel }}</p>
+              <p><strong>{{ t('admin.inquiries.action') }}:</strong> {{ analysisResult.recommendedAction }}</p>
+              <p><strong>{{ t('admin.inquiries.summary') }}:</strong> {{ analysisResult.summary }}</p>
+            </div>
+          </div>
+
+          <!-- Quote section -->
+          <div class="sm:col-span-2 pt-4 border-t border-gray-200">
+            <h4 class="text-sm font-semibold text-gray-900 mb-3">{{ t('admin.inquiries.quote') }}</h4>
+            <div class="grid grid-cols-2 gap-3">
+              <input id="inquiry-quotedAmount" v-model.number="quote.quotedAmount" name="quotedAmount" type="number" min="0" step="0.01" :placeholder="t('admin.inquiries.quoted_amount_placeholder')" class="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <input id="inquiry-validUntil" v-model="quote.validUntil" name="validUntil" type="datetime-local" class="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <input id="inquiry-quoteProducts" v-model="quote.products" name="quoteProducts" :placeholder="t('admin.inquiries.products_placeholder')" class="col-span-2 rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <textarea id="inquiry-quoteCustomerNotes" v-model="quote.customerNotes" name="quoteCustomerNotes" rows="2" :placeholder="t('admin.inquiries.notes_placeholder')" class="col-span-2 rounded-md border border-gray-300 px-3 py-2 text-sm"></textarea>
+              <button type="button" class="btn btn-highlight col-span-2" :disabled="quoting" @click="submitQuote">
+                {{ quoting ? t('admin.inquiries.submitting') : t('admin.inquiries.submit_quote') }}
+              </button>
+            </div>
+          </div>
+        </template>
+
+        <div v-if="formError" class="sm:col-span-2 text-sm text-red-600">{{ formError }}</div>
+        <div class="sm:col-span-2 flex justify-end gap-3">
+          <button type="button" class="btn btn-outline" @click="closeModal">
+            {{ t('admin.inquiries.cancel') }}
+          </button>
+          <button type="submit" :disabled="saving" class="btn btn-highlight">
+            {{ saving ? t('admin.inquiries.saving') : (editingId ? t('admin.inquiries.update') : t('admin.inquiries.create')) }}
+          </button>
         </div>
-      </div>
-    </div>
+      </form>
+    </AdminModal>
 
-    <p v-if="actionMessage" class="mt-4 text-sm" :class="actionError ? 'text-error' : 'text-success'">
+    <p v-if="actionMessage" class="mt-4 text-sm" :class="actionError ? 'text-red-600' : 'text-green-600'">
       {{ actionMessage }}
     </p>
   </div>
@@ -221,12 +214,18 @@ definePageMeta({
   middleware: ['auth']
 })
 
-const { token } = useAuth()
+const api = useApi()
 const { t } = useI18n()
-const { enumLabel, formatNumber, formatDate } = useDisplay()
+const { enumLabel, formatDate } = useDisplay()
 const localePath = useLocalePath()
-const config = useRuntimeConfig()
-const baseURL = config.public.apiBase || '/api/v1'
+
+const columns = [
+  { key: 'createdAt', label: t('admin.inquiries.col_date') },
+  { key: 'company', label: t('admin.inquiries.col_company_contact') },
+  { key: 'products', label: t('admin.inquiries.col_products') },
+  { key: 'status', label: t('admin.inquiries.col_status') },
+  { key: 'actions', label: '' },
+]
 
 const inquiries = ref<any[]>([])
 const pagination = ref<any>(null)
@@ -255,6 +254,7 @@ const form = reactive({
   targetCountry: '',
   estimatedQuantity: '',
   interestedProductsInput: '',
+  productIdsInput: '',
   expectedDelivery: '',
   oemNeeded: false,
   message: '',
@@ -277,19 +277,8 @@ const quote = reactive({
 
 const parseCSV = (value: string) => value.split(',').map(v => v.trim()).filter(Boolean)
 
-const statusClass = (status: string) => {
-  if (status === 'pending') return 'badge-warning'
-  if (status === 'contacted' || status === 'quoted') return 'badge-info'
-  if (status === 'negotiating') return 'badge-primary'
-  if (status === 'won' || status === 'converted') return 'badge-success'
-  if (status === 'lost') return 'badge-error'
-  return 'badge-default'
-}
-
 const formatProducts = (products: unknown) => {
-  if (Array.isArray(products)) {
-    return products.length ? products.join(', ') : '-'
-  }
+  if (Array.isArray(products)) return products.length ? products.join(', ') : '-'
   return '-'
 }
 
@@ -297,28 +286,22 @@ const fetchInquiries = async () => {
   pending.value = true
   error.value = ''
   try {
-    const res = await $fetch<any>(`${baseURL}/admin/inquiries?page=${page.value}&limit=${pageSize}`, {
-      headers: { Authorization: `Bearer ${token.value}` }
-    })
+    const res = await api.get<any>(`/admin/inquiries?page=${page.value}&limit=${pageSize}`)
     inquiries.value = res.data || []
     pagination.value = res.pagination
   } catch (err: any) {
-    error.value = err?.data?.message || err.message || t('errors.api.load_failed')
+    error.value = err?.message || t('errors.api.load_failed')
   } finally {
     pending.value = false
   }
 }
 
 const nextPage = () => {
-  if (pagination.value && page.value < pagination.value.totalPages) {
-    page.value += 1
-  }
+  if (pagination.value && page.value < pagination.value.totalPages) page.value += 1
 }
 
 const prevPage = () => {
-  if (page.value > 1) {
-    page.value -= 1
-  }
+  if (page.value > 1) page.value -= 1
 }
 
 const resetForm = () => {
@@ -330,6 +313,7 @@ const resetForm = () => {
   form.targetCountry = ''
   form.estimatedQuantity = ''
   form.interestedProductsInput = ''
+  form.productIdsInput = ''
   form.expectedDelivery = ''
   form.oemNeeded = false
   form.message = ''
@@ -353,10 +337,11 @@ const fillForm = (inquiry: any) => {
   form.companyName = inquiry.companyName || ''
   form.contactPerson = inquiry.contactPerson || ''
   form.email = inquiry.email || ''
-  form.whatsApp = inquiry.whatsapp || ''
+  form.whatsApp = inquiry.whatsapp || inquiry.whatsApp || ''
   form.targetCountry = inquiry.targetCountry || ''
   form.estimatedQuantity = inquiry.estimatedQuantity || ''
   form.interestedProductsInput = Array.isArray(inquiry.interestedProducts) ? inquiry.interestedProducts.join(', ') : ''
+  form.productIdsInput = Array.isArray(inquiry.productIds) ? inquiry.productIds.join(', ') : ''
   form.expectedDelivery = inquiry.expectedDelivery || ''
   form.oemNeeded = Boolean(inquiry.oemNeeded)
   form.message = inquiry.message || ''
@@ -388,14 +373,12 @@ const openEditModal = async (id: string) => {
   actionMessage.value = ''
   actionError.value = false
   try {
-    const inquiry = await $fetch<any>(`${baseURL}/admin/inquiries/${id}`, {
-      headers: { Authorization: `Bearer ${token.value}` }
-    })
+    const inquiry = await api.get<any>(`/admin/inquiries/${id}`)
     fillForm(inquiry)
     showModal.value = true
   } catch (err: any) {
     actionError.value = true
-    actionMessage.value = err?.data?.message || err.message || t('errors.api.load_failed')
+    actionMessage.value = err?.message || t('errors.api.load_failed')
   }
 }
 
@@ -414,6 +397,7 @@ const buildPayload = () => {
     targetCountry: form.targetCountry,
     estimatedQuantity: form.estimatedQuantity,
     interestedProducts: parseCSV(form.interestedProductsInput),
+    productIds: parseCSV(form.productIdsInput),
     expectedDelivery: form.expectedDelivery,
     oemNeeded: form.oemNeeded,
     message: form.message,
@@ -443,24 +427,16 @@ const saveInquiry = async () => {
   try {
     const payload = buildPayload()
     if (editingId.value) {
-      await $fetch(`${baseURL}/admin/inquiries/${editingId.value}`, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${token.value}` },
-        body: payload
-      })
+      await api.put(`/admin/inquiries/${editingId.value}`, payload)
       actionMessage.value = t('admin.inquiries.updated_success')
     } else {
-      await $fetch(`${baseURL}/admin/inquiries`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token.value}` },
-        body: payload
-      })
+      await api.post('/admin/inquiries', payload)
       actionMessage.value = t('admin.inquiries.created_success')
     }
     closeModal()
     await fetchInquiries()
   } catch (err: any) {
-    formError.value = err?.data?.message || err.message || t('errors.api.save_failed')
+    formError.value = err?.message || t('errors.api.save_failed')
   } finally {
     saving.value = false
   }
@@ -472,15 +448,12 @@ const deleteInquiry = async (id: string) => {
   actionMessage.value = ''
   actionError.value = false
   try {
-    await $fetch(`${baseURL}/admin/inquiries/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token.value}` }
-    })
+    await api.del(`/admin/inquiries/${id}`)
     actionMessage.value = t('admin.inquiries.deleted_success')
     await fetchInquiries()
   } catch (err: any) {
     actionError.value = true
-    actionMessage.value = err?.data?.message || err.message || t('errors.api.delete_failed')
+    actionMessage.value = err?.message || t('errors.api.delete_failed')
   }
 }
 
@@ -496,20 +469,16 @@ const assignInquiry = async () => {
   actionMessage.value = ''
   actionError.value = false
   try {
-    await $fetch(`${baseURL}/admin/inquiries/${editingId.value}/assign`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${token.value}` },
-      body: {
-        assignedTo: assignment.assignedTo.trim(),
-        priority: assignment.priority
-      }
+    await api.put(`/admin/inquiries/${editingId.value}/assign`, {
+      assignedTo: assignment.assignedTo.trim(),
+      priority: assignment.priority
     })
     form.priority = assignment.priority
     actionMessage.value = t('admin.inquiries.assigned_success')
     await fetchInquiries()
   } catch (err: any) {
     actionError.value = true
-    actionMessage.value = err?.data?.message || err.message || t('errors.api.assign_failed')
+    actionMessage.value = err?.message || t('errors.api.assign_failed')
   } finally {
     assigning.value = false
   }
@@ -522,14 +491,11 @@ const analyzeInquiry = async () => {
   actionMessage.value = ''
   actionError.value = false
   try {
-    const res = await $fetch<any>(`${baseURL}/admin/inquiries/${editingId.value}/analyze`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token.value}` }
-    })
+    const res = await api.post<any>(`/admin/inquiries/${editingId.value}/analyze`)
     analysisResult.value = res.analysis || null
   } catch (err: any) {
     actionError.value = true
-    actionMessage.value = err?.data?.message || err.message || t('errors.api.analyze_failed')
+    actionMessage.value = err?.message || t('errors.api.analyze_failed')
   } finally {
     analyzing.value = false
   }
@@ -547,22 +513,18 @@ const submitQuote = async () => {
   actionMessage.value = ''
   actionError.value = false
   try {
-    await $fetch(`${baseURL}/admin/inquiries/${editingId.value}/quote`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token.value}` },
-      body: {
-        quotedAmount: quote.quotedAmount,
-        validUntil: quote.validUntil ? new Date(quote.validUntil).toISOString() : '',
-        products: parseCSV(quote.products),
-        customerNotes: quote.customerNotes
-      }
+    await api.post(`/admin/inquiries/${editingId.value}/quote`, {
+      quotedAmount: quote.quotedAmount,
+      validUntil: quote.validUntil ? new Date(quote.validUntil).toISOString() : '',
+      products: parseCSV(quote.products),
+      customerNotes: quote.customerNotes
     })
     form.status = 'quoted'
     actionMessage.value = t('admin.inquiries.quote_submitted')
     await fetchInquiries()
   } catch (err: any) {
     actionError.value = true
-    actionMessage.value = err?.data?.message || err.message || t('errors.api.quote_failed')
+    actionMessage.value = err?.message || t('errors.api.quote_failed')
   } finally {
     quoting.value = false
   }
@@ -571,222 +533,3 @@ const submitQuote = async () => {
 watch(page, fetchInquiries)
 onMounted(fetchInquiries)
 </script>
-
-<style scoped>
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--spacing-xl);
-}
-
-.page-title {
-  font-size: var(--text-2xl);
-  font-weight: 600;
-  color: var(--color-primary);
-}
-
-.page-subtitle {
-  margin-top: var(--spacing-xs);
-  font-size: var(--text-sm);
-  color: var(--color-text-light);
-}
-
-.table-container {
-  overflow: hidden;
-  border-radius: var(--radius-lg);
-  background: white;
-  box-shadow: var(--shadow-md);
-  margin-top: var(--spacing-xl);
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.data-table th {
-  padding: var(--spacing-md);
-  text-align: left;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--color-primary);
-  background: var(--color-bg-alt);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.data-table td {
-  padding: var(--spacing-md);
-  font-size: var(--text-sm);
-  color: var(--color-text);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.data-table tbody tr:hover {
-  background: var(--color-bg);
-}
-
-.data-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: var(--spacing-lg);
-  padding: var(--spacing-md) var(--spacing-lg);
-  background: white;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-}
-
-.link {
-  color: var(--color-highlight);
-  font-weight: 500;
-  transition: color var(--transition-fast);
-}
-
-.link:hover {
-  color: var(--color-highlight-hover);
-}
-
-.link-danger {
-  color: var(--color-error);
-}
-
-.link-danger:hover {
-  color: var(--color-error);
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--spacing-lg);
-  margin-top: var(--spacing-lg);
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.form-group.col-span-2 {
-  grid-column: span 2;
-}
-
-.form-label {
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--color-text);
-}
-
-.form-input {
-  width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--text-base);
-  color: var(--color-text);
-  background: var(--color-bg);
-  border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-md);
-  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: var(--color-highlight);
-  box-shadow: 0 0 0 3px rgba(var(--color-highlight-rgb), 0.1);
-}
-
-.form-textarea {
-  width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--text-base);
-  color: var(--color-text);
-  background: var(--color-bg);
-  border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-md);
-  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
-  resize: vertical;
-}
-
-.form-textarea:focus {
-  outline: none;
-  border-color: var(--color-highlight);
-  box-shadow: 0 0 0 3px rgba(var(--color-highlight-rgb), 0.1);
-}
-
-.form-checkbox {
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  accent-color: var(--color-highlight);
-}
-
-.form-section {
-  margin-top: var(--spacing-md);
-  padding-top: var(--spacing-md);
-  border-top: 1px solid var(--color-border);
-}
-
-.form-section-title {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--color-primary);
-  margin-bottom: var(--spacing-sm);
-}
-
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-xl);
-}
-
-.modal-container {
-  position: relative;
-  width: 100%;
-  max-width: 800px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-}
-
-.modal-content {
-  position: relative;
-  background: white;
-  border-radius: var(--radius-xl);
-  padding: var(--spacing-xl);
-  box-shadow: var(--shadow-xl);
-  animation: modalIn 0.3s ease forwards;
-}
-
-@keyframes modalIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.modal-title {
-  font-size: var(--text-lg);
-  font-weight: 600;
-  color: var(--color-primary);
-}
-</style>

@@ -72,6 +72,15 @@ func (r *PriceRepository) FindPriceRulesByProduct(ctx context.Context, productID
 	return rules, nil
 }
 
+// FindPriceRulesByPriceListID returns all price rules for a price list.
+func (r *PriceRepository) FindPriceRulesByPriceListID(ctx context.Context, priceListID string) ([]modelsProduct.PriceRule, error) {
+	var rules []modelsProduct.PriceRule
+	if err := r.db.WithContext(ctx).Where("price_list_id = ?", priceListID).Order("product_id ASC, min_quantity ASC").Find(&rules).Error; err != nil {
+		return nil, err
+	}
+	return rules, nil
+}
+
 // FindPriceRule returns a specific price rule.
 func (r *PriceRepository) FindPriceRule(ctx context.Context, id string) (*modelsProduct.PriceRule, error) {
 	var rule modelsProduct.PriceRule

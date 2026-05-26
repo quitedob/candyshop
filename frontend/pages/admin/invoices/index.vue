@@ -6,6 +6,10 @@
         <p class="mt-1 text-sm text-gray-600">{{ t('admin.invoices.description') }}</p>
       </div>
       <div class="mt-4 sm:mt-0 flex items-center gap-3">
+        <button @click="openFromOrderModal" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+          <Icon name="heroicons:document-plus" class="h-4 w-4" aria-hidden="true" />
+          {{ t('admin.invoices.from_order') }}
+        </button>
         <button @click="exportInvoices" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
           <Icon name="heroicons:arrow-down-tray" class="h-4 w-4" aria-hidden="true" />
           {{ t('admin.invoices.export') }}
@@ -49,7 +53,7 @@
           <option value="sent">{{ t('admin.invoices.status_sent') }}</option>
           <option value="paid">{{ t('admin.invoices.status_paid') }}</option>
           <option value="overdue">{{ t('admin.invoices.status_overdue') }}</option>
-          <option value="cancelled">{{ t('admin.invoices.status_cancelled') }}</option>
+          <option value="voided">{{ t('admin.invoices.status_voided') }}</option>
         </select>
         <label for="invoice-dateFrom" class="sr-only">{{ t('admin.invoices.date_from') }}</label>
         <input id="invoice-dateFrom" v-model="dateFrom" name="dateFrom" type="date" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
@@ -121,7 +125,9 @@
               <td class="px-6 py-4 text-sm">
                 <button @click="viewInvoice(invoice)" class="text-orange-600 hover:text-orange-900 mr-3">{{ t('admin.invoices.view') }}</button>
                 <button @click="openEditModal(invoice)" class="text-gray-600 hover:text-gray-900 mr-3">{{ t('admin.invoices.edit') }}</button>
-                <button v-if="invoice.status === 'draft'" @click="sendInvoice(invoice)" class="text-emerald-600 hover:text-emerald-900">{{ t('admin.invoices.send') }}</button>
+                <button @click="exportInvoiceDoc(invoice)" class="text-gray-600 hover:text-gray-900 mr-3">{{ t('admin.invoices.export_doc') }}</button>
+                <button v-if="invoice.status === 'draft'" @click="sendInvoice(invoice)" class="text-emerald-600 hover:text-emerald-900 mr-3">{{ t('admin.invoices.send') }}</button>
+                <button v-if="invoice.status === 'draft'" @click="deleteInvoice(invoice)" class="text-red-600 hover:text-red-900">{{ t('admin.invoices.delete') }}</button>
               </td>
             </tr>
           </tbody>
@@ -163,6 +169,7 @@
                 <select id="invoice-type" v-model="form.type" name="type" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
                   <option value="invoice">{{ enumLabel('invoice_type', 'invoice') }}</option>
                   <option value="proforma">{{ enumLabel('invoice_type', 'proforma') }}</option>
+                  <option value="commercial">{{ enumLabel('invoice_type', 'commercial') }}</option>
                   <option value="credit_note">{{ enumLabel('invoice_type', 'credit_note') }}</option>
                 </select>
               </div>
@@ -202,7 +209,7 @@
                   <option value="sent">{{ t('admin.status_options.sent') }}</option>
                   <option value="paid">{{ t('admin.status_options.paid') }}</option>
                   <option value="overdue">{{ t('admin.status_options.overdue') }}</option>
-                  <option value="cancelled">{{ t('admin.status_options.cancelled') }}</option>
+                  <option value="voided">{{ t('admin.invoices.status_voided') }}</option>
                 </select>
               </div>
             </div>
@@ -298,11 +305,31 @@
         </div>
       </div>
     </div>
+
+    <!-- From Order Modal -->
+    <div v-if="showFromOrderModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+        <h3 class="text-lg font-semibold mb-4">{{ t('admin.invoices.from_order') }}</h3>
+        <form @submit.prevent="createFromOrder">
+          <label class="block text-sm font-medium text-gray-700">{{ t('admin.invoices.order') }}</label>
+          <select v-model="fromOrderId" required class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+            <option value="">{{ t('admin.invoices.select_order') }}</option>
+            <option v-for="order in orders" :key="order.id" :value="order.id">#{{ order.orderNumber || order.id }}</option>
+          </select>
+          <p v-if="fromOrderError" class="mt-2 text-sm text-red-600">{{ fromOrderError }}</p>
+          <div class="mt-4 flex justify-end gap-2">
+            <button type="button" class="px-4 py-2 border rounded-lg text-sm" @click="showFromOrderModal = false">{{ t('admin.invoices.cancel') }}</button>
+            <button type="submit" :disabled="fromOrderSaving" class="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm disabled:opacity-50">{{ t('admin.invoices.create_invoice') }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { normalizeInvoice, normalizeInvoiceList, isoDatePrefix } from '~/utils/invoiceMapping'
 
 definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
@@ -328,6 +355,11 @@ const saving = ref(false)
 const formError = ref('')
 const showPreviewModal = ref(false)
 const previewInvoice = ref<any>(null)
+const invoiceStats = ref<any>(null)
+const showFromOrderModal = ref(false)
+const fromOrderId = ref('')
+const fromOrderError = ref('')
+const fromOrderSaving = ref(false)
 
 const form = reactive({
   invoiceNumber: '', type: 'invoice', orderId: '', currency: cur(null),
@@ -335,6 +367,15 @@ const form = reactive({
 })
 
 const statsCards = computed(() => {
+  const s = invoiceStats.value
+  if (s) {
+    return [
+      { label: t('admin.invoices.total'), value: s.total ?? 0, icon: 'heroicons:document-text', color: 'text-orange-600', bgColor: 'bg-orange-50' },
+      { label: t('admin.invoices.draft'), value: s.draft ?? 0, icon: 'heroicons:pencil', color: 'text-gray-600', bgColor: 'bg-gray-50' },
+      { label: t('admin.invoices.sent'), value: s.sent ?? 0, icon: 'heroicons:paper-airplane', color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
+      { label: t('admin.invoices.paid'), value: s.paid ?? 0, icon: 'heroicons:check-circle', color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
+    ]
+  }
   const all = invoices.value.length
   const draft = invoices.value.filter(i => i.status === 'draft').length
   const sent = invoices.value.filter(i => i.status === 'sent').length
@@ -349,8 +390,8 @@ const statsCards = computed(() => {
 
 const filteredInvoices = computed(() => invoices.value.filter(inv => {
   const matchesSearch = !searchQuery.value ||
-    inv.invoiceNumber?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    inv.customerName?.toLowerCase().includes(searchQuery.value.toLowerCase())
+    (inv.invoiceNumber || '').toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    (inv.customerName || '').toLowerCase().includes(searchQuery.value.toLowerCase())
   return matchesSearch && (statusFilter.value === 'all' || inv.status === statusFilter.value)
 }))
 
@@ -358,7 +399,9 @@ const fetchInvoices = async () => {
   pending.value = true; error.value = ''
   try {
     const res = await api.get<any>('/admin/invoices', { page: page.value, limit: pageSize })
-    invoices.value = res.data || []
+    // Normalize backend fields (invoiceNo→invoiceNumber, createdAt→invoiceDate,
+    // derive paidAmount) so the UI can consume one consistent shape.
+    invoices.value = normalizeInvoiceList(res.data || [])
     pagination.value = res.pagination
   } catch (err: any) {
     error.value = err?.message || t('errors.api.load_failed')
@@ -368,6 +411,64 @@ const fetchInvoices = async () => {
 const fetchOrders = async () => {
   try { const res = await api.get<any>('/admin/orders?limit=100'); orders.value = res.data || [] }
   catch { orders.value = [] }
+}
+
+const fetchInvoiceStats = async () => {
+  try { invoiceStats.value = await api.get<any>('/admin/invoices/stats') }
+  catch { invoiceStats.value = null }
+}
+
+const openFromOrderModal = () => {
+  fromOrderId.value = ''
+  fromOrderError.value = ''
+  showFromOrderModal.value = true
+}
+
+const createFromOrder = async () => {
+  fromOrderSaving.value = true
+  fromOrderError.value = ''
+  try {
+    await api.post('/admin/invoices/from-order', { orderId: fromOrderId.value })
+    showFromOrderModal.value = false
+    await fetchInvoices()
+    await fetchInvoiceStats()
+  } catch (err: any) {
+    fromOrderError.value = err?.message || t('errors.api.save_failed')
+  } finally {
+    fromOrderSaving.value = false
+  }
+}
+
+const deleteInvoice = async (invoice: any) => {
+  if (!confirm(t('admin.confirm_delete'))) return
+  try {
+    await api.delete(`/admin/invoices/${invoice.id}`)
+    await fetchInvoices()
+    await fetchInvoiceStats()
+  } catch (err: any) {
+    alert(err?.message || t('errors.api.delete_failed'))
+  }
+}
+
+const exportInvoiceDoc = async (invoice: any) => {
+  try {
+    const { token } = useAuth()
+    const config = useRuntimeConfig()
+    const base = config.public.apiBase || '/api/v1'
+    const resp = await fetch(`${base}/admin/invoices/${invoice.id}/export`, {
+      headers: { Authorization: `Bearer ${token.value}` },
+    })
+    if (!resp.ok) throw new Error(t('errors.api.export_failed'))
+    const blob = await resp.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${invoice.invoiceNumber || invoice.id}.docx`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (err: any) {
+    alert(err?.message || t('errors.api.export_failed'))
+  }
 }
 
 const openCreateModal = () => {
@@ -380,7 +481,7 @@ const openCreateModal = () => {
 
 const openEditModal = (invoice: any) => {
   editingId.value = invoice.id
-  Object.assign(form, { invoiceNumber: invoice.invoiceNumber || '', type: invoice.type || 'invoice', orderId: invoice.orderId || '', currency: cur(invoice.currency), totalAmount: invoice.totalAmount || 0, paidAmount: invoice.paidAmount || 0, invoiceDate: invoice.invoiceDate ? invoice.invoiceDate.split('T')[0] : '', dueDate: invoice.dueDate ? invoice.dueDate.split('T')[0] : '', status: invoice.status || 'draft', notes: invoice.notes || '' })
+  Object.assign(form, { invoiceNumber: invoice.invoiceNumber || '', type: invoice.type || 'invoice', orderId: invoice.orderId || '', currency: cur(invoice.currency), totalAmount: invoice.totalAmount || 0, paidAmount: invoice.paidAmount || 0, invoiceDate: isoDatePrefix(invoice.invoiceDate), dueDate: isoDatePrefix(invoice.dueDate), status: invoice.status || 'draft', notes: invoice.notes || '' })
   formError.value = ''; showModal.value = true
 }
 
@@ -389,14 +490,20 @@ const closeModal = () => { showModal.value = false; saving.value = false }
 const saveInvoice = async () => {
   saving.value = true; formError.value = ''
   try {
-    if (editingId.value) { await api.put(`/admin/invoices/${editingId.value}`, form) }
-    else { await api.post('/admin/invoices', form) }
+    // Map UI-only field names (invoiceNumber → invoiceNo) and drop fields that
+    // do not exist on the backend (paidAmount, invoiceDate). The backend assigns
+    // an invoiceNo automatically when omitted, and createdAt is set on insert.
+    const { invoiceNumber, paidAmount, invoiceDate, ...rest } = form
+    const payload: Record<string, unknown> = { ...rest }
+    if (invoiceNumber) payload.invoiceNo = invoiceNumber
+    if (editingId.value) { await api.put(`/admin/invoices/${editingId.value}`, payload) }
+    else { await api.post('/admin/invoices', payload) }
     closeModal(); await fetchInvoices()
   } catch (err: any) { formError.value = err?.message || t('errors.api.save_failed') }
   finally { saving.value = false }
 }
 
-const viewInvoice = (invoice: any) => { previewInvoice.value = invoice; showPreviewModal.value = true }
+const viewInvoice = (invoice: any) => { previewInvoice.value = normalizeInvoice(invoice); showPreviewModal.value = true }
 
 const sendInvoice = async (invoice: any) => {
   try { await api.post(`/admin/invoices/${invoice.id}/send`, {}); await fetchInvoices() }
@@ -411,7 +518,7 @@ const exportInvoices = () => {
   const statusMap: Record<string, string> = {
     draft: t('enum.invoice_status.draft'), sent: t('enum.invoice_status.sent'),
     paid: t('enum.invoice_status.paid'), overdue: t('enum.invoice_status.overdue'),
-    cancelled: t('enum.invoice_status.cancelled')
+    voided: t('enum.invoice_status.voided')
   }
   const headers = t('admin.invoices.csv_headers').split(',')
   const csv = [headers.join(','), ...filteredInvoices.value.map(inv => [inv.invoiceNumber, inv.orderNumber || inv.orderId || '', `"${inv.customerName || ''}"`, inv.totalAmount || 0, inv.paidAmount || 0, statusMap[inv.status] || inv.status || '', inv.invoiceDate || '', inv.dueDate || ''].join(','))].join('\n')
@@ -429,9 +536,9 @@ const formatStatus = (status: string) => {
   const key = `admin.invoices.status_${String(status).toLowerCase()}`
   return te(key) ? t(key) : t('admin.invoices.status_unknown')
 }
-const isOverdue = (invoice: any) => { if (!invoice.dueDate || invoice.status === 'paid' || invoice.status === 'cancelled') return false; return new Date(invoice.dueDate) < new Date() }
+const isOverdue = (invoice: any) => { if (!invoice.dueDate || invoice.status === 'paid' || invoice.status === 'voided') return false; return new Date(invoice.dueDate) < new Date() }
 const prevPage = () => { if (page.value > 1) { page.value -= 1; fetchInvoices() } }
 const nextPage = () => { if (pagination.value && page.value < pagination.value.totalPages) { page.value += 1; fetchInvoices() } }
 
-onMounted(() => { fetchInvoices(); fetchOrders() })
+onMounted(() => { fetchInvoices(); fetchOrders(); fetchInvoiceStats() })
 </script>

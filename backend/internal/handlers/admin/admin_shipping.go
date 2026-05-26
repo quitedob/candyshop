@@ -9,28 +9,34 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// R2 B-2: request DTOs use camelCase to match the GORM model's JSON output
+// (json:"costPerKg", "minWeightKg", etc). Previously the request schema was
+// snake_case while the response was camelCase, forcing the admin UI into a
+// dual-naming dance: read camelCase from list responses, send snake_case in
+// create/update payloads. Standardising on camelCase end-to-end removes 21
+// fallback expressions in shipping-rates/index.vue.
 type adminCreateShippingRateRequest struct {
 	Destination   string  `json:"destination" binding:"required"`
-	MinWeightKg   float64 `json:"min_weight_kg"`
-	MaxWeightKg   float64 `json:"max_weight_kg"`
-	BaseCost      float64 `json:"base_cost"`
-	CostPerKg     float64 `json:"cost_per_kg"`
+	MinWeightKg   float64 `json:"minWeightKg"`
+	MaxWeightKg   float64 `json:"maxWeightKg"`
+	BaseCost      float64 `json:"baseCost"`
+	CostPerKg     float64 `json:"costPerKg"`
 	Currency      string  `json:"currency"`
 	Carrier       string  `json:"carrier"`
-	EstimatedDays int     `json:"estimated_days"`
-	IsActive      bool    `json:"is_active"`
+	EstimatedDays int     `json:"estimatedDays"`
+	IsActive      bool    `json:"isActive"`
 }
 
 type adminUpdateShippingRateRequest struct {
 	Destination   *string  `json:"destination"`
-	MinWeightKg   *float64 `json:"min_weight_kg"`
-	MaxWeightKg   *float64 `json:"max_weight_kg"`
-	BaseCost      *float64 `json:"base_cost"`
-	CostPerKg     *float64 `json:"cost_per_kg"`
+	MinWeightKg   *float64 `json:"minWeightKg"`
+	MaxWeightKg   *float64 `json:"maxWeightKg"`
+	BaseCost      *float64 `json:"baseCost"`
+	CostPerKg     *float64 `json:"costPerKg"`
 	Currency      *string  `json:"currency"`
 	Carrier       *string  `json:"carrier"`
-	EstimatedDays *int     `json:"estimated_days"`
-	IsActive      *bool    `json:"is_active"`
+	EstimatedDays *int     `json:"estimatedDays"`
+	IsActive      *bool    `json:"isActive"`
 }
 
 // AdminGetShippingRates returns all shipping rates.

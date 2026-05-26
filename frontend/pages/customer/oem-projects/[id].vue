@@ -34,11 +34,11 @@
           <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
             <div>
               <dt class="text-sm font-medium text-gray-500">{{ t('customer.oemProjects.product_name') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ project.productName || '-' }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ tField(project, 'productName') || '-' }}</dd>
             </div>
-            <div v-if="project.targetMarket">
+            <div v-if="project.requirements?.targetMarket">
               <dt class="text-sm font-medium text-gray-500">{{ t('customer.oemProjects.target_market') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ project.targetMarket }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ project.requirements.targetMarket }}</dd>
             </div>
           </dl>
         </div>
@@ -71,36 +71,50 @@
         </div>
         <div class="px-4 py-5 sm:p-6">
           <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
-            <div v-if="project.flavor">
+            <div v-if="project.requirements?.flavor">
               <dt class="text-sm font-medium text-gray-500">{{ t('customer.oemProjects.flavor') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ project.flavor }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ project.requirements.flavor }}</dd>
             </div>
-            <div v-if="project.shape">
+            <div v-if="project.requirements?.shape">
               <dt class="text-sm font-medium text-gray-500">{{ t('customer.oemProjects.shape') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ project.shape }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ project.requirements.shape }}</dd>
             </div>
-            <div v-if="project.packaging">
+            <div v-if="project.requirements?.packaging">
               <dt class="text-sm font-medium text-gray-500">{{ t('customer.oemProjects.packaging') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ project.packaging }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ project.requirements.packaging }}</dd>
             </div>
-            <div v-if="project.targetMarket">
+            <div v-if="project.requirements?.targetMarket">
               <dt class="text-sm font-medium text-gray-500">{{ t('customer.oemProjects.target_market') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ project.targetMarket }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ project.requirements.targetMarket }}</dd>
             </div>
-            <div v-if="project.certifications && project.certifications.length">
+            <div v-if="project.requirements?.certifications?.length">
               <dt class="text-sm font-medium text-gray-500">{{ t('customer.oemProjects.certifications') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ Array.isArray(project.certifications) ? project.certifications.join(', ') : project.certifications }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ project.requirements.certifications.join(', ') }}</dd>
             </div>
-            <div v-if="project.moq">
+            <div v-if="project.requirements?.moq">
               <dt class="text-sm font-medium text-gray-500">{{ t('customer.oemProjects.moq') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ project.moq }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ project.requirements.moq }}</dd>
             </div>
-            <div v-if="project.requirements" class="sm:col-span-2">
+            <div v-if="project.notes" class="sm:col-span-2">
               <dt class="text-sm font-medium text-gray-500">{{ t('customer.oemProjects.requirements') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900 whitespace-pre-line">{{ project.requirements }}</dd>
+              <dd class="mt-1 text-sm text-gray-900 whitespace-pre-line">{{ project.notes }}</dd>
             </div>
           </dl>
         </div>
+      </div>
+
+      <!-- Attachments -->
+      <div v-if="project.attachments?.length" class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">{{ t('customer.oemProjects.attachments') }}</h3>
+        </div>
+        <ul class="px-4 py-5 sm:p-6 space-y-2">
+          <li v-for="(file, idx) in project.attachments" :key="`${file}-${idx}`">
+            <a :href="file" target="_blank" rel="noopener noreferrer" class="text-sm text-orange-600 hover:text-orange-800 truncate block">
+              {{ attachmentLabel(file) }}
+            </a>
+          </li>
+        </ul>
       </div>
 
       <!-- Samples -->
@@ -129,8 +143,8 @@
                     {{ enumLabel('sample_status', sample.status) }}
                   </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(sample.requestedAt) }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(sample.shippedAt) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(sample.sentAt) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(sample.receivedAt) }}</td>
               </tr>
             </tbody>
           </table>
@@ -152,12 +166,14 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useTranslation } from '~/composables/useTranslation'
 
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const route = useRoute()
 const api = useApi()
 const { t } = useI18n()
+const { tField } = useTranslation()
 const { enumLabel, formatDate } = useDisplay()
 const localePath = useLocalePath()
 
@@ -197,6 +213,16 @@ const sampleStatusClass = (status: string) => {
   if (status === 'rejected') return 'bg-red-100 text-red-800'
   if (status === 'shipped') return 'bg-orange-100 text-orange-800'
   return 'bg-gray-100 text-gray-800'
+}
+
+/** 从 URL 提取附件文件名 */
+const attachmentLabel = (url: string) => {
+  try {
+    const name = decodeURIComponent(url.split('/').pop() || url)
+    return name.length > 60 ? `${name.slice(0, 57)}...` : name
+  } catch {
+    return url
+  }
 }
 
 onMounted(fetchProject)

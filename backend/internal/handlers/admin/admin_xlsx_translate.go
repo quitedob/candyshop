@@ -1,6 +1,4 @@
 // Package admin — One-click XLSX translation using AI.
-// Upload a spreadsheet, select target language, download translated copy.
-// Formatting and numeric cells are preserved. Only text cells are translated.
 package admin
 
 import (
@@ -9,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"candypro/api/internal/pkg/response"
@@ -18,15 +15,17 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
+type xlsxCell struct {
+	key   string // Sheet!A1
+	sheet string
+	ref   string
+	value string
+}
+
 // AdminTranslateXLSX accepts an uploaded XLSX file, translates all text cells
 // to the target language via AI, and returns the translated file.
 //
 // POST /admin/xlsx/translate
-//
-// Form fields:
-//   - file: the XLSX file (multipart)
-//   - targetLang: ISO language code (zh, en, ar, ja, es, fr, de, etc.)
-//   - sourceLang: optional source language (auto-detect if empty)
 func (h *Handler) AdminTranslateXLSX(c *gin.Context) {
 	if h.aiService == nil || !h.aiService.IsEnabled() {
 		response.ErrorResp(c, http.StatusServiceUnavailable, "ai_not_configured")
@@ -53,52 +52,24 @@ func (h *Handler) AdminTranslateXLSX(c *gin.Context) {
 		return
 	}
 
-	// Open the uploaded spreadsheet
 	f, err := excelize.OpenReader(bytes.NewReader(fileBytes))
 	if err != nil {
 		response.ErrorResp(c, http.StatusBadRequest, "xlsx_parse_failed")
 		return
 	}
+	defer func() { _ = f.Close() }()
 
-	// Iterate all sheets and translate text cells
-	sheets := f.GetSheetList()
-	totalCells := 0
-	translatedCells := 0
-
-	for _, sheet := range sheets {
-		rows, rowsErr := f.GetRows(sheet)
-		if rowsErr != nil {
-			continue
-		}
-
-		for rowIdx, row := range rows {
-			for colIdx, cellValue := range row {
-				totalCells++
-				trimmed := strings.TrimSpace(cellValue)
-				if trimmed == "" || isNumericOrDate(trimmed) {
-					continue
-				}
-				if len(trimmed) < 2 {
-					continue // skip single chars
-				}
-
-				translated, transErr := h.aiService.TranslateSingleText(c.Request.Context(), trimmed, sourceLang, targetLang)
-				if transErr != nil || translated == "" || translated == trimmed {
-					continue
-				}
-
-				cellRef, _ := excelize.CoordinatesToCellName(colIdx+1, rowIdx+1)
-				if setErr := f.SetCellValue(sheet, cellRef, translated); setErr != nil {
-					continue
-				}
-				translatedCells++
-			}
-		}
+	cells := collectTranslatableCells(f)
+	translated, warnings, transErr := h.translateXlsxCells(c, cells, sourceLang, targetLang)
+	if transErr != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "translation_failed")
+		return
 	}
 
-	// Write translated file
-	var outBuf bytes.Buffer
-	if writeErr := f.Write(&outBuf); writeErr != nil {
+	applied := applyXlsxTranslations(f, cells, translated)
+
+	outBuf, writeErr := writeXlsxToBuffer(f)
+	if writeErr != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "xlsx_write_failed")
 		return
 	}
@@ -106,11 +77,13 @@ func (h *Handler) AdminTranslateXLSX(c *gin.Context) {
 	filename := fmt.Sprintf("translated_%s_%s.xlsx", targetLang, time.Now().Format("20060102_150405"))
 	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
-	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", outBuf.Bytes())
+	c.Header("X-Translated-Cells", fmt.Sprintf("%d", applied))
+	c.Header("X-Translation-Warnings", fmt.Sprintf("%d", len(warnings)))
+	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", outBuf)
 }
 
-// AdminBatchTranslateXLSX translates all cells in ALL sheets to ALL requested languages
-// and returns a single XLSX with a sheet per language.
+// AdminBatchTranslateXLSX translates text cells to multiple languages;
+// output workbook uses sheets named {originalSheet}_{lang}.
 //
 // POST /admin/xlsx/translate-batch
 func (h *Handler) AdminBatchTranslateXLSX(c *gin.Context) {
@@ -119,7 +92,7 @@ func (h *Handler) AdminBatchTranslateXLSX(c *gin.Context) {
 		return
 	}
 
-	targetLangsStr := strings.TrimSpace(c.PostForm("targetLangs")) // comma-separated: en,zh,ar,ja
+	targetLangsStr := strings.TrimSpace(c.PostForm("targetLangs"))
 	if targetLangsStr == "" {
 		response.InvalidResp(c, "target_langs_required")
 		return
@@ -129,7 +102,6 @@ func (h *Handler) AdminBatchTranslateXLSX(c *gin.Context) {
 		response.InvalidResp(c, "target_langs_empty")
 		return
 	}
-
 	sourceLang := strings.TrimSpace(c.PostForm("sourceLang"))
 
 	file, _, err := c.Request.FormFile("file")
@@ -139,101 +111,152 @@ func (h *Handler) AdminBatchTranslateXLSX(c *gin.Context) {
 	}
 	defer file.Close()
 
-	fileBytes, _ := io.ReadAll(file)
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "xlsx_read_failed")
+		return
+	}
 
-	// Open source once, extract text cells
 	srcFile, err := excelize.OpenReader(bytes.NewReader(fileBytes))
 	if err != nil {
 		response.ErrorResp(c, http.StatusBadRequest, "xlsx_parse_failed")
 		return
 	}
+	defer func() { _ = srcFile.Close() }()
 
-	// Collect all text cells
-	type cellPos struct {
-		sheet string
-		ref   string
-		value string
-	}
-	var cells []cellPos
-	for _, sheet := range srcFile.GetSheetList() {
-		rows, _ := srcFile.GetRows(sheet)
-		for r, row := range rows {
-			for c, val := range row {
-				v := strings.TrimSpace(val)
-				if v == "" || isNumericOrDate(v) || len(v) < 2 {
-					continue
-				}
-				ref, _ := excelize.CoordinatesToCellName(c+1, r+1)
-				cells = append(cells, cellPos{sheet: sheet, ref: ref, value: v})
-			}
-		}
-	}
-
-	// For each target language, create a translated sheet
+	cells := collectTranslatableCells(srcFile)
 	outFile := excelize.NewFile()
-	outFile.SetSheetName("Sheet1", targetLangs[0])
-
-	type langResult struct {
-		lang  string
-		cells map[string]string // ref → translated text
-	}
-	var mu sync.Mutex
-	var results []langResult
+	defaultSheet := outFile.GetSheetName(0)
+	firstOut := true
+	totalApplied := 0
+	totalWarnings := 0
 
 	for _, lang := range targetLangs {
-		result := langResult{lang: lang, cells: make(map[string]string, len(cells))}
-		for _, cell := range cells {
-			translated, tErr := h.aiService.TranslateSingleText(c.Request.Context(), cell.value, sourceLang, lang)
-			if tErr == nil && translated != "" && translated != cell.value {
-				result.cells[cell.ref] = translated
-			}
+		translated, warnings, transErr := h.translateXlsxCells(c, cells, sourceLang, lang)
+		if transErr != nil {
+			response.ErrorResp(c, http.StatusInternalServerError, "translation_failed")
+			return
 		}
-		mu.Lock()
-		results = append(results, result)
-		mu.Unlock()
-	}
+		totalWarnings += len(warnings)
 
-	// Build sheets: one per language
-	for i, res := range results {
-		sheetName := res.lang
-		if i > 0 {
-			outFile.NewSheet(sheetName)
-		}
-		// Copy source structure, replace translated cells
-		for _, sheet := range srcFile.GetSheetList() {
-			rows, _ := srcFile.GetRows(sheet)
+		for _, srcSheet := range srcFile.GetSheetList() {
+			outSheet := sanitizeSheetName(fmt.Sprintf("%s_%s", srcSheet, lang))
+			if firstOut {
+				outFile.SetSheetName(defaultSheet, outSheet)
+				firstOut = false
+			} else if idx, _ := outFile.GetSheetIndex(outSheet); idx == -1 {
+				_, _ = outFile.NewSheet(outSheet)
+			}
+
+			rows, _ := srcFile.GetRows(srcSheet)
 			for r, row := range rows {
 				for c, val := range row {
 					ref, _ := excelize.CoordinatesToCellName(c+1, r+1)
-					if translated, ok := res.cells[ref]; ok {
-						outFile.SetCellValue(sheetName, ref, translated)
+					key := xlsxCellKey(srcSheet, ref)
+					if tr, ok := translated[key]; ok && tr != "" {
+						_ = outFile.SetCellValue(outSheet, ref, tr)
+						totalApplied++
 					} else {
-						outFile.SetCellValue(sheetName, ref, val)
+						_ = outFile.SetCellValue(outSheet, ref, val)
 					}
 				}
 			}
 		}
 	}
 
-	var outBuf bytes.Buffer
-	outFile.Write(&outBuf)
+	outBuf, writeErr := writeXlsxToBuffer(outFile)
+	if writeErr != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "xlsx_write_failed")
+		return
+	}
 
 	filename := fmt.Sprintf("translated_%s.xlsx", time.Now().Format("20060102_150405"))
 	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
-	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", outBuf.Bytes())
+	c.Header("X-Translated-Cells", fmt.Sprintf("%d", totalApplied))
+	c.Header("X-Translation-Warnings", fmt.Sprintf("%d", totalWarnings))
+	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", outBuf)
 }
 
-// ── helpers ──
+func (h *Handler) translateXlsxCells(c *gin.Context, cells []xlsxCell, sourceLang, targetLang string) (map[string]string, []string, error) {
+	items := make(map[string]string, len(cells))
+	for _, cell := range cells {
+		items[cell.key] = cell.value
+	}
+	return h.aiService.BatchTranslateTexts(c.Request.Context(), items, sourceLang, targetLang)
+}
+
+func collectTranslatableCells(f *excelize.File) []xlsxCell {
+	var cells []xlsxCell
+	for _, sheet := range f.GetSheetList() {
+		rows, rowsErr := f.GetRows(sheet)
+		if rowsErr != nil {
+			continue
+		}
+		for rowIdx, row := range rows {
+			for colIdx, cellValue := range row {
+				trimmed := strings.TrimSpace(cellValue)
+				if trimmed == "" || isNumericOrDate(trimmed) || len(trimmed) < 2 {
+					continue
+				}
+				ref, _ := excelize.CoordinatesToCellName(colIdx+1, rowIdx+1)
+				cells = append(cells, xlsxCell{
+					key:   xlsxCellKey(sheet, ref),
+					sheet: sheet,
+					ref:   ref,
+					value: trimmed,
+				})
+			}
+		}
+	}
+	return cells
+}
+
+func applyXlsxTranslations(f *excelize.File, cells []xlsxCell, translated map[string]string) int {
+	applied := 0
+	for _, cell := range cells {
+		tr, ok := translated[cell.key]
+		if !ok || tr == "" || tr == cell.value {
+			continue
+		}
+		if setErr := f.SetCellValue(cell.sheet, cell.ref, tr); setErr == nil {
+			applied++
+		}
+	}
+	return applied
+}
+
+func writeXlsxToBuffer(f *excelize.File) ([]byte, error) {
+	var outBuf bytes.Buffer
+	if err := f.Write(&outBuf); err != nil {
+		return nil, err
+	}
+	return outBuf.Bytes(), nil
+}
+
+func xlsxCellKey(sheet, ref string) string {
+	return sheet + "!" + ref
+}
+
+func sanitizeSheetName(name string) string {
+	// Excel sheet name max 31 chars, no : \ / ? * [ ]
+	replacer := strings.NewReplacer(":", "_", "\\", "_", "/", "_", "?", "_", "*", "_", "[", "_", "]", "_")
+	name = replacer.Replace(name)
+	if len(name) > 31 {
+		name = name[:31]
+	}
+	if name == "" {
+		return "Sheet1"
+	}
+	return name
+}
 
 func isNumericOrDate(s string) bool {
 	s = strings.TrimSpace(s)
-	// Common numeric patterns
 	var num float64
 	if _, err := fmt.Sscanf(s, "%f", &num); err == nil {
 		return true
 	}
-	// Date patterns
 	if _, err := time.Parse("2006-01-02", s); err == nil {
 		return true
 	}
@@ -243,7 +266,6 @@ func isNumericOrDate(s string) bool {
 	if _, err := time.Parse("2006-01-02 15:04:05", s); err == nil {
 		return true
 	}
-	// Currency patterns
 	if strings.HasPrefix(s, "$") || strings.HasPrefix(s, "¥") || strings.HasPrefix(s, "€") {
 		return true
 	}

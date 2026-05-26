@@ -40,6 +40,16 @@ func (r *ActivityLogRepository) FindByUser(ctx context.Context, userID string, p
 	return logs, total, nil
 }
 
+// FindByEntity returns activity logs for a specific entity ordered chronologically.
+func (r *ActivityLogRepository) FindByEntity(ctx context.Context, entityType, entityID string) ([]modelsCommon.ActivityLog, error) {
+	var logs []modelsCommon.ActivityLog
+	err := r.db.WithContext(ctx).
+		Where("entity_type = ? AND entity_id = ?", entityType, entityID).
+		Order("created_at ASC").
+		Find(&logs).Error
+	return logs, err
+}
+
 // FindAll returns paginated activity logs for all users.
 func (r *ActivityLogRepository) FindAll(ctx context.Context, page, limit int) ([]modelsCommon.ActivityLog, int64, error) {
 	var logs []modelsCommon.ActivityLog

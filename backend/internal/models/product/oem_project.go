@@ -1,6 +1,8 @@
 package product
 
 import (
+	modelsCommon "candypro/api/internal/models/common"
+	modelsUser "candypro/api/internal/models/user"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
@@ -49,14 +51,17 @@ func ValidateOEMStatusTransition(from, to string) error {
 type OEMProject struct {
 	ID           string          `json:"id" gorm:"primaryKey"`
 	UserID       string          `json:"userId" gorm:"index;not null"`
+	User         *modelsUser.User `json:"user,omitempty" gorm:"foreignKey:UserID;references:ID"`
 	InquiryID    *string         `json:"inquiryId" gorm:"index"`
 	ProductName  string          `json:"productName"`
 	Status       string          `json:"status" gorm:"default:'inquiry'"` // inquiry, sampling, formulation, quotation, contract, production, delivery, completed
 	CurrentStep  int             `json:"currentStep" gorm:"default:0"`
 	Requirements OEMRequirements `json:"requirements" gorm:"type:jsonb"`
 	Samples      OEMSampleArray  `json:"samples" gorm:"type:jsonb"`
+	Attachments  modelsCommon.StringArray `json:"attachments" gorm:"type:jsonb"`
 	AssignedTo   *string         `json:"assignedTo" gorm:"index"`
-	Notes        string          `json:"notes" gorm:"type:text"`
+	Notes        string          `json:"notes" gorm:"type:text"`           // customer requirement notes (set at creation)
+	AdminNotes   string          `json:"adminNotes" gorm:"type:text"`      // internal admin/team remarks
 	CreatedAt    time.Time       `json:"createdAt"`
 	UpdatedAt    time.Time       `json:"updatedAt"`
 }

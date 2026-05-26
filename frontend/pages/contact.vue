@@ -235,6 +235,10 @@
 import { ref } from 'vue'
 import { useI18n, useLocalePath } from '#i18n'
 
+// /contact is a public marketing page; it must not require authentication.
+// Previously this declared `middleware: ['auth']`, and /contact was also in
+// the auth middleware's protectedRoutes set, so visiting /ja/contact (or any
+// locale-prefixed contact page) without a session redirected to /auth/login.
 const { t, tm, rt } = useI18n()
 const localePath = useLocalePath()
 const config = useRuntimeConfig()
@@ -312,7 +316,7 @@ const whatsappUrl = computed(() => {
 })
 
 // SEO
-useSeo({
+usePageOgImage({
   title: `${t('nav.contact')} | ${t('seo.default_title')}`,
   description: t('seo.contact_description'),
   ogType: 'website'

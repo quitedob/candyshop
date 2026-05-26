@@ -17,8 +17,12 @@ type paymentRepository interface {
 	CreateWithBalanceCheck(ctx context.Context, orderTotalAmount float64, payment *modelsOrder.Payment) error
 	Update(ctx context.Context, payment *modelsOrder.Payment) error
 	ConfirmPayment(ctx context.Context, id, confirmedBy string) error
+	ConfirmPaymentAndRecomputeOrderStatus(ctx context.Context, id, confirmedBy string) (string, string, error)
 	MarkPaymentRefunded(ctx context.Context, id string) error
+	MarkPaymentRefundedAndRecomputeOrderStatus(ctx context.Context, id string) (string, string, error)
 	UpdateStatus(ctx context.Context, id, currentStatus, newStatus string) error
+	ConfirmAuthorizedPayment(ctx context.Context, id, confirmedBy string, capturedAmount float64) error
+	ConfirmAuthorizedPaymentAndRecomputeOrderStatus(ctx context.Context, id, confirmedBy string, capturedAmount float64) (string, string, error)
 	CountByStatus(ctx context.Context, status string) (int64, error)
 	StatusBreakdown(ctx context.Context) (map[string]int64, error)
 }
@@ -61,43 +65,46 @@ func (s *PaymentService) CreatePaymentWithBalanceCheck(ctx context.Context, orde
 }
 
 // ConfirmPayment confirms a payment and updates the order's payment status atomically.
+// Both the payment update and the order payment_status recomputation happen in a single
+// DB transaction so the two records cannot drift if one of the writes fails (H-13).
 func (s *PaymentService) ConfirmPayment(ctx context.Context, paymentID, confirmedBy string) error {
-	payment, err := s.repo.FindByID(ctx, paymentID)
-	if err != nil {
-		return fmt.Errorf("payment not found: %w", err)
-	}
-	if payment.Status != "pending" {
-		return fmt.Errorf("payment cannot be confirmed: current status is '%s'", payment.Status)
-	}
-
-	if err := s.repo.ConfirmPayment(ctx, paymentID, confirmedBy); err != nil {
+	if _, _, err := s.repo.ConfirmPaymentAndRecomputeOrderStatus(ctx, paymentID, confirmedBy); err != nil {
 		if errors.Is(err, orderrepo.ErrPaymentStateMismatch) {
 			return fmt.Errorf("payment cannot be confirmed: not pending or already processed")
 		}
 		return err
 	}
-
-	return s.updateOrderPaymentStatus(ctx, payment.OrderID)
+	return nil
 }
 
-// RefundPayment marks a payment as refunded and updates order status.
+// RefundPayment marks a payment as refunded and updates order status atomically (H-13).
 func (s *PaymentService) RefundPayment(ctx context.Context, paymentID string) error {
-	payment, err := s.repo.FindByID(ctx, paymentID)
-	if err != nil {
-		return fmt.Errorf("payment not found: %w", err)
-	}
-	if payment.Status != "confirmed" {
-		return fmt.Errorf("only confirmed payments can be refunded: current status is '%s'", payment.Status)
-	}
-
-	if err := s.repo.MarkPaymentRefunded(ctx, paymentID); err != nil {
+	if _, _, err := s.repo.MarkPaymentRefundedAndRecomputeOrderStatus(ctx, paymentID); err != nil {
 		if errors.Is(err, orderrepo.ErrPaymentStateMismatch) {
 			return fmt.Errorf("payment cannot be refunded: not in confirmed state or concurrent update")
 		}
 		return err
 	}
+	return nil
+}
 
-	return s.updateOrderPaymentStatus(ctx, payment.OrderID)
+// CountConfirmedPaymentsForOrder reports how many payments on the order are still
+// in "confirmed" state. Used by cancel flows so admins can be warned when an order
+// is being cancelled while money has already been received (H-22).
+func (s *PaymentService) CountConfirmedPaymentsForOrder(ctx context.Context, orderID string) (int, float64, error) {
+	payments, err := s.repo.FindByOrderID(ctx, orderID)
+	if err != nil {
+		return 0, 0, err
+	}
+	count := 0
+	total := 0.0
+	for _, p := range payments {
+		if p.Status == "confirmed" {
+			count++
+			total += p.Amount
+		}
+	}
+	return count, total, nil
 }
 
 // updateOrderPaymentStatus recalculates the order payment status based on its payments.
@@ -161,6 +168,38 @@ func (s *PaymentService) FailPayment(ctx context.Context, paymentID string) erro
 		return fmt.Errorf("cannot fail payment with status '%s'", payment.Status)
 	}
 	return s.repo.UpdateStatus(ctx, paymentID, payment.Status, modelsOrder.PaymentRecordStatusFailed)
+}
+
+// HasLivePaymentForOrder reports whether the order still has a payment in
+// pending / authorized / confirmed state. Used by the compensation hook
+// (H-21) so we only release stock for orders that no longer have any
+// in-flight money.
+func (s *PaymentService) HasLivePaymentForOrder(ctx context.Context, orderID string) (bool, error) {
+	payments, err := s.repo.FindByOrderID(ctx, orderID)
+	if err != nil {
+		return false, err
+	}
+	for _, p := range payments {
+		switch p.Status {
+		case modelsOrder.PaymentRecordStatusPending,
+			modelsOrder.PaymentRecordStatusAuthorized,
+			modelsOrder.PaymentRecordStatusConfirmed:
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// ConfirmAuthorizedPayment confirms a previously authorized gateway payment.
+// Atomic with the parent order's payment_status recomputation (H-13).
+func (s *PaymentService) ConfirmAuthorizedPayment(ctx context.Context, paymentID, confirmedBy string, capturedAmount float64) error {
+	if _, _, err := s.repo.ConfirmAuthorizedPaymentAndRecomputeOrderStatus(ctx, paymentID, confirmedBy, capturedAmount); err != nil {
+		if errors.Is(err, orderrepo.ErrPaymentStateMismatch) {
+			return fmt.Errorf("payment cannot be confirmed: not in authorized state or concurrent update")
+		}
+		return err
+	}
+	return nil
 }
 
 // FindByGatewayTransactionID looks up a payment by its Stripe/PayPal transaction ID.

@@ -12,11 +12,13 @@
     </div>
 
     <!-- Tab navigation -->
-    <div class="flex gap-1 rounded-lg bg-gray-100 p-1 w-fit">
+    <div class="flex gap-1 rounded-lg bg-gray-100 p-1 w-fit" role="tablist" :aria-label="t('customer.quick_order.title')">
       <button
         v-for="tab in tabs"
         :key="tab.key"
-        :class="['rounded-md px-4 py-2 text-sm font-medium transition-colors', activeTab === tab.key ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-600 hover:text-gray-900']"
+        role="tab"
+        :aria-selected="activeTab === tab.key"
+        :class="['rounded-md px-4 py-2 text-sm font-medium transition-colors min-h-11', activeTab === tab.key ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-600 hover:text-gray-900']"
         @click="activeTab = tab.key"
       >
         {{ tab.label }}
@@ -32,19 +34,29 @@
           :key="idx"
           class="flex gap-3 items-start"
         >
-          <input
-            v-model="row.productId"
-            type="text"
-            :placeholder="t('customer.quick_order.sku_placeholder')"
-            class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-100"
-          />
-          <input
-            v-model.number="row.quantity"
-            type="number"
-            min="1"
-            :placeholder="t('customer.quick_order.qty_placeholder')"
-            class="w-24 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-100"
-          />
+          <div class="flex-1">
+            <label :for="`manual-product-${idx}`" class="sr-only">{{ t('customer.quick_order.sku_placeholder') }}</label>
+            <input
+              :id="`manual-product-${idx}`"
+              v-model="row.productId"
+              type="text"
+              name="productId"
+              :placeholder="t('customer.quick_order.sku_placeholder')"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-100"
+            />
+          </div>
+          <div class="w-24">
+            <label :for="`manual-qty-${idx}`" class="sr-only">{{ t('customer.quick_order.qty_placeholder') }}</label>
+            <input
+              :id="`manual-qty-${idx}`"
+              v-model.number="row.quantity"
+              type="number"
+              min="1"
+              name="quantity"
+              :placeholder="t('customer.quick_order.qty_placeholder')"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-100"
+            />
+          </div>
           <button
             class="inline-flex items-center rounded-lg p-2 text-gray-400 hover:text-red-500 transition-colors"
             :aria-label="t('customer.quick_order.remove_row')"
@@ -75,10 +87,10 @@
       <h3 class="text-sm font-semibold text-gray-900 mb-4">{{ t('customer.quick_order.csv_upload') }}</h3>
       <p class="text-xs text-gray-500 mb-4">{{ t('customer.quick_order.csv_format_hint') }}</p>
       <div class="flex items-center gap-4">
-        <label class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
-          <Icon name="heroicons:document-arrow-up" class="h-4 w-4 text-orange-500" />
+        <label for="csv-file-input" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors min-h-11">
+          <Icon name="heroicons:document-arrow-up" class="h-4 w-4 text-orange-500" aria-hidden="true" />
           {{ csvFileName || t('customer.quick_order.choose_file') }}
-          <input type="file" accept=".csv" class="hidden" @change="onCsvFileChange" />
+          <input id="csv-file-input" type="file" accept=".csv" name="csvFile" class="hidden" @change="onCsvFileChange" />
         </label>
         <button
           :disabled="!csvFile || submitting"
@@ -92,11 +104,47 @@
       <p v-if="csvPreview.length" class="mt-4 text-xs text-gray-600">
         {{ t('customer.quick_order.rows_found', { count: csvPreview.length }) }}
       </p>
+      <div v-if="csvErrors.length" class="mt-4 rounded-lg border border-red-200 bg-red-50 p-3" role="alert">
+        <p class="text-sm font-medium text-red-800">{{ t('customer.quick_order.csv_errors') }}</p>
+        <ul class="mt-2 list-disc pl-5 text-xs text-red-700">
+          <li v-for="(err, i) in csvErrors" :key="i">{{ err }}</li>
+        </ul>
+      </div>
     </div>
 
     <!-- Requisition Lists Tab -->
     <div v-if="activeTab === 'requisition'" class="rounded-lg border border-gray-200 bg-white p-6">
       <h3 class="text-sm font-semibold text-gray-900 mb-4">{{ t('customer.quick_order.requisition_lists') }}</h3>
+
+      <!-- 创建/编辑采购清单 -->
+      <div class="mb-6 rounded-lg border border-dashed border-gray-200 p-4 space-y-3">
+        <input
+          id="req-list-name"
+          v-model="reqForm.name"
+          type="text"
+          :placeholder="t('customer.quick_order.list_name_placeholder')"
+          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        />
+        <div v-for="(row, idx) in reqForm.items" :key="idx" class="flex gap-2">
+          <input v-model="row.productId" type="text" :placeholder="t('customer.quick_order.sku_placeholder')" class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+          <input v-model.number="row.quantity" type="number" min="1" class="w-24 rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+          <button type="button" class="text-gray-400 hover:text-red-500" @click="reqForm.items.splice(idx, 1)">
+            <Icon name="heroicons:x-mark" class="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+        <button type="button" class="text-sm text-orange-600" @click="reqForm.items.push({ productId: '', quantity: 1 })">
+          + {{ t('customer.quick_order.add_row') }}
+        </button>
+        <div class="flex gap-2">
+          <button type="button" class="rounded-lg bg-orange-500 px-4 py-2 text-sm text-white" @click="saveRequisitionList">
+            {{ editingListId ? t('common.save') : t('customer.quick_order.create_list') }}
+          </button>
+          <button v-if="editingListId" type="button" class="rounded-lg border px-4 py-2 text-sm" @click="resetReqForm">
+            {{ t('common.cancel') }}
+          </button>
+        </div>
+      </div>
+
       <div v-if="requisitionLists.length === 0" class="text-sm text-gray-400 text-center py-6">
         {{ t('customer.quick_order.no_requisition_lists') }}
       </div>
@@ -105,6 +153,19 @@
           <p class="text-sm font-medium text-gray-900">{{ list.name }}</p>
           <p v-if="list.notes" class="text-xs text-gray-500">{{ list.notes }}</p>
         </div>
+        <div class="flex items-center gap-2">
+        <button
+          class="inline-flex items-center gap-1 rounded-lg bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+          @click="editRequisitionList(list)"
+        >
+          {{ t('common.edit') }}
+        </button>
+        <button
+          class="inline-flex items-center gap-1 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 transition-colors"
+          @click="deleteRequisitionList(list.id)"
+        >
+          {{ t('common.delete') }}
+        </button>
         <button
           class="inline-flex items-center gap-1 rounded-lg bg-orange-50 px-3 py-1.5 text-xs font-medium text-orange-700 hover:bg-orange-100 transition-colors"
           @click="convertRequisitionToOrder(list.id)"
@@ -112,6 +173,7 @@
           <Icon name="heroicons:arrow-right-circle" class="h-3.5 w-3.5" />
           {{ t('customer.quick_order.create_from_list') }}
         </button>
+        </div>
       </div>
     </div>
 
@@ -126,7 +188,7 @@
           <p class="text-sm font-medium text-gray-900">#{{ order.orderNumber }}</p>
           <p class="text-xs text-gray-500">
             {{ formatDate(order.createdAt) }} &middot;
-            {{ order.items?.length || 0 }} items &middot;
+            {{ t('customer.cart.items_count', { count: order.items?.length || 0 }) }} &middot;
             {{ formatCurrency(order.totalAmount) }}
           </p>
         </div>
@@ -148,6 +210,7 @@ const { t } = useI18n()
 const localePath = useLocalePath()
 const api = useApi()
 const router = useRouter()
+const { formatNumber, formatDate, currencyOrDefault: cur } = useDisplay()
 
 interface ManualRow {
   productId: string
@@ -162,15 +225,51 @@ const manualRows = ref<ManualRow[]>([{ productId: '', quantity: null }])
 const csvFile = ref<File | null>(null)
 const csvFileName = ref('')
 const csvPreview = ref<any[]>([])
+const csvErrors = ref<string[]>([])
 const requisitionLists = ref<any[]>([])
 const orderHistory = ref<any[]>([])
+const editingListId = ref<string | null>(null)
+const reqForm = reactive({ name: '', items: [{ productId: '', quantity: 1 }] })
 
-const tabs = [
+function resetReqForm() {
+  editingListId.value = null
+  reqForm.name = ''
+  reqForm.items = [{ productId: '', quantity: 1 }]
+}
+
+async function saveRequisitionList() {
+  const items = reqForm.items.filter((r) => r.productId.trim() && r.quantity > 0)
+  if (!reqForm.name.trim() || !items.length) return
+  if (editingListId.value) {
+    await api.put(`/user/requisition-lists/${editingListId.value}`, { name: reqForm.name, items })
+  } else {
+    await api.post('/user/requisition-lists', { name: reqForm.name, items })
+  }
+  resetReqForm()
+  await loadRequisitionLists()
+}
+
+async function editRequisitionList(list: any) {
+  editingListId.value = list.id
+  reqForm.name = list.name
+  try {
+    const detail = await api.get(`/user/requisition-lists/${list.id}`)
+    reqForm.items = (detail?.items || []).map((it: any) => ({ productId: it.productId, quantity: it.quantity }))
+    if (!reqForm.items.length) reqForm.items = [{ productId: '', quantity: 1 }]
+  } catch { /* silent */ }
+}
+
+async function deleteRequisitionList(id: string) {
+  await api.delete(`/user/requisition-lists/${id}`)
+  await loadRequisitionLists()
+}
+
+const tabs = computed(() => [
   { key: 'manual', label: t('customer.quick_order.tab_manual') },
   { key: 'csv', label: t('customer.quick_order.tab_csv') },
   { key: 'requisition', label: t('customer.quick_order.tab_requisition') },
   { key: 'reorder', label: t('customer.quick_order.tab_reorder') },
-]
+])
 
 const validManualRows = computed(() =>
   manualRows.value.filter((r) => r.productId.trim() && (r.quantity ?? 0) > 0)
@@ -180,14 +279,9 @@ function addManualRow() {
   manualRows.value.push({ productId: '', quantity: null })
 }
 
-function formatDate(dateStr: string): string {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString()
-}
-
 function formatCurrency(amount: number): string {
   if (amount == null) return '—'
-  return `$${amount.toFixed(2)}`
+  return `${cur()} ${formatNumber(amount || 0)}`
 }
 
 async function submitManualOrder() {
@@ -218,15 +312,20 @@ function onCsvFileChange(e: Event) {
   if (!file) return
   csvFile.value = file
   csvFileName.value = file.name
-  // Preview first few rows
+  csvErrors.value = []
   const reader = new FileReader()
   reader.onload = (ev) => {
     const text = ev.target?.result as string
     const lines = text.split('\n').filter((l) => l.trim())
-    csvPreview.value = lines.slice(1, 6).map((l) => {
+    const errors: string[] = []
+    csvPreview.value = lines.slice(1, 6).map((l, idx) => {
       const [productId, quantity] = l.split(',')
-      return { productId: productId?.trim(), quantity: parseInt(quantity?.trim()) || 0 }
+      const qty = parseInt(quantity?.trim()) || 0
+      if (!productId?.trim()) errors.push(t('customer.quick_order.csv_error_row', { row: idx + 2 }))
+      if (qty <= 0) errors.push(t('customer.quick_order.csv_error_qty', { row: idx + 2 }))
+      return { productId: productId?.trim(), quantity: qty }
     })
+    csvErrors.value = errors.slice(0, 5)
   }
   reader.readAsText(file)
 }
@@ -272,7 +371,7 @@ async function convertRequisitionToOrder(listId: string) {
   submitting.value = true
   submitError.value = ''
   try {
-    const order = await api.post(`/user/requisition-lists/${listId}/convert-to-order`)
+    const order = await api.post(`/user/requisition-lists/${listId}/convert`)
     router.push({ path: localePath(`/customer/orders/${order.id}`) })
   } catch (err: any) {
     submitError.value = err?.message || t('errors.unknown')

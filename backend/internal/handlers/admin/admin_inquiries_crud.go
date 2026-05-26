@@ -21,6 +21,7 @@ type adminCreateInquiryRequest struct {
 	TargetCountry         string   `json:"targetCountry"`
 	EstimatedQuantity     string   `json:"estimatedQuantity"`
 	InterestedProducts    []string `json:"interestedProducts"`
+	ProductIDs            []string `json:"productIds"`
 	PackagingRequirements string   `json:"packagingRequirements"`
 	FlavorRequirements    string   `json:"flavorRequirements"`
 	OEMNeeded             bool     `json:"oemNeeded"`
@@ -40,6 +41,7 @@ type adminUpdateInquiryRequest struct {
 	TargetCountry         *string   `json:"targetCountry"`
 	EstimatedQuantity     *string   `json:"estimatedQuantity"`
 	InterestedProducts    *[]string `json:"interestedProducts"`
+	ProductIDs            *[]string `json:"productIds"`
 	PackagingRequirements *string   `json:"packagingRequirements"`
 	FlavorRequirements    *string   `json:"flavorRequirements"`
 	OEMNeeded             *bool     `json:"oemNeeded"`
@@ -83,6 +85,7 @@ func (h *Handler) AdminCreateInquiry(c *gin.Context) {
 		TargetCountry:         strings.TrimSpace(req.TargetCountry),
 		EstimatedQuantity:     strings.TrimSpace(req.EstimatedQuantity),
 		InterestedProducts:    modelsCommon.StringArray(req.InterestedProducts),
+		ProductIDs:            modelsCommon.StringArray(req.ProductIDs),
 		PackagingRequirements: strings.TrimSpace(req.PackagingRequirements),
 		FlavorRequirements:    strings.TrimSpace(req.FlavorRequirements),
 		OEMNeeded:             req.OEMNeeded,
@@ -124,6 +127,7 @@ func (h *Handler) AdminUpdateInquiry(c *gin.Context) {
 		response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
+	previousStatus := inquiry.Status
 
 	var req adminUpdateInquiryRequest
 	if !response.BindJSONOrInvalid(c, &req) {
@@ -164,6 +168,9 @@ func (h *Handler) AdminUpdateInquiry(c *gin.Context) {
 	if req.InterestedProducts != nil {
 		inquiry.InterestedProducts = modelsCommon.StringArray(*req.InterestedProducts)
 	}
+	if req.ProductIDs != nil {
+		inquiry.ProductIDs = modelsCommon.StringArray(*req.ProductIDs)
+	}
 	if req.PackagingRequirements != nil {
 		inquiry.PackagingRequirements = strings.TrimSpace(*req.PackagingRequirements)
 	}
@@ -180,7 +187,16 @@ func (h *Handler) AdminUpdateInquiry(c *gin.Context) {
 		inquiry.Message = strings.TrimSpace(*req.Message)
 	}
 	if req.Status != nil {
-		inquiry.Status = strings.TrimSpace(*req.Status)
+		st := strings.TrimSpace(*req.Status)
+		if err := h.services.Inquiry.ValidateInquiryStatus(st); err != nil {
+			response.InvalidResp(c, "invalid_request")
+			return
+		}
+		if err := h.services.Inquiry.ValidateInquiryStatusTransition(inquiry.Status, st); err != nil {
+			response.InvalidResp(c, "invalid_request")
+			return
+		}
+		inquiry.Status = st
 	}
 	if req.Priority != nil {
 		inquiry.Priority = strings.TrimSpace(*req.Priority)
@@ -201,6 +217,10 @@ func (h *Handler) AdminUpdateInquiry(c *gin.Context) {
 	if err := h.services.Inquiry.UpdateInquiry(c.Request.Context(), inquiry); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "inquiry_update_failed")
 		return
+	}
+
+	if previousStatus != inquiry.Status {
+		h.logInquiryAudit(c, inquiryID, c.GetString("userID"), previousStatus, inquiry.Status)
 	}
 
 	c.JSON(http.StatusOK, inquiry)

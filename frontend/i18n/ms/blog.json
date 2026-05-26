@@ -1,35 +1,35 @@
 {
   "blog": {
-    "title": "Blog & Resources",
+    "title": "Blog & Wawasan",
     "categories": {
-      "compliance": "Compliance",
-      "product_knowledge": "Product Knowledge",
-      "packaging": "Packaging Trends",
-      "market_insights": "Market Insights"
+      "compliance": "Pematuhan",
+      "product_knowledge": "Pengetahuan Produk",
+      "packaging": "Trend Pembungkusan",
+      "market_insights": "Wawasan Pasaran"
     },
-    "read_more": "Read More",
-    "related_articles": "Related Articles",
-    "share": "Share Article",
-    "table_of_contents": "Table of Contents"
+    "read_more": "Baca Lagi",
+    "related_articles": "Artikel Berkaitan",
+    "share": "Kongsi Artikel",
+    "table_of_contents": "Jadual Kandungan"
   },
   "blog_extra": {
-    "featured": "Featured",
-    "stay_updated": "Stay Updated",
-    "subscribe_desc": "Get the latest industry insights and compliance updates delivered to your inbox",
-    "email_placeholder": "Enter your email",
-    "all_posts": "All Posts",
-    "loading_posts": "Loading posts...",
-    "no_posts": "No posts found in this category.",
-    "newsletter_invalid": "Please enter a valid email address.",
-    "newsletter_redirect": "Opening the contact form…",
-    "cta_questions": "Have questions about our candy manufacturing capabilities?",
-    "cta_heading": "Learn More About Our Services",
-    "min_read": "{count} min read",
+    "featured": "Pilihan",
+    "stay_updated": "Kekal Dimaklumkan",
+    "subscribe_desc": "Wawasan industri, kemas kini pematuhan, dan pengetahuan produk untuk pembeli B2B.",
+    "email_placeholder": "Masukkan e-mel anda",
+    "all_posts": "Semua Catatan",
+    "loading_posts": "Memuatkan catatan...",
+    "no_posts": "Tiada catatan dijumpai dalam kategori ini.",
+    "newsletter_invalid": "Sila masukkan alamat e-mel yang sah.",
+    "newsletter_redirect": "Membuka borang hubungan…",
+    "cta_questions": "Ada soalan tentang keupayaan pembuatan gula-gula kami?",
+    "cta_heading": "Ketahui Lebih Lanjut Tentang Perkhidmatan Kami",
+    "min_read": "{count} min baca",
     "share_twitter": "Twitter",
     "share_linkedin": "LinkedIn",
     "share_facebook": "Facebook",
-    "share_copy_link": "Copy Link",
-    "share_copied": "Copied!",
-    "seo_description": "Industry insights, compliance knowledge, and product expertise for candy manufacturers."
+    "share_copy_link": "Salin Pautan",
+    "share_copied": "Disalin!",
+    "seo_description": "Wawasan industri, pengetahuan pematuhan, dan kepakaran produk untuk pengeluar gula-gula."
   }
 }

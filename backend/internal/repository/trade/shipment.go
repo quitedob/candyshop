@@ -68,6 +68,21 @@ func (r *ShipmentRepository) Delete(ctx context.Context, id uint) error {
 	return r.db.WithContext(ctx).Delete(&modelsTrade.ShipmentTracking{}, id).Error
 }
 
+// FindTrackable 返回待同步追踪状态的发货记录（非终态且有提单号）。
+func (r *ShipmentRepository) FindTrackable(ctx context.Context, limit int) ([]modelsTrade.ShipmentTracking, error) {
+	if limit < 1 {
+		limit = 50
+	}
+	var shipments []modelsTrade.ShipmentTracking
+	err := r.db.WithContext(ctx).
+		Where("status IN ?", []string{"PENDING", "DISPATCHED", "IN_TRANSIT"}).
+		Where("bill_of_lading_no <> ''").
+		Order("updated_at asc").
+		Limit(limit).
+		Find(&shipments).Error
+	return shipments, err
+}
+
 // FindByTransactionIDs returns shipments for multiple transaction IDs (batch preload).
 func (r *ShipmentRepository) FindByTransactionIDs(ctx context.Context, transactionIDs []uint) ([]modelsTrade.ShipmentTracking, error) {
 	if len(transactionIDs) == 0 {

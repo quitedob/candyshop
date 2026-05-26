@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 
 	"candypro/api/internal/pkg/eino/graph"
 	"candypro/api/internal/pkg/eino/prompts/agent"
@@ -17,6 +15,9 @@ import (
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/compose"
 )
+
+// LastTradeAgentToolCount 记录最近一次 NewTradeAgent 注册的工具数量（供启动日志使用）。
+var LastTradeAgentToolCount int
 
 // NewTradeAgent creates a TradeAssistant ChatModelAgent following the official Eino
 // "Graph as Agent Tool" architecture.
@@ -86,16 +87,20 @@ func NewTradeAgent(ctx context.Context, chatModel model.ToolCallingChatModel, pe
 		}
 	}
 
-	// RAG compliance lookup tool is temporarily disabled (Phase 5).
-	// Keep buildRagComplianceTool() + rag package + corpus/ intact for Phase 5.
-	// Uncomment the block below to re-enable:
-	/*
-		if ragTool, ragErr := buildRagComplianceTool(); ragErr == nil {
-			tools = append(tools, ragTool)
+	// 合规 RAG 工具：RAGComplianceEnabled=false 时不注册（产品决策永久关闭）。
+	if RAGComplianceEnabled {
+		if retriever, ragErr := rag.NewFromCorpus(); ragErr == nil {
+			if ragTool, toolErr := rag.NewComplianceTool(retriever); toolErr == nil {
+				tools = append(tools, ragTool)
+			} else {
+				log.Printf("Warning: RAG compliance lookup tool not available: %v", toolErr)
+			}
 		} else {
 			log.Printf("Warning: RAG compliance lookup tool not available: %v", ragErr)
 		}
-	*/
+	}
+
+	LastTradeAgentToolCount = len(tools)
 
 	a, err := adk.NewChatModelAgent(ctx, &adk.ChatModelAgentConfig{
 		Name:        "TradeAssistant",
@@ -116,35 +121,4 @@ func NewTradeAgent(ctx context.Context, chatModel model.ToolCallingChatModel, pe
 	}
 
 	return a, nil
-}
-
-// Deprecated: use rag.NewFromCorpus() instead.
-func buildRagComplianceTool() (tool.BaseTool, error) {
-	corpusDir, err := resolveComplianceCorpusDir()
-	if err != nil {
-		return nil, err
-	}
-
-	retriever, err := rag.NewComplianceRetriever(corpusDir)
-	if err != nil {
-		return nil, err
-	}
-
-	return rag.NewComplianceTool(retriever)
-}
-
-func resolveComplianceCorpusDir() (string, error) {
-	candidates := []string{
-		filepath.Join("internal", "pkg", "eino", "corpus"),
-		filepath.Join(".", "internal", "pkg", "eino", "corpus"),
-		filepath.Join("backend", "internal", "pkg", "eino", "corpus"),
-	}
-
-	for _, candidate := range candidates {
-		info, err := os.Stat(candidate)
-		if err == nil && info.IsDir() {
-			return candidate, nil
-		}
-	}
-	return "", fmt.Errorf("cannot find compliance corpus directory in known locations")
 }

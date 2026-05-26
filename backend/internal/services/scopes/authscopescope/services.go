@@ -1,16 +1,23 @@
 package authscopescope
 
 import (
+	"log"
+
 	"candypro/api/internal/config"
+	"candypro/api/internal/pkg/authsession"
+	authrepo "candypro/api/internal/repository/auth"
 	repositoryCommon "candypro/api/internal/repository/common"
 	auth "candypro/api/internal/services/auth"
 	user "candypro/api/internal/services/user"
 )
 
 type Services struct {
-	User *user.UserService
-	JWT  *auth.JWTService
-	Auth *auth.AuthService
+	User               *user.UserService
+	Company            *user.CompanyService
+	JWT                *auth.JWTService
+	Auth               *auth.AuthService
+	Sessions           authsession.Store
+	PasswordResetToken *authrepo.PasswordResetTokenRepository
 }
 
 func New(repos *repositoryCommon.AuthScopeRepositories, cfg *config.Config) *Services {
@@ -18,11 +25,20 @@ func New(repos *repositoryCommon.AuthScopeRepositories, cfg *config.Config) *Ser
 		return &Services{}
 	}
 
-	jwtSvc := auth.NewJWTService(repos.RefreshToken, cfg)
+	sessions, err := authsession.NewFromConfig(cfg.Security.RedisURL, repos.RefreshToken)
+	if err != nil {
+		log.Fatalf("JWT 会话存储初始化失败: %v", err)
+	}
+	jwtSvc := auth.NewJWTService(sessions, cfg)
+
+	userSvc := user.NewUserService(repos.User)
 
 	return &Services{
-		User: user.NewUserService(repos.User),
-		JWT:  jwtSvc,
-		Auth: auth.NewAuthService(repos.User, repos.Role, repos.RefreshToken, jwtSvc, cfg),
+		User:               userSvc,
+		Company:            user.NewCompanyService(repos.Company, userSvc),
+		JWT:                jwtSvc,
+		Auth:               auth.NewAuthService(repos.User, repos.Role, sessions, jwtSvc, cfg),
+		Sessions:           sessions,
+		PasswordResetToken: repos.PasswordResetToken,
 	}
 }

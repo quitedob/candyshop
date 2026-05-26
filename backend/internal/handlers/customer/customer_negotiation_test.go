@@ -81,6 +81,22 @@ func (r *fakeNegotiationRepo) FindPendingByInquiryID(ctx context.Context, inquir
 	return nil, context.Canceled
 }
 
+// TransitionStatus 模拟 A-4 的条件 UPDATE：仅当当前 status==fromStatus 时才改为 toStatus。
+// 返回受影响行数，0 表示并发竞争 / 已被改写。
+func (r *fakeNegotiationRepo) TransitionStatus(ctx context.Context, id, fromStatus, toStatus string, updatedAt time.Time) (int64, error) {
+	for i, o := range r.offers {
+		if o.ID == id {
+			if o.Status != fromStatus {
+				return 0, nil
+			}
+			r.offers[i].Status = toStatus
+			r.offers[i].UpdatedAt = updatedAt
+			return 1, nil
+		}
+	}
+	return 0, nil
+}
+
 func TestCustomerCreateNegotiationOffer_Success(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
@@ -241,8 +257,11 @@ func TestCustomerAcceptNegotiationOffer_NotPending(t *testing.T) {
 	handler := buildTestNegotiationHandler(negoRepo, &fakeNegotiationInquiryRepo{})
 
 	rec := performCustomerAcceptNegotiation(handler, userID, offerID)
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("expected 400, got %d, body=%s", rec.Code, rec.Body.String())
+	// 409 Conflict reflects "offer is not in pending state" (state-machine conflict),
+	// the previous 400 was returned by the generic err.Error() handler before C-10
+	// mapped the sentinel error to a stable code.
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("expected 409, got %d, body=%s", rec.Code, rec.Body.String())
 	}
 }
 

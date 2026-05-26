@@ -1,79 +1,79 @@
 {
   "home": {
     "hero": {
-      "title": "Professional OEM Candy Manufacturer",
-      "subtitle": "Premium Quality Private Label Gummy, Hard Candy, Aerated Candy, Toffee & Compound Chocolate for Global Brands",
-      "cta_primary": "Get Quote",
-      "cta_secondary": "View Products"
+      "title": "전문 OEM 캔디 제조업체",
+      "subtitle": "글로벌 브랜드를 위한 프리미엄 품질의 프라이빗 라벨 구미, 하드 캔디, 발포 캔디, 토피 및 컴파운드 초콜릿",
+      "cta_primary": "견적 받기",
+      "cta_secondary": "제품 보기"
     },
     "categories": {
-      "title": "Product Categories",
-      "subtitle": "Explore our comprehensive range of confectionery products"
+      "title": "제품 카테고리",
+      "subtitle": "다양한 제과 제품 라인업을 둘러보세요"
     },
     "trust": {
-      "title": "Why Choose Us",
-      "subtitle": "Trusted by leading brands worldwide",
-      "expert_team": "Expert Team",
-      "expert_team_desc": "150+ skilled professionals",
-      "capacity_desc": "100 tons daily output",
-      "export_desc": "50+ export countries"
+      "title": "왜 우리를 선택해야 할까요",
+      "subtitle": "전 세계 선도 브랜드의 신뢰를 받고 있습니다",
+      "expert_team": "전문 팀",
+      "expert_team_desc": "150명 이상의 숙련된 전문가",
+      "capacity_desc": "일일 100톤 생산량",
+      "export_desc": "50개국 이상 수출"
     },
     "certifications": {
-      "title": "Quality Certifications",
-      "subtitle": "Committed to the highest standards of food safety and quality",
-      "haccp_desc": "Food Safety Management",
-      "iso_desc": "Food Safety Standard",
-      "brc_desc": "Food Safety Grade A",
-      "halal_desc": "Halal Certified"
+      "title": "품질 인증",
+      "subtitle": "최고 수준의 식품 안전 및 품질 기준을 준수합니다",
+      "haccp_desc": "식품 안전 관리",
+      "iso_desc": "식품 안전 표준",
+      "brc_desc": "식품 안전 Grade A",
+      "halal_desc": "Halal 인증"
     },
     "featured": {
-      "title": "Featured Products",
-      "subtitle": "Our best-selling items loved by clients worldwide"
+      "title": "추천 제품",
+      "subtitle": "전 세계 고객이 사랑하는 베스트셀러"
     },
     "oem": {
-      "title": "OEM & Private Label Solutions",
-      "subtitle": "Bring your brand vision to life with our custom manufacturing",
-      "cta": "Learn More",
-      "feature1": "Custom formula development",
-      "feature2": "Private label packaging",
-      "feature3": "Low MOQ from 1000 pcs",
-      "feature4": "Fast lead time 2-4 weeks",
-      "feature5": "Sample approval process"
+      "title": "OEM 및 프라이빗 라벨 솔루션",
+      "subtitle": "맞춤형 제조로 브랜드 비전을 실현하세요",
+      "cta": "자세히 보기",
+      "feature1": "맞춤형 배합 개발",
+      "feature2": "프라이빗 라벨 패키징",
+      "feature3": "1,000개부터 낮은 MOQ",
+      "feature4": "주문별 납기 확인",
+      "feature5": "샘플 승인 프로세스"
     },
     "global": {
-      "title": "Global Reach",
-      "subtitle": "Exporting to markets across Europe, Americas, and Asia",
-      "north_america": "North America",
-      "north_america_countries": "USA, Canada, Mexico",
-      "europe": "Europe",
-      "europe_countries": "UK, Germany, France, Italy",
-      "southeast_asia": "Southeast Asia",
-      "southeast_asia_countries": "Singapore, Thailand, Malaysia",
-      "middle_east": "Middle East",
-      "middle_east_countries": "UAE, Saudi Arabia, Qatar"
+      "title": "글로벌 네트워크",
+      "subtitle": "유럽, 아메리카, 아시아 시장으로 수출",
+      "north_america": "북미",
+      "north_america_countries": "미국, 캐나다, 멕시코",
+      "europe": "유럽",
+      "europe_countries": "영국, 독일, 프랑스, 이탈리아",
+      "southeast_asia": "동남아시아",
+      "southeast_asia_countries": "싱가포르, 태국, 말레이시아",
+      "middle_east": "중동",
+      "middle_east_countries": "UAE, 사우디아라비아, 카타르"
     },
     "faq": {
-      "title": "Frequently Asked Questions",
-      "subtitle": "Quick answers to common questions about our services",
-      "view_all": "View All FAQs",
-      "q1": "What is your minimum order quantity (MOQ)?",
-      "a1": "Our MOQ varies by product type, starting from 1,000 pieces for standard items and 3,000 pieces for custom OEM orders.",
-      "q2": "How long is your lead time?",
-      "a2": "Standard orders take 2-3 weeks, while custom OEM orders typically require 4-6 weeks depending on complexity.",
-      "q3": "Do you provide samples?",
-      "a3": "Yes, we provide samples for quality evaluation. Sample fees are refundable upon placing a bulk order.",
-      "q4": "What certifications do you have?",
-      "a4": "We are HACCP, ISO22000, BRC Grade A, and Halal certified. Our products meet international food safety standards."
+      "title": "자주 묻는 질문",
+      "subtitle": "서비스에 대한 일반적인 질문에 대한 빠른 답변",
+      "view_all": "모든 FAQ 보기",
+      "q1": "최소 주문 수량(MOQ)은 얼마인가요?",
+      "a1": "MOQ는 제품 유형에 따라 다르며, 표준 제품은 1,000개부터, 맞춤 OEM 주문은 3,000개부터 시작합니다.",
+      "q2": "납기는 얼마나 걸리나요?",
+      "a2": "납기는 주문 확인 시 영업팀이 안내합니다. 본 사이트에는 고정 주/월 수치를 게시하지 않습니다.",
+      "q3": "샘플을 제공하나요?",
+      "a3": "네, 품질 평가를 위한 샘플을 제공합니다. 대량 주문 시 샘플 비용은 환불됩니다.",
+      "q4": "어떤 인증을 보유하고 있나요?",
+      "a4": "HACCP, ISO22000, BRC Grade A, Halal 인증을 보유하고 있습니다. 제품은 국제 식품 안전 기준을 충족합니다."
     },
     "how_to_order": {
-      "title": "How to Order",
-      "subtitle": "Place your B2B order in 3 simple steps",
-      "step1_title": "Browse & Select",
-      "step1_desc": "Explore our product catalog and find the right candy products for your market.",
-      "step2_title": "Register & Get Approved",
-      "step2_desc": "Create your B2B account and get verified by our team — usually within 24 hours.",
-      "step3_title": "Order & Track",
-      "step3_desc": "Add products to cart, checkout, and track your order from production to delivery."
+      "title": "주문 방법",
+      "subtitle": "3단계로 간편하게 B2B 주문",
+      "step1_title": "둘러보기 및 선택",
+      "step1_desc": "제품 카탈로그를 탐색하고 시장에 맞는 캔디 제품을 찾으세요.",
+      "step2_title": "가입 및 승인",
+      "step2_desc": "B2B 계정을 생성하고 팀의 검증을 받으세요 — 보통 24시간 이내.",
+      "step3_title": "주문 및 추적",
+      "step3_desc": "제품을 장바구니에 담고, 결제 후 생산부터 배송까지 주문을 추적하세요."
     }
   }
 }

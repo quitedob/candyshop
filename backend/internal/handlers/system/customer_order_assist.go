@@ -4,6 +4,7 @@ import (
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
 	"candypro/api/internal/pkg/crypto"
+	"candypro/api/internal/pkg/inventorywarn"
 	"candypro/api/internal/pkg/kyb"
 	"candypro/api/internal/pkg/response"
 	tradeSvc "candypro/api/internal/services/trade"
@@ -155,36 +156,15 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 	if len(inventoryValidation.Violations) > 0 {
 		response.ErrorRespDetail(c, http.StatusUnprocessableEntity, "order_draft_blocked_inventory", gin.H{
 			"violations": inventoryValidation.Violations,
-			"warnings":   inventoryValidation.Warnings,
+			"warnings":   inventorywarn.FormatWarnings(c, inventoryValidation.Warnings, productByID),
 		})
 		return
 	}
 
-	complianceLookup := h.aiService.LookupCompliance(
-		targetCountry,
-		buildComplianceQuery(targetCountry, selectedProductModels),
-		5,
-	)
-
+	// 合规仅依赖硬规则与市场画像，不使用 RAG 语料检索。
 	referencePayload := make([]gin.H, 0)
 	retrievalSummary := ""
-	hasOfficialEvidence := false
-	if complianceLookup != nil {
-		retrievalSummary = complianceLookup.Answer
-		for _, ref := range complianceLookup.References {
-			if ref.Official {
-				hasOfficialEvidence = true
-			}
-			referencePayload = append(referencePayload, gin.H{
-				"source":   ref.Source,
-				"section":  ref.Section,
-				"snippet":  ref.Snippet,
-				"score":    ref.Score,
-				"url":      ref.URL,
-				"official": ref.Official,
-			})
-		}
-	}
+	hasOfficialEvidence := len(complianceValidation.Violations) == 0 && len(complianceValidation.Warnings) == 0
 
 	subtotal := 0.0
 	for _, item := range items {
@@ -197,6 +177,7 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 		OrderNumber:                fmt.Sprintf("AID-%s-%s", now.Format("20060102"), strings.ToUpper(crypto.GenerateSlug())),
 		UserID:                     userID,
 		InquiryID:                  inquiryID,
+		Source:                     modelsOrder.OrderSourceAIAssist,
 		Status:                     "pending_confirmation",
 		PaymentStatus:              "unpaid",
 		Items:                      items,
@@ -230,7 +211,7 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 	warnings := make([]string, 0, 8)
 	warnings = append(warnings, selectionWarnings...)
 	warnings = append(warnings, complianceValidation.Warnings...)
-	warnings = append(warnings, inventoryValidation.Warnings...)
+	warnings = append(warnings, inventorywarn.FormatWarnings(c, inventoryValidation.Warnings, productByID)...)
 	if req.Budget > 0 && order.TotalAmount > req.Budget {
 		warnings = append(warnings, fmt.Sprintf("Estimated total %.2f %s exceeds budget %.2f %s.", order.TotalAmount, currency, req.Budget, currency))
 	}
@@ -493,57 +474,4 @@ func baselineComplianceChecklist(country string) []string {
 			"Ensure certificate package is complete (origin, health/safety docs, and importer records).",
 		}
 	}
-}
-
-// buildComplianceQuery generates a dynamic compliance query based on actual product attributes.
-// This replaces the hardcoded keyword string so the RAG lookup is product-specific.
-func buildComplianceQuery(country string, products []modelsProduct.Product) string {
-	parts := []string{"food import labeling registration"}
-
-	// Add product-specific terms
-	hasHalal := false
-	categories := make(map[string]struct{})
-	for _, p := range products {
-		if p.HalalCertified {
-			hasHalal = true
-		}
-		if p.Category != "" {
-			categories[strings.ToLower(p.Category)] = struct{}{}
-		}
-		if p.Allergens != "" {
-			parts = append(parts, "allergens declaration")
-			break
-		}
-		if p.Ingredients != "" {
-			parts = append(parts, "additives ingredients")
-			break
-		}
-	}
-
-	if hasHalal {
-		parts = append(parts, "halal certification requirements")
-	}
-	for cat := range categories {
-		parts = append(parts, cat)
-	}
-
-	// Add country-specific regulatory terms
-	switch strings.ToLower(strings.TrimSpace(country)) {
-	case "usa", "us", "united states":
-		parts = append(parts, "FDA FSMA prior notice nutrition facts")
-	case "eu", "europe", "european union":
-		parts = append(parts, "EU 1169/2011 food labeling E-numbers additives")
-	case "japan", "jp":
-		parts = append(parts, "MHLW food sanitation act import notification")
-	case "saudi arabia", "saudi", "ksa":
-		parts = append(parts, "SFDA import registration halal")
-	case "india", "in":
-		parts = append(parts, "FSSAI import license food safety")
-	case "pakistan", "pk":
-		parts = append(parts, "PSQCA food standards halal")
-	default:
-		parts = append(parts, "customs clearance food safety certificate")
-	}
-
-	return strings.Join(dedupeNonEmpty(parts), " ")
 }

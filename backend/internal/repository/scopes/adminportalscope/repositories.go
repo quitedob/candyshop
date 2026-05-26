@@ -26,6 +26,7 @@ type Repositories struct {
 	Invoice            *order.InvoiceRepository
 	DocumentAdjustment *order.DocumentAdjustmentRepository
 	Product            *product.ProductRepository
+	Category           *product.CategoryRepository
 	Price              *product.PriceRepository
 	Content            *content.ContentRepository
 	Role               *auth.RoleRepository
@@ -70,6 +71,7 @@ func New(db *gorm.DB) *Repositories {
 		Invoice:            order.NewInvoiceRepository(db),
 		DocumentAdjustment: order.NewDocumentAdjustmentRepository(db),
 		Product:            product.NewProductRepository(db),
+		Category:           product.NewCategoryRepository(db),
 		Price:              product.NewPriceRepository(db),
 		Content:            content.NewContentRepository(db),
 		Role:               auth.NewRoleRepository(db),

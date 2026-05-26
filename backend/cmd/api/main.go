@@ -18,8 +18,11 @@ import (
 	"candypro/api/internal/config"
 	"candypro/api/internal/database"
 	"candypro/api/internal/handlers"
+	"candypro/api/internal/pkg/applog"
 	"candypro/api/internal/pkg/eino"
 	"candypro/api/internal/pkg/i18n"
+	"candypro/api/internal/pkg/safego"
+	"candypro/api/internal/pkg/workerlock"
 
 	"github.com/joho/godotenv"
 	"gorm.io/gorm"
@@ -48,9 +51,9 @@ func main() {
 	// Initialize configuration
 	cfg, err := config.Load()
 	if err != nil {
-
-		log.Fatalf("Failed to load configuration: %v", err)
+		log.Fatalf("配置加载失败: %v", err)
 	}
+	applog.Init(cfg.Server.Environment)
 	// Connect to database
 	var db *gorm.DB
 	db, err = database.Connect(&cfg.Database)
@@ -61,6 +64,18 @@ func main() {
 		// Run migrations
 		if err := database.AutoMigrate(db); err != nil {
 			log.Fatalf("Failed to run migrations: %v", err)
+		}
+		if err := database.NormalizeLegacyLeadTimeCopy(db); err != nil {
+			log.Printf("Warning: legacy lead-time copy normalization failed: %v", err)
+		}
+		if err := database.EnsureDefaultWarehouseStock(db); err != nil {
+			log.Printf("Warning: default warehouse stock ensure failed: %v", err)
+		}
+		if err := database.EnsureStartupData(db); err != nil {
+			log.Printf("Warning: startup data ensure failed: %v", err)
+		}
+		if err := database.SeedCategoryTranslations(db); err != nil {
+			log.Printf("Warning: category translation seed failed: %v", err)
 		}
 
 		// Always seed essential system data (roles, superadmin)
@@ -113,7 +128,8 @@ func main() {
 		if h.System != nil {
 			h.System.AttachAgentToAIService(h.System.TradeAgent())
 		}
-		log.Println("Trade AI agent initialized successfully (13 tools)")
+		log.Println("Trade AI agent initialized successfully")
+		log.Printf("Trade AI agent tool count: %d", eino.LastTradeAgentToolCount)
 	}
 	// Initialize B2B DeepAgent coordinator (ProductExpert, PricingExpert, LogisticsExpert)
 	if initErr := h.System.InitDeepAgent(); initErr != nil {
@@ -135,14 +151,23 @@ func main() {
 			log.Printf("Warning: checkpoint table migration failed: %v", migrateErr)
 		} else if h.System.CheckPointStore() != nil {
 			log.Println("Agent checkpoint store initialized (PostgreSQL)")
+			if h.AdminPortal != nil {
+				h.AdminPortal.AttachCheckPointStore(h.System.CheckPointStore())
+			}
 		}
 	}
 
 	backgroundCtx, stopBackground := context.WithCancel(context.Background())
 	defer stopBackground()
-	stopOrderDraftCleanup := startOrderDraftCleanup(backgroundCtx, svcs)
-	stopOutboxRelay := startEventOutboxTradeRelay(backgroundCtx, svcs)
-	stopCheckpointCleanup := startCheckpointCleanup(backgroundCtx, h.System.CheckPointStore())
+	// L-6: distributed worker mutex. Multi-instance deployments must avoid
+	// running the same scheduled job in parallel; jobs wrap their tick body in
+	// workerlock.WithLock(...) so only one instance executes per interval.
+	workerLocker := workerlock.NewFromEnv(cfg.Security.RedisURL)
+	stopOrderDraftCleanup := startOrderDraftCleanup(backgroundCtx, svcs, workerLocker)
+	stopOutboxRelay := startEventOutboxTradeRelay(backgroundCtx, svcs, workerLocker)
+	stopCheckpointCleanup := startCheckpointCleanup(backgroundCtx, h.System.CheckPointStore(), workerLocker)
+	stopShipmentTrackingSync := startShipmentTrackingSync(backgroundCtx, svcs, workerLocker)
+	stopNotificationRelay := startNotificationRelay(backgroundCtx, svcs)
 
 	// Setup router
 	routerWithShutdown := api.SetupRouter(h, cfg, db)
@@ -191,6 +216,8 @@ func main() {
 	stopOrderDraftCleanup()
 	stopOutboxRelay()
 	stopCheckpointCleanup()
+	stopShipmentTrackingSync()
+	stopNotificationRelay()
 	stopBackground()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -206,7 +233,7 @@ func main() {
 const defaultEventOutboxRelayIntervalSeconds = 30
 
 // startEventOutboxTradeRelay 轮询发件箱，在订单确认为 confirmed 后异步创建 Trade（最终一致性）
-func startEventOutboxTradeRelay(ctx context.Context, svcs *servicesCommon.Services) func() {
+func startEventOutboxTradeRelay(ctx context.Context, svcs *servicesCommon.Services, locker workerlock.Locker) func() {
 	if svcs == nil || svcs.AdminPortal == nil || svcs.AdminPortal.Order == nil || svcs.AdminPortal.Trade == nil {
 		return func() {}
 	}
@@ -216,26 +243,30 @@ func startEventOutboxTradeRelay(ctx context.Context, svcs *servicesCommon.Servic
 	interval := time.Duration(intervalSec) * time.Second
 
 	runRelay := func() {
-		n, err := svcs.AdminPortal.Order.ProcessPendingTradeOutbox(workerCtx, svcs.AdminPortal.Trade, 50)
-		if err != nil {
-			log.Printf("Warning: trade outbox relay: %v", err)
-			return
-		}
-		if n > 0 {
-			log.Printf("Trade outbox relay processed %d event(s)", n)
-		}
+		// L-6: only one instance runs the relay per tick.
+		_, _ = workerlock.WithLock(workerCtx, locker, "trade-outbox-relay", interval, func(c context.Context) error {
+			n, err := svcs.AdminPortal.Order.ProcessPendingTradeOutbox(c, svcs.AdminPortal.Trade, 50)
+			if err != nil {
+				log.Printf("Warning: trade outbox relay: %v", err)
+				return err
+			}
+			if n > 0 {
+				log.Printf("Trade outbox relay processed %d event(s)", n)
+			}
+			return nil
+		})
 	}
 
 	go func() {
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
-		runRelay()
+		safego.Run("trade-outbox-relay.initial", runRelay)
 		for {
 			select {
 			case <-workerCtx.Done():
 				return
 			case <-ticker.C:
-				runRelay()
+				safego.Run("trade-outbox-relay.tick", runRelay)
 			}
 		}
 	}()
@@ -244,7 +275,7 @@ func startEventOutboxTradeRelay(ctx context.Context, svcs *servicesCommon.Servic
 	return cancel
 }
 
-func startOrderDraftCleanup(ctx context.Context, svcs *servicesCommon.Services) func() {
+func startOrderDraftCleanup(ctx context.Context, svcs *servicesCommon.Services, locker workerlock.Locker) func() {
 	if svcs == nil || svcs.System == nil || svcs.System.Order == nil {
 		return func() {}
 	}
@@ -273,32 +304,35 @@ func startOrderDraftCleanup(ctx context.Context, svcs *servicesCommon.Services) 
 	expire := time.Duration(expireMinutes) * time.Minute
 
 	runCleanup := func() {
-		cutoff := time.Now().Add(-expire)
-		released, err := svcs.System.Order.ReleaseExpiredPendingConfirmationOrders(workerCtx, cutoff, batchSize)
-		if err != nil {
-			log.Printf("Warning: order draft cleanup failed: %v", err)
-			return
-		}
-		if released > 0 {
-			log.Printf(
-				"Order draft cleanup released %d expired draft(s) older than %d minutes",
-				released,
-				expireMinutes,
-			)
-		}
+		_, _ = workerlock.WithLock(workerCtx, locker, "order-draft-cleanup", interval, func(c context.Context) error {
+			cutoff := time.Now().Add(-expire)
+			released, err := svcs.System.Order.ReleaseExpiredPendingConfirmationOrders(c, cutoff, batchSize)
+			if err != nil {
+				log.Printf("Warning: order draft cleanup failed: %v", err)
+				return err
+			}
+			if released > 0 {
+				log.Printf(
+					"Order draft cleanup released %d expired draft(s) older than %d minutes",
+					released,
+					expireMinutes,
+				)
+			}
+			return nil
+		})
 	}
 
 	go func() {
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 
-		runCleanup()
+		safego.Run("order-draft-cleanup.initial", runCleanup)
 		for {
 			select {
 			case <-workerCtx.Done():
 				return
 			case <-ticker.C:
-				runCleanup()
+				safego.Run("order-draft-cleanup.tick", runCleanup)
 			}
 		}
 	}()
@@ -344,7 +378,7 @@ const (
 )
 
 // startCheckpointCleanup periodically deletes stale agent checkpoints.
-func startCheckpointCleanup(ctx context.Context, store *eino.PostgresCheckPointStore) func() {
+func startCheckpointCleanup(ctx context.Context, store *eino.PostgresCheckPointStore, locker workerlock.Locker) func() {
 	if store == nil {
 		return func() {}
 	}
@@ -364,16 +398,113 @@ func startCheckpointCleanup(ctx context.Context, store *eino.PostgresCheckPointS
 			case <-workerCtx.Done():
 				return
 			case <-ticker.C:
-				deleted, err := store.CleanupOlderThan(workerCtx, ttl)
-				if err != nil {
-					log.Printf("Warning: checkpoint cleanup failed: %v", err)
-				} else if deleted > 0 {
-					log.Printf("Checkpoint cleanup deleted %d stale entry/entries (TTL=%dh)", deleted, ttlHours)
-				}
+				safego.Run("checkpoint-cleanup.tick", func() {
+					_, _ = workerlock.WithLock(workerCtx, locker, "checkpoint-cleanup", interval, func(c context.Context) error {
+						deleted, err := store.CleanupOlderThan(c, ttl)
+						if err != nil {
+							log.Printf("Warning: checkpoint cleanup failed: %v", err)
+							return err
+						}
+						if deleted > 0 {
+							log.Printf("Checkpoint cleanup deleted %d stale entry/entries (TTL=%dh)", deleted, ttlHours)
+						}
+						return nil
+					})
+				})
 			}
 		}
 	}()
 
 	log.Printf("Checkpoint cleanup worker started (interval=%dmin TTL=%dh)", intervalMin, ttlHours)
+	return cancel
+}
+
+const (
+	defaultShipmentTrackingSyncIntervalMinutes = 15
+	defaultShipmentTrackingSyncBatchSize       = 50
+)
+
+// startShipmentTrackingSync 定期根据已有追踪事件同步发货状态。
+func startShipmentTrackingSync(ctx context.Context, svcs *servicesCommon.Services, locker workerlock.Locker) func() {
+	if svcs == nil || svcs.UserPortal == nil || svcs.UserPortal.Logistics == nil {
+		return func() {}
+	}
+	intervalMin := getEnvPositiveInt("SHIPMENT_TRACKING_SYNC_INTERVAL_MINUTES", defaultShipmentTrackingSyncIntervalMinutes)
+	batchSize := getEnvPositiveInt("SHIPMENT_TRACKING_SYNC_BATCH_SIZE", defaultShipmentTrackingSyncBatchSize)
+	workerCtx, cancel := context.WithCancel(ctx)
+
+	go func() {
+		ticker := time.NewTicker(time.Duration(intervalMin) * time.Minute)
+		defer ticker.Stop()
+		runSync := func() {
+			_, _ = workerlock.WithLock(workerCtx, locker, "shipment-tracking-sync", time.Duration(intervalMin)*time.Minute, func(c context.Context) error {
+				n, err := svcs.UserPortal.Logistics.SyncActiveShipmentTracking(c, batchSize)
+				if err != nil {
+					log.Printf("Shipment tracking sync error: %v", err)
+					return err
+				}
+				if n > 0 {
+					log.Printf("Shipment tracking sync updated %d shipment(s)", n)
+				}
+				return nil
+			})
+		}
+		safego.Run("shipment-tracking-sync.initial", runSync)
+		for {
+			select {
+			case <-workerCtx.Done():
+				return
+			case <-ticker.C:
+				safego.Run("shipment-tracking-sync.tick", runSync)
+			}
+		}
+	}()
+
+	log.Printf("Shipment tracking sync worker started (interval=%dmin batch=%d)", intervalMin, batchSize)
+	return cancel
+}
+
+
+const (
+	defaultNotificationRelayIntervalSeconds = 15
+	defaultNotificationRelayBatchSize       = 50
+)
+
+// startNotificationRelay drains the notification_outbox table on a tick (C-8).
+// Producers insert rows in the same DB tx as their business mutation; this
+// worker performs the network call asynchronously with retry/backoff.
+func startNotificationRelay(ctx context.Context, svcs *servicesCommon.Services) func() {
+	if svcs == nil || svcs.NotificationRelay == nil {
+		return func() {}
+	}
+	intervalSec := getEnvPositiveInt("NOTIFICATION_RELAY_INTERVAL_SECONDS", defaultNotificationRelayIntervalSeconds)
+	batchSize := getEnvPositiveInt("NOTIFICATION_RELAY_BATCH_SIZE", defaultNotificationRelayBatchSize)
+	workerCtx, cancel := context.WithCancel(ctx)
+
+	run := func() {
+		processed, err := svcs.NotificationRelay.ProcessBatch(workerCtx, batchSize)
+		if err != nil {
+			log.Printf("notification relay: %v", err)
+			return
+		}
+		if processed > 0 {
+			log.Printf("Notification relay processed %d notification(s)", processed)
+		}
+	}
+
+	go func() {
+		ticker := time.NewTicker(time.Duration(intervalSec) * time.Second)
+		defer ticker.Stop()
+		safego.Run("notification-relay.initial", run)
+		for {
+			select {
+			case <-workerCtx.Done():
+				return
+			case <-ticker.C:
+				safego.Run("notification-relay.tick", run)
+			}
+		}
+	}()
+	log.Printf("Notification relay worker started (interval=%ds batch=%d)", intervalSec, batchSize)
 	return cancel
 }

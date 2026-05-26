@@ -125,8 +125,9 @@ func (a *Adapter) postForm(ctx context.Context, path string, params map[string]s
 	}
 
 	var result struct {
-		ID     string `json:"id"`
-		Status string `json:"status"`
+		ID           string `json:"id"`
+		Status       string `json:"status"`
+		ClientSecret string `json:"client_secret"`
 	}
 	if err := json.Unmarshal(respBody, &result); err != nil {
 		return nil, fmt.Errorf("stripe: parse response: %w", err)
@@ -136,6 +137,7 @@ func (a *Adapter) postForm(ctx context.Context, path string, params map[string]s
 		TransactionID: result.ID,
 		Status:        result.Status,
 		RawResponse:   string(respBody),
+		ClientSecret:  result.ClientSecret,
 	}, nil
 }
 

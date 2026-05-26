@@ -1,79 +1,79 @@
 {
   "home": {
     "hero": {
-      "title": "Professional OEM Candy Manufacturer",
-      "subtitle": "Premium Quality Private Label Gummy, Hard Candy, Aerated Candy, Toffee & Compound Chocolate for Global Brands",
-      "cta_primary": "Get Quote",
-      "cta_secondary": "View Products"
+      "title": "مصنع OEM متخصص في الحلويات",
+      "subtitle": "حلويات جيلي وصلبة ومنفوشة وتوفي وشوكولاتة مركبة بعلامة خاصة عالية الجودة للعلامات التجارية العالمية",
+      "cta_primary": "احصل على عرض سعر",
+      "cta_secondary": "تصفح المنتجات"
     },
     "categories": {
-      "title": "Product Categories",
-      "subtitle": "Explore our comprehensive range of confectionery products"
+      "title": "فئات المنتجات",
+      "subtitle": "استكشف مجموعتنا الغنية من منتجات الحلويات"
     },
     "trust": {
-      "title": "Why Choose Us",
-      "subtitle": "Trusted by leading brands worldwide",
-      "expert_team": "Expert Team",
-      "expert_team_desc": "150+ skilled professionals",
-      "capacity_desc": "100 tons daily output",
-      "export_desc": "50+ export countries"
+      "title": "لماذا تختارنا",
+      "subtitle": "الخيار الموثوق لدى العلامات التجارية الرائدة عالمياً",
+      "expert_team": "فريق متخصص",
+      "expert_team_desc": "أكثر من 150 متخصصاً تقنياً",
+      "capacity_desc": "إنتاج يومي 100 طن",
+      "export_desc": "تصدير إلى أكثر من 50 دولة"
     },
     "certifications": {
-      "title": "Quality Certifications",
-      "subtitle": "Committed to the highest standards of food safety and quality",
-      "haccp_desc": "Food Safety Management",
-      "iso_desc": "Food Safety Standard",
-      "brc_desc": "Food Safety Grade A",
-      "halal_desc": "Halal Certified"
+      "title": "شهادات الجودة",
+      "subtitle": "ملتزمون بأعلى معايير سلامة الأغذية والجودة",
+      "haccp_desc": "نظام إدارة سلامة الأغذية",
+      "iso_desc": "معايير سلامة الأغذية",
+      "brc_desc": "سلامة الأغذية — الدرجة A",
+      "halal_desc": "شهادة حلال"
     },
     "featured": {
-      "title": "Featured Products",
-      "subtitle": "Our best-selling items loved by clients worldwide"
+      "title": "المنتجات الأكثر مبيعاً",
+      "subtitle": "منتجات رائجة محبوبة لدى العملاء حول العالم"
     },
     "oem": {
-      "title": "OEM & Private Label Solutions",
-      "subtitle": "Bring your brand vision to life with our custom manufacturing",
-      "cta": "Learn More",
-      "feature1": "Custom formula development",
-      "feature2": "Private label packaging",
-      "feature3": "Low MOQ from 1000 pcs",
-      "feature4": "Fast lead time 2-4 weeks",
-      "feature5": "Sample approval process"
+      "title": "حلول OEM والعلامة الخاصة",
+      "subtitle": "حقّق رؤية علامتك التجارية من خلال التصنيع المخصص",
+      "cta": "اعرف المزيد",
+      "feature1": "تطوير تركيبات مخصصة",
+      "feature2": "تصميم تغليف بعلامة خاصة",
+      "feature3": "حد أدنى للطلب من 1,000 قطعة",
+      "feature4": "تأكيد موعد التسليم لكل طلب",
+      "feature5": "عملية تأكيد العينات"
     },
     "global": {
-      "title": "Global Reach",
-      "subtitle": "Exporting to markets across Europe, Americas, and Asia",
-      "north_america": "North America",
-      "north_america_countries": "USA, Canada, Mexico",
-      "europe": "Europe",
-      "europe_countries": "UK, Germany, France, Italy",
-      "southeast_asia": "Southeast Asia",
-      "southeast_asia_countries": "Singapore, Thailand, Malaysia",
-      "middle_east": "Middle East",
-      "middle_east_countries": "UAE, Saudi Arabia, Qatar"
+      "title": "انتشار عالمي",
+      "subtitle": "نصدر إلى أسواق أوروبا والأمريكتين وآسيا",
+      "north_america": "أمريكا الشمالية",
+      "north_america_countries": "الولايات المتحدة، كندا، المكسيك",
+      "europe": "أوروبا",
+      "europe_countries": "المملكة المتحدة، ألمانيا، فرنسا، إيطاليا",
+      "southeast_asia": "جنوب شرق آسيا",
+      "southeast_asia_countries": "سنغافورة، تايلاند، ماليزيا",
+      "middle_east": "الشرق الأوسط",
+      "middle_east_countries": "الإمارات، السعودية، قطر"
     },
     "faq": {
-      "title": "Frequently Asked Questions",
-      "subtitle": "Quick answers to common questions about our services",
-      "view_all": "View All FAQs",
-      "q1": "What is your minimum order quantity (MOQ)?",
-      "a1": "Our MOQ varies by product type, starting from 1,000 pieces for standard items and 3,000 pieces for custom OEM orders.",
-      "q2": "How long is your lead time?",
-      "a2": "Standard orders take 2-3 weeks, while custom OEM orders typically require 4-6 weeks depending on complexity.",
-      "q3": "Do you provide samples?",
-      "a3": "Yes, we provide samples for quality evaluation. Sample fees are refundable upon placing a bulk order.",
-      "q4": "What certifications do you have?",
-      "a4": "We are HACCP, ISO22000, BRC Grade A, and Halal certified. Our products meet international food safety standards."
+      "title": "الأسئلة الشائعة",
+      "subtitle": "إجابات على الأسئلة الشائعة حول خدماتنا",
+      "view_all": "عرض الكل",
+      "q1": "ما هو الحد الأدنى لكمية الطلب (MOQ)؟",
+      "a1": "يختلف MOQ حسب نوع المنتج. المنتجات القياسية تبدأ من 1,000 قطعة، وطلبات OEM المخصصة عادة من 3,000 قطعة.",
+      "q2": "كم يستغرق موعد التسليم؟",
+      "a2": "يُقدَّم موعد التسليم من فريق المبيعات عند تأكيد الطلب. لا ينشر هذا الموقع تقديرات ثابتة بالأسابيع أو الأشهر.",
+      "q3": "هل تقدمون عينات؟",
+      "a3": "نعم، نوفر عينات لتقييم الجودة. تُسترد رسوم العينة بعد تقديم الطلب.",
+      "q4": "ما الشهادات التي لديكم؟",
+      "a4": "نحمل شهادات HACCP وISO22000 وBRC A وHalal. منتجاتنا تتوافق مع معايير سلامة الأغذية الدولية."
     },
     "how_to_order": {
-      "title": "How to Order",
-      "subtitle": "Place your B2B order in 3 simple steps",
-      "step1_title": "Browse & Select",
-      "step1_desc": "Explore our product catalog and find the right candy products for your market.",
-      "step2_title": "Register & Get Approved",
-      "step2_desc": "Create your B2B account and get verified by our team — usually within 24 hours.",
-      "step3_title": "Order & Track",
-      "step3_desc": "Add products to cart, checkout, and track your order from production to delivery."
+      "title": "كيفية الطلب",
+      "subtitle": "3 خطوات لإتمام مشتريات B2B",
+      "step1_title": "تصفح واختر",
+      "step1_desc": "تصفح دليل المنتجات واعثر على الحلويات المناسبة لسوقك.",
+      "step2_title": "التسجيل والمراجعة",
+      "step2_desc": "أنشئ حساب B2B وانتظر مراجعة الفريق — عادة خلال 24 ساعة.",
+      "step3_title": "الطلب والتتبع",
+      "step3_desc": "أضف إلى السلة، أكمل الدفع، وتتبع طلبك من الإنتاج حتى التسليم."
     }
   }
 }

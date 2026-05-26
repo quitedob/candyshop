@@ -2,6 +2,7 @@ package order
 
 import (
 	"context"
+	"time"
 
 	modelsOrder "candypro/api/internal/models/order"
 
@@ -40,6 +41,25 @@ func (r *NegotiationRepository) Create(ctx context.Context, offer *modelsOrder.N
 
 func (r *NegotiationRepository) Update(ctx context.Context, offer *modelsOrder.NegotiationOffer) error {
 	return r.db.WithContext(ctx).Save(offer).Error
+}
+
+// TransitionStatus 原子地把指定 offer 从 fromStatus 改为 toStatus。
+// 仅当数据库当前 status = fromStatus 时才会写入；返回 RowsAffected。
+//
+// A-4: AcceptOffer / RejectOffer 不能再用 read→check→Save 的 TOCTOU 模式，
+// 必须依赖此方法的条件 WHERE 防止两个管理员同时接受同一 pending offer。
+func (r *NegotiationRepository) TransitionStatus(ctx context.Context, id, fromStatus, toStatus string, updatedAt time.Time) (int64, error) {
+	res := r.db.WithContext(ctx).
+		Model(&modelsOrder.NegotiationOffer{}).
+		Where("id = ? AND status = ?", id, fromStatus).
+		Updates(map[string]any{
+			"status":     toStatus,
+			"updated_at": updatedAt,
+		})
+	if res.Error != nil {
+		return 0, res.Error
+	}
+	return res.RowsAffected, nil
 }
 
 func (r *NegotiationRepository) FindPendingByInquiryID(ctx context.Context, inquiryID string) (*modelsOrder.NegotiationOffer, error) {

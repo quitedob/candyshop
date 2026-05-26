@@ -1,7 +1,6 @@
 package customer
 
 import (
-	modelsOrder "candypro/api/internal/models/order"
 	"candypro/api/internal/pkg/response"
 	"net/http"
 
@@ -19,19 +18,10 @@ func (h *Handler) CustomerGetInvoices(c *gin.Context) {
 		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
-	orders, err := h.services.Order.GetUserOrders(c.Request.Context(), userID, 1, 100)
+	allInvoices, err := h.services.Invoice.GetByUserID(c.Request.Context(), userID)
 	if err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "invoice_fetch_failed")
 		return
-	}
-	allInvoices := make([]modelsOrder.Invoice, 0)
-	if orderSlice, ok := orders.Data.([]modelsOrder.Order); ok {
-		for _, o := range orderSlice {
-			invoices, err := h.services.Invoice.GetByOrderID(c.Request.Context(), o.ID)
-			if err == nil {
-				allInvoices = append(allInvoices, invoices...)
-			}
-		}
 	}
 	c.JSON(http.StatusOK, gin.H{"data": allInvoices, "total": len(allInvoices)})
 }

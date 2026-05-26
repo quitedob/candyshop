@@ -126,8 +126,9 @@ import { ref, onMounted } from 'vue'
 definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
 const api = useApi()
-const { t } = useI18n()
-const { formatDate } = useDisplay()
+const { t, te } = useI18n()
+const { formatDate, enumLabel } = useDisplay()
+const { formatRelativeTime } = useRelativeTime('admin.staff', { plainKeys: true })
 
 const staff = ref<any[]>([])
 const pagination = ref<any>(null)
@@ -201,29 +202,13 @@ const formatRole = (role: any) => {
   if (!role) return t('enum.order_status.unknown')
   const name = typeof role === 'string' ? role : role.name
   if (!name) return t('enum.order_status.unknown')
-  return name.charAt(0).toUpperCase() + name.slice(1)
+  const key = `roles.${name}`
+  return te(key) ? t(key) : name
 }
 
 const formatStatus = (status: string) => {
   if (!status) return t('enum.order_status.unknown')
-  return status.charAt(0).toUpperCase() + status.slice(1)
-}
-
-const formatRelativeTime = (dateStr: string) => {
-  if (!dateStr) return '-'
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffSec = Math.floor(diffMs / 1000)
-  const diffMin = Math.floor(diffSec / 60)
-  const diffHour = Math.floor(diffMin / 60)
-  const diffDay = Math.floor(diffHour / 24)
-
-  if (diffSec < 60) return t('admin.staff.just_now')
-  if (diffMin < 60) return t('admin.staff.minutes_ago', { count: diffMin })
-  if (diffHour < 24) return t('admin.staff.hours_ago', { count: diffHour })
-  if (diffDay < 7) return t('admin.staff.days_ago', { count: diffDay })
-  return formatDate(dateStr)
+  return enumLabel('user_status', status)
 }
 
 const prevPage = () => { if (page.value > 1) { page.value -= 1; fetchStaff() } }

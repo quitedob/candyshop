@@ -3,6 +3,8 @@ package auth
 import (
 	"sync"
 	"time"
+
+	"candypro/api/internal/pkg/safego"
 )
 
 // SEC-7: Per-account brute-force protection for login attempts.
@@ -41,7 +43,7 @@ func NewLoginAttemptTracker() *LoginAttemptTracker {
 		attempts: make(map[string]*loginAttempt),
 		stopCh:   make(chan struct{}),
 	}
-	go t.cleanup()
+	safego.Go("login-limiter.cleanup", t.cleanup)
 	return t
 }
 
@@ -87,6 +89,13 @@ func (t *LoginAttemptTracker) RecordFailure(email string) {
 		// Evict stale entries if capacity exceeded
 		if len(t.attempts) >= maxTrackedAccounts {
 			t.evictExpiredLocked()
+		}
+		// L-5: if no entries were stale enough to expire, drop the single oldest
+		// non-locked entry so the map can never exceed maxTrackedAccounts. Without
+		// this fallback an enumeration burst could push the map past the cap by
+		// one insert per concurrent goroutine before the next cleanup tick.
+		if len(t.attempts) >= maxTrackedAccounts {
+			t.evictOldestUnlockedLocked()
 		}
 		a = &loginAttempt{}
 		t.attempts[email] = a
@@ -142,5 +151,25 @@ func (t *LoginAttemptTracker) evictExpiredLocked() {
 		} else if !a.isLocked && now.Sub(a.lastFail) >= lockoutDuration {
 			delete(t.attempts, email)
 		}
+	}
+}
+
+// evictOldestUnlockedLocked drops the single oldest non-locked tracker entry
+// when the map is full but nothing is stale enough to expire (L-5). Locked
+// entries are preserved so we never silently lift an active brute-force lockout.
+func (t *LoginAttemptTracker) evictOldestUnlockedLocked() {
+	var oldestEmail string
+	var oldestAt time.Time
+	for email, a := range t.attempts {
+		if a.isLocked {
+			continue
+		}
+		if oldestEmail == "" || a.lastFail.Before(oldestAt) {
+			oldestEmail = email
+			oldestAt = a.lastFail
+		}
+	}
+	if oldestEmail != "" {
+		delete(t.attempts, oldestEmail)
 	}
 }

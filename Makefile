@@ -1,4 +1,4 @@
-.PHONY: all help dev build test clean docker-up docker-down docker-logs migrate seed
+.PHONY: all help dev dev-frontend dev-frontend-clean build test clean docker-up docker-down docker-logs migrate seed
 
 # Default target
 all: help
@@ -10,6 +10,7 @@ help:
 	@echo "Development:"
 	@echo "  dev           Start backend development server"
 	@echo "  dev-frontend  Start frontend development server"
+	@echo "  dev-frontend-clean  Clean .nuxt cache then start frontend dev"
 	@echo "  dev-all       Start both backend and frontend"
 	@echo ""
 	@echo "Building:"
@@ -44,6 +45,7 @@ help:
 	@echo "Utilities:"
 	@echo "  clean         Clean build artifacts"
 	@echo "  swagger       Generate Swagger documentation"
+	@echo "  api-gen       Regenerate Swagger + frontend OpenAPI client (orval)"
 	@echo "  install       Install dependencies"
 
 # Development targets
@@ -52,6 +54,9 @@ dev:
 
 dev-frontend:
 	cd frontend && npm run dev
+
+dev-frontend-clean:
+	cd frontend && npm run dev:clean
 
 dev-all:
 	@echo "Starting backend and frontend..."
@@ -62,7 +67,7 @@ build:
 	cd backend && go build -o bin/api cmd/api/main.go
 
 build-frontend:
-	cd frontend && npm run build
+	cd frontend && npm run api:generate && npm run build
 
 build-all: build build-frontend
 
@@ -139,7 +144,10 @@ clean:
 	rm -rf frontend/node_modules/.cache
 
 swagger:
-	cd backend && swag init -g cmd/api/main.go -o docs
+	cd backend && swag init -g cmd/api/main.go -o docs --parseDependency --parseInternal
+
+api-gen: swagger
+	cd frontend && npm run api:generate
 
 install:
 	cd backend && go mod download

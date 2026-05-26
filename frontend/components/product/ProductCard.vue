@@ -8,7 +8,7 @@
       <div class="product-card__image">
         <img
           :src="imgSrc"
-          :alt="product.name"
+          :alt="tField(product, 'name')"
           class="product-card__img"
           loading="lazy"
           @error="handleImageError"
@@ -53,13 +53,13 @@
 
       <!-- Content -->
       <div class="product-card__content">
-        <h3 class="product-card__title">{{ product.name }}</h3>
-        <p class="product-card__summary">{{ product.summary }}</p>
+        <h3 class="product-card__title">{{ tField(product, 'name') }}</h3>
+        <p class="product-card__summary">{{ tField(product, 'summary') }}</p>
 
         <!-- Price -->
         <p v-if="product.basePrice" class="product-card__price">
           {{ $t('product.price_from') }} {{ priceDisplay }}{{ $t('product.price_per_unit') }}
-          <span v-if="currency.isConverted.value" class="product-card__price-note">{{ $t('product.reference_price') }}</span>
+          <span v-if="currency.isConverted.value && currency.ratesLoaded.value" class="product-card__price-note">{{ $t('product.reference_price') }}: {{ referencePriceDisplay }}</span>
         </p>
 
         <!-- Meta -->
@@ -90,6 +90,7 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n, useLocalePath } from '#i18n'
 import { useDisplay } from '~/composables/useDisplay'
+import { useTranslation } from '~/composables/useTranslation'
 
 interface Product {
   id: string
@@ -105,6 +106,7 @@ interface Product {
   moq?: number
   leadTime?: string
   basePrice?: number
+  translations?: Record<string, Record<string, string>>
 }
 
 interface Props {
@@ -115,10 +117,13 @@ const props = defineProps<Props>()
 
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { formatNumber } = useDisplay()
+const { formatNumber, currencyOrDefault: cur } = useDisplay()
 const currency = useCurrency()
+const { tField } = useTranslation()
 
-const priceDisplay = computed(() => currency.formatPrice(props.product.basePrice || 0))
+const transactionCurrency = computed(() => cur((props.product as { currency?: string }).currency || 'USD'))
+const priceDisplay = computed(() => `${transactionCurrency.value} ${formatNumber(props.product.basePrice || 0)}`)
+const referencePriceDisplay = computed(() => currency.formatPrice(props.product.basePrice || 0))
 
 const FALLBACK = computed(() => {
   const catSlug = props.product.categorySlug || props.product.category

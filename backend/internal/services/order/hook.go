@@ -58,3 +58,18 @@ func (s *HookConfigService) Delete(ctx context.Context, id uint) error {
 func (s *HookConfigService) ListExecutionsByHook(ctx context.Context, hookID uint, limit, offset int) ([]modelsOrder.HookExecution, int64, error) {
 	return s.executionRepo.ListByHook(ctx, hookID, limit, offset)
 }
+
+// FindActiveByEvent 返回指定事件的启用 Hook 配置
+func (s *HookConfigService) FindActiveByEvent(ctx context.Context, eventName string) ([]modelsOrder.HookConfig, error) {
+	all, err := s.hookRepo.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]modelsOrder.HookConfig, 0)
+	for _, h := range all {
+		if h.Status == "active" && h.EventName == eventName {
+			out = append(out, h)
+		}
+	}
+	return out, nil
+}

@@ -1,6 +1,10 @@
 package order
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 // Invoice type constants.
 const (
@@ -24,13 +28,13 @@ type Invoice struct {
 	OrderID     string     `gorm:"type:varchar(255);index" json:"orderId"`
 	TradeID     *uint      `gorm:"index" json:"tradeId,omitempty"` // Link to trade_transactions for unified billing
 	Type        string     `gorm:"type:varchar(50);default:'commercial'" json:"type"`
-	Status      string     `gorm:"type:varchar(50);default:'draft'" json:"status"`
+	Status      string     `gorm:"type:varchar(50);default:'draft';index" json:"status"`
 	InvoiceNo   string     `gorm:"type:varchar(100);uniqueIndex" json:"invoiceNo"`
 	Amount      float64    `json:"amount"`
 	TaxAmount   float64    `json:"taxAmount"`
 	TotalAmount float64    `json:"totalAmount"`
 	Currency    string     `gorm:"type:varchar(3);default:'USD'" json:"currency"`
-	DueDate     *time.Time `json:"dueDate"`
+	DueDate     *time.Time `json:"dueDate" gorm:"index"`
 	SentAt      *time.Time `json:"sentAt"`
 	PaidAt      *time.Time `json:"paidAt"`
 	Notes       string     `gorm:"type:text" json:"notes"`
@@ -44,4 +48,8 @@ type Invoice struct {
 	OrderFinancialHash string    `gorm:"type:varchar(64)" json:"orderFinancialHash,omitempty"`
 	CreatedAt          time.Time `json:"createdAt"`
 	UpdatedAt          time.Time `json:"updatedAt"`
+	// Version is the optimistic-lock counter (C-5).
+	Version int64 `json:"version" gorm:"default:0"`
+	// DeletedAt enables soft delete on invoices (C-9).
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 }

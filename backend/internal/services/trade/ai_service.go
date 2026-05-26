@@ -100,7 +100,7 @@ Provide:
 func (s *AIService) GetShippingOptions(ctx context.Context, country string) (string, error) {
 	countryContext := getCountryContext(country)
 	prompt := fmt.Sprintf(`Provide B2B candy shipping options and logistics details for %s:
-1. Standard shipping methods and estimated times
+1. Available shipping methods (sea, air, courier) — do NOT quote specific transit day counts; state that transit varies by method, season, and destination and is confirmed at order time
 2. Import duties and taxes (%s)
 3. Customs clearance process
 4. Temperature control requirements during transit

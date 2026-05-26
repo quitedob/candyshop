@@ -71,7 +71,7 @@
           <label for="pricing-product" class="block text-sm font-medium text-gray-700">{{ t('admin.pricing.select_product') }}</label>
           <select id="pricing-product" v-model="selectedProductId" name="productId" @change="fetchProductPrices" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
             <option value="">{{ t('admin.pricing.select_product_placeholder') }}</option>
-            <option v-for="product in products" :key="product.id" :value="product.id">{{ product.name }}</option>
+            <option v-for="product in products" :key="product.id" :value="product.id">{{ tField(product, 'name') }}</option>
           </select>
         </div>
       </div>
@@ -187,6 +187,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useTranslation } from '~/composables/useTranslation'
 
 definePageMeta({
   layout: 'admin',
@@ -195,6 +196,7 @@ definePageMeta({
 
 const api = useApi()
 const { t } = useI18n()
+const { tField } = useTranslation()
 const { currencyOrDefault: cur, enumLabel, formatNumber, formatDate } = useDisplay()
 
 const activeTab = ref('price-lists')

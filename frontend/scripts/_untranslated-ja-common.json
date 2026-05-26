@@ -1,0 +1,152 @@
+{
+  "本网站需要 JavaScript 以获得最佳体验。您可使用以下链接继续浏览。": {
+    "key": "javascript_required",
+    "en": "This site works best with JavaScript enabled. Use the links below to continue browsing.",
+    "loc": "このサイトは JavaScript を有効にすると最適に動作します。以下のリンクから引き続き閲覧できます。"
+  },
+  "WhatsApp咨询": {
+    "key": "whatsapp.us",
+    "en": "WhatsApp Us",
+    "loc": "WhatsApp 相談"
+  },
+  "您好，我对您的OEM糖果服务很感兴趣。能提供更多信息吗？": {
+    "key": "whatsapp.message",
+    "en": "Hi, I'm interested in your OEM candy services. Can you provide more information?",
+    "loc": "こんにちは。OEM キャンディサービスに興味があります。詳細を教えていただけますか？"
+  },
+  "您好，我对「{product}」感兴趣{categoryPart}。能否提供更多信息？": {
+    "key": "whatsapp.product_inquiry",
+    "en": "Hi, I'm interested in \"{product}\"{categoryPart}. Can you provide more information?",
+    "loc": "こんにちは、「{product}」{categoryPart}に興味があります。詳細を教えていただけますか？"
+  },
+  "（分类：{name}）": {
+    "key": "whatsapp.category_part",
+    "en": " from {name} category",
+    "loc": "（カテゴリ：{name}）"
+  },
+  "您好，我想咨询贵司的 OEM 糖果服务。\n\n": {
+    "key": "whatsapp.inquiry_intro",
+    "en": "Hi, I'd like to inquire about your OEM candy services.\n\n",
+    "loc": "こんにちは、貴社の OEM キャンディサービスについてお問い合わせしたいです。\n\n"
+  },
+  "第 {current} 页 / 共 {total} 页": {
+    "key": "pagination.page",
+    "en": "Page {current} of {total}",
+    "loc": "{total} ページ中 {current} ページ目"
+  },
+  "显示第 {from} 到 {to} 项 / 共 {total} 项产品": {
+    "key": "pagination.showing",
+    "en": "Showing {from} to {to} of {total} products",
+    "loc": "{total} 件中 {from} ～ {to} 件の製品を表示"
+  },
+  "{field} 为必填项": {
+    "key": "validation.required.default",
+    "en": "{field} is required",
+    "loc": "{field} は必須です"
+  },
+  "公司名称至少需要 {min} 个字符": {
+    "key": "validation.minLength.companyName",
+    "en": "Company Name must be at least {min} characters",
+    "loc": "会社名は {min} 文字以上必要です"
+  },
+  "联系人至少需要 {min} 个字符": {
+    "key": "validation.minLength.contactPerson",
+    "en": "Contact Person must be at least {min} characters",
+    "loc": "担当者は {min} 文字以上必要です"
+  },
+  "至少需要 {min} 个字符": {
+    "key": "validation.minLength.default",
+    "en": "Must be at least {min} characters",
+    "loc": "{min} 文字以上必要です"
+  },
+  "global": {
+    "key": "defaults.target_country_global",
+    "en": "global",
+    "loc": "global"
+  },
+  "链接地址": {
+    "key": "rte.link_url",
+    "en": "Link URL",
+    "loc": "リンク URL"
+  },
+  "https://example.com": {
+    "key": "rte.link_placeholder",
+    "en": "https://example.com",
+    "loc": "https://example.com"
+  },
+  "通过 WhatsApp 联系我们": {
+    "key": "a11y.contact_whatsapp",
+    "en": "Contact us on WhatsApp",
+    "loc": "WhatsApp でお問い合わせ"
+  },
+  "English": {
+    "key": "languages.en",
+    "en": "English",
+    "loc": "English"
+  },
+  "印尼语": {
+    "key": "languages.id",
+    "en": "Bahasa Indonesia",
+    "loc": "Bahasa Indonesia"
+  },
+  "马来语": {
+    "key": "languages.ms",
+    "en": "Bahasa Melayu",
+    "loc": "Bahasa Melayu"
+  },
+  "起订量: ": {
+    "key": "product.moq_prefix",
+    "en": "MOQ: ",
+    "loc": "MOQ: "
+  },
+  "{alt} - 图片 {n}": {
+    "key": "product.gallery_image_alt",
+    "en": "{alt} - Image {n}",
+    "loc": "{alt} - 画像 {n}"
+  },
+  "{alt} - 缩略图 {n}": {
+    "key": "product.gallery_thumbnail_alt",
+    "en": "{alt} - Thumbnail {n}",
+    "loc": "{alt} - サムネイル {n}"
+  },
+  "有效期至 {date}": {
+    "key": "factory.cert_valid_until",
+    "en": "Valid until {date}",
+    "loc": "有効期限 {date}"
+  },
+  "危害分析关键控制点 - 食品安全管理体系": {
+    "key": "factory.cert_haccp_desc",
+    "en": "Hazard Analysis Critical Control Point - Food Safety Management System",
+    "loc": "HACCP - 食品安全管理システム"
+  },
+  "英国零售商协会全球食品安全标准 - A级": {
+    "key": "factory.cert_brc_desc",
+    "en": "British Retail Consortium Global Standard for Food Safety - Grade A",
+    "loc": "BRC 世界基準食品安全規格 - A グレード"
+  },
+  "清真认证 - 伊斯兰市场合规": {
+    "key": "factory.cert_halal_desc",
+    "en": "Halal Certification for Islamic Market Compliance",
+    "loc": "Halal 認証 - イスラム市場対応"
+  },
+  "CandyPro OEM": {
+    "key": "invoices.company_name",
+    "en": "CandyPro OEM",
+    "loc": "CandyPro OEM"
+  },
+  "Cookie 偏好设置": {
+    "key": "cookie_consent.title",
+    "en": "Cookie Preferences",
+    "loc": "Cookie 設定"
+  },
+  "我们使用 Cookie 来提升您的浏览体验、分析网站流量和个性化内容。点击「全部接受」即表示您同意我们使用所有 Cookie。您可以选择「仅必要」以拒绝非必要 Cookie。": {
+    "key": "cookie_consent.message",
+    "en": "We use cookies to enhance your browsing experience, analyze site traffic, and personalize content. By clicking 'Accept All', you consent to our use of all cookies. You can choose 'Essential Only' to reject non-essential cookies.",
+    "loc": "Cookie を使用して閲覧体験の向上、サイトトラフィック分析、コンテンツのパーソナライズを行います。「すべて受け入れる」をクリックするとすべての Cookie の使用に同意したことになります。「必須のみ」を選択すると非必須 Cookie を拒否できます。"
+  },
+  "了解我们的 Cookie 政策": {
+    "key": "cookie_consent.learn_more",
+    "en": "Learn more about our Cookie Policy",
+    "loc": "Cookie ポリシーの詳細"
+  }
+}

@@ -28,13 +28,13 @@ func (h *Handler) CustomerGetCompany(c *gin.Context) {
 		response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
-	if user.CompanyID == nil {
-		response.ErrorResp(c, http.StatusNotFound, "no_company_profile")
+	company, err := h.services.Company.EnsureCompanyForUser(c.Request.Context(), user)
+	if err != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "company_provision_failed")
 		return
 	}
-	company, err := h.services.Company.GetCompany(c.Request.Context(), *user.CompanyID)
-	if err != nil {
-		response.ErrorResp(c, http.StatusNotFound, "company_not_found")
+	if company == nil {
+		response.ErrorResp(c, http.StatusNotFound, "no_company_profile")
 		return
 	}
 	c.JSON(http.StatusOK, company)
@@ -55,13 +55,13 @@ func (h *Handler) CustomerUpdateCompany(c *gin.Context) {
 		response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
-	if user.CompanyID == nil {
-		response.ErrorResp(c, http.StatusNotFound, "no_company_profile")
+	company, err := h.services.Company.EnsureCompanyForUser(c.Request.Context(), user)
+	if err != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "company_provision_failed")
 		return
 	}
-	company, err := h.services.Company.GetCompany(c.Request.Context(), *user.CompanyID)
-	if err != nil {
-		response.ErrorResp(c, http.StatusNotFound, "company_not_found")
+	if company == nil {
+		response.ErrorResp(c, http.StatusNotFound, "no_company_profile")
 		return
 	}
 	var req struct {

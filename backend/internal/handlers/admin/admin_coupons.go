@@ -31,8 +31,22 @@ func (h *Handler) AdminCreateCoupon(c *gin.Context) {
 	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
-	startsAt, _ := time.Parse(time.RFC3339, req.StartsAt)
-	expiresAt, _ := time.Parse(time.RFC3339, req.ExpiresAt)
+	// R2 A-3: previously the parse errors were swallowed, leaving coupons with
+	// year-0001 timestamps (always-expired). Reject malformed RFC3339 input.
+	startsAt, err := time.Parse(time.RFC3339, req.StartsAt)
+	if err != nil {
+		response.InvalidResp(c, "invalid_starts_at")
+		return
+	}
+	expiresAt, err := time.Parse(time.RFC3339, req.ExpiresAt)
+	if err != nil {
+		response.InvalidResp(c, "invalid_expires_at")
+		return
+	}
+	if !expiresAt.After(startsAt) {
+		response.InvalidResp(c, "invalid_expires_before_starts")
+		return
+	}
 
 	coupon := &modelsOrder.Coupon{
 		ID:             fmt.Sprintf("CP%d", time.Now().UnixNano()),
@@ -50,6 +64,8 @@ func (h *Handler) AdminCreateCoupon(c *gin.Context) {
 		response.ErrorResp(c, http.StatusInternalServerError, "coupon_create_failed")
 		return
 	}
+	// H-23: audit coupon lifecycle so abuse / unauthorised edits leave a trail.
+	h.logActivityAudit(c, "coupon_create", "coupon", coupon.ID, "", coupon.Code)
 	c.JSON(http.StatusCreated, coupon)
 }
 
@@ -82,6 +98,7 @@ func (h *Handler) AdminDeleteCoupon(c *gin.Context) {
 		response.ErrorResp(c, http.StatusInternalServerError, "coupon_delete_failed")
 		return
 	}
+	h.logActivityAudit(c, "coupon_delete", "coupon", id, "", "")
 	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
 }
 
@@ -109,13 +126,18 @@ func (h *Handler) AdminCreateGiftCard(c *gin.Context) {
 		Status:         modelsOrder.GiftCardStatusActive,
 	}
 	if req.ExpiresAt != "" {
-		t, _ := time.Parse(time.RFC3339, req.ExpiresAt)
+		t, err := time.Parse(time.RFC3339, req.ExpiresAt)
+		if err != nil {
+			response.InvalidResp(c, "invalid_expires_at")
+			return
+		}
 		gc.ExpiresAt = &t
 	}
 	if err := h.services.Coupon.CreateGiftCard(c.Request.Context(), gc); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "giftcard_create_failed")
 		return
 	}
+	h.logActivityAudit(c, "giftcard_create", "giftcard", gc.ID, "", gc.Code)
 	c.JSON(http.StatusCreated, gc)
 }
 

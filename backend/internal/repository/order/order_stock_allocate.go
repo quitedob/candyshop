@@ -75,15 +75,30 @@ func countWarehouseStockRows(tx *gorm.DB, productID string) (int64, error) {
 func reserveWarehouseStock(tx *gorm.DB, warehouseID, productID string, qty int, reason, refID, operatorID string, t time.Time) ([]*modelsOrder.StockTransaction, error) {
 	var ws modelsProduct.WarehouseStock
 	err := tx.Where("warehouse_id = ? AND product_id = ?", warehouseID, productID).First(&ws).Error
-	if err != nil {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		var p modelsProduct.Product
+		if perr := tx.Where("id = ?", productID).First(&p).Error; perr != nil {
+			return nil, perr
+		}
+		ws = modelsProduct.WarehouseStock{
+			WarehouseID: warehouseID,
+			ProductID:   productID,
+			Quantity:    p.StockQuantity,
+			Reserved:    0,
+			UpdatedAt:   t,
+		}
+		if cerr := tx.Create(&ws).Error; cerr != nil {
+			return nil, cerr
+		}
+	} else if err != nil {
 		return nil, err
 	}
 	sellableWh := ws.Quantity - ws.Reserved
 	if sellableWh < 0 {
-		sellableWh = 0
+		return nil, fmt.Errorf("%w: negative sellable warehouse stock for product %s", modelsOrder.ErrInsufficientStock, productID)
 	}
 	if sellableWh < qty {
-		return nil, fmt.Errorf("insufficient warehouse sellable stock (quantity minus reserved) for product %s", productID)
+		return nil, fmt.Errorf("%w: insufficient warehouse sellable stock for product %s", modelsOrder.ErrInsufficientStock, productID)
 	}
 	res := tx.Model(&modelsProduct.WarehouseStock{}).
 		Where("id = ? AND (quantity - reserved) >= ?", ws.ID, qty).
@@ -92,7 +107,7 @@ func reserveWarehouseStock(tx *gorm.DB, warehouseID, productID string, qty int, 
 		return nil, res.Error
 	}
 	if res.RowsAffected == 0 {
-		return nil, fmt.Errorf("insufficient warehouse stock for product %s (concurrent)", productID)
+		return nil, fmt.Errorf("%w: insufficient warehouse stock for product %s (concurrent)", modelsOrder.ErrInsufficientStock, productID)
 	}
 
 	var p modelsProduct.Product
@@ -107,7 +122,7 @@ func reserveWarehouseStock(tx *gorm.DB, warehouseID, productID string, qty int, 
 		return nil, res2.Error
 	}
 	if res2.RowsAffected == 0 {
-		return nil, fmt.Errorf("insufficient aggregate stock_quantity for product %s", productID)
+		return nil, fmt.Errorf("%w: insufficient aggregate stock_quantity for product %s", modelsOrder.ErrInsufficientStock, productID)
 	}
 	afterP := beforeP - qty
 	wid := warehouseID
@@ -216,58 +231,16 @@ func deductWarehouseStock(tx *gorm.DB, warehouseID, productID string, qty int, r
 	return []*modelsOrder.StockTransaction{rec}, nil
 }
 
-// deductFromDefaultWarehouse 从指定仓行扣减 quantity，并镜像扣减 product.stock_quantity
-// Deprecated: use reserveWarehouseStock + deductWarehouseStock for three-phase inventory.
-func deductFromDefaultWarehouse(tx *gorm.DB, warehouseID, productID string, qty int, reason, refID, operatorID string, t time.Time) ([]*modelsOrder.StockTransaction, error) {
-	var ws modelsProduct.WarehouseStock
-	err := tx.Where("warehouse_id = ? AND product_id = ?", warehouseID, productID).First(&ws).Error
-	if err != nil {
-		return nil, err
+// applyWarehouseStockChange 按 reason 路由到三阶段库存操作（预留/释放/扣减）
+func applyWarehouseStockChange(tx *gorm.DB, warehouseID, productID string, qty int, reason, refID, operatorID string, t time.Time) ([]*modelsOrder.StockTransaction, error) {
+	switch reason {
+	case modelsOrder.StockReasonStockReleased, modelsOrder.StockReasonOrderCancelled, modelsOrder.StockReasonOrderDeleted, modelsOrder.StockReasonDraftExpired:
+		return releaseWarehouseStock(tx, warehouseID, productID, qty, reason, refID, operatorID, t)
+	case modelsOrder.StockReasonDispatched, modelsOrder.StockReasonGoodsIssued, modelsOrder.StockReasonStockDeducted:
+		return deductWarehouseStock(tx, warehouseID, productID, qty, reason, refID, operatorID, t)
+	default:
+		return reserveWarehouseStock(tx, warehouseID, productID, qty, reason, refID, operatorID, t)
 	}
-	sellableWh := ws.Quantity - ws.Reserved
-	if sellableWh < 0 {
-		sellableWh = 0
-	}
-	if sellableWh < qty {
-		return nil, fmt.Errorf("insufficient warehouse sellable stock (quantity minus reserved) for product %s", productID)
-	}
-	res := tx.Model(&modelsProduct.WarehouseStock{}).
-		Where("id = ? AND (quantity - reserved) >= ?", ws.ID, qty).
-		Update("quantity", gorm.Expr("quantity - ?", qty))
-	if res.Error != nil {
-		return nil, res.Error
-	}
-	if res.RowsAffected == 0 {
-		return nil, fmt.Errorf("insufficient warehouse stock for product %s (concurrent)", productID)
-	}
-	var p modelsProduct.Product
-	if err := tx.Where("id = ?", productID).First(&p).Error; err != nil {
-		return nil, err
-	}
-	beforeP := p.StockQuantity
-	res2 := tx.Model(&modelsProduct.Product{}).
-		Where("id = ? AND stock_quantity >= ?", productID, qty).
-		Update("stock_quantity", gorm.Expr("stock_quantity - ?", qty))
-	if res2.Error != nil {
-		return nil, res2.Error
-	}
-	if res2.RowsAffected == 0 {
-		return nil, fmt.Errorf("insufficient aggregate stock_quantity for product %s", productID)
-	}
-	afterP := beforeP - qty
-	wid := warehouseID
-	rec := &modelsOrder.StockTransaction{
-		ProductID:   productID,
-		Change:      -qty,
-		StockBefore: beforeP,
-		StockAfter:  afterP,
-		Reason:      reason,
-		ReferenceID: refID,
-		OperatorID:  operatorID,
-		WarehouseID: &wid,
-		CreatedAt:   t,
-	}
-	return []*modelsOrder.StockTransaction{rec}, nil
 }
 
 // deductStockForProductLine 扣减库存：若存在 ProductBatch 则按 FEFO；否则多仓（有仓记录时走默认仓）或回退单仓字段
@@ -314,7 +287,7 @@ func deductLegacyProductStock(tx *gorm.DB, productID string, qty int, reason, re
 		return nil, err
 	}
 	if p.StockQuantity-holds < qty {
-		return nil, fmt.Errorf("insufficient sellable stock for product %s after OEM holds", productID)
+		return nil, fmt.Errorf("%w for product %s after OEM holds", modelsOrder.ErrInsufficientStock, productID)
 	}
 	nWh, err := countWarehouseStockRows(tx, productID)
 	if err != nil {
@@ -323,7 +296,7 @@ func deductLegacyProductStock(tx *gorm.DB, productID string, qty int, reason, re
 	if nWh > 0 {
 		wid, werr := resolveDefaultWarehouseID(tx, "")
 		if werr == nil {
-			return deductFromDefaultWarehouse(tx, wid, productID, qty, reason, refID, operatorID, t)
+			return applyWarehouseStockChange(tx, wid, productID, qty, reason, refID, operatorID, t)
 		}
 	}
 	before := p.StockQuantity
@@ -360,14 +333,14 @@ func deductLegacyProductStockWithWarehouse(tx *gorm.DB, warehouseID, productID s
 		return nil, err
 	}
 	if p.StockQuantity-holds < qty {
-		return nil, fmt.Errorf("insufficient sellable stock for product %s after OEM holds", productID)
+		return nil, fmt.Errorf("%w for product %s after OEM holds", modelsOrder.ErrInsufficientStock, productID)
 	}
 	nWh, err := countWarehouseStockRows(tx, productID)
 	if err != nil {
 		return nil, err
 	}
 	if nWh > 0 {
-		return deductFromDefaultWarehouse(tx, warehouseID, productID, qty, reason, refID, operatorID, t)
+		return applyWarehouseStockChange(tx, warehouseID, productID, qty, reason, refID, operatorID, t)
 	}
 	before := p.StockQuantity
 	res := tx.Model(&modelsProduct.Product{}).
@@ -451,7 +424,7 @@ func deductFEFOFromBatches(tx *gorm.DB, productID string, qty int, reason, refID
 		return nil, err
 	}
 	if int(sum)-holds < qty {
-		return nil, fmt.Errorf("insufficient batch stock for product %s (FEFO)", productID)
+		return nil, fmt.Errorf("%w: insufficient batch stock for product %s (FEFO)", modelsOrder.ErrInsufficientStock, productID)
 	}
 
 	remaining := qty
@@ -464,7 +437,7 @@ func deductFEFOFromBatches(tx *gorm.DB, productID string, qty int, reason, refID
 			Take(&b).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, fmt.Errorf("insufficient batch stock for product %s (concurrent reservation)", productID)
+				return nil, fmt.Errorf("%w: insufficient batch stock for product %s (concurrent reservation)", modelsOrder.ErrInsufficientStock, productID)
 			}
 			return nil, err
 		}
@@ -507,7 +480,7 @@ func deductFEFOFromBatches(tx *gorm.DB, productID string, qty int, reason, refID
 		return nil, res.Error
 	}
 	if res.RowsAffected == 0 {
-		return nil, fmt.Errorf("insufficient aggregate stock_quantity for product %s", productID)
+		return nil, fmt.Errorf("%w: insufficient aggregate stock_quantity for product %s", modelsOrder.ErrInsufficientStock, productID)
 	}
 
 	// Also update warehouse_stock for consistency (mirror legacy path behavior)
@@ -539,7 +512,7 @@ func deductFEFOFromBatchesWithWarehouse(tx *gorm.DB, warehouseID, productID stri
 		return nil, err
 	}
 	if int(sum)-holds < qty {
-		return nil, fmt.Errorf("insufficient batch stock for product %s in warehouse %s (FEFO)", productID, warehouseID)
+		return nil, fmt.Errorf("%w: insufficient batch stock for product %s in warehouse %s (FEFO)", modelsOrder.ErrInsufficientStock, productID, warehouseID)
 	}
 
 	remaining := qty
@@ -552,7 +525,7 @@ func deductFEFOFromBatchesWithWarehouse(tx *gorm.DB, warehouseID, productID stri
 			Take(&b).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, fmt.Errorf("insufficient batch stock for product %s in warehouse %s (concurrent)", productID, warehouseID)
+				return nil, fmt.Errorf("%w: insufficient batch stock for product %s in warehouse %s (concurrent)", modelsOrder.ErrInsufficientStock, productID, warehouseID)
 			}
 			return nil, err
 		}
@@ -595,7 +568,7 @@ func deductFEFOFromBatchesWithWarehouse(tx *gorm.DB, warehouseID, productID stri
 		return nil, res.Error
 	}
 	if res.RowsAffected == 0 {
-		return nil, fmt.Errorf("insufficient aggregate stock_quantity for product %s", productID)
+		return nil, fmt.Errorf("%w: insufficient aggregate stock_quantity for product %s", modelsOrder.ErrInsufficientStock, productID)
 	}
 
 	if ue := tx.Model(&modelsProduct.WarehouseStock{}).

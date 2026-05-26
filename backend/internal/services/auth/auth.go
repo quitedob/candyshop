@@ -4,6 +4,7 @@ import (
 	"candypro/api/internal/config"
 	modelsAuth "candypro/api/internal/models/auth"
 	modelsUser "candypro/api/internal/models/user"
+	"candypro/api/internal/pkg/authsession"
 	"candypro/api/internal/pkg/crypto"
 	pwdutil "candypro/api/internal/pkg/password"
 	"context"
@@ -22,17 +23,10 @@ type roleRepository interface {
 	FindByID(ctx context.Context, id string) (*modelsAuth.Role, error)
 }
 
-type refreshTokenRepository interface {
-	FindByToken(ctx context.Context, token string) (*modelsAuth.RefreshToken, error)
-	Update(ctx context.Context, token *modelsAuth.RefreshToken) error
-	DeleteByToken(ctx context.Context, token string) error
-	DeleteAllForUser(ctx context.Context, userID string) error
-}
-
 type AuthService struct {
 	userRepo   userRepository
 	roleRepo   roleRepository
-	tokenRepo  refreshTokenRepository
+	sessions   authsession.Store
 	jwtService *JWTService
 	cfg        *config.Config
 }
@@ -40,17 +34,22 @@ type AuthService struct {
 func NewAuthService(
 	userRepo userRepository,
 	roleRepo roleRepository,
-	tokenRepo refreshTokenRepository,
+	sessions authsession.Store,
 	jwtService *JWTService,
 	cfg *config.Config,
 ) *AuthService {
 	return &AuthService{
 		userRepo:   userRepo,
 		roleRepo:   roleRepo,
-		tokenRepo:  tokenRepo,
+		sessions:   sessions,
 		jwtService: jwtService,
 		cfg:        cfg,
 	}
+}
+
+// Sessions 返回会话存储（供 middleware 校验 Redis access 会话）
+func (s *AuthService) Sessions() authsession.Store {
+	return s.sessions
 }
 
 // Register creates a new user, hashes their password, and sets up a default profile
@@ -68,8 +67,7 @@ func (s *AuthService) Register(ctx context.Context, user *modelsUser.User) error
 		}
 	}
 
-	// Hash password
-	hash, err := pwdutil.HashPassword(user.PasswordHash) // Password string originally passed through model field
+	hash, err := pwdutil.HashPassword(user.PasswordHash)
 	if err != nil {
 		return err
 	}
@@ -110,38 +108,30 @@ func (s *AuthService) ValidateCredentials(ctx context.Context, email, password s
 
 // ValidateRefreshToken checks if a refresh token is valid and not expired/revoked
 func (s *AuthService) ValidateRefreshToken(ctx context.Context, tokenStr string) (string, error) {
-	token, err := s.tokenRepo.FindByToken(ctx, tokenStr)
+	token, err := s.sessions.GetRefreshToken(ctx, tokenStr)
 	if err != nil {
 		return "", errors.New("invalid or expired refresh token")
 	}
-
 	if token.RevokedAt != nil || token.ExpiresAt.Before(time.Now()) {
 		return "", errors.New("invalid or expired refresh token")
 	}
-
 	return token.UserID, nil
 }
 
 // RevokeRefreshToken marks a refresh token as revoked
 func (s *AuthService) RevokeRefreshToken(ctx context.Context, tokenStr string) error {
-	token, err := s.tokenRepo.FindByToken(ctx, tokenStr)
-	if err != nil {
-		return err
-	}
-
-	now := time.Now()
-	token.RevokedAt = &now
-	return s.tokenRepo.Update(ctx, token)
+	return s.sessions.RevokeRefreshToken(ctx, tokenStr)
 }
 
 // Logout revokes a token
 func (s *AuthService) Logout(ctx context.Context, tokenStr string) error {
-	return s.tokenRepo.DeleteByToken(ctx, tokenStr)
+	return s.sessions.DeleteRefreshToken(ctx, tokenStr)
 }
 
-// RevokeAllUserTokens revokes all refresh tokens for a user (e.g., after password change).
+// RevokeAllUserTokens revokes all refresh + access sessions for a user
 func (s *AuthService) RevokeAllUserTokens(ctx context.Context, userID string) error {
-	return s.tokenRepo.DeleteAllForUser(ctx, userID)
+	_ = s.sessions.RevokeAllUserAccessSessions(ctx, userID)
+	return s.sessions.RevokeAllUserRefreshTokens(ctx, userID)
 }
 
 // ResolveRoleID resolves a role ID from explicit roleID or roleName.

@@ -120,6 +120,60 @@ func (c *Client) GenerateProduct(ctx context.Context, description, language stri
 	return &result, "", nil
 }
 
+// ContentReviseResult is the structured AI output for partial draft revision.
+type ContentReviseResult struct {
+	Updates map[string]json.RawMessage `json:"updates"`
+	Summary string                     `json:"summary"`
+}
+
+// InlineEditResult is the AI output for Cursor-style selection replacement.
+type InlineEditResult struct {
+	Replacement string `json:"replacement"`
+	Format        string `json:"format"` // html or plain
+}
+
+// InlineEditContent rewrites only the selected excerpt per user instruction.
+func (c *Client) InlineEditContent(ctx context.Context, language, instruction, selectedText, selectedHTML, contextBefore, contextAfter, fieldType string) (*InlineEditResult, string, error) {
+	prompt := buildInlineEditPrompt(language, instruction, selectedText, selectedHTML, contextBefore, contextAfter, fieldType)
+	raw, err := c.GenerateJSON(ctx, prompt)
+	if err != nil {
+		return nil, "", fmt.Errorf("inline edit: %w", err)
+	}
+
+	raw = cleanJSONBlock(raw)
+	var result InlineEditResult
+	if err := json.Unmarshal([]byte(raw), &result); err != nil {
+		return nil, raw, nil
+	}
+	if result.Format == "" {
+		if fieldType == "html" {
+			result.Format = "html"
+		} else {
+			result.Format = "plain"
+		}
+	}
+	return &result, "", nil
+}
+
+// ReviseContent applies user feedback to an existing draft, changing only relevant fields/sections.
+func (c *Client) ReviseContent(ctx context.Context, contentType, language, instruction, selectedText string, focusFields []string, current map[string]string) (*ContentReviseResult, string, error) {
+	prompt := buildContentRevisePrompt(contentType, language, instruction, selectedText, focusFields, current)
+	raw, err := c.GenerateJSON(ctx, prompt)
+	if err != nil {
+		return nil, "", fmt.Errorf("content revision: %w", err)
+	}
+
+	raw = cleanJSONBlock(raw)
+	var result ContentReviseResult
+	if err := json.Unmarshal([]byte(raw), &result); err != nil {
+		return nil, raw, nil
+	}
+	if result.Updates == nil {
+		result.Updates = map[string]json.RawMessage{}
+	}
+	return &result, "", nil
+}
+
 // GenerateContent produces a structured ContentGenResult from a topic string.
 func (c *Client) GenerateContent(ctx context.Context, topic, contentType, language string) (*ContentGenResult, string, error) {
 	langInstruction := localeInstruction(language)
@@ -148,8 +202,16 @@ func (c *Client) GenerateContent(ctx context.Context, topic, contentType, langua
 	if contentType == "post" && result.ReadTime == 0 && result.Content != "" {
 		result.ReadTime = max(1, wordCount(stripHTML(result.Content))/200)
 	}
+	if contentType == "post" {
+		result.Category = normalizeBlogCategory(result.Category)
+	}
 
 	return &result, "", nil
+}
+
+// NormalizeBlogCategory maps free-text or AI labels to public blog category slugs.
+func NormalizeBlogCategory(raw string) string {
+	return normalizeBlogCategory(raw)
 }
 
 // ProductFieldsForTranslation returns the text fields of a product that should be translated.
@@ -168,11 +230,30 @@ func ProductFieldsForTranslation(p *ProductGenResult) map[string]string {
 
 // ContentFieldsForTranslation returns the text fields of generated content for translation.
 func ContentFieldsForTranslation(c *ContentGenResult) map[string]string {
-	return map[string]string{
+	fields := map[string]string{
 		"title":   c.Title,
 		"excerpt": c.Excerpt,
 		"content": c.Content,
 	}
+	if c.AuthorName != "" {
+		fields["authorName"] = c.AuthorName
+	}
+	if c.AuthorTitle != "" {
+		fields["authorTitle"] = c.AuthorTitle
+	}
+	if c.AuthorBio != "" {
+		fields["authorBio"] = c.AuthorBio
+	}
+	if c.Challenge != "" {
+		fields["challenge"] = c.Challenge
+	}
+	if c.Solution != "" {
+		fields["solution"] = c.Solution
+	}
+	if c.Result != "" {
+		fields["result"] = c.Result
+	}
+	return fields
 }
 
 // SupportedLocales is the ordered list of all supported translation locales.
@@ -228,7 +309,7 @@ Return ONLY a valid JSON object (no markdown fences, no extra text) with exactly
   "description": "Detailed product description, 100-200 words",
   "category": "Product category (e.g., Hard Candy, Gummies, Chocolate, Lollipops, Toffee, Marshmallow, Jelly, Biscuit, Snack)",
   "categorySlug": "url-friendly-category-slug",
-  "leadTime": "Typical production lead time (e.g., '15-25 days')",
+  "leadTime": "Production lead time — set by admin per product or stated in order confirmation (do not invent week/month estimates)",
   "ingredients": "Full ingredients list as a single string",
   "allergens": "Known allergens (e.g., 'Contains milk and soy.')",
   "shelfLife": "Shelf life (e.g., '12 months')",
@@ -238,7 +319,7 @@ Return ONLY a valid JSON object (no markdown fences, no extra text) with exactly
   "primaryPackaging": "Primary packaging: flow-wrap, foil, box, bag, jar, blister, tin",
   "innerPackConfig": "Inner pack config (e.g., '12 units per display box')",
   "palletConfig": "Pallet config (e.g., '48 cases/layer × 5 layers')",
-  "sampleLeadTime": "Sample lead time (e.g., '3-5 days')",
+  "sampleLeadTime": "Sample lead time — set by admin or stated in order confirmation",
   "gtin": "A realistic 13-digit EAN-13",
   "hsCode": "HS code for candy (e.g., '1704.90', '1806.32')",
   "flavors": ["Flavor1", "Flavor2"],
@@ -286,7 +367,9 @@ Make nutrition/weight/dimension values realistic for the candy type. Always fill
 
 func buildPostGenPrompt(topic, langInstruction string) string {
 	return `You are a professional content writer for CandyPro, a candy OEM manufacturer.
-Generate a JSON object for a blog post about: ` + topic + `
+The administrator's brief below may be written in ANY language — read and understand it completely, then write the article in the language specified below.
+
+Brief: ` + topic + `
 
 ` + langInstruction + `
 
@@ -296,7 +379,7 @@ Return ONLY a valid JSON object (no markdown fences, no extra text) with exactly
   "slug": "url-friendly-slug-derived-from-title",
   "content": "Full article body in HTML format, 400-800 words, using <h2>, <h3>, <p>, <ul>, <li>, <strong> — no <h1>",
   "excerpt": "Engaging 2-3 sentence excerpt summarizing the article",
-  "category": "Relevant category: Candy Manufacturing, OEM Trends, Food Safety, Market Insights, or Packaging",
+  "category": "Exactly one of: compliance | product_knowledge | packaging | market_insights",
   "readTime": estimated_minutes_as_integer,
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
   "authorName": "Suggested author name",
@@ -307,7 +390,9 @@ Return ONLY a valid JSON object (no markdown fences, no extra text) with exactly
 
 func buildCaseGenPrompt(topic, langInstruction string) string {
 	return `You are a professional content writer for CandyPro, a candy OEM manufacturer.
-Generate a JSON object for a case study about: ` + topic + `
+The administrator's brief below may be written in ANY language — read and understand it completely, then write the case study in the language specified below.
+
+Brief: ` + topic + `
 
 ` + langInstruction + `
 
@@ -319,11 +404,110 @@ Return ONLY a valid JSON object (no markdown fences, no extra text) with exactly
   "client": "Client company name",
   "industry": "Client industry (e.g., Food & Beverage, Retail, Confectionery)",
   "location": "Client location (city, country)",
-  "timeline": "Project timeline (e.g., '3 months', 'Q1-Q2 2025')",
+  "timeline": "Project timeline — provided by sales team in quotation or order confirmation only (do not invent week/month estimates)",
   "challenge": "The client's challenge or problem (2-3 sentences)",
   "solution": "CandyPro's solution and approach (2-3 sentences)",
   "result": "Measurable results and benefits achieved (2-3 sentences)",
   "services": ["OEM Production", "Custom Formulation", "Packaging Design"]
+}`
+}
+
+func buildInlineEditPrompt(language, instruction, selectedText, selectedHTML, contextBefore, contextAfter, fieldType string) string {
+	langInstruction := localeInstruction(language)
+	formatHint := "Return plain text only — no HTML tags, no markdown fences."
+	formatVal := "plain"
+	switch fieldType {
+	case "html":
+		formatHint = "Return an HTML fragment only (e.g. <p>, <ul>, <strong>). No <html> wrapper, no markdown fences."
+		formatVal = "html"
+	case "title":
+		formatHint = "Return a single-line title string — no HTML, no quotes wrapper."
+	}
+
+	selectedBlock := selectedText
+	if fieldType == "html" && strings.TrimSpace(selectedHTML) != "" {
+		selectedBlock = selectedHTML
+	}
+
+	return `You are a Cursor-style inline editing assistant for CandyPro CMS content.
+Rewrite ONLY the selected excerpt according to the instruction. Do NOT return the full document.
+
+` + langInstruction + `
+
+Context before selection:
+` + contextBefore + `
+
+SELECTED EXCERPT (replace this only):
+` + selectedBlock + `
+
+Context after selection:
+` + contextAfter + `
+
+Instruction (any language):
+` + instruction + `
+
+Rules:
+1. Return ONLY the replacement for the selected excerpt — same format and comparable length unless instruction asks otherwise.
+2. ` + formatHint + `
+3. Preserve factual accuracy and terminology from surrounding context.
+4. Do not include the unchanged context before/after in your output.
+
+Return ONLY valid JSON:
+{
+  "replacement": "<replacement text only>",
+  "format": "` + formatVal + `"
+}`
+}
+
+func buildContentRevisePrompt(contentType, language, instruction, selectedText string, focusFields []string, current map[string]string) string {
+	langInstruction := localeInstruction(language)
+	currentJSON, _ := json.Marshal(current)
+
+	focusHint := "Infer which fields to change from the administrator's instruction. Do NOT rewrite unchanged fields."
+	if len(focusFields) > 0 {
+		focusHint = "Only modify these fields unless the instruction clearly requires another: " + strings.Join(focusFields, ", ")
+	}
+
+	selectedBlock := ""
+	if strings.TrimSpace(selectedText) != "" {
+		selectedBlock = `
+The administrator selected this excerpt from the draft — apply the revision primarily here:
+"` + strings.TrimSpace(selectedText) + `"
+When "content" is updated, return the COMPLETE content field with only the targeted section changed; keep all other paragraphs identical.
+`
+	}
+
+	var allowedFields string
+	if contentType == "case" {
+		allowedFields = `Allowed keys in "updates": title, slug, content, client, industry, location, timeline, challenge, solution, result, services (array of strings).`
+	} else {
+		allowedFields = `Allowed keys in "updates": title, slug, excerpt, content, category (one of compliance|product_knowledge|packaging|market_insights), readTime (integer), tags (array of strings), authorName, authorTitle, authorBio.`
+	}
+
+	return `You are an editorial assistant for CandyPro CMS. The administrator is reviewing an AI-generated draft and wants targeted fixes — like Cursor inline edit — NOT a full rewrite.
+
+` + langInstruction + `
+
+Current draft (JSON):
+` + string(currentJSON) + `
+
+Revision instruction (may be in any language):
+` + instruction + `
+` + selectedBlock + `
+` + focusHint + `
+` + allowedFields + `
+
+Rules:
+1. Return ONLY changed fields inside "updates". Omit fields that stay the same.
+2. Preserve tone, structure, and factual consistency with the rest of the draft.
+3. If title changes materially, also update "slug".
+4. If content changes, update "readTime" when appropriate (post only).
+5. "summary" is one short sentence in Chinese explaining what you changed.
+
+Return ONLY valid JSON (no markdown fences):
+{
+  "updates": { },
+  "summary": "..."
 }`
 }
 
@@ -364,4 +548,31 @@ func stripHTML(s string) string {
 
 func wordCount(s string) int {
 	return len(strings.Fields(s))
+}
+
+// normalizeBlogCategory maps AI or free-text labels to public blog category slugs.
+func normalizeBlogCategory(raw string) string {
+	s := strings.ToLower(strings.TrimSpace(raw))
+	s = strings.ReplaceAll(s, " ", "_")
+	s = strings.ReplaceAll(s, "-", "_")
+	switch s {
+	case "compliance", "food_safety", "regulatory", "法规", "合规":
+		return "compliance"
+	case "product_knowledge", "product", "candy_manufacturing", "manufacturing", "产品知识":
+		return "product_knowledge"
+	case "packaging", "包装":
+		return "packaging"
+	case "market_insights", "market", "oem_trends", "trends", "insights", "市场洞察":
+		return "market_insights"
+	default:
+		if s == "" {
+			return "market_insights"
+		}
+		for _, slug := range []string{"compliance", "product_knowledge", "packaging", "market_insights"} {
+			if strings.Contains(s, slug) {
+				return slug
+			}
+		}
+		return "market_insights"
+	}
 }

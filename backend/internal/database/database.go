@@ -61,6 +61,7 @@ func Connect(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 	sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)
 	sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)
 	sqlDB.SetConnMaxLifetime(time.Duration(cfg.ConnMaxLifetime) * time.Minute)
+	sqlDB.SetConnMaxIdleTime(10 * time.Minute)
 
 	// Test connection
 	if err := sqlDB.Ping(); err != nil {
@@ -143,6 +144,7 @@ func AutoMigrate(db *gorm.DB) error {
 	// Phase 1: Migrate tables without foreign key dependencies first
 	phase1 := []any{
 		&modelsAuth.Role{},
+		&modelsAuth.PasswordResetToken{},
 		&modelsUser.Company{},
 		&modelsAuth.RefreshToken{},
 		&modelsProduct.Category{},
@@ -156,6 +158,8 @@ func AutoMigrate(db *gorm.DB) error {
 		&modelsCommon.ActivityLog{},
 		&modelsCommon.SystemSetting{},
 		&modelsCommon.Translation{},
+		&modelsCommon.IdempotencyKey{},
+		&modelsCommon.NotificationOutbox{},
 		&modelsTrade.ComplianceRequirement{},
 		&modelsOrder.StockTransaction{},
 		&modelsOrder.EventOutbox{},
@@ -245,6 +249,29 @@ func AutoMigrate(db *gorm.DB) error {
 	return nil
 }
 
+// EnsureStartupData 启动迁移后回填默认税费/运费、产品 base_price 与重量等运行时数据。
+func EnsureStartupData(db *gorm.DB) error {
+	if db == nil {
+		return nil
+	}
+	if err := EnsureDefaultTaxShippingRates(db); err != nil {
+		return err
+	}
+	if err := EnsureProductBasePrices(db); err != nil {
+		return err
+	}
+	if err := EnsureProductGrossWeights(db); err != nil {
+		return err
+	}
+	if err := BackfillOrderCOGS(db); err != nil {
+		return err
+	}
+	if err := EnsureDefaultSystemSettings(db); err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetDB returns the global database connection
 func GetDB() *gorm.DB {
 	return db
@@ -282,6 +309,9 @@ func SeedDatabase(db *gorm.DB) error {
 	if err := seedProducts(db); err != nil {
 		return err
 	}
+	if err := seedWarehouses(db); err != nil {
+		return err
+	}
 	if err := seedOEMFlows(db); err != nil {
 		return err
 	}
@@ -298,6 +328,9 @@ func SeedDatabase(db *gorm.DB) error {
 		return err
 	}
 	if err := seedCaseStudies(db); err != nil {
+		return err
+	}
+	if err := seedTaxShippingRates(db); err != nil {
 		return err
 	}
 

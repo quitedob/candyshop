@@ -1,6 +1,6 @@
 <template>
-  <div class="admin-layout">
-    <!-- 窄屏顶栏：汉堡入口，避免侧栏挤占主内容 -->
+  <div class="admin-layout" :class="{ 'dark': isDark }">
+    <!-- Mobile top bar -->
     <header class="admin-mobile-topbar">
       <button
         type="button"
@@ -10,12 +10,12 @@
         :aria-label="t('admin.a11y.openNav')"
         @click="isMobileNavOpen = !isMobileNavOpen"
       >
-        <Icon name="heroicons:bars-3" class="admin-mobile-topbar__icon" aria-hidden="true" />
+        <Icon name="material-symbols:menu" class="admin-mobile-topbar__icon" aria-hidden="true" />
       </button>
       <span class="admin-mobile-topbar__brand">{{ t('admin.brand') }}</span>
     </header>
 
-    <!-- 移动端侧栏遮罩 -->
+    <!-- Mobile backdrop -->
     <div
       class="admin-sidebar-backdrop"
       :class="{ 'admin-sidebar-backdrop--visible': isMobileNavOpen }"
@@ -23,7 +23,7 @@
       @click="isMobileNavOpen = false"
     />
 
-    <!-- Sidebar -->
+    <!-- Sidebar — Alexandria primary-container -->
     <aside
       class="admin-sidebar"
       :class="{
@@ -31,15 +31,15 @@
         'admin-sidebar--mobile-open': isMobileNavOpen
       }"
     >
-      <!-- Logo -->
+      <!-- Header -->
       <div class="admin-sidebar__header">
         <NuxtLink to="/" class="admin-sidebar__logo" @click="isMobileNavOpen = false">
           <svg viewBox="0 0 180 40" fill="none" class="admin-sidebar__logo-svg">
-            <circle cx="20" cy="20" r="16" fill="var(--color-highlight)" opacity="0.3"/>
+            <circle cx="20" cy="20" r="16" fill="var(--color-highlight)" opacity="0.25"/>
             <path d="M14 20C14 16.6863 16.6863 14 20 14C23.3137 14 26 16.6863 26 20C26 23.3137 23.3137 26 20 26C16.6863 26 14 23.3137 14 20Z" stroke="var(--color-highlight)" stroke-width="2.5"/>
             <circle cx="17" cy="17" r="2" fill="var(--color-accent)"/>
             <circle cx="23" cy="23" r="2" fill="white"/>
-            <text x="45" y="27" font-family="Outfit, system-ui, sans-serif" font-size="18" font-weight="700" fill="white">CandyPro</text>
+            <text x="45" y="27" font-family="Noto Serif, Georgia, serif" font-size="18" font-weight="700" fill="white">CandyPro</text>
           </svg>
         </NuxtLink>
         <button
@@ -48,7 +48,7 @@
           :aria-label="t('admin.a11y.closeNav')"
           @click="isMobileNavOpen = false"
         >
-          <Icon name="heroicons:x-mark" class="admin-sidebar__close-icon" aria-hidden="true" />
+          <Icon name="material-symbols:close" class="admin-sidebar__close-icon" aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -57,7 +57,7 @@
           :aria-label="t('admin.a11y.toggleSidebar')"
           @click="isCollapsed = !isCollapsed"
         >
-          <Icon :name="isCollapsed ? 'heroicons:chevron-right' : 'heroicons:chevron-left'" class="admin-sidebar__toggle-icon" aria-hidden="true" />
+          <Icon :name="isCollapsed ? 'material-symbols:chevron-right' : 'material-symbols:chevron-left'" class="admin-sidebar__toggle-icon" aria-hidden="true" />
         </button>
       </div>
 
@@ -65,90 +65,88 @@
       <nav id="admin-sidebar-nav" class="admin-sidebar__nav" :aria-label="t('admin.brand')">
         <!-- Group: Main -->
         <div class="admin-sidebar__group">
-          <template v-for="item in mainNav" :key="item.key">
-            <NuxtLink
-              :to="localePath(item.href)"
-              class="admin-sidebar__link"
-              :class="{ 'admin-sidebar__link--active': isActive(item.href) }"
-              :title="!showNavLabels ? t(item.key) : ''"
-              @click="isMobileNavOpen = false"
-            >
-              <Icon :name="item.icon" class="admin-sidebar__link-icon" aria-hidden="true" />
-              <span v-if="showNavLabels" class="admin-sidebar__link-text">{{ t(item.key) }}</span>
-            </NuxtLink>
-          </template>
-        </div>
-
-        <!-- Divider -->
-        <div class="admin-sidebar__divider" />
-
-        <!-- Group: Management -->
-        <div v-if="showNavLabels" class="admin-sidebar__group-label">{{ t('admin.nav.management') }}</div>
-        <template v-for="item in managementNav" :key="item.key">
           <NuxtLink
+            v-for="item in mainNav"
+            :key="item.key"
             :to="localePath(item.href)"
             class="admin-sidebar__link"
             :class="{ 'admin-sidebar__link--active': isActive(item.href) }"
             :title="!showNavLabels ? t(item.key) : ''"
             @click="isMobileNavOpen = false"
           >
-            <Icon :name="item.icon" class="admin-sidebar__link-icon" />
+            <Icon :name="item.icon" class="admin-sidebar__link-icon" aria-hidden="true" />
+            <span v-if="showNavLabels" class="admin-sidebar__link-text">{{ t(item.key) }}</span>
+          </NuxtLink>
+        </div>
+
+        <div class="admin-sidebar__divider" />
+
+        <!-- Group: Management -->
+        <div v-if="showNavLabels" class="admin-sidebar__group-label">{{ t('admin.nav.management') }}</div>
+        <NuxtLink
+          v-for="item in managementNav"
+          :key="item.key"
+          :to="localePath(item.href)"
+          class="admin-sidebar__link"
+          :class="{ 'admin-sidebar__link--active': isActive(item.href) }"
+          :title="!showNavLabels ? t(item.key) : ''"
+          @click="isMobileNavOpen = false"
+        >
+          <Icon :name="item.icon" class="admin-sidebar__link-icon" aria-hidden="true" />
+          <span v-if="showNavLabels" class="admin-sidebar__link-text">{{ t(item.key) }}</span>
+        </NuxtLink>
+
+        <!-- Super Admin -->
+        <template v-if="isSuperAdmin">
+          <div class="admin-sidebar__divider" />
+          <div v-if="showNavLabels" class="admin-sidebar__group-label">{{ t('admin.nav.superadmin') }}</div>
+          <NuxtLink
+            v-for="item in superAdminNav"
+            :key="item.key"
+            :to="localePath(item.href)"
+            class="admin-sidebar__link"
+            :class="{ 'admin-sidebar__link--active': isActive(item.href) }"
+            :title="!showNavLabels ? t(item.key) : ''"
+            @click="isMobileNavOpen = false"
+          >
+            <Icon :name="item.icon" class="admin-sidebar__link-icon" aria-hidden="true" />
             <span v-if="showNavLabels" class="admin-sidebar__link-text">{{ t(item.key) }}</span>
           </NuxtLink>
         </template>
-
-        <!-- Divider -->
-        <div class="admin-sidebar__divider" />
-
-        <!-- Group: Super Admin -->
-        <template v-if="isSuperAdmin">
-          <div v-if="showNavLabels" class="admin-sidebar__group-label">{{ t('admin.nav.superadmin') }}</div>
-          <template v-for="item in superAdminNav" :key="item.key">
-            <NuxtLink
-              :to="localePath(item.href)"
-              class="admin-sidebar__link"
-              :class="{ 'admin-sidebar__link--active': isActive(item.href) }"
-              :title="!showNavLabels ? t(item.key) : ''"
-              @click="isMobileNavOpen = false"
-            >
-              <Icon :name="item.icon" class="admin-sidebar__link-icon" aria-hidden="true" />
-              <span v-if="showNavLabels" class="admin-sidebar__link-text">{{ t(item.key) }}</span>
-            </NuxtLink>
-          </template>
-        </template>
       </nav>
 
-      <!-- User Profile：折叠时仍保留语言、头像与退出，避免无法登出 -->
+      <!-- CTA Button -->
+      <div v-if="showNavLabels" class="admin-sidebar__cta">
+        <NuxtLink :to="localePath('/admin/orders')" class="admin-sidebar__cta-btn">
+          <Icon name="material-symbols:add" size="18" aria-hidden="true" />
+          {{ t('admin.nav.orders') }}
+        </NuxtLink>
+      </div>
+
+      <!-- Footer -->
       <div class="admin-sidebar__footer">
-        <div v-if="showNavLabels" class="admin-sidebar__lang">
-          <button
-            v-for="loc in locales"
-            :key="loc.code"
-            type="button"
-            :class="['admin-sidebar__lang-btn', { 'admin-sidebar__lang-btn--active': locale === loc.code }]"
-            :title="loc.name"
-            @click="switchLocale(loc.code)"
-          >{{ loc.code.toUpperCase() }}</button>
+        <div class="admin-sidebar__lang">
+          <LanguageSwitcher />
         </div>
+        <button
+          type="button"
+          class="admin-sidebar__logout min-h-11 min-w-11"
+          :aria-label="isDark ? t('admin.theme.light') : t('admin.theme.dark')"
+          :title="isDark ? t('admin.theme.light') : t('admin.theme.dark')"
+          @click="toggleDark"
+        >
+          <Icon :name="isDark ? 'material-symbols:light-mode' : 'material-symbols:dark-mode'" class="admin-sidebar__logout-icon" aria-hidden="true" />
+          <span v-if="showNavLabels" class="admin-sidebar__logout-text">{{ isDark ? t('admin.theme.light') : t('admin.theme.dark') }}</span>
+        </button>
         <div class="admin-sidebar__user" :class="{ 'admin-sidebar__user--collapsed': !showNavLabels }">
           <div class="admin-sidebar__user-avatar">{{ userInitials }}</div>
           <div v-if="showNavLabels" class="admin-sidebar__user-info">
             <p class="admin-sidebar__user-name">{{ user?.firstName }} {{ user?.lastName }}</p>
-            <p class="admin-sidebar__user-role">{{ user?.role }}</p>
+            <p class="admin-sidebar__user-role">{{ roleLabel(user?.role) }}</p>
           </div>
         </div>
-        <div v-if="!showNavLabels" class="admin-sidebar__lang admin-sidebar__lang--icon">
-          <button
-            v-for="loc in locales"
-            :key="loc.code"
-            type="button"
-            :class="['admin-sidebar__lang-btn', { 'admin-sidebar__lang-btn--active': locale === loc.code }]"
-            :title="loc.name"
-            @click="switchLocale(loc.code)"
-          >{{ loc.code.toUpperCase() }}</button>
-        </div>
-        <button type="button" class="admin-sidebar__logout" :title="!showNavLabels ? t('admin.logout') : ''" @click="handleLogout">
-          <Icon name="heroicons:arrow-right-on-rectangle" class="admin-sidebar__logout-icon" aria-hidden="true" />
+        <button type="button" class="admin-sidebar__logout" :title="!showNavLabels ? t('admin.logout') : ''" :aria-label="t('admin.logout')" @click="handleLogout">
+          <Icon name="material-symbols:logout" class="admin-sidebar__logout-icon" aria-hidden="true" />
           <span v-if="showNavLabels" class="admin-sidebar__logout-text">{{ t('admin.logout') }}</span>
         </button>
       </div>
@@ -164,65 +162,84 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-
-useSeo({ noindex: true })
+// 门户页不索引；避免 useSeo 在 layout 中调用 useRoute（CSR/HMR 时 router 可能未就绪）
+useHead({ meta: [{ name: 'robots', content: 'noindex, nofollow' }] })
 
 const { user, logout } = useAuth()
+const { isDark, toggle: toggleDark } = useDarkMode()
 const route = useRoute()
 const localePath = useLocalePath()
-const { t, locale, setLocale, locales } = useI18n()
+const { t, te, locale, loadLocaleMessages } = useI18n()
+
+await useAsyncData(
+  () => `admin-locale-messages-${locale.value}`,
+  () => loadLocaleMessages(locale.value),
+  { watch: [locale] },
+)
 
 const isCollapsed = ref(false)
 const isMobileNavOpen = ref(false)
-const isSuperAdmin = computed(() => user.value?.role === 'superadmin')
-
+const isSuperAdmin = computed(() => user?.value?.role === 'superadmin')
 const showNavLabels = computed(() => !isCollapsed.value || isMobileNavOpen.value)
 
-// User initials
 const userInitials = computed(() => {
-  if (!user.value) return 'U'
-  return `${user.value.firstName?.charAt(0) || ''}${user.value.lastName?.charAt(0) || ''}`
+  const current = user?.value
+  if (!current) return 'U'
+  return `${current.firstName?.charAt(0) || ''}${current.lastName?.charAt(0) || ''}`
 })
 
-// Main Navigation
+const roleLabel = (role?: string | null) => {
+  if (!role) return ''
+  const key = `roles.${role}`
+  return te(key) ? t(key) : role
+}
+
 const mainNav = [
-  { key: 'admin.nav.dashboard', href: '/admin', icon: 'heroicons:home' },
-  { key: 'admin.nav.inquiries', href: '/admin/inquiries', icon: 'lucide:inbox' },
-  { key: 'admin.nav.orders', href: '/admin/orders', icon: 'heroicons:shopping-cart' },
+  { key: 'admin.nav.dashboard', href: '/admin', icon: 'material-symbols:home' },
+  { key: 'admin.nav.inquiries', href: '/admin/inquiries', icon: 'material-symbols:inbox' },
+  { key: 'admin.nav.orders', href: '/admin/orders', icon: 'material-symbols:shopping-cart' },
+  { key: 'admin.nav.returns', href: '/admin/returns', icon: 'material-symbols:assignment-return' },
 ]
 
-// Management Navigation
 const managementNav = [
-  { key: 'admin.nav.analytics', href: '/admin/analytics', icon: 'heroicons:chart-bar' },
-  { key: 'admin.nav.financial', href: '/admin/financial', icon: 'heroicons:banknotes' },
-  { key: 'admin.nav.inventory', href: '/admin/inventory', icon: 'heroicons:archive-box' },
-  { key: 'admin.nav.shipments', href: '/admin/shipments', icon: 'heroicons:truck' },
-  { key: 'admin.nav.invoices', href: '/admin/invoices', icon: 'heroicons:document-text' },
-  { key: 'admin.nav.products', href: '/admin/products', icon: 'heroicons:cube' },
-  { key: 'admin.nav.pricing', href: '/admin/pricing', icon: 'heroicons:tag' },
-  { key: 'admin.nav.companies', href: '/admin/companies', icon: 'heroicons:building-office' },
-  { key: 'admin.nav.trades', href: '/admin/trades', icon: 'heroicons:currency-dollar' },
-  { key: 'admin.nav.oemProjects', href: '/admin/oem', icon: 'heroicons:sparkles' },
-  { key: 'admin.nav.ai', href: '/admin/ai', icon: 'heroicons:sparkles' },
+  { key: 'admin.nav.analytics', href: '/admin/analytics', icon: 'material-symbols:bar-chart' },
+  { key: 'admin.nav.financial', href: '/admin/financial', icon: 'material-symbols:payments' },
+  { key: 'admin.nav.inventory', href: '/admin/inventory', icon: 'material-symbols:inventory-2' },
+  { key: 'admin.nav.xlsx', href: '/admin/xlsx', icon: 'material-symbols:table-chart' },
+  { key: 'admin.nav.shipments', href: '/admin/shipments', icon: 'material-symbols:local-shipping' },
+  { key: 'admin.nav.invoices', href: '/admin/invoices', icon: 'material-symbols:description' },
+  { key: 'admin.nav.products', href: '/admin/products', icon: 'material-symbols:package-2' },
+  { key: 'admin.nav.categories', href: '/admin/categories', icon: 'material-symbols:category' },
+  { key: 'admin.nav.pricing', href: '/admin/pricing', icon: 'material-symbols:sell' },
+  { key: 'admin.nav.coupons', href: '/admin/coupons', icon: 'material-symbols:confirmation-number' },
+  { key: 'admin.nav.shipping_rates', href: '/admin/shipping-rates', icon: 'material-symbols:local-shipping' },
+  { key: 'admin.nav.tax_rates', href: '/admin/tax-rates', icon: 'material-symbols:percent' },
+  { key: 'admin.nav.companies', href: '/admin/companies', icon: 'material-symbols:apartment' },
+  { key: 'admin.nav.trades', href: '/admin/trades', icon: 'material-symbols:attach-money' },
+  { key: 'admin.nav.oemProjects', href: '/admin/oem-projects', icon: 'material-symbols:factory' },
+  { key: 'admin.nav.ai', href: '/admin/ai', icon: 'material-symbols:psychology' },
 ]
 
-// Super Admin Navigation
 const superAdminNav = [
-  { key: 'admin.nav.users', href: '/admin/users', icon: 'heroicons:users' },
-  { key: 'admin.nav.staff', href: '/admin/staff', icon: 'heroicons:user-group' },
-  { key: 'admin.nav.certifications', href: '/admin/certifications', icon: 'heroicons:shield-check' },
-  { key: 'admin.nav.auditLog', href: '/admin/audit-log', icon: 'heroicons:clock' },
-  { key: 'admin.nav.settings', href: '/admin/settings', icon: 'heroicons:cog-6-tooth' },
-  { key: 'admin.nav.translations', href: '/admin/translations', icon: 'heroicons:language' },
-  { key: 'admin.nav.content', href: '/admin/content', icon: 'heroicons:newspaper' },
+  { key: 'admin.nav.users', href: '/admin/users', icon: 'material-symbols:group' },
+  { key: 'admin.nav.organizations', href: '/admin/organizations', icon: 'material-symbols:corporate-fare' },
+  { key: 'admin.nav.channels', href: '/admin/channels', icon: 'material-symbols:hub' },
+  { key: 'admin.nav.webhooks', href: '/admin/webhooks', icon: 'material-symbols:webhook' },
+  { key: 'admin.nav.hooks', href: '/admin/hooks', icon: 'material-symbols:extension' },
+  { key: 'admin.nav.staff', href: '/admin/staff', icon: 'material-symbols:groups' },
+  { key: 'admin.nav.certifications', href: '/admin/certifications', icon: 'material-symbols:verified-user' },
+  { key: 'admin.nav.auditLog', href: '/admin/audit-log', icon: 'material-symbols:schedule' },
+  { key: 'admin.nav.settings', href: '/admin/settings', icon: 'material-symbols:settings' },
+  { key: 'admin.nav.translations', href: '/admin/translations', icon: 'material-symbols:translate' },
+  { key: 'admin.nav.content', href: '/admin/content', icon: 'material-symbols:newspaper' },
 ]
 
-// Check if nav item is active
-const isActive = (href) => {
+const isActive = (href: string) => {
+  const path = route?.path
+  if (!path) return false
   const fullPath = localePath(href)
-  if (href === '/admin') return route.path === fullPath
-  return route.path.startsWith(fullPath)
+  if (href === '/admin') return path === fullPath
+  return path.startsWith(fullPath)
 }
 
 const handleLogout = async () => {
@@ -230,29 +247,14 @@ const handleLogout = async () => {
   await logout()
 }
 
-const switchLocale = async (code: string) => {
-  if (import.meta.client) {
-    localStorage.setItem('user-locale', code)
-    document.cookie = `user-locale=${code}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`
-  }
-  await setLocale(code)
-}
-
-let mediaQuery
+let mediaQuery: MediaQueryList | undefined
 const closeMobileIfDesktop = () => {
-  if (mediaQuery && !mediaQuery.matches) {
-    isMobileNavOpen.value = false
-  }
+  if (mediaQuery && !mediaQuery.matches) isMobileNavOpen.value = false
 }
 
-// Persist collapse state and restore locale
 onMounted(async () => {
   const saved = localStorage.getItem('admin-sidebar-collapsed')
-  if (saved) {
-    isCollapsed.value = saved === 'true'
-  }
-  const savedLocale = localStorage.getItem('user-locale')
-  if (savedLocale && savedLocale !== locale.value) await setLocale(savedLocale)
+  if (saved) isCollapsed.value = saved === 'true'
   mediaQuery = window.matchMedia('(min-width: 768px)')
   mediaQuery.addEventListener('change', closeMobileIfDesktop)
 })
@@ -261,23 +263,15 @@ watch(isCollapsed, (val) => {
   localStorage.setItem('admin-sidebar-collapsed', val.toString())
 })
 
-watch(() => route.path, () => {
-  isMobileNavOpen.value = false
-})
+watch(() => route?.path, () => { isMobileNavOpen.value = false })
 
 watch(isMobileNavOpen, (open) => {
-  if (import.meta.client) {
-    document.body.classList.toggle('body-lock', open)
-  }
+  if (import.meta.client) document.body.classList.toggle('body-lock', open)
 })
 
 onUnmounted(() => {
-  if (mediaQuery) {
-    mediaQuery.removeEventListener('change', closeMobileIfDesktop)
-  }
-  if (import.meta.client) {
-    document.body.classList.remove('body-lock')
-  }
+  if (mediaQuery) mediaQuery.removeEventListener('change', closeMobileIfDesktop)
+  if (import.meta.client) document.body.classList.remove('body-lock')
 })
 </script>
 
@@ -288,7 +282,7 @@ onUnmounted(() => {
   background: var(--color-bg);
 }
 
-/* —— 移动端顶栏 —— */
+/* Mobile top bar */
 .admin-mobile-topbar {
   display: none;
   align-items: center;
@@ -308,32 +302,23 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  border: none;
   border-radius: var(--radius-md);
   background: var(--color-bg-alt);
   color: var(--color-primary);
+  border: none;
+  padding: 0;
   cursor: pointer;
 }
 
-.admin-mobile-topbar__icon {
-  width: 22px;
-  height: 22px;
-}
+.admin-mobile-topbar__icon { width: 22px; height: 22px; }
 
 .admin-mobile-topbar__brand {
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.admin-sidebar-backdrop {
-  display: none;
-}
-
+.admin-sidebar-backdrop { display: none; }
 .admin-sidebar-backdrop--visible {
   display: block;
   position: fixed;
@@ -344,23 +329,22 @@ onUnmounted(() => {
 }
 
 @media (min-width: 768px) {
-  .admin-sidebar-backdrop--visible {
-    display: none !important;
-  }
+  .admin-sidebar-backdrop--visible { display: none !important; }
 }
 
-/* Sidebar */
+/* Sidebar — Alexandria primary-container */
 .admin-sidebar {
-  width: 260px;
+  width: 280px;
   height: 100vh;
   position: sticky;
   top: 0;
-  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  background: var(--color-primary-container);
   display: flex;
   flex-direction: column;
   transition: width 0.3s ease, transform 0.3s ease;
   overflow: hidden;
   z-index: 560;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .admin-sidebar--collapsed {
@@ -373,20 +357,12 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-xs);
-  padding: var(--spacing-md);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding: var(--spacing-lg) var(--spacing-md);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.admin-sidebar__logo {
-  display: block;
-  flex: 1;
-  min-width: 0;
-}
-
-.admin-sidebar__logo-svg {
-  height: 36px;
-  width: auto;
-}
+.admin-sidebar__logo { display: block; flex: 1; min-width: 0; }
+.admin-sidebar__logo-svg { height: 36px; width: auto; }
 
 .admin-sidebar__toggle {
   min-width: 44px;
@@ -399,19 +375,16 @@ onUnmounted(() => {
   background: transparent;
   cursor: pointer;
   border-radius: var(--radius-md);
-  color: rgba(255,255,255,0.6);
-  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+  color: rgba(255, 255, 255, 0.4);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
 .admin-sidebar__toggle:hover {
-  background: rgba(255,255,255,0.1);
-  color: white;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
 }
 
-.admin-sidebar__toggle-icon {
-  width: 18px;
-  height: 18px;
-}
+.admin-sidebar__toggle-icon { width: 18px; height: 18px; }
 
 .admin-sidebar__close {
   display: none;
@@ -424,18 +397,11 @@ onUnmounted(() => {
   background: transparent;
   cursor: pointer;
   border-radius: var(--radius-md);
-  color: rgba(255,255,255,0.7);
+  color: rgba(255, 255, 255, 0.5);
 }
 
-.admin-sidebar__close:hover {
-  background: rgba(255,255,255,0.1);
-  color: white;
-}
-
-.admin-sidebar__close-icon {
-  width: 22px;
-  height: 22px;
-}
+.admin-sidebar__close:hover { background: rgba(255, 255, 255, 0.08); color: white; }
+.admin-sidebar__close-icon { width: 22px; height: 22px; }
 
 /* Navigation */
 .admin-sidebar__nav {
@@ -444,32 +410,27 @@ onUnmounted(() => {
   padding: var(--spacing-md) 0;
 }
 
-.admin-sidebar__nav::-webkit-scrollbar {
-  width: 4px;
-}
-
+.admin-sidebar__nav::-webkit-scrollbar { width: 4px; }
 .admin-sidebar__nav::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 2px;
 }
 
-.admin-sidebar__group {
-  margin-bottom: var(--spacing-sm);
-}
+.admin-sidebar__group { margin-bottom: var(--spacing-xs); }
 
 .admin-sidebar__group-label {
   padding: var(--spacing-sm) var(--spacing-md);
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.3);
 }
 
 .admin-sidebar__divider {
   height: 1px;
-  background: rgba(255,255,255,0.1);
-  margin: var(--spacing-md) 0;
+  background: rgba(255, 255, 255, 0.06);
+  margin: var(--spacing-sm) var(--spacing-md);
 }
 
 .admin-sidebar__link {
@@ -477,28 +438,31 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
-  margin: 2px var(--spacing-sm);
+  margin: 1px var(--spacing-sm);
   border-radius: var(--radius-md);
-  color: rgba(255,255,255,0.7);
+  color: rgba(255, 255, 255, 0.55);
   font-size: var(--text-sm);
   font-weight: 500;
-  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
   min-height: 44px;
   box-sizing: border-box;
 }
 
 .admin-sidebar__link:hover {
-  background: rgba(255,255,255,0.1);
-  color: white;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .admin-sidebar__link--active {
-  background: rgba(var(--color-highlight-rgb), 0.2);
-  color: var(--color-highlight);
+  background: var(--color-highlight);
+  color: white;
+  font-weight: 600;
+  transform: translateX(4px);
 }
 
 .admin-sidebar__link--active:hover {
-  background: rgba(var(--color-highlight-rgb), 0.25);
+  background: var(--color-highlight);
+  color: white;
 }
 
 .admin-sidebar__link-icon {
@@ -518,25 +482,53 @@ onUnmounted(() => {
   padding: var(--spacing-sm);
 }
 
+.admin-sidebar--collapsed .admin-sidebar__link--active {
+  transform: none;
+}
+
+/* CTA */
+.admin-sidebar__cta {
+  padding: var(--spacing-md);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.admin-sidebar__cta-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: var(--color-highlight);
+  color: white;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity var(--transition-fast);
+  min-height: 44px;
+}
+
+.admin-sidebar__cta-btn:hover {
+  opacity: 0.9;
+}
+
 /* Footer */
 .admin-sidebar__footer {
   padding: var(--spacing-md);
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Language Switcher */
 .admin-sidebar__lang {
   display: flex;
   gap: 4px;
   margin-bottom: var(--spacing-sm);
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-md);
   padding: 3px;
 }
 
-.admin-sidebar__lang--icon {
-  margin-bottom: var(--spacing-sm);
-}
+.admin-sidebar__lang--icon { margin-bottom: var(--spacing-sm); }
 
 .admin-sidebar__lang-btn {
   flex: 1;
@@ -546,18 +538,16 @@ onUnmounted(() => {
   border-radius: calc(var(--radius-md) - 2px);
   font-size: var(--text-xs);
   font-weight: 600;
-  color: rgba(255,255,255,0.5);
-  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+  color: rgba(255, 255, 255, 0.35);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
   text-align: center;
   background: transparent;
 }
 
-.admin-sidebar__lang-btn:hover {
-  color: rgba(255,255,255,0.8);
-}
+.admin-sidebar__lang-btn:hover { color: rgba(255, 255, 255, 0.7); }
 
 .admin-sidebar__lang-btn--active {
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.12);
   color: white;
 }
 
@@ -587,14 +577,12 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.admin-sidebar__user-info {
-  overflow: hidden;
-}
+.admin-sidebar__user-info { overflow: hidden; }
 
 .admin-sidebar__user-name {
   font-size: var(--text-sm);
   font-weight: 500;
-  color: white;
+  color: rgba(255, 255, 255, 0.85);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -602,7 +590,7 @@ onUnmounted(() => {
 
 .admin-sidebar__user-role {
   font-size: var(--text-xs);
-  color: rgba(255,255,255,0.5);
+  color: rgba(255, 255, 255, 0.35);
   text-transform: capitalize;
 }
 
@@ -617,31 +605,19 @@ onUnmounted(() => {
   border: none;
   cursor: pointer;
   border-radius: var(--radius-md);
-  color: rgba(255,255,255,0.5);
+  color: rgba(255, 255, 255, 0.35);
   font-size: var(--text-sm);
-  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
   background: transparent;
 }
 
 .admin-sidebar__logout:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(186, 26, 26, 0.15);
   color: var(--color-error);
 }
 
-.admin-sidebar__logout-icon {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-.admin-sidebar__logout-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.admin-sidebar--collapsed .admin-sidebar__logout {
-  padding: var(--spacing-sm);
-}
+.admin-sidebar__logout-icon { width: 18px; height: 18px; flex-shrink: 0; }
+.admin-sidebar__logout-text { overflow: hidden; text-overflow: ellipsis; }
 
 /* Main Content */
 .admin-main {
@@ -659,30 +635,40 @@ onUnmounted(() => {
 }
 
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .admin-main__content {
-    animation: none;
-  }
+  .admin-main__content { animation: none; }
 }
 
-@media (max-width: 767px) {
-  .admin-layout {
-    flex-direction: column;
-  }
+/* RTL */
+[dir="rtl"] .admin-layout {
+  flex-direction: row-reverse;
+}
 
-  .admin-mobile-topbar {
-    display: flex;
-  }
+[dir="rtl"] .admin-sidebar {
+  border-right: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+[dir="rtl"] .admin-sidebar__toggle-icon {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .admin-sidebar__link--active {
+  transform: translateX(-4px);
+}
+
+[dir="rtl"] .admin-sidebar--collapsed .admin-sidebar__link--active {
+  transform: none;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .admin-layout { flex-direction: column; }
+  .admin-mobile-topbar { display: flex; }
 
   .admin-sidebar {
     position: fixed;
@@ -696,26 +682,28 @@ onUnmounted(() => {
     box-shadow: none;
   }
 
-  .admin-sidebar--collapsed {
-    width: min(300px, 88vw) !important;
+  [dir="rtl"] .admin-sidebar {
+    left: auto;
+    right: 0;
+    transform: translateX(100%);
   }
+
+  .admin-sidebar--collapsed { width: min(300px, 88vw) !important; }
 
   .admin-sidebar--mobile-open {
     transform: translateX(0);
-    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.2);
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.25);
   }
 
-  .admin-sidebar__toggle {
-    display: none;
+  [dir="rtl"] .admin-sidebar--mobile-open {
+    transform: translateX(0);
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.25);
   }
 
-  .admin-sidebar__close {
-    display: flex;
-  }
+  .admin-sidebar__toggle { display: none; }
+  .admin-sidebar__close { display: flex; }
 
-  .admin-main {
-    width: 100%;
-  }
+  .admin-main { width: 100%; }
 
   .admin-main__content {
     padding: var(--spacing-md);

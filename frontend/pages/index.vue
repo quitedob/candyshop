@@ -83,13 +83,13 @@
         <div v-else class="categories__grid">
           <NuxtLink v-for="category in categories" :key="category.slug" :to="localePath(category.to)" class="cat-card">
             <div class="cat-card__img">
-              <img :src="category.image" :alt="category.name" loading="lazy" />
+              <img :src="category.image" :alt="tField(category, 'name')" loading="lazy" />
               <div class="cat-card__overlay">
                 <span class="cat-card__arrow"><Icon name="lucide:arrow-right" size="20" /></span>
               </div>
             </div>
             <div class="cat-card__body">
-              <h3 class="cat-card__name">{{ category.name }}</h3>
+              <h3 class="cat-card__name">{{ tField(category, 'name') }}</h3>
               <span class="cat-card__count">{{ category.count }} {{ $t('product.products') }}</span>
             </div>
           </NuxtLink>
@@ -225,11 +225,16 @@
           <p>{{ $t('home.global.subtitle') }}</p>
         </div>
 
-        <div class="global__grid">
-          <div v-for="region in markets" :key="region.name" class="region-card">
-            <div class="region-card__flag">{{ region.flag }}</div>
-            <h4 class="region-card__name">{{ region.name }}</h4>
-            <p class="region-card__countries">{{ region.countries }}</p>
+        <div class="global__map-wrapper">
+          <div class="global__map-bg"></div>
+          <div class="global__grid">
+            <div v-for="region in markets" :key="region.name" class="region-card">
+              <div class="region-card__icon">
+                <Icon :name="region.icon" size="36" />
+              </div>
+              <h4 class="region-card__name">{{ region.name }}</h4>
+              <p class="region-card__countries">{{ region.countries }}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -237,7 +242,7 @@
 
     <!-- FAQ -->
     <section class="faq section section-lg">
-      <div class="container container-narrow">
+      <div class="container">
         <div class="section-header">
           <span class="section-tag">{{ $t('home.faq.title') }}</span>
           <h2>{{ $t('home.faq.title') }}</h2>
@@ -298,15 +303,17 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useI18n, useLocalePath } from '#i18n'
+import { useTranslation } from '~/composables/useTranslation'
 
 const { t, locale } = useI18n()
+const { tField } = useTranslation()
 const localePath = useLocalePath()
 const config = useRuntimeConfig()
 const { isAuthenticated, isAdmin, isPending } = useAuth()
 const { getCategories, getFeaturedProducts } = useApi()
 
 // SEO — must be called before await to keep Vue setup context
-useSeo({
+usePageOgImage({
   title: t('seo.home_title'),
   description: t('seo.home_description'),
   ogType: 'website',
@@ -348,10 +355,12 @@ const { data: categoriesData, status: categoriesStatus, refresh: refreshCategori
 )
 
 const categories = computed(() => {
-  return (categoriesData.value || []).map(category => ({
+  const data = categoriesData.value
+  if (!Array.isArray(data)) return []
+  return data.map(category => ({
+    ...category,
     slug: category.slug,
     to: `/products/${category.slug}`,
-    name: category.name || t(`product.categories.${category.slug.replace(/-/g, '_')}`),
     count: category.productCount || 0,
     image: category.thumbnail || `/images/categories/${category.slug}.jpg`
   }))
@@ -381,7 +390,10 @@ const { data: featuredProductsData, status: featuredStatus, refresh: refreshFeat
   }
 )
 
-const featuredProducts = computed(() => featuredProductsData.value || [])
+const featuredProducts = computed(() => {
+  const data = featuredProductsData.value
+  return Array.isArray(data) ? data : []
+})
 
 // Order steps
 const orderSteps = computed(() => [
@@ -401,10 +413,10 @@ const oemFeatures = computed(() => [
 
 // Global Markets
 const markets = computed(() => [
-  { name: t('home.global.north_america'), flag: '🇺🇸', countries: t('home.global.north_america_countries') },
-  { name: t('home.global.europe'), flag: '🇪🇺', countries: t('home.global.europe_countries') },
-  { name: t('home.global.southeast_asia'), flag: '🌏', countries: t('home.global.southeast_asia_countries') },
-  { name: t('home.global.middle_east'), flag: '🕌', countries: t('home.global.middle_east_countries') },
+  { name: t('home.global.north_america'), icon: 'lucide:map-pinned', countries: t('home.global.north_america_countries') },
+  { name: t('home.global.europe'), icon: 'lucide:landmark', countries: t('home.global.europe_countries') },
+  { name: t('home.global.southeast_asia'), icon: 'lucide:globe', countries: t('home.global.southeast_asia_countries') },
+  { name: t('home.global.middle_east'), icon: 'lucide:building', countries: t('home.global.middle_east_countries') },
 ])
 
 // FAQ
@@ -1010,7 +1022,22 @@ const toggleFaq = (index: number) => {
 }
 
 /* ===== GLOBAL REACH ===== */
+.global__map-wrapper {
+  position: relative;
+}
+
+.global__map-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 500'%3E%3Cg fill='none' stroke='%23ea580c' stroke-width='0.8' opacity='0.12'%3E%3Cellipse cx='220' cy='150' rx='80' ry='50'/%3E%3Cellipse cx='550' cy='120' rx='140' ry='70'/%3E%3Cellipse cx='780' cy='200' rx='60' ry='80'/%3E%3Cellipse cx='350' cy='320' rx='50' ry='40'/%3E%3Cellipse cx='650' cy='350' rx='70' ry='45'/%3E%3Cellipse cx='850' cy='360' rx='90' ry='55'/%3E%3Cpath d='M220 150 Q 350 80 550 120 Q 700 150 780 200'/%3E%3Cpath d='M550 120 Q 500 250 350 320 Q 550 380 650 350'/%3E%3Cpath d='M780 200 Q 800 300 850 360'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
 .global__grid {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--spacing-lg);
@@ -1031,10 +1058,16 @@ const toggleFaq = (index: number) => {
   border-color: rgba(var(--color-highlight-rgb), 0.2);
 }
 
-.region-card__flag {
-  font-size: 3rem;
-  margin-bottom: var(--spacing-md);
-  line-height: 1;
+.region-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--spacing-md);
+  background: rgba(var(--color-highlight-rgb), 0.08);
+  border-radius: var(--radius-xl);
+  color: var(--color-highlight);
 }
 
 .region-card__name {

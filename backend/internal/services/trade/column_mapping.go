@@ -4,12 +4,31 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 )
 
-// BuildColumnMapping uses AI to map XLSX column headers to CandyPro product fields.
-// Returns a map of field name → column header name, or nil on failure.
+// BuildColumnMapping 使用 Trade Agent 将 XLSX 表头映射到 CandyPro 产品字段。
+// 返回 field → column header 名称；失败时返回 nil（调用方仍可用启发式映射）。
 func (s *AIService) BuildColumnMapping(ctx context.Context, headers []string, sampleRows [][]string) map[string]string {
+	raw, err := s.generateStructuredJSON(ctx, buildColumnMappingPrompt(headers, sampleRows))
+	if err != nil || raw == "" {
+		if err != nil {
+			slog.Warn("column mapping AI generation failed", "error", err)
+		}
+		return nil
+	}
+
+	var aiMapping map[string]string
+	text := extractJSONBlock(strings.TrimSpace(raw))
+	if err := json.Unmarshal([]byte(text), &aiMapping); err != nil {
+		slog.Warn("column mapping JSON parse failed", "error", err)
+		return nil
+	}
+	return aiMapping
+}
+
+func buildColumnMappingPrompt(headers []string, sampleRows [][]string) string {
 	var sb strings.Builder
 	sb.WriteString("You are a product data importer. Map the following XLSX columns to CandyPro product fields.\n\n")
 	sb.WriteString("Available fields: id, name, category, categorySlug, basePrice, moq, stockQuantity, leadTime, halalCertified, oemAvailable, hsCode, shelfLife, storage, status, thumbnail, images, flavors, shapes, ingredients, allergens, certifications, description, summary\n\n")
@@ -27,15 +46,5 @@ func (s *AIService) BuildColumnMapping(ctx context.Context, headers []string, sa
 	}
 	sb.WriteString("\nReturn a JSON object mapping field names to column header names. Only include columns that have a clear match. Example: {\"name\": \"Product Name\", \"basePrice\": \"Unit Price\"}\n")
 	sb.WriteString("Return ONLY the JSON object, no other text.")
-
-	raw, err := s.GenerateJSON(ctx, sb.String())
-	if err != nil || raw == "" {
-		return nil
-	}
-
-	var aiMapping map[string]string
-	if json.Unmarshal([]byte(raw), &aiMapping) != nil {
-		return nil
-	}
-	return aiMapping
+	return sb.String()
 }

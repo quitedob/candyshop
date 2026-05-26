@@ -18,7 +18,8 @@ type Services struct {
 	Search  *search.SearchService
 	Trade   *trade.TradeService
 	User    *user.UserService
-	Payment *order.PaymentService
+	Payment        *order.PaymentService
+	GatewayPayment *order.GatewayPaymentService
 }
 
 func New(repos *repositoryCommon.SystemRepositories, cfg *config.Config, searchSvc *search.SearchService) *Services {
@@ -26,13 +27,16 @@ func New(repos *repositoryCommon.SystemRepositories, cfg *config.Config, searchS
 		return &Services{Search: searchSvc}
 	}
 
+	paymentSvc := order.NewPaymentService(repos.Payment, repos.Order)
+
 	return &Services{
-		Inquiry: inquiry.NewInquiryService(repos.Inquiry, cfg),
-		Order:   order.NewOrderService(repos.Order),
-		Product: product.NewProductService(repos.Product),
-		Search:  searchSvc,
-		Trade:   trade.NewTradeService(repos.Trade),
-		User:    user.NewUserService(repos.User),
-		Payment: order.NewPaymentService(repos.Payment, repos.Order),
+		Inquiry:        inquiry.NewInquiryService(repos.Inquiry, cfg),
+		Order:          order.NewOrderService(repos.Order),
+		Product:        product.NewProductService(repos.Product),
+		Search:         searchSvc,
+		Trade:          trade.NewTradeService(repos.Trade),
+		User:           user.NewUserService(repos.User),
+		Payment:        paymentSvc,
+		GatewayPayment: order.NewGatewayPaymentService(cfg, paymentSvc),
 	}
 }

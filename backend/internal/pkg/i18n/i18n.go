@@ -43,20 +43,26 @@ func Init(db *gorm.DB) error {
 }
 
 // Translate returns the translated string for the given locale and key.
-// Lookup order: cache → en fallback → key itself.
+//
+// R2 D-7: a single-step fallback to the default locale (zh) is applied when
+// the requested locale is missing the key. This keeps the UI showing real
+// translated content for newly-added keys before all locales catch up,
+// instead of surfacing the raw dotted key path (e.g. "errors.something").
+// As a final fallback the raw key is returned — the caller can detect this
+// by comparing the result to the input.
 func Translate(locale, key string) string {
-	cacheKey := locale + "|" + key
-
 	mu.RLock()
-	if v, ok := cache[cacheKey]; ok {
+	if v, ok := cache[locale+"|"+key]; ok {
 		mu.RUnlock()
 		return v
 	}
-	mu.RUnlock()
-
-	if locale != "en" {
-		return Translate("en", key)
+	if locale != "zh" {
+		if v, ok := cache["zh|"+key]; ok {
+			mu.RUnlock()
+			return v
+		}
 	}
+	mu.RUnlock()
 	return key
 }
 

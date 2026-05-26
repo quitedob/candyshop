@@ -1,6 +1,6 @@
 {
   "blog": {
-    "title": "新闻资讯",
+    "title": "博客与洞察",
     "categories": {
       "compliance": "合规知识",
       "product_knowledge": "产品知识",
@@ -15,7 +15,7 @@
   "blog_extra": {
     "featured": "精选",
     "stay_updated": "保持关注",
-    "subscribe_desc": "获取最新的行业洞察和合规动态",
+    "subscribe_desc": "面向 B2B 买家的行业洞察、合规动态与产品知识。",
     "email_placeholder": "输入您的邮箱",
     "all_posts": "全部文章",
     "loading_posts": "正在加载文章...",

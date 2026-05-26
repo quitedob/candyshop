@@ -2,26 +2,53 @@ package order
 
 import (
 	modelsOrder "candypro/api/internal/models/order"
+	"candypro/api/internal/pkg/safego"
 	"context"
 	"log"
 	"strings"
 	"sync"
+	"time"
 
 	"gorm.io/gorm"
 )
 
+// defaultPolicyRefreshInterval bounds how stale the in-process cache can become
+// when another instance edits the policies table directly. 5 minutes balances
+// admin-edit latency against DB load (M-20).
+const defaultPolicyRefreshInterval = 5 * time.Minute
+
 // CountryPaymentPolicyService provides table-driven country payment policy lookups.
 type CountryPaymentPolicyService struct {
-	db    *gorm.DB
-	cache map[string]*modelsOrder.CountryPaymentPolicy
-	mu    sync.RWMutex
+	db          *gorm.DB
+	cache       map[string]*modelsOrder.CountryPaymentPolicy
+	mu          sync.RWMutex
+	refreshOnce sync.Once
 }
 
 // NewCountryPaymentPolicyService creates a new CountryPaymentPolicyService.
 func NewCountryPaymentPolicyService(db *gorm.DB) *CountryPaymentPolicyService {
 	svc := &CountryPaymentPolicyService{db: db}
 	svc.loadPolicies()
+	svc.startAutoRefresh(defaultPolicyRefreshInterval)
 	return svc
+}
+
+// startAutoRefresh launches a single background goroutine that periodically
+// reloads the policy cache so multi-instance deployments converge after direct
+// DB edits or hot config rollouts (M-20). Idempotent across calls.
+func (s *CountryPaymentPolicyService) startAutoRefresh(interval time.Duration) {
+	if interval <= 0 {
+		return
+	}
+	s.refreshOnce.Do(func() {
+		safego.Go("country-payment-policy.refresh", func() {
+			ticker := time.NewTicker(interval)
+			defer ticker.Stop()
+			for range ticker.C {
+				s.loadPolicies()
+			}
+		})
+	})
 }
 
 // loadPolicies loads all policies from the database into memory.

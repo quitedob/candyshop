@@ -87,7 +87,7 @@ const handleResend = async () => {
   resendSuccess.value = false
   resendError.value = ''
   try {
-    await resendVerificationEmail()
+    await resendVerificationEmail(email.value || undefined)
     resendSuccess.value = true
     cooldown.value = 60
     timer = setInterval(() => {

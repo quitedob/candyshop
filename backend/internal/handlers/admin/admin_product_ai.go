@@ -50,7 +50,7 @@ func (h *Handler) AdminAIGenerateProduct(c *gin.Context) {
 	// Auto-translate text fields to all non-source locales
 	sourceData := eino.ProductFieldsForTranslation(product)
 	targetLocales := eino.LocalesExcluding(req.Language)
-	transResult, _ := h.aiService.BatchTranslateFields(c.Request.Context(), sourceData, targetLocales)
+	transResult, _ := h.batchTranslateContent(c.Request.Context(), sourceData, targetLocales)
 
 	c.JSON(http.StatusOK, gin.H{
 		"product":      product,

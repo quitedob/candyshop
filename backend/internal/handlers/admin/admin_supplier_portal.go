@@ -149,6 +149,10 @@ func (h *Handler) SupplierUpdatePOStatus(c *gin.Context) {
 
 // SupplierRegisterSelf allows a factory/supplier to register themselves.
 func (h *Handler) SupplierRegisterSelf(c *gin.Context) {
+	if h.cfg != nil && !h.cfg.Security.EnableSupplierPortal {
+		response.ErrorResp(c, http.StatusNotFound, "not_found")
+		return
+	}
 	if h.services == nil || h.services.Supplier == nil {
 		response.ServiceUnavailableResp(c)
 		return

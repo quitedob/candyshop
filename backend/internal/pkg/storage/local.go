@@ -59,7 +59,7 @@ var allowedMediaTypes = map[string]bool{
 var allowedFolders = map[string]bool{
 	"images": true, "documents": true, "products": true,
 	"certifications": true, "avatars": true, "uploads": true,
-	"payment-proofs": true, "kyb": true,
+	"payment-proofs": true, "kyb": true, "order-messages": true,
 }
 
 // Whitelisted file extensions
@@ -68,6 +68,7 @@ var allowedExtensions = map[string]bool{
 	".webp": true, ".gif": true, ".pdf": true,
 	".docx": true, ".doc": true, ".txt": true,
 	".svg": true, ".mkv": true, ".mp4": true, ".mp3": true,
+	".csv": true, ".xlsx": true, ".xls": true,
 }
 
 // Upload stores a file on the local filesystem and returns the public URL path.
@@ -97,7 +98,7 @@ func (s *LocalStorageService) Upload(ctx context.Context, reader io.Reader, opts
 	if idx := strings.Index(detectedType, ";"); idx != -1 {
 		detectedType = strings.TrimSpace(detectedType[:idx])
 	}
-	if !allowedImageTypes[detectedType] && !allowedDocTypes[detectedType] && !allowedMediaTypes[detectedType] {
+	if !contentTypeAllowed(detectedType, opts.FileName) {
 		return "", fmt.Errorf("file content type %s is not allowed", detectedType)
 	}
 

@@ -1,0 +1,852 @@
+{
+  "本周新增 {count}": {
+    "key": "admin.dashboard.new_users_this_week",
+    "en": "{count} new this week",
+    "ja": "今週 {count} 件の新規"
+  },
+  "显示第 {from} 到 {to} 条，共 {total} 条": {
+    "key": "admin.returns.showing",
+    "en": "Showing {from} to {to} of {total}",
+    "ja": "{total} 件中 {from} ～ {to} 件を表示"
+  },
+  "销售成本": {
+    "key": "admin.orders.cogs",
+    "en": "COGS",
+    "ja": "COGS"
+  },
+  "可能含有": {
+    "key": "admin.products.field_may_contain",
+    "en": "May Contain",
+    "ja": "May Contain"
+  },
+  "水分活度 (aʷ)": {
+    "key": "admin.products.field_water_activity",
+    "en": "Water Activity (aʷ)",
+    "ja": "Water アクティビティ (aʷ)"
+  },
+  "正在生成产品数据...": {
+    "key": "admin.products.ai_generating",
+    "en": "Generating product data...",
+    "ja": "Generating product data..."
+  },
+  "输入语言": {
+    "key": "admin.products.ai_language_label",
+    "en": "Source Language",
+    "ja": "Source Language"
+  },
+  "基本信息": {
+    "key": "admin.products.ai_section_basic",
+    "en": "Basic Information",
+    "ja": "Basic Information"
+  },
+  "市场代码": {
+    "key": "admin.products.market_code",
+    "en": "Market Code",
+    "ja": "Market コード"
+  },
+  "标签模板 ID": {
+    "key": "admin.products.label_template",
+    "en": "Label Template ID",
+    "ja": "Label Template ID"
+  },
+  "重新加载": {
+    "key": "admin.products.reload_market",
+    "en": "Reload",
+    "ja": "Reload"
+  },
+  "市场画像已保存。": {
+    "key": "admin.products.market_saved",
+    "en": "Market profile saved.",
+    "ja": "Market profile saved."
+  },
+  "可选。建议 1200×630，用于社交媒体链接预览。": {
+    "key": "admin.content.og_image_hint",
+    "en": "Optional. 1200×630 recommended for social previews.",
+    "ja": "任意. 1200×630 recommended for social previews."
+  },
+  "阅读时间(分钟)": {
+    "key": "admin.content.post_read_time",
+    "en": "Read Time (min)",
+    "ja": "Read 時間 (min)"
+  },
+  "作者名称": {
+    "key": "admin.content.author_name",
+    "en": "Author Name",
+    "ja": "Author 名称"
+  },
+  "作者头衔": {
+    "key": "admin.content.author_title",
+    "en": "Author Title",
+    "ja": "Author タイトル"
+  },
+  "作者简介": {
+    "key": "admin.content.author_bio",
+    "en": "Author Bio",
+    "ja": "Author Bio"
+  },
+  "客户名称": {
+    "key": "admin.content.case_client",
+    "en": "Client Name",
+    "ja": "Client 名称"
+  },
+  "行业": {
+    "key": "admin.content.case_industry",
+    "en": "Industry",
+    "ja": "Industry"
+  },
+  "地点": {
+    "key": "admin.shipments.event_location",
+    "en": "Location",
+    "ja": "Location"
+  },
+  "时间线": {
+    "key": "admin.oem.label_timeline",
+    "en": "Timeline",
+    "ja": "時間line"
+  },
+  "开始编写内容...": {
+    "key": "admin.content.editor_placeholder",
+    "en": "Start writing...",
+    "ja": "Start writing..."
+  },
+  "挑战": {
+    "key": "admin.content.case_challenge",
+    "en": "Challenge",
+    "ja": "Challenge"
+  },
+  "成果": {
+    "key": "admin.content.case_result",
+    "en": "Result",
+    "ja": "Result"
+  },
+  "内容已更新": {
+    "key": "admin.content.updated_success",
+    "en": "Content updated successfully",
+    "ja": "コンテンツ updated successfully"
+  },
+  "内容已删除": {
+    "key": "admin.content.deleted_success",
+    "en": "Content deleted successfully",
+    "ja": "コンテンツ deleted successfully"
+  },
+  "原文语言": {
+    "key": "admin.content.ai_language_label",
+    "en": "Source Language",
+    "ja": "Source Language"
+  },
+  "AI 修订选区": {
+    "key": "admin.content.inline_ai_title",
+    "en": "Edit selection",
+    "ja": "編集 selection"
+  },
+  "描述要如何修改选中内容…": {
+    "key": "admin.content.inline_ai_placeholder",
+    "en": "Describe how to change the selection…",
+    "ja": "Describe how to change the selection…"
+  },
+  "选区": {
+    "key": "admin.content.inline_ai_selection",
+    "en": "Selection",
+    "ja": "Selection"
+  },
+  "AI 修订中…": {
+    "key": "admin.content.inline_ai_loading",
+    "en": "Revising…",
+    "ja": "Revising…"
+  },
+  "修改前": {
+    "key": "admin.content.inline_ai_before",
+    "en": "Before",
+    "ja": "Before"
+  },
+  "修改后": {
+    "key": "admin.content.inline_ai_after",
+    "en": "After",
+    "ja": "After"
+  },
+  "重新生成": {
+    "key": "admin.content.ai_regenerate",
+    "en": "Regenerate",
+    "ja": "Regenerate"
+  },
+  "在正文中选中一段文字，或选择修订范围，描述要如何修改（类似 Cursor 局部编辑）。": {
+    "key": "admin.content.ai_revise_hint",
+    "en": "Select text in the body or pick a scope, then describe the fix (Cursor-style partial edit).",
+    "ja": "本文でテキストを選択するか範囲を選び、修正内容を記述します（Cursor 式部分編集）。"
+  },
+  "已选中片段": {
+    "key": "admin.content.ai_revise_selected",
+    "en": "Selected excerpt",
+    "ja": "Selected excerpt"
+  },
+  "修订范围": {
+    "key": "admin.content.ai_revise_scope",
+    "en": "Revision scope",
+    "ja": "Revision scope"
+  },
+  "正文": {
+    "key": "admin.content.ai_revise_scope_content",
+    "en": "Body",
+    "ja": "Body"
+  },
+  "作者信息": {
+    "key": "admin.content.ai_revise_scope_author",
+    "en": "Author",
+    "ja": "Author"
+  },
+  "应用修订": {
+    "key": "admin.content.ai_revise_apply",
+    "en": "Apply revision",
+    "ja": "Apply revision"
+  },
+  "修订中…": {
+    "key": "admin.content.ai_revising",
+    "en": "Revising…",
+    "ja": "Revising…"
+  },
+  "留空则使用默认作者名称": {
+    "key": "admin.content.trans_author_name_placeholder",
+    "en": "Leave empty to use default author name",
+    "ja": "Leave empty to use default author name"
+  },
+  "留空则使用默认作者职称": {
+    "key": "admin.content.trans_author_title_placeholder",
+    "en": "Leave empty to use default author title",
+    "ja": "Leave empty to use default author title"
+  },
+  "添加认证": {
+    "key": "admin.certifications.add_certification",
+    "en": "Add Certification",
+    "ja": "Add Certification"
+  },
+  "缩写": {
+    "key": "admin.certifications.abbreviation",
+    "en": "Abbreviation",
+    "ja": "Abbreviation"
+  },
+  "颁发机构": {
+    "key": "admin.certifications.issuer",
+    "en": "Issuer",
+    "ja": "Issuer"
+  },
+  "徽章链接": {
+    "key": "admin.certifications.badge_url",
+    "en": "Badge URL",
+    "ja": "Badge URL"
+  },
+  "认证名称为必填项。": {
+    "key": "admin.certifications.name_required",
+    "en": "Certification name is required.",
+    "ja": "Certification name is required."
+  },
+  "确定删除此认证？": {
+    "key": "admin.certifications.confirm_delete",
+    "en": "Delete this certification?",
+    "ja": "削除 this certification?"
+  },
+  "认证更新成功。": {
+    "key": "admin.certifications.updated_success",
+    "en": "Certification updated successfully.",
+    "ja": "Certification updated successfully."
+  },
+  "认证删除成功。": {
+    "key": "admin.certifications.deleted_success",
+    "en": "Certification deleted successfully.",
+    "ja": "Certification deleted successfully."
+  },
+  "按名称搜索...": {
+    "key": "admin.companies.search_placeholder",
+    "en": "Search by name...",
+    "ja": "検索 by name..."
+  },
+  "注册号": {
+    "key": "admin.companies.registration_number",
+    "en": "Registration Number",
+    "ja": "Registration Number"
+  },
+  "网站": {
+    "key": "admin.companies.website",
+    "en": "Website",
+    "ja": "Website"
+  },
+  "营业执照": {
+    "key": "admin.companies.business_license",
+    "en": "Business License",
+    "ja": "Business License"
+  },
+  "查看文档": {
+    "key": "admin.companies.view_document",
+    "en": "View Document",
+    "ja": "表示 Document"
+  },
+  "企业状态更新成功。": {
+    "key": "admin.companies.status_updated",
+    "en": "Company status updated successfully.",
+    "ja": "会社 status updated successfully."
+  },
+  "进口": {
+    "key": "admin.trades.import",
+    "en": "Import",
+    "ja": "Import"
+  },
+  "交易": {
+    "key": "admin.trades.transaction",
+    "en": "Transaction",
+    "ja": "Transaction"
+  },
+  "交货条款": {
+    "key": "admin.trades.delivery_terms",
+    "en": "Delivery Terms",
+    "ja": "Delivery Terms"
+  },
+  "文档": {
+    "key": "admin.trades.documents",
+    "en": "Documents",
+    "ja": "Documents"
+  },
+  "文档名称": {
+    "key": "admin.trades.doc_name",
+    "en": "Document Name",
+    "ja": "Document 名称"
+  },
+  "贸易状态更新成功。": {
+    "key": "admin.trades.status_updated",
+    "en": "Trade status updated successfully.",
+    "ja": "Trade status updated successfully."
+  },
+  "查看详情": {
+    "key": "admin.oemProjects.view_detail",
+    "en": "View Detail",
+    "ja": "表示 Detail"
+  },
+  "收起": {
+    "key": "admin.trades.collapse",
+    "en": "Collapse",
+    "ja": "Collapse"
+  },
+  "展开": {
+    "key": "admin.trades.expand",
+    "en": "Expand",
+    "ja": "Expand"
+  },
+  "调用的工具": {
+    "key": "admin.trades.tools_called",
+    "en": "Tools Called",
+    "ja": "終了ols Called"
+  },
+  "输入消息，按Enter发送...": {
+    "key": "admin.trades.ai_input_placeholder",
+    "en": "Type a message, press Enter to send...",
+    "ja": "メッセージを入力し、Enter で送信..."
+  },
+  "上下文": {
+    "key": "admin.trades.ai_context_label",
+    "en": "Context",
+    "ja": "Context"
+  },
+  "文档生成成功": {
+    "key": "admin.trades.ai_doc_generated",
+    "en": "Document generated successfully",
+    "ja": "Document generated successfully"
+  },
+  "为此贸易交易生成 {type}。": {
+    "key": "admin.trades.ai_generate_prompt",
+    "en": "Generate a {type} for this trade transaction.",
+    "ja": "この貿易取引の {type} を生成します。"
+  },
+  "快捷单证生成": {
+    "key": "admin.trades.quick_generate",
+    "en": "Quick Document Generation",
+    "ja": "Quick Document Generation"
+  },
+  "结算里程碑": {
+    "key": "admin.trades.settlements",
+    "en": "Settlements",
+    "ja": "Settlements"
+  },
+  "添加结算": {
+    "key": "admin.trades.add_settlement",
+    "en": "Add Settlement",
+    "ja": "Add Settlement"
+  },
+  "合规": {
+    "key": "admin.trades.compliance",
+    "en": "Compliance",
+    "ja": "Compliance"
+  },
+  "合规要求": {
+    "key": "admin.trades.compliance_item",
+    "en": "Requirement",
+    "ja": "Requirement"
+  },
+  "价格列表名称": {
+    "key": "admin.pricing.name",
+    "en": "Price List Name",
+    "ja": "Price 一覧 名称"
+  },
+  "确定删除此价格列表？": {
+    "key": "admin.pricing.confirm_delete_price_list",
+    "en": "Delete this price list?",
+    "ja": "削除 this price list?"
+  },
+  "定价规则": {
+    "key": "admin.pricing.pricing_rules",
+    "en": "Pricing Rules",
+    "ja": "価格 Rules"
+  },
+  "添加规则": {
+    "key": "admin.pricing.add_rule",
+    "en": "Add Rule",
+    "ja": "Add Rule"
+  },
+  "添加定价规则": {
+    "key": "admin.pricing.add_pricing_rule",
+    "en": "Add Pricing Rule",
+    "ja": "Add 価格 Rule"
+  },
+  "确定删除此定价规则？": {
+    "key": "admin.pricing.confirm_delete_price",
+    "en": "Delete this pricing rule?",
+    "ja": "削除 this pricing rule?"
+  },
+  "交货": {
+    "key": "admin.oemProjects.delivery",
+    "en": "Delivery",
+    "ja": "Delivery"
+  },
+  "负责人": {
+    "key": "admin.oemProjects.col_assigned",
+    "en": "Assigned",
+    "ja": "Assigned"
+  },
+  "目标市场": {
+    "key": "admin.oemProjects.target_market",
+    "en": "Target Market",
+    "ja": "Target Market"
+  },
+  "进度跟踪": {
+    "key": "admin.oemProjects.step_tracker",
+    "en": "Step Tracker",
+    "ja": "Step Tracker"
+  },
+  "需求": {
+    "key": "admin.oemProjects.requirements",
+    "en": "Requirements",
+    "ja": "Requirements"
+  },
+  "口味": {
+    "key": "admin.oemProjects.flavor",
+    "en": "Flavor",
+    "ja": "Flavor"
+  },
+  "形状": {
+    "key": "admin.oemProjects.shape",
+    "en": "Shape",
+    "ja": "Shape"
+  },
+  "申请时间": {
+    "key": "admin.oemProjects.requested_date",
+    "en": "Requested",
+    "ja": "Requested"
+  },
+  "项目状态更新成功。": {
+    "key": "admin.oemProjects.status_updated",
+    "en": "Project status updated successfully.",
+    "ja": "Project status updated successfully."
+  },
+  "账户状态": {
+    "key": "admin.user_detail.account_status",
+    "en": "Account Status",
+    "ja": "Account ステータス"
+  },
+  "用户状态更新成功。": {
+    "key": "admin.user_detail.status_updated",
+    "en": "User status updated successfully.",
+    "ja": "User status updated successfully."
+  },
+  "保存资料": {
+    "key": "admin.user_detail.save_profile",
+    "en": "Save Profile",
+    "ja": "保存 Profile"
+  },
+  "用户资料更新成功。": {
+    "key": "admin.user_detail.profile_updated",
+    "en": "User profile updated successfully.",
+    "ja": "User profile updated successfully."
+  },
+  "更新角色": {
+    "key": "admin.user_detail.update_role",
+    "en": "Update Role",
+    "ja": "更新 Role"
+  },
+  "用户角色更新成功。": {
+    "key": "admin.user_detail.role_updated",
+    "en": "User role updated successfully.",
+    "ja": "User role updated successfully."
+  },
+  "危险操作": {
+    "key": "admin.user_detail.danger_zone",
+    "en": "Danger Zone",
+    "ja": "Danger Zone"
+  },
+  "删除用户": {
+    "key": "admin.user_detail.delete_user",
+    "en": "Delete User",
+    "ja": "削除 User"
+  },
+  "显示第 {from} 至 {to} 条，共 {total} 条": {
+    "key": "admin.auditLog.showing",
+    "en": "Showing {from} to {to} of {total} results",
+    "ja": "{total} 件中 {from} ～ {to} 件を表示"
+  },
+  "{from} → {to}": {
+    "key": "admin.inventory.from_to",
+    "en": "{from} → {to}",
+    "ja": "{from} → {to}"
+  },
+  "全选": {
+    "key": "admin.inventory.select_all",
+    "en": "Select All",
+    "ja": "Select すべて"
+  },
+  "已选 {count} 项": {
+    "key": "admin.inventory.selected_count",
+    "en": "{count} selected",
+    "ja": "{count} 件を選択"
+  },
+  "列映射": {
+    "key": "admin.inventory.import_column_mapping",
+    "en": "Column Mapping",
+    "ja": "Column Mapping"
+  },
+  "导入完成：新建 {created} 项，更新 {updated} 项，错误 {errors} 项": {
+    "key": "admin.inventory.import_result",
+    "en": "Import complete: {created} created, {updated} updated, {errors} errors",
+    "ja": "取り込み完了：新規 {created} 件、更新 {updated} 件、エラー {errors} 件"
+  },
+  "正在解析文件...": {
+    "key": "admin.inventory.import_parsing",
+    "en": "Parsing file...",
+    "ja": "Parsing file..."
+  },
+  "正在编辑 {count} 个产品": {
+    "key": "admin.inventory.batch_edit_selected_count",
+    "en": "Editing {count} products",
+    "ja": "{count} 件の製品を編集中"
+  },
+  "字段": {
+    "key": "admin.inventory.batch_edit_field",
+    "en": "Field",
+    "ja": "Field"
+  },
+  "应用更改": {
+    "key": "admin.inventory.batch_edit_apply",
+    "en": "Apply Changes",
+    "ja": "Apply Changes"
+  },
+  "正在应用...": {
+    "key": "admin.inventory.batch_edit_applying",
+    "en": "Applying...",
+    "ja": "Applying..."
+  },
+  "更新 {updated} 项，{errors} 项错误": {
+    "key": "admin.inventory.batch_edit_result",
+    "en": "Updated {updated}, {errors} errors",
+    "ja": "更新 {updated} 件、{errors} 件エラー"
+  },
+  "基础价格": {
+    "key": "admin.inventory.batch_edit_field_basePrice",
+    "en": "Base Price",
+    "ja": "Base Price"
+  },
+  "确定要删除选中的 {count} 个产品吗？该操作不可撤销。": {
+    "key": "admin.inventory.batch_delete_confirm",
+    "en": "Are you sure you want to delete {count} selected products? This action cannot be undone.",
+    "ja": "選択した {count} 件の製品を削除しますか？この操作は元に戻せません。"
+  },
+  "删除 {deleted} 项，{errors} 项错误": {
+    "key": "admin.inventory.batch_delete_result",
+    "en": "{deleted} deleted, {errors} errors",
+    "ja": "削除 {deleted} 件、{errors} 件エラー"
+  },
+  "更新库存": {
+    "key": "admin.inventory.update_stock",
+    "en": "Update Stock",
+    "ja": "更新 Stock"
+  },
+  "新建发货": {
+    "key": "admin.shipments.new_shipment",
+    "en": "New Shipment",
+    "ja": "New Shipment"
+  },
+  "物流历史": {
+    "key": "admin.shipments.tracking_history",
+    "en": "Tracking History",
+    "ja": "Tracking History"
+  },
+  "出库发运": {
+    "key": "admin.shipments.dispatch",
+    "en": "Dispatch",
+    "ja": "Dispatch"
+  },
+  "发运成功。": {
+    "key": "admin.shipments.dispatch_success",
+    "en": "Shipment dispatched.",
+    "ja": "Shipment dispatched."
+  },
+  "请从订单详情页创建履约单": {
+    "key": "admin.shipments.create_from_order",
+    "en": "Create fulfillments from the order detail page.",
+    "ja": "作成 fulfillments from the order detail page."
+  },
+  "添加追踪事件": {
+    "key": "admin.shipments.add_event",
+    "en": "Add Event",
+    "ja": "Add Event"
+  },
+  "事件类型": {
+    "key": "admin.shipments.event_type",
+    "en": "Event Type",
+    "ja": "Event タイプ"
+  },
+  "申请日期": {
+    "key": "admin.returns.col_date",
+    "en": "Requested",
+    "ja": "Requested"
+  },
+  "已收货": {
+    "key": "admin.returns.status_received",
+    "en": "Received",
+    "ja": "Received"
+  },
+  "已付：{currency} {amount}": {
+    "key": "admin.invoices.paid_amount_line",
+    "en": "Paid: {currency} {amount}",
+    "ja": "支払済み: {currency} {amount}"
+  },
+  "打印": {
+    "key": "admin.invoices.print",
+    "en": "Print",
+    "ja": "Print"
+  },
+  "收票方": {
+    "key": "admin.invoices.bill_to",
+    "en": "Bill To",
+    "ja": "Bill 終了"
+  },
+  "导出 DOCX": {
+    "key": "admin.invoices.export_doc",
+    "en": "Export DOCX",
+    "ja": "エクスポート DOCX"
+  },
+  "查看和管理员工信息、角色及活动记录。": {
+    "key": "admin.staff.description",
+    "en": "View and manage staff members, their roles, and activity.",
+    "ja": "表示 and manage staff members, their roles, and activity."
+  },
+  "最后登录": {
+    "key": "admin.staff.col_last_login",
+    "en": "Last Login",
+    "ja": "Last Login"
+  },
+  "从未登录": {
+    "key": "admin.staff.never",
+    "en": "Never",
+    "ja": "Never"
+  },
+  "刚刚": {
+    "key": "admin.auditLog.just_now",
+    "en": "just now",
+    "ja": "just now"
+  },
+  "{count} 分钟前": {
+    "key": "admin.auditLog.minutes_ago",
+    "en": "{count} minutes ago",
+    "ja": "{count} minutes ago"
+  },
+  "{count} 小时前": {
+    "key": "admin.auditLog.hours_ago",
+    "en": "{count} hours ago",
+    "ja": "{count} hours ago"
+  },
+  "{count} 天前": {
+    "key": "admin.auditLog.days_ago",
+    "en": "{count} days ago",
+    "ja": "{count} days ago"
+  },
+  "追踪系统内所有操作和变更记录。": {
+    "key": "admin.auditLog.description",
+    "en": "Track all system activity and changes across the platform.",
+    "ja": "Track all system activity and changes across the platform."
+  },
+  "贸易": {
+    "key": "admin.settings.tab_trade",
+    "en": "Trade",
+    "ja": "Trade"
+  },
+  "状态变更": {
+    "key": "admin.auditLog.action_status_change",
+    "en": "Status Change",
+    "ja": "ステータス Change"
+  },
+  "提单": {
+    "key": "admin.docLabels.bill_of_lading",
+    "en": "Bill of Lading",
+    "ja": "Bill of Lading"
+  },
+  "销售合同": {
+    "key": "admin.docLabels.sales_contract",
+    "en": "Sales Contract",
+    "ja": "Sales Contract"
+  },
+  "装箱单": {
+    "key": "admin.docLabels.packing_list",
+    "en": "Packing List",
+    "ja": "Packing List"
+  },
+  "合同编号": {
+    "key": "admin.docLabels.contract_no",
+    "en": "Contract No.",
+    "ja": "Contract No."
+  },
+  "证书编号": {
+    "key": "admin.docLabels.cert_no",
+    "en": "Cert No.",
+    "ja": "Cert No."
+  },
+  "船名/航次": {
+    "key": "admin.docLabels.vessel_voyage",
+    "en": "Vessel/Voyage",
+    "ja": "Vessel/Voyage"
+  },
+  "总件数": {
+    "key": "admin.docLabels.total_packages",
+    "en": "Total Packages",
+    "ja": "合計 Packages"
+  },
+  "更新翻译失败": {
+    "key": "admin.translations.update_failed",
+    "en": "Failed to update translation",
+    "ja": "失敗 to update translation"
+  },
+  "删除翻译失败": {
+    "key": "admin.translations.delete_failed",
+    "en": "Failed to delete translation",
+    "ja": "失敗 to delete translation"
+  },
+  "计划-执行-重规划": {
+    "key": "admin.ai.mode_plan",
+    "en": "Plan-Execute-Replan",
+    "ja": "Plan-Execute-Replan"
+  },
+  "贸易助手": {
+    "key": "admin.ai.mode_trade",
+    "en": "Trade Assistant",
+    "ja": "Trade Assistant"
+  },
+  "产品推荐": {
+    "key": "admin.ai.mode_recommend",
+    "en": "Product Recommend",
+    "ja": "Product Recommend"
+  },
+  "分析询价": {
+    "key": "admin.ai.mode_analyze_inquiry",
+    "en": "Analyze Inquiry",
+    "ja": "Analyze Inquiry"
+  },
+  "显示畅销产品": {
+    "key": "admin.ai.suggestion_1",
+    "en": "Show me top selling products",
+    "ja": "Show me top selling products"
+  },
+  "分析本月订单趋势": {
+    "key": "admin.ai.suggestion_2",
+    "en": "Analyze order trends this month",
+    "ja": "Analyze order trends this month"
+  },
+  "推荐糖果产品定价": {
+    "key": "admin.ai.suggestion_3",
+    "en": "Recommend pricing for candy products",
+    "ja": "Recommend pricing for candy products"
+  },
+  "[工具调用完成]": {
+    "key": "admin.ai.tool_completed",
+    "en": "[Tool completed]",
+    "ja": "[終了ol completed]"
+  },
+  "步骤": {
+    "key": "admin.oem.col_steps",
+    "en": "Steps",
+    "ja": "Steps"
+  },
+  "确定删除此流程？": {
+    "key": "admin.oem.confirm_delete_flow",
+    "en": "Delete this flow?",
+    "ja": "削除 this flow?"
+  },
+  "确定删除此方案？": {
+    "key": "admin.oem.confirm_delete_solution",
+    "en": "Delete this solution?",
+    "ja": "削除 this solution?"
+  },
+  "HTTP": {
+    "key": "admin.webhooks.col_status_code",
+    "en": "HTTP",
+    "ja": "HTTP"
+  },
+  "结果": {
+    "key": "admin.webhooks.col_result",
+    "en": "Result",
+    "ja": "Result"
+  },
+  "配置 (JSON)": {
+    "key": "admin.hooks.config_json",
+    "en": "Config (JSON)",
+    "ja": "設定 (JSON)"
+  },
+  "JSON 配置无效。": {
+    "key": "admin.hooks.invalid_json",
+    "en": "Invalid JSON config.",
+    "ja": "JSON 設定が無効です。"
+  },
+  "Hook ID": {
+    "key": "admin.hooks.hook_id",
+    "en": "Hook ID",
+    "ja": "Hook ID"
+  },
+  "载荷": {
+    "key": "admin.hooks.col_payload",
+    "en": "Payload",
+    "ja": "Payload"
+  },
+  "条款": {
+    "key": "admin.organizations.col_terms",
+    "en": "Terms",
+    "ja": "Terms"
+  },
+  "天数": {
+    "key": "admin.shippingRates.col_days",
+    "en": "Days",
+    "ja": "Days"
+  },
+  "地区": {
+    "key": "admin.taxRates.col_region",
+    "en": "Region",
+    "ja": "Region"
+  },
+  "共 {total} 条": {
+    "key": "admin.coupons.showing",
+    "en": "{total} total",
+    "ja": "合計 {total} 件"
+  },
+  "下载 Excel 报表；金额列按所选币种换算。": {
+    "key": "admin.xlsx.export_hint",
+    "en": "Download Excel reports. Monetary columns use the selected currency.",
+    "ja": "Download Excel reports. 購入金額 columns use the selected currency."
+  },
+  "已选：{name}": {
+    "key": "admin.xlsx.file_selected",
+    "en": "Selected: {name}",
+    "ja": "選択：{name}"
+  }
+}

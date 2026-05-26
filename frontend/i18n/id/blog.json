@@ -1,35 +1,35 @@
 {
   "blog": {
-    "title": "Blog & Resources",
+    "title": "Blog & Wawasan",
     "categories": {
-      "compliance": "Compliance",
-      "product_knowledge": "Product Knowledge",
-      "packaging": "Packaging Trends",
-      "market_insights": "Market Insights"
+      "compliance": "Pengetahuan Kepatuhan",
+      "product_knowledge": "Pengetahuan Produk",
+      "packaging": "Tren Kemasan",
+      "market_insights": "Wawasan Pasar"
     },
-    "read_more": "Read More",
-    "related_articles": "Related Articles",
-    "share": "Share Article",
-    "table_of_contents": "Table of Contents"
+    "read_more": "Baca Selengkapnya",
+    "related_articles": "Artikel Terkait",
+    "share": "Bagikan Artikel",
+    "table_of_contents": "Daftar Isi"
   },
   "blog_extra": {
-    "featured": "Featured",
-    "stay_updated": "Stay Updated",
-    "subscribe_desc": "Get the latest industry insights and compliance updates delivered to your inbox",
-    "email_placeholder": "Enter your email",
-    "all_posts": "All Posts",
-    "loading_posts": "Loading posts...",
-    "no_posts": "No posts found in this category.",
-    "newsletter_invalid": "Please enter a valid email address.",
-    "newsletter_redirect": "Opening the contact form…",
-    "cta_questions": "Have questions about our candy manufacturing capabilities?",
-    "cta_heading": "Learn More About Our Services",
-    "min_read": "{count} min read",
+    "featured": "Unggulan",
+    "stay_updated": "Tetap Terinformasi",
+    "subscribe_desc": "Wawasan industri, pembaruan kepatuhan, dan pengetahuan produk untuk pembeli B2B.",
+    "email_placeholder": "Masukkan email Anda",
+    "all_posts": "Semua Artikel",
+    "loading_posts": "Memuat artikel...",
+    "no_posts": "Belum ada artikel dalam kategori ini.",
+    "newsletter_invalid": "Masukkan alamat email yang valid.",
+    "newsletter_redirect": "Membuka formulir kontak…",
+    "cta_questions": "Pertanyaan tentang kapabilitas manufaktur permen kami?",
+    "cta_heading": "Pelajari Lebih Lanjut tentang Layanan Kami",
+    "min_read": "{count} menit baca",
     "share_twitter": "Twitter",
     "share_linkedin": "LinkedIn",
     "share_facebook": "Facebook",
-    "share_copy_link": "Copy Link",
-    "share_copied": "Copied!",
-    "seo_description": "Industry insights, compliance knowledge, and product expertise for candy manufacturers."
+    "share_copy_link": "Salin Tautan",
+    "share_copied": "Tersalin!",
+    "seo_description": "Wawasan industri, pengetahuan kepatuhan, dan keahlian produk manufaktur permen."
   }
 }

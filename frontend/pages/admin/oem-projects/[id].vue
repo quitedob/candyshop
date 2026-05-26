@@ -44,11 +44,11 @@
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.oemProjects.product_name') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ project.productName || '-' }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ tField(project, 'productName') || '-' }}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.oemProjects.target_market') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ project.targetMarket || '-' }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ project.requirements?.targetMarket || '-' }}</dd>
             </div>
             <div v-if="project.assignedTo">
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.oemProjects.assigned_to') }}</dt>
@@ -85,33 +85,37 @@
         </div>
         <div class="px-4 py-5 sm:p-6">
           <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
-            <div v-if="project.flavor">
+            <div v-if="project.requirements?.flavor">
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.oemProjects.flavor') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ project.flavor }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ project.requirements.flavor }}</dd>
             </div>
-            <div v-if="project.shape">
+            <div v-if="project.requirements?.shape">
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.oemProjects.shape') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ project.shape }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ project.requirements.shape }}</dd>
             </div>
-            <div v-if="project.packaging">
+            <div v-if="project.requirements?.packaging">
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.oemProjects.packaging') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ project.packaging }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ project.requirements.packaging }}</dd>
             </div>
-            <div v-if="project.targetMarket">
+            <div v-if="project.requirements?.targetMarket">
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.oemProjects.target_market') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ project.targetMarket }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ project.requirements.targetMarket }}</dd>
             </div>
-            <div v-if="project.certifications && project.certifications.length">
+            <div v-if="project.requirements?.certifications?.length">
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.oemProjects.certifications') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ Array.isArray(project.certifications) ? project.certifications.join(', ') : project.certifications }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ project.requirements.certifications.join(', ') }}</dd>
             </div>
-            <div v-if="project.moq">
+            <div v-if="project.requirements?.moq">
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.oemProjects.moq') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900">{{ project.moq }}</dd>
+              <dd class="mt-1 text-sm text-gray-900">{{ project.requirements.moq }}</dd>
             </div>
-            <div v-if="project.requirements" class="sm:col-span-2">
+            <div v-if="project.notes" class="sm:col-span-2">
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.oemProjects.requirements_notes') }}</dt>
-              <dd class="mt-1 text-sm text-gray-900 whitespace-pre-line">{{ project.requirements }}</dd>
+              <dd class="mt-1 text-sm text-gray-900 whitespace-pre-line">{{ project.notes }}</dd>
+            </div>
+            <div v-if="project.adminNotes" class="sm:col-span-2">
+              <dt class="text-sm font-medium text-gray-500">{{ t('admin.oemProjects.notes') }}</dt>
+              <dd class="mt-1 text-sm text-gray-900 whitespace-pre-line">{{ project.adminNotes }}</dd>
             </div>
           </dl>
         </div>
@@ -143,8 +147,8 @@
                     {{ enumLabel('sample_status', sample.status) }}
                   </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(sample.requestedAt) }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(sample.shippedAt) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(sample.sentAt) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(sample.receivedAt) }}</td>
               </tr>
             </tbody>
           </table>
@@ -162,6 +166,7 @@
               <label for="oem-status" class="block text-sm font-medium text-gray-700">{{ t('admin.oemProjects.status') }}</label>
               <select id="oem-status" name="status" v-model="statusInput" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
                 <option v-for="step in steps" :key="step.key" :value="step.key">{{ step.label }}</option>
+                <option value="cancelled">{{ t('admin.oemProjects.cancelled') }}</option>
               </select>
             </div>
             <div>
@@ -185,6 +190,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useTranslation } from '~/composables/useTranslation'
 
 definePageMeta({
   layout: 'admin',
@@ -192,8 +198,9 @@ definePageMeta({
 })
 
 const route = useRoute()
-const { token } = useAuth()
+const { adminGetOemProject, adminUpdateOemStatus } = useApi()
 const { t } = useI18n()
+const { tField } = useTranslation()
 const { enumLabel, formatDate } = useDisplay()
 const localePath = useLocalePath()
 const config = useRuntimeConfig()
@@ -223,9 +230,7 @@ const fetchProject = async () => {
   pending.value = true
   error.value = ''
   try {
-    project.value = await $fetch<any>(`${baseURL}/admin/oem-projects/${route.params.id}`, {
-      headers: { Authorization: `Bearer ${token.value}` }
-    })
+    project.value = await adminGetOemProject(String(route.params.id))
     statusInput.value = project.value.status || 'inquiry'
     notesInput.value = project.value.adminNotes || ''
   } catch (err: any) {
@@ -241,14 +246,17 @@ const updateStatus = async () => {
   statusError.value = false
 
   try {
-    await $fetch(`${baseURL}/admin/oem-projects/${route.params.id}/status`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${token.value}` },
-      body: {
-        status: statusInput.value,
-        notes: notesInput.value
-      }
+    await adminUpdateOemStatus(String(route.params.id), {
+      status: statusInput.value,
     })
+    if (notesInput.value !== (project.value.adminNotes || '')) {
+      await $fetch(`${baseURL}/admin/oem-projects/${route.params.id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        body: { adminNotes: notesInput.value },
+      })
+      project.value.adminNotes = notesInput.value
+    }
     project.value.status = statusInput.value
     statusMessage.value = t('admin.oemProjects.status_updated')
     setTimeout(() => { statusMessage.value = '' }, 3000)

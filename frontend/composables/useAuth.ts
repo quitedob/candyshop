@@ -13,107 +13,59 @@ export interface User {
   emailVerified?: boolean
 }
 
-type JwtPayload = {
-  sub?: string
-  email?: string
-  role?: string
-  exp?: number
-}
-
-const decodeJwtPayload = (token: string): JwtPayload | null => {
-  try {
-    const parts = token.split('.')
-    if (parts.length < 2) {
-      return null
-    }
-    if (typeof atob !== 'function') {
-      return null
-    }
-    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
-    const json = atob(base64)
-    return JSON.parse(json) as JwtPayload
-  } catch {
-    return null
-  }
-}
-
 const lazyT = (): ((key: string) => string) => {
   try { return useI18n().t } catch { return (key: string) => key }
 }
 
+/** 带 Cookie 凭证的认证请求（HttpOnly JWT） */
+export const authFetch = <T>(url: string, options: Record<string, unknown> = {}): Promise<T> => {
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string> ?? {})
+  }
+  if (import.meta.server) {
+    const incoming = useRequestHeaders(['cookie'])
+    if (incoming.cookie) {
+      headers.cookie = incoming.cookie
+    }
+  }
+  return $fetch<T>(url, {
+    ...options,
+    credentials: 'include',
+    headers
+  })
+}
+
 export const useAuth = () => {
   const localePath = useLocalePath()
-  const token = useCookie<string | null>('auth_token', {
-    maxAge: 60 * 60 * 24 * 30,
-    path: '/',
-    httpOnly: false,
-    secure: typeof window !== 'undefined' ? window.location.protocol === 'https:' : false,
-    sameSite: 'lax',
-    watch: false,
-    default: () => null
-  })
-  const refreshToken = useCookie<string | null>('refresh_token', {
-    maxAge: 60 * 60 * 24 * 30,
-    path: '/',
-    httpOnly: false,
-    secure: typeof window !== 'undefined' ? window.location.protocol === 'https:' : false,
-    sameSite: 'lax',
-    watch: false,
-    default: () => null
-  })
   const user = useState<User | null>('auth_user', () => null)
   const initialized = useState<boolean>('auth_initialized', () => false)
+  const sessionActive = useState<boolean>('auth_session', () => false)
 
   const config = useRuntimeConfig()
-  const baseURL = config.public.apiBase || '/api/v1'
+  const baseURL = import.meta.server
+    ? config.internalApiBase
+    : (config.public.apiBase || '/api/v1')
 
-  const isAuthenticated = computed(() => !!token.value && !!user.value)
+  const isAuthenticated = computed(() => !!user.value && sessionActive.value)
   const isAdmin = computed(() =>
     isAuthenticated.value && (user.value?.role === 'admin' || user.value?.role === 'superadmin')
   )
-
+  const isSupplier = computed(() =>
+    isAuthenticated.value && user.value?.role === 'supplier'
+  )
   const isPending = computed(() =>
     isAuthenticated.value && user.value?.status === 'pending'
   )
 
   const clearAuthState = () => {
-    token.value = null
-    refreshToken.value = null
     user.value = null
+    sessionActive.value = false
   }
 
-  const refreshAccessToken = async () => {
-    if (!refreshToken.value) {
-      return false
-    }
-
-    try {
-      const response = await $fetch<any>(`${baseURL}/auth/refresh`, {
-        method: 'POST',
-        body: { refresh_token: refreshToken.value }
-      })
-      token.value = response.access_token
-      return true
-    } catch {
-      return false
-    }
-  }
-
-  const fetchCurrentUser = async () => {
-    if (!token.value) {
-      return null
-    }
-
-    const me = await $fetch<any>(`${baseURL}/auth/me`, {
-      headers: {
-        Authorization: `Bearer ${token.value}`
-      }
-    })
-
+  const mapMeToUser = (me: any): User => {
     const resolvedRole =
       typeof me.role === 'string' ? me.role : me.role?.name || 'customer'
-
-    const meUser: User = {
+    return {
       id: me.id,
       email: me.email,
       firstName: me.firstName || '',
@@ -124,70 +76,31 @@ export const useAuth = () => {
       status: me.status,
       emailVerified: me.emailVerified
     }
-    user.value = meUser
-    return meUser
+  }
+
+  const refreshAccessToken = async () => {
+    try {
+      await authFetch(`${baseURL}/auth/refresh`, { method: 'POST', body: {} })
+      sessionActive.value = true
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  const fetchCurrentUser = async () => {
+    const me = await authFetch<any>(`${baseURL}/auth/me`)
+    user.value = mapMeToUser(me)
+    sessionActive.value = true
+    return user.value
   }
 
   const initAuth = async () => {
     if (initialized.value && user.value) {
-      // Check if token is expired even when already initialized
-      const payload = decodeJwtPayload(token.value || '')
-      const now = Math.floor(Date.now() / 1000)
-      if (payload?.exp && payload.exp <= now) {
-        const refreshed = await refreshAccessToken()
-        if (!refreshed) {
-          clearAuthState()
-          initialized.value = false
-          await navigateTo(localePath('/auth/login'))
-          return
-        }
-      }
       return
-    }
-
-    // Re-initialize: have token but user state was lost (e.g., cookie persisted but state cleared)
-    if (initialized.value && !user.value && token.value) {
-      try {
-        await fetchCurrentUser()
-        return
-      } catch {
-        const refreshed = await refreshAccessToken()
-        if (!refreshed) {
-          clearAuthState()
-          return
-        }
-        try {
-          await fetchCurrentUser()
-          return
-        } catch {
-          clearAuthState()
-          return
-        }
-      }
     }
 
     initialized.value = true
-    if (!token.value) {
-      user.value = null
-      return
-    }
-
-    const payload = decodeJwtPayload(token.value)
-    const now = Math.floor(Date.now() / 1000)
-    const isExpired = !!payload?.exp && payload.exp <= now
-
-    if (isExpired) {
-      const refreshed = await refreshAccessToken()
-      if (!refreshed) {
-        clearAuthState()
-        return
-      }
-    }
-
-    if (user.value) {
-      return
-    }
-
     try {
       await fetchCurrentUser()
     } catch {
@@ -206,42 +119,16 @@ export const useAuth = () => {
 
   const login = async (credentials: { email: string; password: string; remember?: boolean }) => {
     try {
-      const response = await $fetch<any>(`${baseURL}/auth/login`, {
+      const response = await authFetch<any>(`${baseURL}/auth/login`, {
         method: 'POST',
         body: credentials
       })
 
-      token.value = response.access_token
-      refreshToken.value = response.refresh_token
-
-      // If "Remember me" is NOT checked, re-set as session-only (no expiry)
-      if (!credentials.remember && typeof document !== 'undefined') {
-        const secureFlag = window.location.protocol === 'https:' ? '; Secure' : ''
-        document.cookie = `auth_token=${response.access_token}; path=/; SameSite=Lax${secureFlag}`
-        document.cookie = `refresh_token=${response.refresh_token}; path=/; SameSite=Lax${secureFlag}`
-      }
-
-      // Sync useCookie defaults so they match the expiry we just set
-      if (!credentials.remember) {
-        token.value = response.access_token
-        refreshToken.value = response.refresh_token
-      }
-
-      const role =
-        typeof response.user?.role === 'string'
-          ? response.user.role
-          : response.user?.role?.name || 'customer'
-
-      user.value = {
-        id: response.user.id,
-        email: response.user.email,
-        firstName: response.user.firstName || '',
-        lastName: response.user.lastName || '',
-        role,
-        company: response.user.company,
-        phone: response.user.phone,
-        status: response.user.status,
-        emailVerified: response.user.emailVerified
+      sessionActive.value = true
+      if (response.user) {
+        user.value = mapMeToUser(response.user)
+      } else {
+        await fetchCurrentUser()
       }
       initialized.value = true
       return response
@@ -252,37 +139,47 @@ export const useAuth = () => {
 
   const register = async (userData: Record<string, any>) => {
     try {
-      return await $fetch<any>(`${baseURL}/auth/register`, {
+      const response = await authFetch<any>(`${baseURL}/auth/register`, {
         method: 'POST',
         body: userData
       })
+      sessionActive.value = true
+      if (response.user) {
+        user.value = mapMeToUser(response.user)
+      } else {
+        await fetchCurrentUser()
+      }
+      initialized.value = true
+      return response
     } catch (error: any) {
       throw new Error(error.data?.message || lazyT()('auth.errors.register_failed'))
     }
   }
 
   const logout = async () => {
-    if (refreshToken.value) {
-      try {
-        await $fetch(`${baseURL}/auth/logout`, {
-          method: 'POST',
-          body: { refresh_token: refreshToken.value },
-          headers: token.value ? { Authorization: `Bearer ${token.value}` } : undefined
-        })
-      } catch {
-        // ignore logout API errors and clear local state anyway
-      }
+    try {
+      await authFetch(`${baseURL}/auth/logout`, { method: 'POST', body: {} })
+    } catch {
+      // ignore logout API errors
     }
-
     clearAuthState()
     initialized.value = false
     await navigateTo(localePath('/auth/login'))
   }
 
-  const resendVerificationEmail = async () => {
+  const resendVerificationEmail = async (email?: string) => {
     try {
-      return await $fetch<any>(`${baseURL}/auth/resend-verification`, {
-        method: 'POST'
+      if (sessionActive.value && user.value) {
+        return await authFetch<any>(`${baseURL}/auth/resend-verification`, {
+          method: 'POST'
+        })
+      }
+      if (!email?.trim()) {
+        throw new Error(lazyT()('auth.errors.resend_failed'))
+      }
+      return await authFetch<any>(`${baseURL}/auth/resend-verification-public`, {
+        method: 'POST',
+        body: { email: email.trim() }
       })
     } catch (error: any) {
       throw new Error(error.data?.message || lazyT()('auth.errors.resend_failed'))
@@ -291,8 +188,7 @@ export const useAuth = () => {
 
   const verifyEmail = async (token: string) => {
     try {
-      // R4-06/backend: VerifyEmail endpoint is POST with token in body
-      return await $fetch<any>(`${baseURL}/auth/verify-email`, {
+      return await authFetch<any>(`${baseURL}/auth/verify-email`, {
         method: 'POST',
         body: { token }
       })
@@ -301,17 +197,23 @@ export const useAuth = () => {
     }
   }
 
+  /** @deprecated HttpOnly cookie 模式下无客户端 token，SSE 请用 credentials:'include' */
+  const token = computed(() => null as string | null)
+
   return {
     user,
     token,
     isAuthenticated,
     isAdmin,
+    isSupplier,
     isPending,
     login,
     register,
     logout,
     initAuth,
+    refreshAccessToken,
     resendVerificationEmail,
-    verifyEmail
+    verifyEmail,
+    authFetch
   }
 }

@@ -131,7 +131,8 @@ definePageMeta({
 })
 
 const route = useRoute()
-const { token, user: authUser } = useAuth()
+const { user: authUser } = useAuth()
+const { adminGetUser, adminUpdateUserStatus, adminUpdateUserRole, adminUpdateUser, adminDeleteUser } = useApi()
 const { t, te } = useI18n()
 const { enumLabel } = useDisplay()
 const localePath = useLocalePath()
@@ -141,8 +142,6 @@ if (authUser.value?.role !== 'superadmin') {
   navigateTo(localePath('/admin'))
 }
 
-const config = useRuntimeConfig()
-const baseURL = config.public.apiBase || '/api/v1'
 const id = route.params.id as string
 
 const user = ref<any>(null)
@@ -175,9 +174,7 @@ const fetchUser = async () => {
   pending.value = true
   
   try {
-    const res = await $fetch<any>(`${baseURL}/admin/users/${id}`, {
-      headers: { Authorization: `Bearer ${token.value}` }
-    })
+    const res = await adminGetUser(id)
     user.value = res
     statusInput.value = res.status
     roleInput.value = res.role?.name || res.role || 'customer'
@@ -198,11 +195,7 @@ const updateStatus = async () => {
   updateError.value = false
   
   try {
-    await $fetch(`${baseURL}/admin/users/${id}/status`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${token.value}` },
-      body: { status: statusInput.value }
-    })
+    await adminUpdateUserStatus(id, statusInput.value)
     user.value.status = statusInput.value
     updateMessage.value = t('admin.user_detail.status_updated')
     
@@ -221,15 +214,11 @@ const updateProfile = async () => {
   updateError.value = false
 
   try {
-    const res = await $fetch<any>(`${baseURL}/admin/users/${id}`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${token.value}` },
-      body: {
-        firstName: profileInput.firstName,
-        lastName: profileInput.lastName,
-        company: profileInput.company,
-        phone: profileInput.phone
-      }
+    const res = await adminUpdateUser(id, {
+      firstName: profileInput.firstName,
+      lastName: profileInput.lastName,
+      company: profileInput.company,
+      phone: profileInput.phone
     })
 
     user.value = res
@@ -248,13 +237,7 @@ const updateRole = async () => {
   updateError.value = false
 
   try {
-    await $fetch<any>(`${baseURL}/admin/users/${id}/role`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${token.value}` },
-      body: {
-        roleName: roleInput.value
-      }
-    })
+    await adminUpdateUserRole(id, roleInput.value)
 
     if (user.value) {
       user.value.role = { ...(user.value.role || {}), name: roleInput.value }
@@ -276,10 +259,7 @@ const deleteUser = async () => {
   updateError.value = false
 
   try {
-    await $fetch(`${baseURL}/admin/users/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token.value}` }
-    })
+    await adminDeleteUser(id)
     await navigateTo(localePath('/admin/users'))
   } catch (err: any) {
     updateError.value = true

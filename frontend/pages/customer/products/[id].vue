@@ -21,7 +21,7 @@
         <!-- Product Images -->
         <div class="space-y-4">
           <div class="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50">
-            <img v-if="selectedImage" :src="selectedImage" :alt="product.name" class="w-full h-full object-cover" />
+            <img v-if="selectedImage" :src="selectedImage" :alt="tField(product, 'name')" class="w-full h-full object-cover" />
             <div v-else class="w-full h-full flex items-center justify-center">
               <Icon name="heroicons:cube" class="h-24 w-24 text-orange-200" />
             </div>
@@ -46,9 +46,9 @@
 
         <!-- Product Info -->
         <div>
-          <div class="text-sm text-orange-600 font-medium mb-1">{{ product.category }}</div>
-          <h1 class="text-3xl font-bold text-gray-900 mb-3">{{ product.name }}</h1>
-          <p class="text-gray-600 mb-6">{{ product.summary || product.description }}</p>
+          <div class="text-sm text-orange-600 font-medium mb-1">{{ tField(product, 'category') }}</div>
+          <h1 class="text-3xl font-bold text-gray-900 mb-3">{{ tField(product, 'name') }}</h1>
+          <p class="text-gray-600 mb-6">{{ tField(product, 'summary') || tField(product, 'description') }}</p>
 
           <!-- Price & MOQ -->
           <div class="bg-white rounded-xl border border-orange-100 p-5 mb-6">
@@ -137,7 +137,7 @@
               <div>
                 <h3 class="font-semibold text-gray-900">{{ t('customer.products.oem_available') }}</h3>
                 <p class="text-sm text-gray-600 mt-1">{{ t('customer.products.oem_private_label_hint') }}</p>
-                <NuxtLink :to="localePath('/customer/oem-projects/new')" class="inline-flex items-center gap-1 mt-2 text-sm text-orange-600 hover:text-orange-700 font-medium">
+                <NuxtLink :to="oemNewLink" class="inline-flex items-center gap-1 mt-2 text-sm text-orange-600 hover:text-orange-700 font-medium">
                   {{ t('customer.products.start_oem') }}
                   <Icon name="heroicons:arrow-right" class="h-4 w-4" />
                 </NuxtLink>
@@ -152,12 +152,17 @@
               <Icon v-else name="heroicons:paper-airplane" class="h-5 w-5" />
               {{ submitting ? t('customer.products.submitting') : t('customer.products.submit_request') }}
             </button>
+            <button @click="addToCart" :disabled="addingToCart" class="w-full py-3 border-2 border-orange-500 text-orange-600 font-semibold rounded-xl hover:bg-orange-50 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+              <Icon v-if="addingToCart" name="heroicons:arrow-path" class="h-5 w-5 animate-spin" />
+              <Icon v-else name="heroicons:shopping-cart" class="h-5 w-5" />
+              {{ addingToCart ? t('customer.products.submitting') : t('customer.products.add_to_cart') }}
+            </button>
             <div class="flex gap-3">
-              <NuxtLink :to="`${localePath('/customer/inquiries/new')}?product=${product.id}&name=${encodeURIComponent(product.name)}`" class="flex-1 py-3 border-2 border-orange-500 text-orange-600 font-semibold rounded-xl hover:bg-orange-50 transition-colors flex items-center justify-center gap-2">
+              <NuxtLink :to="`${localePath('/customer/inquiries/new')}?productId=${product.id}&name=${encodeURIComponent(tField(product, 'name'))}`" class="flex-1 py-3 border-2 border-orange-500 text-orange-600 font-semibold rounded-xl hover:bg-orange-50 transition-colors flex items-center justify-center gap-2">
                 <Icon name="heroicons:chat-bubble-left" class="h-5 w-5" />
                 {{ t('customer.products.inquire') }}
               </NuxtLink>
-              <NuxtLink v-if="product.oemAvailable" :to="localePath('/customer/oem-projects/new')" class="px-6 py-3 border-2 border-orange-500 text-orange-600 font-semibold rounded-xl hover:bg-orange-50 transition-colors flex items-center justify-center gap-2">
+              <NuxtLink v-if="product.oemAvailable" :to="oemNewLink" class="px-6 py-3 border-2 border-orange-500 text-orange-600 font-semibold rounded-xl hover:bg-orange-50 transition-colors flex items-center justify-center gap-2">
                 <Icon name="heroicons:sparkles" class="h-5 w-5" />
                 {{ t('customer.products.oem_short') }}
               </NuxtLink>
@@ -185,59 +190,59 @@
             <div class="border-t border-gray-200 pt-6">
               <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ t('customer.products.product_details') }}</h3>
               <div class="grid grid-cols-2 gap-4">
-                <div v-if="product.leadTime">
+                <div v-if="tField(product, 'leadTime')">
                   <p class="text-sm text-gray-500">{{ t('customer.products.lead_time') }}</p>
-                  <p class="font-medium text-gray-900">{{ product.leadTime }}</p>
+                  <p class="font-medium text-gray-900">{{ tField(product, 'leadTime') }}</p>
                 </div>
-                <div v-if="product.shelfLife">
+                <div v-if="tField(product, 'shelfLife')">
                   <p class="text-sm text-gray-500">{{ t('customer.products.shelf_life') }}</p>
-                  <p class="font-medium text-gray-900">{{ product.shelfLife }}</p>
+                  <p class="font-medium text-gray-900">{{ tField(product, 'shelfLife') }}</p>
                 </div>
-                <div v-if="product.storage">
+                <div v-if="tField(product, 'storage')">
                   <p class="text-sm text-gray-500">{{ t('customer.products.storage') }}</p>
-                  <p class="font-medium text-gray-900">{{ product.storage }}</p>
+                  <p class="font-medium text-gray-900">{{ tField(product, 'storage') }}</p>
                 </div>
               </div>
             </div>
 
             <!-- Flavors -->
-            <div v-if="product.flavors?.length">
+            <div v-if="tArray(product, 'flavors').length">
               <h4 class="text-sm font-medium text-gray-700 mb-2">{{ t('customer.products.flavors') }}</h4>
               <div class="flex flex-wrap gap-2">
-                <span v-for="flavor in product.flavors" :key="flavor" class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full text-sm">
+                <span v-for="flavor in tArray(product, 'flavors')" :key="flavor" class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full text-sm">
                   {{ flavor }}
                 </span>
               </div>
             </div>
 
             <!-- Shapes -->
-            <div v-if="product.shapes?.length">
+            <div v-if="tArray(product, 'shapes').length">
               <h4 class="text-sm font-medium text-gray-700 mb-2">{{ t('customer.products.shapes') }}</h4>
               <div class="flex flex-wrap gap-2">
-                <span v-for="shape in product.shapes" :key="shape" class="px-3 py-1.5 bg-orange-50 text-orange-700 rounded-full text-sm">
+                <span v-for="shape in tArray(product, 'shapes')" :key="shape" class="px-3 py-1.5 bg-orange-50 text-orange-700 rounded-full text-sm">
                   {{ shape }}
                 </span>
               </div>
             </div>
 
             <!-- Certifications -->
-            <div v-if="product.certifications?.length">
+            <div v-if="tArray(product, 'certifications').length">
               <h4 class="text-sm font-medium text-gray-700 mb-2">{{ t('customer.products.certifications') }}</h4>
               <div class="flex flex-wrap gap-2">
-                <span v-for="cert in product.certifications" :key="cert" class="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-sm">
+                <span v-for="cert in tArray(product, 'certifications')" :key="cert" class="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-sm">
                   {{ cert }}
                 </span>
               </div>
             </div>
 
             <!-- Ingredients & Allergens -->
-            <div v-if="product.ingredients">
+            <div v-if="tField(product, 'ingredients')">
               <h4 class="text-sm font-medium text-gray-700 mb-2">{{ t('customer.products.ingredients') }}</h4>
-              <p class="text-sm text-gray-600">{{ product.ingredients }}</p>
+              <p class="text-sm text-gray-600">{{ tField(product, 'ingredients') }}</p>
             </div>
-            <div v-if="product.allergens">
+            <div v-if="tField(product, 'allergens')">
               <h4 class="text-sm font-medium text-gray-700 mb-2">{{ t('customer.products.allergens') }}</h4>
-              <p class="text-sm text-amber-600">{{ product.allergens }}</p>
+              <p class="text-sm text-amber-600">{{ tField(product, 'allergens') }}</p>
             </div>
           </div>
         </div>
@@ -247,7 +252,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useTranslation } from '~/composables/useTranslation'
 
 definePageMeta({
   layout: 'customer',
@@ -255,9 +261,11 @@ definePageMeta({
 })
 
 const { t } = useI18n()
+const { tField, tArray } = useTranslation()
 const localePath = useLocalePath()
 const { currencyOrDefault: cur, formatNumber } = useDisplay()
 const api = useApi()
+const toast = useToast()
 const route = useRoute()
 
 const product = ref<any>(null)
@@ -269,6 +277,7 @@ const contractPrice = ref<number | null>(null)
 const loadingPrice = ref(false)
 const shippingCountry = ref('')
 const submitting = ref(false)
+const addingToCart = ref(false)
 const showSuccess = ref(false)
 
 // SKU variants
@@ -297,6 +306,22 @@ const allImages = computed(() => {
 
 // Displayed unit price: contract price takes priority over public price
 const displayPrice = computed(() => contractPrice.value ?? product.value?.basePrice ?? 0)
+
+/** 跳转 OEM 新建页并携带当前产品上下文 */
+const oemNewLink = computed(() => {
+  if (!product.value?.id) return localePath('/customer/oem-projects/new')
+  const params = new URLSearchParams({ productId: product.value.id })
+  const name = tField(product.value, 'name')
+  if (name) params.set('productName', name)
+  if (product.value.moq) params.set('moq', String(product.value.moq))
+  const flavor = selectedFlavor.value || tArray(product.value, 'flavors')[0]
+  if (flavor) params.set('flavor', flavor)
+  const shape = tArray(product.value, 'shapes')[0]
+  if (shape) params.set('shape', shape)
+  const certs = tArray(product.value, 'certifications')
+  if (certs.length) params.set('certifications', certs.join(','))
+  return `${localePath('/customer/oem-projects/new')}?${params.toString()}`
+})
 
 const fetchProduct = async () => {
   pending.value = true
@@ -348,7 +373,6 @@ watch(quantity, () => { fetchContractPrice() })
 const submitOrderRequest = async () => {
   submitting.value = true
   try {
-    // Create order directly with the selected product
     await api.createOrder({
       items: [{
         productId: product.value.id,
@@ -356,27 +380,38 @@ const submitOrderRequest = async () => {
         unitPrice: displayPrice.value,
         specifications: selectedVariant.value?.sku || ''
       }],
+      incoterms: 'FOB',
       shippingAddress: { country: shippingCountry.value || '' } as any
     })
     showSuccess.value = true
   } catch (err: any) {
-    // Fallback: add to cart then navigate to cart
-    try {
-      await api.addToCart(product.value.id, {
-        quantity: quantity.value,
-        unitPrice: displayPrice.value,
-        specifications: selectedVariant.value?.sku || ''
-      })
-      await navigateTo(localePath('/customer/cart'))
-    } catch (cartErr: any) {
-      alert(cartErr?.message || t('errors.api.cart_submit_failed'))
-    }
+    alert(err?.message || t('errors.api.order_submit_failed'))
   } finally {
     submitting.value = false
   }
 }
 
+const addToCart = async () => {
+  if (!product.value?.id) return
+  addingToCart.value = true
+  try {
+    await api.addToCart(product.value.id, {
+      quantity: quantity.value,
+      unitPrice: displayPrice.value,
+      specifications: selectedVariant.value?.sku || ''
+    })
+    toast.success(t('customer.products.added_to_cart'))
+  } catch (err: any) {
+    alert(err?.message || t('errors.api.cart_submit_failed'))
+  } finally {
+    addingToCart.value = false
+  }
+}
+
 onMounted(fetchProduct)
+watch(() => route.params.id, (id) => {
+  if (id) fetchProduct()
+})
 </script>
 
 <style scoped>

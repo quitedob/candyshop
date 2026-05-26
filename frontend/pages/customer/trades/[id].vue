@@ -274,7 +274,7 @@ const sendMessage = () => {
 
 const streamFetch = async (url: string) => {
   try {
-    const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token.value}` } })
+    const response = await fetch(url, { credentials: 'include' })
     if (!response.ok) {
       messages.value.push({ role: 'ai', content: `*${t('customer.trades.error_connecting')}*`, sender: 'System' })
       isStreaming.value = false

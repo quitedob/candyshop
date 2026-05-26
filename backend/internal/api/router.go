@@ -15,6 +15,7 @@ import (
 	"candypro/api/internal/config"
 	"candypro/api/internal/handlers"
 	productRepo "candypro/api/internal/repository/product"
+	commonRepo "candypro/api/internal/repository/common"
 	"candypro/api/internal/middleware"
 	"candypro/api/internal/pkg/response"
 
@@ -77,6 +78,9 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 	}
 	router.Use(cors.New(corsConfig))
 
+	// Cookie CSRF：变更请求校验 Origin（Bearer 客户端跳过）
+	router.Use(middleware.CookieCSRFGuard(cfg))
+
 	// Locale middleware — sets "locale" in gin.Context for i18n
 	router.Use(middleware.LocaleMiddleware())
 
@@ -104,12 +108,20 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 		middleware.PublicInquiryRateLimit(inquiryPublicLimiter, cfg.Security.PublicInquiryRateLimitPerMinute),
 	}
 
+	// Idempotency middleware: when a request carries an Idempotency-Key header
+	// we cache (status, body) per (user, method, path, key). Replays with the
+	// same body return the cached response; conflicting bodies get 409 (M-17).
+	var idempotency gin.HandlerFunc = func(c *gin.Context) { c.Next() }
+	if db != nil {
+		idempotency = middleware.Idempotency(commonRepo.NewIdempotencyKeyRepository(db), nil)
+	}
+
 	// API routes
 	api := router.Group("/api/v1")
 	{
 		// Public routes (preferred explicit namespace)
 		public := api.Group("/public")
-		publicroutes.Register(public, h, publicInquiryMiddlewares...)
+		publicroutes.Register(public, h, cfg, publicInquiryMiddlewares...)
 
 		// Auth routes
 		auth := api.Group("/auth")
@@ -117,21 +129,23 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 
 		// User routes (Protected)
 		user := api.Group("/user")
+		user.Use(idempotency)
 		userportalroutes.Register(user, h, cfg, db)
 
 		// Admin routes (Protected)
 		admin := api.Group("/admin")
+		admin.Use(idempotency)
 		adminportalroutes.Register(admin, h, cfg)
 
 		// System routes (preferred explicit namespace)
 		system := api.Group("/system")
 		systemroutes.Register(system, h, cfg, publicAIMiddlewares...)
 
-		// Supplier portal routes (API key auth)
-		if db != nil {
+		// Supplier portal routes（默认关闭，设 ENABLE_SUPPLIER_PORTAL=true 启用）
+		if cfg.Security.EnableSupplierPortal && db != nil {
 			supplierRepo := productRepo.NewSupplierRepository(db)
 			supplier := api.Group("/supplier")
-			supplier.Use(middleware.SupplierAuthMiddleware(supplierRepo))
+			supplier.Use(middleware.SupplierAuthMiddleware(cfg, supplierRepo))
 			{
 				supplier.GET("/profile", h.AdminPortal.SupplierGetProfile)
 				supplier.PUT("/profile", h.AdminPortal.SupplierUpdateProfile)
@@ -146,13 +160,23 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
 
-	// Health check — lightweight liveness probe (no dependency checks).
+	// Health check — liveness with optional DB ping.
 	router.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
+		status := gin.H{
 			"status":  "ok",
 			"service": "candypro-api",
 			"version": "1.0.0",
-		})
+		}
+		if db != nil {
+			sqlDB, err := db.DB()
+			if err != nil || sqlDB.Ping() != nil {
+				status["db"] = "down"
+				c.JSON(http.StatusServiceUnavailable, status)
+				return
+			}
+			status["db"] = "up"
+		}
+		c.JSON(http.StatusOK, status)
 	})
 
 	// Readiness check — verifies critical dependencies before serving traffic.
@@ -171,7 +195,15 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 		}
 
 		if h.System != nil && !h.System.IsAgentReady() {
-			failures = append(failures, "ai_agent_not_ready")
+			// AI 为可选依赖，不影响核心 B2B 流量就绪
+			status := gin.H{
+				"status":  "ready",
+				"service": "candypro-api",
+				"version": "1.0.0",
+				"warnings": []string{"ai_agent_not_ready"},
+			}
+			c.JSON(http.StatusOK, status)
+			return
 		}
 
 		if len(failures) > 0 {
@@ -190,7 +222,7 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 	})
 
 		// Prometheus metrics endpoint
-		router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+		router.GET("/metrics", middleware.MetricsAuth(), gin.WrapH(promhttp.Handler()))
 
 	// 404 handler
 	router.NoRoute(func(c *gin.Context) {

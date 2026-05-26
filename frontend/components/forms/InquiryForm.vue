@@ -167,9 +167,9 @@
           id="files"
           :label="$t('form.upload_files')"
           :error="form.errors.files?.[0]"
-          :max-files="5"
-          :max-size="5"
-          accept="image/jpeg,image/png,image/webp,application/pdf"
+          :max-files="INQUIRY_MAX_FILES"
+          :max-size="INQUIRY_MAX_FILE_MB"
+          :accept="INQUIRY_ACCEPT_ATTR"
           @files-selected="form.handleFileUpload"
         />
         <div v-if="form.state.files.length > 0" class="inquiry-form__files">
@@ -216,12 +216,20 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useInquiry } from '~/composables/useInquiry'
+import {
+  INQUIRY_ACCEPT_ATTR,
+  INQUIRY_MAX_FILES,
+  INQUIRY_MAX_FILE_MB
+} from '~/utils/inquiryAttachments'
 
 interface Props {
   productSlug?: string
+  productId?: string
   productName?: string
   category?: string
   userId?: string
+  /** 已登录时使用客户门户询价端点 */
+  useCustomerEndpoint?: boolean
 }
 
 const props = defineProps<Props>()
@@ -232,6 +240,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const form = useInquiry({
+  submitMode: props.useCustomerEndpoint ? 'customer' : 'public',
   onSuccess: (response) => {
     emit('success')
   }
@@ -290,6 +299,9 @@ if (props.productName) {
   productsInput.value = props.productName
   form.state.interestedProducts = [props.productName]
 }
+if (props.productId) {
+  form.state.productIds = [props.productId]
+}
 if (props.productSlug) {
   form.state.message = form.state.message
     ? form.state.message
@@ -299,14 +311,19 @@ if (props.productSlug) {
 // Ensure the form never shows a stale submitted state from a previous navigation or SSR
 onMounted(() => {
   form.isSubmitted = false
+  // 从 URL 查询参数预填（contact 页等入口）
+  form.populateFromQuery()
   // Associate user ID if logged in
   if (props.userId) {
     ;(form.state as any).userId = props.userId
   }
-  // Re-apply pre-fill after mount (reset clears it)
+  // Re-apply product props after mount（优先级高于 query）
   if (props.productName) {
     productsInput.value = props.productName
     form.state.interestedProducts = [props.productName]
+  }
+  if (props.productId) {
+    form.state.productIds = [props.productId]
   }
   if (props.productSlug) {
     form.state.message = `Product: ${props.productName || props.productSlug}${props.category ? ` (${props.category})` : ''}`

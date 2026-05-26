@@ -4,6 +4,7 @@ import (
 	"candypro/api/internal/models/common"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type TranslationRepository struct {
@@ -87,18 +88,28 @@ func (r *TranslationRepository) FindAllActive() ([]common.Translation, error) {
 }
 
 func (r *TranslationRepository) BulkUpsert(translations []common.Translation) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		for i := range translations {
-			if err := tx.Where("key = ? AND locale = ?", translations[i].Key, translations[i].Locale).
-				Assign(map[string]any{
-					"value":      translations[i].Value,
-					"group":      translations[i].Group,
-					"is_active":  translations[i].IsActive,
-					"updated_by": translations[i].UpdatedBy,
-				}).FirstOrCreate(&translations[i]).Error; err != nil {
-				return err
-			}
-		}
+	if len(translations) == 0 {
 		return nil
-	})
+	}
+	// R2 E-10: previously this was a per-row FirstOrCreate inside a transaction —
+	// 500 imported translations meant 500 round-trips. Replace with a single
+	// ON CONFLICT (key, locale) DO UPDATE batch insert. The unique index
+	// idx_trans_key_locale on the Translation model is the conflict target.
+	// Batch size of 200 keeps PostgreSQL's bind-parameter count safely under
+	// the default 65535 limit (~7 columns × 200 rows = 1.4k params).
+	//
+	// Note: we list the update columns explicitly rather than using
+	// AssignmentColumns(["group", ...]) because "group" is a PostgreSQL
+	// reserved word and AssignmentColumns doesn't quote identifiers — manual
+	// expressions referencing EXCLUDED.* sidestep the quoting issue.
+	return r.db.Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "key"}, {Name: "locale"}},
+		DoUpdates: clause.Assignments(map[string]any{
+			"value":      gorm.Expr(`EXCLUDED.value`),
+			`"group"`:    gorm.Expr(`EXCLUDED."group"`),
+			"is_active":  gorm.Expr(`EXCLUDED.is_active`),
+			"updated_by": gorm.Expr(`EXCLUDED.updated_by`),
+			"updated_at": gorm.Expr(`EXCLUDED.updated_at`),
+		}),
+	}).CreateInBatches(translations, 200).Error
 }

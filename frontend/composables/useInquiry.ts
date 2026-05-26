@@ -3,7 +3,12 @@
  * Handles inquiry form state, validation, and submission
  */
 
-import { reactive, ref } from 'vue'
+import {
+  INQUIRY_ACCEPT_ATTR,
+  INQUIRY_MAX_FILES,
+  INQUIRY_MAX_FILE_MB,
+  isInquiryAttachmentAllowed
+} from '~/utils/inquiryAttachments'
 import { useI18n, useLocalePath } from '#i18n'
 import { useRoute, useRouter, useNuxtApp } from '#app'
 
@@ -15,6 +20,7 @@ interface InquiryFormState {
   targetCountry: string
   estimatedQuantity: string
   interestedProducts: string[]
+  productIds: string[]
   packagingRequirements: string
   flavorRequirements: string
   oemNeeded: boolean | null
@@ -40,11 +46,14 @@ interface ValidationErrors {
 interface InquiryFormOptions {
   onSuccess?: (response: { success: boolean; message: string; inquiryId?: string }) => void
   onError?: (error: { message: string }) => void
+  /** public=匿名访客端点；customer=已登录客户门户端点 */
+  submitMode?: 'public' | 'customer'
 }
 
 export const useInquiry = (options: InquiryFormOptions = {}) => {
   const { t, te } = useI18n()
-  const { submitInquiry } = useApi()
+  const { submitInquiry, submitCustomerInquiry } = useApi()
+  const submitFn = options.submitMode === 'customer' ? submitCustomerInquiry : submitInquiry
 
   // Form state
   const state = reactive<InquiryFormState>({
@@ -55,6 +64,7 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
     targetCountry: '',
     estimatedQuantity: '',
     interestedProducts: [],
+    productIds: [],
     packagingRequirements: '',
     flavorRequirements: '',
     oemNeeded: null,
@@ -77,6 +87,7 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
     targetCountry: {},
     estimatedQuantity: {},
     interestedProducts: {},
+    productIds: {},
     packagingRequirements: {},
     flavorRequirements: {},
     oemNeeded: {},
@@ -103,9 +114,9 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
       }
     }
 
-    // Email validation
+    // Email validation — aligned with backend binding:"email" (validation.IsValidEmail)
     if (rule.email && typeof value === 'string' && value) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
       if (!emailRegex.test(value)) {
         fieldErrors.push(t('validation.email'))
       }
@@ -211,6 +222,7 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
     state.targetCountry = ''
     state.estimatedQuantity = ''
     state.interestedProducts = []
+    state.productIds = []
     state.packagingRequirements = ''
     state.flavorRequirements = ''
     state.oemNeeded = null
@@ -227,9 +239,8 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
   const handleFileUpload = (files: FileList | null) => {
     if (!files) return
 
-    const maxFiles = 5
-    const maxSize = 5 * 1024 * 1024 // 5MB
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+    const maxFiles = INQUIRY_MAX_FILES
+    const maxSize = INQUIRY_MAX_FILE_MB * 1024 * 1024
 
     Array.from(files).forEach(file => {
       // Check file count
@@ -240,12 +251,12 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
 
       // Check file size
       if (file.size > maxSize) {
-        errors.value.files = [t('form.file_too_large', { name: file.name, max: 5 })]
+        errors.value.files = [t('form.file_too_large', { name: file.name, max: INQUIRY_MAX_FILE_MB })]
         return
       }
 
       // Check file type
-      if (!allowedTypes.includes(file.type)) {
+      if (!isInquiryAttachmentAllowed(file)) {
         errors.value.files = [t('form.file_type_unsupported', { name: file.name })]
         return
       }
@@ -278,7 +289,7 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
     isSubmitting.value = true
 
     try {
-      const response = await submitInquiry({
+      const response = await submitFn({
         companyName: state.companyName,
         contactPerson: state.contactPerson,
         email: state.email,
@@ -286,6 +297,7 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
         targetCountry: state.targetCountry || undefined,
         estimatedQuantity: state.estimatedQuantity || undefined,
         interestedProducts: state.interestedProducts,
+        productIds: state.productIds.length ? state.productIds : undefined,
         packagingRequirements: state.packagingRequirements || undefined,
         flavorRequirements: state.flavorRequirements || undefined,
         oemNeeded: state.oemNeeded === true,
@@ -319,7 +331,14 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
     if (route.query.company) state.companyName = String(route.query.company)
     if (route.query.contact) state.contactPerson = String(route.query.contact)
     if (route.query.email) state.email = String(route.query.email)
-    if (route.query.product) state.interestedProducts = [String(route.query.product)]
+    if (route.query.name) {
+      state.interestedProducts = [String(route.query.name)]
+    } else if (route.query.product) {
+      state.interestedProducts = [String(route.query.product)]
+    }
+    if (route.query.productId) {
+      state.productIds = [String(route.query.productId)]
+    }
     if (route.query.quantity) state.estimatedQuantity = String(route.query.quantity)
     if (route.query.country) state.targetCountry = String(route.query.country)
     if (route.query.message) state.message = String(route.query.message)
@@ -352,7 +371,7 @@ export const useQuickInquiry = () => {
   const { $localePath } = useNuxtApp()
   const localePath = $localePath || useLocalePath()
 
-  const openInquiry = (product?: { name: string; category: string }, isSample = false) => {
+  const openInquiry = (product?: { id?: string; name: string; category: string }, isSample = false) => {
     const router = useRouter()
     const route = useRoute()
     const { isAuthenticated } = useAuth()
@@ -367,7 +386,8 @@ export const useQuickInquiry = () => {
     const query: Record<string, string> = {}
 
     if (product) {
-      query.product = product.name
+      query.name = product.name
+      if ('id' in product && product.id) query.productId = product.id
       query.category = product.category
       if (isSample) {
         query.message = 'I would like to request a sample for this product.'

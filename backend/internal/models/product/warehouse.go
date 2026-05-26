@@ -20,7 +20,7 @@ type Warehouse struct {
 type WarehouseStock struct {
 	ID          uint      `json:"id" gorm:"primaryKey"`
 	WarehouseID string    `json:"warehouseId" gorm:"not null;uniqueIndex:idx_wh_prod"`
-	ProductID   string    `json:"productId" gorm:"not null;uniqueIndex:idx_wh_prod"`
+	ProductID   string    `json:"productId" gorm:"not null;uniqueIndex:idx_wh_prod;index"`
 	VariantID   *string   `json:"variantId" gorm:"index"`
 	Quantity    int       `json:"quantity" gorm:"default:0"`
 	Reserved    int       `json:"reserved" gorm:"default:0"` // reserved for pending orders
@@ -30,14 +30,14 @@ type WarehouseStock struct {
 // ProductBatch represents a production batch with traceability info.
 type ProductBatch struct {
 	ID             string    `json:"id" gorm:"primaryKey"`
-	ProductID      string    `json:"productId" gorm:"not null;index"`
+	ProductID      string    `json:"productId" gorm:"not null;index:idx_batch_fefo,priority:1"`
 	VariantID      *string   `json:"variantId" gorm:"index"`
-	WarehouseID    string    `json:"warehouseId" gorm:"not null;index"`
+	WarehouseID    string    `json:"warehouseId" gorm:"not null;index:idx_batch_fefo,priority:2"`
 	BatchNumber    string    `json:"batchNumber" gorm:"uniqueIndex;not null"`
 	Quantity       int       `json:"quantity" gorm:"default:0"`
 	UnitCost       float64   `json:"unitCost" gorm:"default:0"` // purchase unit cost
 	ProductionDate time.Time `json:"productionDate"`
-	ExpiryDate     time.Time `json:"expiryDate"`
+	ExpiryDate     time.Time `json:"expiryDate" gorm:"index:idx_batch_fefo,priority:3"`
 	IsExpired      bool      `json:"isExpired" gorm:"default:false"`
 	Notes          string    `json:"notes" gorm:"type:text"`
 	CreatedAt      time.Time `json:"createdAt"`

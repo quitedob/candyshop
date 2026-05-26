@@ -98,6 +98,57 @@ func (h *Handler) CustomerGetRequisitionList(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"list": list, "items": items})
 }
 
+func (h *Handler) CustomerUpdateRequisitionList(c *gin.Context) {
+	if h.services == nil || h.services.RequisitionList == nil {
+		response.ServiceUnavailableResp(c)
+		return
+	}
+	id := c.Param("id")
+	list, err := h.services.RequisitionList.FindByID(c.Request.Context(), id)
+	if err != nil {
+		response.ErrorResp(c, http.StatusNotFound, "requisition_list_not_found")
+		return
+	}
+	userID, ok := contextUserID(c)
+	if !ok || list.UserID != userID {
+		response.ErrorResp(c, http.StatusForbidden, "forbidden")
+		return
+	}
+	var req struct {
+		Name  *string `json:"name"`
+		Notes *string `json:"notes"`
+		Items []struct {
+			ProductID string `json:"productId" binding:"required"`
+			Quantity  int    `json:"quantity" binding:"required,min=1"`
+		} `json:"items"`
+	}
+	if !response.BindJSONOrInvalid(c, &req) {
+		return
+	}
+	if req.Name != nil {
+		list.Name = strings.TrimSpace(*req.Name)
+	}
+	if req.Notes != nil {
+		list.Notes = strings.TrimSpace(*req.Notes)
+	}
+	list.UpdatedAt = time.Now()
+	if err := h.services.RequisitionList.Update(c.Request.Context(), list); err != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "requisition_list_update_failed")
+		return
+	}
+	if req.Items != nil {
+		items := make([]modelsOrder.RequisitionListItem, len(req.Items))
+		for i, it := range req.Items {
+			items[i] = modelsOrder.RequisitionListItem{ProductID: it.ProductID, Quantity: it.Quantity}
+		}
+		if err := h.services.RequisitionList.UpdateItems(c.Request.Context(), id, items); err != nil {
+			response.ErrorResp(c, http.StatusInternalServerError, "requisition_list_update_failed")
+			return
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{"list": list})
+}
+
 func (h *Handler) CustomerDeleteRequisitionList(c *gin.Context) {
 	if h.services == nil || h.services.RequisitionList == nil {
 		response.ServiceUnavailableResp(c)
@@ -152,13 +203,15 @@ func (h *Handler) CustomerConvertRequisitionToOrder(c *gin.Context) {
 		}
 	}
 	order := &modelsOrder.Order{
-		ID:        crypto.GenerateID(),
-		UserID:    userID,
-		Status:    modelsOrder.OrderStatusPending,
-		Items:     orderItems,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		ID:            crypto.GenerateID(),
+		UserID:        userID,
+		Status:        modelsOrder.OrderStatusPendingConfirm,
+		StockReserved: false,
+		Items:         orderItems,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
 	}
+	h.assignOrderWarehouseID(c, &order.WarehouseID)
 	if err := h.services.Order.CreateOrder(c.Request.Context(), order); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "order_create_failed")
 		return
@@ -240,14 +293,15 @@ func (h *Handler) CustomerCreateBulkOrder(c *gin.Context) {
 	}
 
 	order := &modelsOrder.Order{
-		ID:        crypto.GenerateID(),
-		UserID:    userID,
-		Status:    modelsOrder.OrderStatusPending,
-		Items:     items,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		ID:            crypto.GenerateID(),
+		UserID:        userID,
+		Status:        modelsOrder.OrderStatusPendingConfirm,
+		StockReserved: false,
+		Items:         items,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
 	}
-
+	h.assignOrderWarehouseID(c, &order.WarehouseID)
 	if err := h.services.Order.CreateOrder(c.Request.Context(), order); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "bulk_order_create_failed")
 		return
@@ -282,14 +336,16 @@ func (h *Handler) CustomerReorderFromHistory(c *gin.Context) {
 	}
 
 	newOrder := &modelsOrder.Order{
-		ID:        crypto.GenerateID(),
-		UserID:    userID,
-		Status:    modelsOrder.OrderStatusPending,
-		Items:     sourceOrder.Items,
-		Currency:  sourceOrder.Currency,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		ID:            crypto.GenerateID(),
+		UserID:        userID,
+		Status:        modelsOrder.OrderStatusPendingConfirm,
+		StockReserved: false,
+		Items:         sourceOrder.Items,
+		Currency:      sourceOrder.Currency,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
 	}
+	h.assignOrderWarehouseID(c, &newOrder.WarehouseID)
 	if err := h.services.Order.CreateOrder(c.Request.Context(), newOrder); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "reorder_failed")
 		return

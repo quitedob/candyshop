@@ -89,7 +89,9 @@ func (h *Handler) handleStripePaymentFailed(c *gin.Context, paymentID string) {
 	}
 	if err := h.services.Payment.FailPayment(c.Request.Context(), paymentID); err != nil {
 		log.Printf("stripe webhook: failed to mark payment %s failed: %v", paymentID, err)
+		return
 	}
+	h.compensateOrderForFailedPayment(c, paymentID)
 }
 
 func (h *Handler) handleStripePaymentCanceled(c *gin.Context, paymentID string) {
@@ -98,5 +100,58 @@ func (h *Handler) handleStripePaymentCanceled(c *gin.Context, paymentID string) 
 	}
 	if err := h.services.Payment.FailPayment(c.Request.Context(), paymentID); err != nil {
 		log.Printf("stripe webhook: failed to cancel payment %s: %v", paymentID, err)
+		return
 	}
+	h.compensateOrderForFailedPayment(c, paymentID)
+}
+
+// compensateOrderForFailedPayment releases reserved stock and cancels the order
+// if the failed payment was the only live payment AND the order is still in a
+// state where compensation is meaningful (pending / pending_confirmation).
+//
+// H-21: previously a failed gateway payment left the order with reserved stock
+// indefinitely. Customers who never retried saw stock leak until the draft
+// expiry sweep eventually fired. With this hook the order is auto-cancelled
+// and stock returns to circulation immediately.
+func (h *Handler) compensateOrderForFailedPayment(c *gin.Context, paymentID string) {
+	if h.services == nil || h.services.Payment == nil || h.services.Order == nil {
+		return
+	}
+	ctx := c.Request.Context()
+	pay, err := h.services.Payment.GetPayment(ctx, paymentID)
+	if err != nil || pay == nil {
+		return
+	}
+	hasLive, err := h.services.Payment.HasLivePaymentForOrder(ctx, pay.OrderID)
+	if err != nil {
+		log.Printf("stripe webhook: HasLivePaymentForOrder %s: %v", pay.OrderID, err)
+		return
+	}
+	if hasLive {
+		// Another payment attempt is still pending/authorized/confirmed — no
+		// compensation needed; the order remains live.
+		return
+	}
+	order, err := h.services.Order.GetOrder(ctx, pay.OrderID)
+	if err != nil || order == nil {
+		return
+	}
+	// Only auto-cancel orders that haven't moved past the pre-execution stage.
+	switch order.Status {
+	case "pending", "pending_confirmation":
+	default:
+		return
+	}
+	if order.StockReserved {
+		if rerr := h.services.Order.ReleaseOrderStock(ctx, order); rerr != nil {
+			log.Printf("stripe webhook: ReleaseOrderStock for order %s: %v", order.ID, rerr)
+			return
+		}
+	}
+	order.Status = "cancelled"
+	if uerr := h.services.Order.UpdateOrder(ctx, order); uerr != nil {
+		log.Printf("stripe webhook: cancel order %s: %v", order.ID, uerr)
+		return
+	}
+	log.Printf("stripe webhook: order %s auto-cancelled after payment %s failure (H-21 compensation)", order.ID, paymentID)
 }

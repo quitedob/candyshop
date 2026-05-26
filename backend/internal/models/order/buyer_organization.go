@@ -39,9 +39,11 @@ func (OrgMember) TableName() string { return "org_members" }
 
 // ApprovalAction records an approval decision on a pending-approval order.
 type ApprovalAction struct {
-	ID        uint      `json:"id" gorm:"primaryKey;autoIncrement"`
-	OrderID   string    `json:"orderId" gorm:"not null;index"`
-	UserID    string    `json:"userId" gorm:"not null"`
+	ID      uint   `json:"id" gorm:"primaryKey;autoIncrement"`
+	OrderID string `json:"orderId" gorm:"not null;index"`
+	// R2 E-12: indexed so audit views and approver-history lookups don't
+	// trigger full-table scans of approval_actions.
+	UserID    string    `json:"userId" gorm:"not null;index"`
 	Action    string    `json:"action" gorm:"not null"` // approved, rejected, modified
 	Comment   string    `json:"comment"`
 	CreatedAt time.Time `json:"createdAt"`

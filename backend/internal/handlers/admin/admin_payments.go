@@ -87,12 +87,18 @@ func (h *Handler) AdminCreatePayment(c *gin.Context) {
 		return
 	}
 
+	method := strings.TrimSpace(req.Method)
+	if !modelsOrder.ValidPaymentMethods[method] {
+		response.InvalidResp(c, "invalid_request")
+		return
+	}
+
 	payment := &modelsOrder.Payment{
 		ID:        crypto.GenerateID(),
 		OrderID:   orderID,
 		Amount:    req.Amount,
 		Currency:  currency,
-		Method:    strings.TrimSpace(req.Method),
+		Method:    method,
 		Status:    "pending",
 		Reference: strings.TrimSpace(req.Reference),
 		ProofURL:  strings.TrimSpace(req.ProofURL),
@@ -110,6 +116,9 @@ func (h *Handler) AdminCreatePayment(c *gin.Context) {
 		response.ErrorResp(c, http.StatusInternalServerError, "payment_create_failed")
 		return
 	}
+
+	adminIDStr := c.GetString("userID")
+	h.logPaymentActivity(c, "payment_create", orderID, payment.ID, adminIDStr, payment.Amount)
 
 	c.JSON(http.StatusCreated, payment)
 }
@@ -137,18 +146,35 @@ func (h *Handler) AdminConfirmPayment(c *gin.Context) {
 		return
 	}
 
-	adminID, _ := c.Get("userID")
-	adminIDStr := ""
-	if id, ok := adminID.(string); ok {
-		adminIDStr = id
-	}
+	adminIDStr := c.GetString("userID")
 
-	if err := h.services.Payment.ConfirmPayment(c.Request.Context(), paymentID, adminIDStr); err != nil {
+	var confirmErr error
+	if h.services.GatewayPayment != nil && pay.GatewayTransactionID != nil && strings.TrimSpace(*pay.GatewayTransactionID) != "" {
+		confirmErr = h.services.GatewayPayment.CaptureAndConfirm(c.Request.Context(), pay, adminIDStr)
+	} else {
+		confirmErr = h.services.Payment.ConfirmPayment(c.Request.Context(), paymentID, adminIDStr)
+	}
+	if confirmErr != nil {
 		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	h.logPaymentActivity(c, "payment_confirm", orderID, paymentID, adminIDStr, pay.Amount)
+
+	if h.cfg != nil && h.cfg.Order.AutoInvoiceOnPayment && h.services.Invoice != nil {
+		existing, _ := h.services.Invoice.GetByOrderID(c.Request.Context(), orderID)
+		if len(existing) == 0 {
+			if inv, invErr := h.services.Invoice.CreateInvoiceFromOrder(c.Request.Context(), orderID, adminIDStr); invErr == nil && inv != nil && h.services.ActivityLog != nil {
+				details, _ := json.Marshal(map[string]interface{}{"orderId": orderID, "invoiceId": inv.ID, "amount": inv.Amount})
+				uid := adminIDStr
+				_ = h.services.ActivityLog.LogActivity(c.Request.Context(), &modelsCommon.ActivityLog{
+					ID: crypto.GenerateID(), UserID: &uid, Action: "invoice_auto_created",
+					EntityType: "order", EntityID: orderID, Details: string(details),
+					IPAddress: c.ClientIP(), UserAgent: c.GetHeader("User-Agent"), CreatedAt: time.Now(),
+				})
+			}
+		}
+	}
 
 	if h.services.Notification != nil {
 		if ord, err := h.services.Order.GetOrder(c.Request.Context(), orderID); err == nil {
@@ -158,6 +184,9 @@ func (h *Handler) AdminConfirmPayment(c *gin.Context) {
 				Reference: orderID,
 				Title:     "Payment Confirmed",
 				Message:   fmt.Sprintf("Your payment of %.2f for order #%s has been confirmed.", pay.Amount, ord.OrderNumber),
+			})
+			h.emitLifecycleEvent(c, modelsOrder.WebhookEventPaymentConfirmed, orderID, gin.H{
+				"orderId": orderID, "paymentId": paymentID, "amount": pay.Amount,
 			})
 		}
 	}
@@ -191,16 +220,17 @@ func (h *Handler) AdminRefundPayment(c *gin.Context) {
 		return
 	}
 
-	if err := h.services.Payment.RefundPayment(c.Request.Context(), paymentID); err != nil {
+	if h.services.GatewayPayment != nil && pay.GatewayTransactionID != nil {
+		if err := h.services.GatewayPayment.RefundGateway(c.Request.Context(), pay); err != nil {
+			response.InvalidResp(c, "invalid_request")
+			return
+		}
+	} else if err := h.services.Payment.RefundPayment(c.Request.Context(), paymentID); err != nil {
 		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
-	adminID, _ := c.Get("userID")
-	adminIDStr := ""
-	if id, ok := adminID.(string); ok {
-		adminIDStr = id
-	}
+	adminIDStr := c.GetString("userID")
 	h.logPaymentActivity(c, "payment_refund", orderID, paymentID, adminIDStr, pay.Amount)
 
 	if h.services.Notification != nil {
@@ -226,25 +256,39 @@ func (h *Handler) logPaymentActivity(c *gin.Context, action, orderID, paymentID,
 		return
 	}
 	if strings.TrimSpace(adminID) == "" {
-		log.Printf("payment_audit_skipped: empty admin user id action=%s orderId=%s paymentId=%s amount=%v ip=%s",
+		log.Printf("payment_audit: empty admin user id action=%s orderId=%s paymentId=%s amount=%v ip=%s",
 			action, orderID, paymentID, amount, c.ClientIP())
-		return
 	}
 	details, _ := json.Marshal(map[string]interface{}{
 		"orderId":   orderID,
 		"paymentId": paymentID,
 		"amount":    amount,
 	})
+	var uid *string
+	if strings.TrimSpace(adminID) != "" {
+		id := adminID
+		uid = &id
+	}
+	now := time.Now()
+	base := &modelsCommon.ActivityLog{
+		UserID:    uid,
+		Action:    action,
+		Details:   string(details),
+		IPAddress: c.ClientIP(),
+		UserAgent: c.GetHeader("User-Agent"),
+		CreatedAt: now,
+	}
+	// 付款实体日志（全局审计）
 	_ = h.services.ActivityLog.LogActivity(c.Request.Context(), &modelsCommon.ActivityLog{
-		ID:         crypto.GenerateID(),
-		UserID:     &adminID,
-		Action:     action,
-		EntityType: "payment",
-		EntityID:   paymentID,
-		Details:    string(details),
-		IPAddress:  c.ClientIP(),
-		UserAgent:  c.GetHeader("User-Agent"),
-		CreatedAt:  time.Now(),
+		ID: crypto.GenerateID(), UserID: base.UserID, Action: base.Action,
+		EntityType: "payment", EntityID: paymentID, Details: base.Details,
+		IPAddress: base.IPAddress, UserAgent: base.UserAgent, CreatedAt: base.CreatedAt,
+	})
+	// 订单实体日志（订单详情时间线）
+	_ = h.services.ActivityLog.LogActivity(c.Request.Context(), &modelsCommon.ActivityLog{
+		ID: crypto.GenerateID(), UserID: base.UserID, Action: base.Action,
+		EntityType: "order", EntityID: orderID, Details: base.Details,
+		IPAddress: base.IPAddress, UserAgent: base.UserAgent, CreatedAt: base.CreatedAt,
 	})
 }
 

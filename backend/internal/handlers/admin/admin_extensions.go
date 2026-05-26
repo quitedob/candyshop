@@ -5,7 +5,9 @@ import (
 	modelsProduct "candypro/api/internal/models/product"
 	modelsUser "candypro/api/internal/models/user"
 	"candypro/api/internal/pkg/pagination"
+	"candypro/api/internal/pkg/password"
 	"candypro/api/internal/pkg/response"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -66,15 +68,17 @@ func (h *Handler) GetInquiriesReport(c *gin.Context) {
 		return
 	}
 
+	// M-1: pull all status counts in a single GROUP BY query rather than firing
+	// one COUNT per status. Missing statuses surface as 0.
 	statuses := []string{"pending", "contacted", "quoted", "negotiating", "won", "lost", "closed"}
+	grouped, gerr := h.services.Inquiry.CountInquiriesByStatusGrouped(c.Request.Context())
+	if gerr != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
+		return
+	}
 	byStatus := make(map[string]int64, len(statuses))
 	for _, status := range statuses {
-		count, countErr := h.services.Inquiry.CountInquiriesByStatus(c.Request.Context(), status)
-		if countErr != nil {
-			response.ErrorResp(c, http.StatusInternalServerError, "dashboard_fetch_failed")
-			return
-		}
-		byStatus[status] = count
+		byStatus[status] = grouped[status]
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -113,6 +117,11 @@ func (h *Handler) AdminCreateUser(c *gin.Context) {
 	}
 	if exists {
 		response.ErrorResp(c, http.StatusConflict, "email_exists")
+		return
+	}
+
+	if msg := password.ValidatePasswordStrength(req.Password); msg != "" {
+		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
@@ -234,7 +243,13 @@ func (h *Handler) AdminGetInquiry(c *gin.Context) {
 		response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
-	c.JSON(http.StatusOK, inquiry)
+	resp := inquiryDetailResponse{Inquiry: inquiry, StatusHistory: []statusHistoryEntry{}}
+	if h.services.ActivityLog != nil {
+		if logs, logErr := h.services.ActivityLog.FindByEntity(c.Request.Context(), "inquiry", inquiryID); logErr == nil {
+			resp.StatusHistory = buildStatusHistoryFromLogs(logs, "inquiry_status_change")
+		}
+	}
+	c.JSON(http.StatusOK, resp)
 }
 
 // AdminAssignInquiry assigns inquiry to a sales/admin user.
@@ -273,7 +288,7 @@ func (h *Handler) AdminAssignInquiry(c *gin.Context) {
 	c.JSON(http.StatusOK, inquiry)
 }
 
-// AdminAnalyzeInquiry returns a lightweight AI-style analysis payload.
+// AdminAnalyzeInquiry 调用 AIService.AnalyzeInquiry 生成真实 AI 分析（非规则占位）。
 func (h *Handler) AdminAnalyzeInquiry(c *gin.Context) {
 	if h.services == nil {
 		response.ServiceUnavailableResp(c)
@@ -287,34 +302,72 @@ func (h *Handler) AdminAnalyzeInquiry(c *gin.Context) {
 		return
 	}
 
-	risk := "low"
-	if inquiry.EstimatedQuantity == "" || inquiry.TargetCountry == "" {
-		risk = "medium"
+	inquiryText := strings.TrimSpace(inquiry.Message)
+	if inquiryText == "" {
+		inquiryText = strings.TrimSpace(inquiry.InternalNotes)
 	}
-	if strings.Contains(strings.ToLower(inquiry.Message), "urgent") {
-		risk = "high"
+	if inquiryText == "" {
+		inquiryText = strings.TrimSpace(inquiry.CustomerNotes)
 	}
-	recommendedAction := "follow_up_with_quote"
-	if risk == "high" {
-		recommendedAction = "contact_within_2_hours"
+	if inquiryText == "" {
+		inquiryText = fmt.Sprintf("Company: %s; Contact: %s; Products: %v; Packaging: %s; Flavor: %s",
+			inquiry.CompanyName, inquiry.ContactPerson, inquiry.InterestedProducts,
+			inquiry.PackagingRequirements, inquiry.FlavorRequirements)
 	}
-	summary := "Inquiry has sufficient information for normal sales follow-up."
-	if risk == "medium" {
-		summary = "Inquiry requires clarification on quantity, market, or specs before quoting."
+
+	targetCountry := strings.TrimSpace(inquiry.TargetCountry)
+	if targetCountry == "" {
+		targetCountry = "global"
 	}
-	if risk == "high" {
-		summary = "Inquiry contains urgency signals and should be prioritized immediately."
+
+	if h.aiService == nil || !h.aiService.IsEnabled() {
+		response.ErrorResp(c, http.StatusServiceUnavailable, "ai_not_configured")
+		return
+	}
+
+	analysis, aiErr := h.aiService.AnalyzeInquiry(c.Request.Context(), inquiryText, targetCountry)
+	if aiErr != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "ai_analyze_failed")
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"inquiryId": inquiry.ID,
 		"analysis": gin.H{
 			"priority":          inquiry.Priority,
-			"riskLevel":         risk,
-			"recommendedAction": recommendedAction,
-			"summary":           summary,
+			"riskLevel":         inferInquiryRiskLevel(analysis, inquiry.Priority),
+			"recommendedAction": "ai_generated",
+			"summary":           strings.TrimSpace(analysis),
+			"targetCountry":     targetCountry,
 		},
 	})
+}
+
+// inferInquiryRiskLevel 从 AI 分析文本推断风险等级（非简单复用 priority）。
+func inferInquiryRiskLevel(analysis, fallback string) string {
+	lower := strings.ToLower(strings.TrimSpace(analysis))
+	highMarkers := []string{"high risk", "critical", "severe", "urgent compliance", "major concern", "significant risk"}
+	for _, m := range highMarkers {
+		if strings.Contains(lower, m) {
+			return "high"
+		}
+	}
+	lowMarkers := []string{"low risk", "straightforward", "minimal risk", "standard product"}
+	for _, m := range lowMarkers {
+		if strings.Contains(lower, m) {
+			return "low"
+		}
+	}
+	mediumMarkers := []string{"medium risk", "moderate", "caution", "some concerns"}
+	for _, m := range mediumMarkers {
+		if strings.Contains(lower, m) {
+			return "medium"
+		}
+	}
+	if fallback != "" {
+		return fallback
+	}
+	return "medium"
 }
 
 // AdminQuoteInquiry writes quote result back to inquiry.
@@ -438,7 +491,10 @@ func (h *Handler) AdminGetProducts(c *gin.Context) {
 
 	page, limit := pagination.ParsePagination(c, 20, 100)
 	category := strings.TrimSpace(c.Query("category"))
-	products, err := h.services.Product.GetProducts(c.Request.Context(), page, limit, category)
+	search := strings.TrimSpace(c.Query("search"))
+	status := strings.TrimSpace(c.Query("status"))
+
+	products, err := h.services.Product.GetProductsForAdmin(c.Request.Context(), page, limit, category, status, search)
 	if err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "product_fetch_failed")
 		return

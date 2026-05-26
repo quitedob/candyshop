@@ -12,5 +12,13 @@
   "po_number": "订单编号",
   "status": "状态",
   "expected_date": "预计交期",
-  "total": "总金额"
+  "total": "总金额",
+  "company_name": "公司名称",
+  "contact_email": "联系邮箱",
+  "portal_title": "CandyPro 供应商",
+  "actions": "操作",
+  "accept_po": "接受",
+  "mark_shipped": "标记发货",
+  "mark_received": "标记收货",
+  "profile_saved": "资料已保存"
 }

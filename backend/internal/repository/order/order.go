@@ -4,8 +4,9 @@ import (
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
 	"context"
+	"errors"
+	"fmt"
 	"log"
-	"sort"
 	"time"
 
 	"gorm.io/gorm"
@@ -62,7 +63,12 @@ func (r *OrderRepository) FindByID(ctx context.Context, id string) (*modelsOrder
 	return &order, nil
 }
 
-// FindByUserID returns paginated orders for a specific user
+// FindByUserID returns paginated orders for a specific user.
+//
+// Preloads User and Inquiry so list views and notifications don't have to
+// re-query each related row (H-4). Without this, downstream code that read
+// order.User.Email always saw nil and either skipped notifications or did
+// a per-row lookup.
 func (r *OrderRepository) FindByUserID(ctx context.Context, userID string, page, limit int) ([]modelsOrder.Order, int64, error) {
 	var orders []modelsOrder.Order
 	var total int64
@@ -74,7 +80,10 @@ func (r *OrderRepository) FindByUserID(ctx context.Context, userID string, page,
 	}
 
 	offset := (page - 1) * limit
-	if err := query.Offset(offset).Limit(limit).Order("created_at DESC").Find(&orders).Error; err != nil {
+	if err := query.
+		Preload("User").
+		Preload("Inquiry").
+		Offset(offset).Limit(limit).Order("created_at DESC").Find(&orders).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -109,9 +118,54 @@ func (r *OrderRepository) CreateWithStockReservation(ctx context.Context, order 
 	})
 }
 
-// Update updates an order
+// Update updates an order using full-row Save semantics. Internal callers
+// already populated the order from a fresh read, so this remains the default
+// path for Admin* handlers that read+mutate a complete struct.
+//
+// For high-contention paths prefer UpdateWithVersionGuard so concurrent writes
+// can't silently overwrite each other (C-5).
+//
+// M-9: even when callers don't request explicit version-guarding, we bump the
+// Version column on every Save so anyone holding a stale snapshot will fail
+// their next UpdateWithVersionGuard. This keeps the optimistic-lock contract
+// intact even for paths that haven't migrated to the guarded API yet.
 func (r *OrderRepository) Update(ctx context.Context, order *modelsOrder.Order) error {
+	if order != nil {
+		order.Version++
+	}
 	return r.db.WithContext(ctx).Omit("User", "Inquiry").Save(order).Error
+}
+
+// ErrOptimisticLockConflict 表示乐观锁版本号不匹配，调用方应重新读取并重试或上报。
+var ErrOptimisticLockConflict = errors.New("optimistic lock conflict")
+
+// UpdateWithVersionGuard performs an order update guarded by the Version column.
+// The provided Version is the version the caller observed; the row is updated
+// only if the DB still holds that version. On success, order.Version is
+// incremented so the caller can chain further operations safely (C-5).
+//
+// Returns ErrOptimisticLockConflict when the row has been modified concurrently.
+func (r *OrderRepository) UpdateWithVersionGuard(ctx context.Context, order *modelsOrder.Order, fields map[string]interface{}) error {
+	if order == nil || order.ID == "" {
+		return fmt.Errorf("UpdateWithVersionGuard: order ID required")
+	}
+	if fields == nil {
+		fields = map[string]interface{}{}
+	}
+	expected := order.Version
+	fields["version"] = expected + 1
+	fields["updated_at"] = time.Now()
+	res := r.db.WithContext(ctx).Model(&modelsOrder.Order{}).
+		Where("id = ? AND version = ?", order.ID, expected).
+		Updates(fields)
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrOptimisticLockConflict
+	}
+	order.Version = expected + 1
+	return nil
 }
 
 // UpdateWithStockAdjustment adjusts stock atomically during order edits.
@@ -140,7 +194,7 @@ func (r *OrderRepository) UpdateWithStockAdjustment(ctx context.Context, order *
 		if err := writeStockAuditEntries(tx, extra); err != nil {
 			return err
 		}
-		return tx.Save(order).Error
+		return tx.Omit("User", "Inquiry").Save(order).Error
 	})
 }
 
@@ -154,11 +208,13 @@ func (r *OrderRepository) Delete(ctx context.Context, id string) error {
 // Falls back to legacy direct deduction when no warehouse rows exist.
 func (r *OrderRepository) ReserveStockForOrder(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var locked modelsOrder.Order
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where("id = ?", order.ID).First(order).Error; err != nil {
+			Where("id = ?", order.ID).First(&locked).Error; err != nil {
 			return err
 		}
-		if order.StockReserved {
+		if locked.StockReserved {
+			order.StockReserved = true
 			return nil
 		}
 
@@ -168,30 +224,38 @@ func (r *OrderRepository) ReserveStockForOrder(ctx context.Context, order *model
 			if qty <= 0 {
 				continue
 			}
-			recs, err := reserveStockForOrderLine(tx, warehouseIDFromOrder(order), productID, qty, modelsOrder.StockReasonStockReserved, order.ID, order.UserID, now)
+			recs, err := reserveStockForOrderLine(tx, warehouseIDFromOrder(&locked), productID, qty, modelsOrder.StockReasonStockReserved, locked.ID, locked.UserID, now)
 			if err != nil {
 				return err
 			}
 			all = append(all, recs...)
 		}
 
-		order.StockReserved = true
-		order.UpdatedAt = now
-		if err := tx.Save(order).Error; err != nil {
+		if err := writeStockAuditEntries(tx, all); err != nil {
 			return err
 		}
-		return writeStockAuditEntries(tx, all)
+		if err := tx.Model(&modelsOrder.Order{}).Where("id = ?", locked.ID).Updates(map[string]interface{}{
+			"stock_reserved": true,
+			"updated_at":     now,
+		}).Error; err != nil {
+			return err
+		}
+		order.StockReserved = true
+		order.UpdatedAt = now
+		return nil
 	})
 }
 
 // ReleaseStockForOrder releases previously reserved stock (decrement Reserved, increment Product.StockQuantity).
 func (r *OrderRepository) ReleaseStockForOrder(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var locked modelsOrder.Order
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where("id = ?", order.ID).First(order).Error; err != nil {
+			Where("id = ?", order.ID).First(&locked).Error; err != nil {
 			return err
 		}
-		if !order.StockReserved {
+		if !locked.StockReserved {
+			order.StockReserved = false
 			return nil
 		}
 
@@ -201,17 +265,24 @@ func (r *OrderRepository) ReleaseStockForOrder(ctx context.Context, order *model
 			if qty <= 0 {
 				continue
 			}
-			recs, err := releaseStockForOrderLine(tx, warehouseIDFromOrder(order), productID, qty, modelsOrder.StockReasonStockReleased, order.ID, order.UserID, now)
+			recs, err := releaseStockForOrderLine(tx, warehouseIDFromOrder(&locked), productID, qty, modelsOrder.StockReasonStockReleased, locked.ID, locked.UserID, now)
 			if err != nil {
 				return err
 			}
 			all = append(all, recs...)
 		}
-		order.StockReserved = false
-		if err := tx.Save(order).Error; err != nil {
+		if err := writeStockAuditEntries(tx, all); err != nil {
 			return err
 		}
-		return writeStockAuditEntries(tx, all)
+		if err := tx.Model(&modelsOrder.Order{}).Where("id = ?", locked.ID).Updates(map[string]interface{}{
+			"stock_reserved": false,
+			"updated_at":     now,
+		}).Error; err != nil {
+			return err
+		}
+		order.StockReserved = false
+		order.UpdatedAt = now
+		return nil
 	})
 }
 
@@ -228,6 +299,110 @@ func (r *OrderRepository) DeleteWithStockRestore(ctx context.Context, order *mod
 			}
 		}
 		return tx.Delete(&modelsOrder.Order{}, "id = ?", order.ID).Error
+	})
+}
+
+// ApprovePendingOrder transitions an order from pending_approval to pending_confirmation.
+func (r *OrderRepository) ApprovePendingOrder(ctx context.Context, id string) error {
+	now := time.Now()
+	res := r.db.WithContext(ctx).
+		Model(&modelsOrder.Order{}).
+		Where("id = ? AND status = ?", id, modelsOrder.OrderStatusPendingApproval).
+		Updates(map[string]interface{}{
+			"status":     modelsOrder.OrderStatusPendingConfirm,
+			"updated_at": now,
+		})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+// ApprovePendingOrderWithAudit atomically transitions an order from pending_approval
+// to pending_confirmation and writes the corresponding ApprovalAction row in a single
+// transaction (H-16). The previous two-call pattern allowed the audit insert to fail
+// silently after the status update had already committed.
+func (r *OrderRepository) ApprovePendingOrderWithAudit(ctx context.Context, id, userID, action, comment string) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		now := time.Now()
+		res := tx.Model(&modelsOrder.Order{}).
+			Where("id = ? AND status = ?", id, modelsOrder.OrderStatusPendingApproval).
+			Updates(map[string]interface{}{
+				"status":     modelsOrder.OrderStatusPendingConfirm,
+				"updated_at": now,
+			})
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		return tx.Create(&modelsOrder.ApprovalAction{
+			OrderID: id,
+			UserID:  userID,
+			Action:  action,
+			Comment: comment,
+		}).Error
+	})
+}
+
+// CancelPendingApprovalOrder cancels a pending_approval order and releases reserved stock if any.
+func (r *OrderRepository) CancelPendingApprovalOrder(ctx context.Context, orderID string) error {
+	return r.cancelPendingApprovalOrderWithOptionalAudit(ctx, orderID, "", "", "")
+}
+
+// CancelPendingApprovalOrderWithAudit atomically cancels a pending_approval order
+// (releasing stock) and writes the corresponding ApprovalAction row in a single
+// transaction (H-16).
+func (r *OrderRepository) CancelPendingApprovalOrderWithAudit(ctx context.Context, orderID, userID, action, comment string) error {
+	return r.cancelPendingApprovalOrderWithOptionalAudit(ctx, orderID, userID, action, comment)
+}
+
+func (r *OrderRepository) cancelPendingApprovalOrderWithOptionalAudit(ctx context.Context, orderID, userID, action, comment string) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var order modelsOrder.Order
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("id = ? AND status = ?", orderID, modelsOrder.OrderStatusPendingApproval).
+			First(&order).Error; err != nil {
+			return err
+		}
+
+		now := time.Now()
+		if order.StockReserved {
+			var all []*modelsOrder.StockTransaction
+			for _, item := range order.Items {
+				if item.Quantity <= 0 {
+					continue
+				}
+				recs, err := releaseStockForOrderLine(tx, warehouseIDFromOrder(&order), item.ProductID, item.Quantity, modelsOrder.StockReasonStockReleased, order.ID, order.UserID, now)
+				if err != nil {
+					return err
+				}
+				all = append(all, recs...)
+			}
+			if err := writeStockAuditEntries(tx, all); err != nil {
+				return err
+			}
+			order.StockReserved = false
+		}
+
+		order.Status = modelsOrder.OrderStatusCancelled
+		order.UpdatedAt = now
+		if err := tx.Save(&order).Error; err != nil {
+			return err
+		}
+		if action != "" {
+			return tx.Create(&modelsOrder.ApprovalAction{
+				OrderID: orderID,
+				UserID:  userID,
+				Action:  action,
+				Comment: comment,
+			}).Error
+		}
+		return nil
 	})
 }
 
@@ -253,8 +428,32 @@ func (r *OrderRepository) ConfirmPendingOrder(ctx context.Context, id string, co
 // ConfirmAndReserveStock atomically confirms a pending_confirmation order and reserves stock.
 // Used for AI draft orders that defer stock reservation until customer confirmation.
 func (r *OrderRepository) ConfirmAndReserveStock(ctx context.Context, id string, stockDeltas map[string]int, confirmedAt time.Time) error {
+	return r.confirmAndReserve(ctx, id, stockDeltas, confirmedAt, nil)
+}
+
+// ConfirmAndReserveStockWithFinancials extends ConfirmAndReserveStock so the
+// COGS / tax / shipping / total / currency fields are committed inside the same
+// transaction as the status flip + stock reservation (H-15). The previous
+// pattern wrote financials in a follow-up call which could fail and leave
+// stock reserved with cogs=0.
+type OrderConfirmFinancials struct {
+	Items          *modelsOrder.OrderItemArray
+	COGS           *float64
+	Subtotal       *float64
+	TaxAmount      *float64
+	ShippingAmount *float64
+	TotalAmount    *float64
+	Currency       *string
+}
+
+// ConfirmAndReserveStockWithFinancials confirms the order, reserves stock, and
+// applies optional financial fields atomically (H-15).
+func (r *OrderRepository) ConfirmAndReserveStockWithFinancials(ctx context.Context, id string, stockDeltas map[string]int, confirmedAt time.Time, fin *OrderConfirmFinancials) error {
+	return r.confirmAndReserve(ctx, id, stockDeltas, confirmedAt, fin)
+}
+
+func (r *OrderRepository) confirmAndReserve(ctx context.Context, id string, stockDeltas map[string]int, confirmedAt time.Time, fin *OrderConfirmFinancials) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Verify order is still pending_confirmation (with row lock to prevent concurrent confirms)
 		var order modelsOrder.Order
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Where("id = ? AND status = ?", id, modelsOrder.OrderStatusPendingConfirm).
@@ -275,15 +474,39 @@ func (r *OrderRepository) ConfirmAndReserveStock(ctx context.Context, id string,
 			all = append(all, recs...)
 		}
 
-		// Update order: status → pending, stock_reserved → true
+		updates := map[string]interface{}{
+			"status":         modelsOrder.OrderStatusPending,
+			"stock_reserved": true,
+			"confirmed_at":   confirmedAt,
+			"updated_at":     confirmedAt,
+		}
+		if fin != nil {
+			if fin.Items != nil {
+				updates["items"] = *fin.Items
+			}
+			if fin.COGS != nil {
+				updates["cogs"] = *fin.COGS
+			}
+			if fin.Subtotal != nil {
+				updates["subtotal"] = *fin.Subtotal
+			}
+			if fin.TaxAmount != nil {
+				updates["tax_amount"] = *fin.TaxAmount
+			}
+			if fin.ShippingAmount != nil {
+				updates["shipping_amount"] = *fin.ShippingAmount
+			}
+			if fin.TotalAmount != nil {
+				updates["total_amount"] = *fin.TotalAmount
+			}
+			if fin.Currency != nil && *fin.Currency != "" {
+				updates["currency"] = *fin.Currency
+			}
+		}
+
 		res := tx.Model(&modelsOrder.Order{}).
 			Where("id = ? AND status = ?", id, modelsOrder.OrderStatusPendingConfirm).
-			Updates(map[string]interface{}{
-				"status":         modelsOrder.OrderStatusPending,
-				"stock_reserved": true,
-				"confirmed_at":   confirmedAt,
-				"updated_at":     confirmedAt,
-			})
+			Updates(updates)
 		if res.Error != nil {
 			return res.Error
 		}
@@ -433,6 +656,10 @@ func (r *OrderRepository) FindRecent(ctx context.Context, limit int) ([]modelsOr
 }
 
 // RevenueByMonth returns monthly revenue for the last N months.
+//
+// R2 B-1: emits camelCase keys (orderCount) so the frontend doesn't need
+// dual-naming fallbacks. Previously we returned snake_case order_count which
+// forced every chart consumer to do `b.orderCount || b.order_count`.
 func (r *OrderRepository) RevenueByMonth(ctx context.Context, months int) ([]map[string]interface{}, error) {
 	type row struct {
 		Month      string
@@ -453,9 +680,9 @@ func (r *OrderRepository) RevenueByMonth(ctx context.Context, months int) ([]map
 	result := make([]map[string]interface{}, len(rows))
 	for i, row := range rows {
 		result[i] = map[string]interface{}{
-			"month":       row.Month,
-			"revenue":     row.Revenue,
-			"order_count": row.OrderCount,
+			"month":      row.Month,
+			"revenue":    row.Revenue,
+			"orderCount": row.OrderCount,
 		}
 	}
 	return result, nil
@@ -489,44 +716,40 @@ func (r *OrderRepository) OrderCountByMonth(ctx context.Context, months int) ([]
 }
 
 // TopProductsByRevenue analyzes order items to find top products by revenue.
+//
+// Pushes the aggregation into Postgres using jsonb_array_elements + GROUP BY so
+// large order tables don't have to be paged into memory and walked in Go (M-4).
+// The previous implementation pulled 500 most-recent orders into Go and rolled
+// up by hand, which scaled poorly and silently capped accuracy at the most
+// recent slice of orders.
 func (r *OrderRepository) TopProductsByRevenue(ctx context.Context, limit int) ([]map[string]interface{}, error) {
-	var orders []modelsOrder.Order
-	if err := r.db.WithContext(ctx).
-		Where("status != ?", "cancelled").
-		Order("created_at DESC").
-		Limit(500).
-		Find(&orders).Error; err != nil {
+	if limit <= 0 {
+		return nil, nil
+	}
+	type row struct {
+		ProductID string  `gorm:"column:product_id"`
+		Revenue   float64 `gorm:"column:revenue"`
+	}
+	var rows []row
+	err := r.db.WithContext(ctx).Raw(`
+		SELECT item->>'productId' AS product_id,
+			SUM((item->>'quantity')::int * COALESCE((item->>'unitPrice')::numeric, 0)) AS revenue
+		FROM orders o
+		CROSS JOIN LATERAL jsonb_array_elements(o.items) AS item
+		WHERE o.status NOT IN ('cancelled', 'expired')
+			AND item->>'productId' IS NOT NULL
+		GROUP BY item->>'productId'
+		ORDER BY revenue DESC
+		LIMIT ?
+	`, limit).Scan(&rows).Error
+	if err != nil {
 		return nil, err
 	}
-
-	productMap := make(map[string]float64)
-	for _, order := range orders {
-		for _, item := range order.Items {
-			productMap[item.ProductID] += float64(item.Quantity) * item.UnitPrice
-		}
-	}
-
-	type productRevenue struct {
-		ProductID string
-		Revenue   float64
-	}
-	var products []productRevenue
-	for id, rev := range productMap {
-		products = append(products, productRevenue{ProductID: id, Revenue: rev})
-	}
-
-	sort.Slice(products, func(i, j int) bool {
-		return products[i].Revenue > products[j].Revenue
-	})
-
-	if limit > len(products) {
-		limit = len(products)
-	}
-	result := make([]map[string]interface{}, limit)
-	for i := 0; i < limit; i++ {
+	result := make([]map[string]interface{}, len(rows))
+	for i, r := range rows {
 		result[i] = map[string]interface{}{
-			"productId": products[i].ProductID,
-			"revenue":   products[i].Revenue,
+			"productId": r.ProductID,
+			"revenue":   r.Revenue,
 		}
 	}
 	return result, nil
@@ -639,7 +862,8 @@ func warehouseIDFromOrder(order *modelsOrder.Order) string {
 // reserveStockForOrderLine reserves stock for a single product line.
 // When warehouse stock rows exist, uses three-phase reserve (increment Reserved, decrement Product.StockQuantity).
 // warehouseID routes to a specific warehouse; empty string falls back to default warehouse.
-// Falls back to legacy direct deduction when no warehouse rows exist.
+// When ProductBatch rows exist, uses FEFO deduction aligned with dispatch path.
+// Falls back to legacy direct deduction when no warehouse or batch rows exist.
 func reserveStockForOrderLine(tx *gorm.DB, warehouseID, productID string, qty int, reason, refID, operatorID string, t time.Time) ([]*modelsOrder.StockTransaction, error) {
 	if qty <= 0 {
 		return nil, nil
@@ -654,6 +878,13 @@ func reserveStockForOrderLine(tx *gorm.DB, warehouseID, productID string, qty in
 			return nil, werr
 		}
 		return reserveWarehouseStock(tx, wid, productID, qty, reason, refID, operatorID, t)
+	}
+	var batchCount int64
+	if err := tx.Model(&modelsProduct.ProductBatch{}).Where("product_id = ?", productID).Count(&batchCount).Error; err != nil {
+		return nil, err
+	}
+	if batchCount > 0 {
+		return deductFEFOFromBatches(tx, productID, qty, reason, refID, operatorID, t)
 	}
 	return deductLegacyProductStock(tx, productID, qty, reason, refID, operatorID, t)
 }
@@ -714,14 +945,20 @@ func (r *OrderRepository) SalesVelocity(ctx context.Context, months int) ([]Sale
 	var rows []SalesVelocityResult
 	err := r.db.WithContext(ctx).Raw(`
 		SELECT p.id AS product_id, p.name AS product_name, p.category,
-			COALESCE(SUM(oi.quantity), 0)::int AS total_qty,
-			COALESCE(SUM(oi.total), 0) AS revenue
+			COALESCE(oi.total_qty, 0)::int AS total_qty,
+			COALESCE(oi.revenue, 0) AS revenue
 		FROM products p
-		LEFT JOIN order_items oi ON p.id = oi.product_id
-		LEFT JOIN orders o ON oi.order_id = o.id
-			AND o.status NOT IN ('cancelled', 'expired')
-			AND o.created_at >= date_trunc('month', NOW()) - (? * INTERVAL '1 month')
-		GROUP BY p.id, p.name, p.category
+		LEFT JOIN (
+			SELECT item->>'productId' AS product_id,
+				SUM((item->>'quantity')::int) AS total_qty,
+				SUM((item->>'quantity')::int * COALESCE((item->>'unitPrice')::numeric, 0)) AS revenue
+			FROM orders o
+			CROSS JOIN LATERAL jsonb_array_elements(o.items) AS item
+			WHERE o.status NOT IN ('cancelled', 'expired')
+				AND o.created_at >= date_trunc('month', NOW()) - (? * INTERVAL '1 month')
+			GROUP BY item->>'productId'
+		) oi ON oi.product_id = p.id
+		WHERE p.deleted_at IS NULL
 		ORDER BY revenue DESC
 	`, months).Scan(&rows).Error
 	return rows, err
@@ -739,6 +976,12 @@ type RFMRecord struct {
 }
 
 // RFMAnalysis returns RFM values for all ordering users.
+//
+// R2 E-8: scoped to the last 12 months. Previously this joined ALL orders
+// against ALL users with no temporal limit, which became prohibitively slow
+// once the catalogue had a few hundred thousand orders. RFM is a behavioural
+// signal — older purchases dilute recency without contributing actionable
+// segmentation — so a rolling year is the standard default.
 func (r *OrderRepository) RFMAnalysis(ctx context.Context) ([]RFMRecord, error) {
 	var rows []RFMRecord
 	err := r.db.WithContext(ctx).Raw(`
@@ -750,7 +993,9 @@ func (r *OrderRepository) RFMAnalysis(ctx context.Context) ([]RFMRecord, error) 
 			COALESCE(SUM(o.total_amount), 0) AS monetary
 		FROM users u
 		INNER JOIN orders o ON u.id = o.user_id
-		WHERE o.status NOT IN ('cancelled', 'expired')
+			AND o.status NOT IN ('cancelled', 'expired')
+			AND o.created_at >= NOW() - INTERVAL '12 months'
+			AND u.deleted_at IS NULL
 		GROUP BY u.id, u.first_name, u.last_name, u.email
 		ORDER BY monetary DESC
 	`).Scan(&rows).Error
@@ -779,6 +1024,7 @@ func (r *OrderRepository) CustomerChurn(ctx context.Context, dormantDays int) ([
 		FROM users u
 		INNER JOIN orders o ON u.id = o.user_id
 		WHERE o.status NOT IN ('cancelled', 'expired')
+			AND u.deleted_at IS NULL
 		GROUP BY u.id, u.first_name, u.last_name, u.email
 		HAVING MAX(o.created_at) < NOW() - (? * INTERVAL '1 day')
 		ORDER BY MAX(o.created_at)
@@ -806,17 +1052,22 @@ func (r *OrderRepository) InventoryHealth(ctx context.Context, salesWindowDays i
 			p.name AS product_name,
 			p.stock_quantity AS stock_quantity,
 			COALESCE(p.safety_stock, 0) AS safety_stock,
-			ROUND(COALESCE(SUM(oi.quantity), 0)::numeric / NULLIF(?, 0), 2) AS avg_daily_sales,
-			CASE WHEN COALESCE(SUM(oi.quantity), 0) > 0
-				THEN ROUND((p.stock_quantity::numeric / (SUM(oi.quantity)::numeric / NULLIF(?, 0))), 1)
+			ROUND(COALESCE(oi.total_qty, 0)::numeric / NULLIF(?, 0), 2) AS avg_daily_sales,
+			CASE WHEN COALESCE(oi.total_qty, 0) > 0
+				THEN ROUND((p.stock_quantity::numeric / (oi.total_qty::numeric / NULLIF(?, 0))), 1)
 				ELSE 999
 			END AS sellable_days
 		FROM products p
-		LEFT JOIN order_items oi ON p.id = oi.product_id
-		LEFT JOIN orders o ON oi.order_id = o.id
-			AND o.status NOT IN ('cancelled', 'expired')
-			AND o.created_at >= NOW() - (? * INTERVAL '1 day')
-		GROUP BY p.id, p.name, p.stock_quantity, p.safety_stock
+		LEFT JOIN (
+			SELECT item->>'productId' AS product_id,
+				SUM((item->>'quantity')::int) AS total_qty
+			FROM orders o
+			CROSS JOIN LATERAL jsonb_array_elements(o.items) AS item
+			WHERE o.status NOT IN ('cancelled', 'expired')
+				AND o.created_at >= NOW() - (? * INTERVAL '1 day')
+			GROUP BY item->>'productId'
+		) oi ON oi.product_id = p.id
+		WHERE p.deleted_at IS NULL
 		ORDER BY sellable_days
 	`, salesWindowDays, salesWindowDays, salesWindowDays).Scan(&rows).Error
 	if err != nil {
@@ -841,6 +1092,8 @@ type ProfitLossResult struct {
 }
 
 // ProfitLossByPeriod returns P&L grouped by period (day/week/month).
+// NOTE: COGS (orders.cogs) is populated at order-confirmation time; historical orders
+// created before COGS tracking was enabled may still report cogs=0, inflating gross margin.
 func (r *OrderRepository) ProfitLossByPeriod(ctx context.Context, groupBy string, periods int) ([]ProfitLossResult, error) {
 	var truncate string
 	var interval string
@@ -898,22 +1151,27 @@ func (r *OrderRepository) ReplenishmentSuggestions(ctx context.Context, cycleDay
 			p.name AS product_name,
 			p.stock_quantity AS current_stock,
 			COALESCE(p.safety_stock, 0) AS safety_stock,
-			ROUND(COALESCE(SUM(oi.quantity), 0)::numeric / NULLIF(?, 0), 2) AS avg_daily_sales,
+			ROUND(COALESCE(oi.total_qty, 0)::numeric / NULLIF(?, 0), 2) AS avg_daily_sales,
 			0 AS in_transit,
 			0 AS pending_orders,
 			GREATEST(0, (
-				(ROUND(COALESCE(SUM(oi.quantity), 0)::numeric / NULLIF(?, 0), 2) * ?)
+				(ROUND(COALESCE(oi.total_qty, 0)::numeric / NULLIF(?, 0), 2) * ?)
 				+ COALESCE(p.safety_stock, 0)
 				- p.stock_quantity
 			)::int) AS suggested_qty,
 			? AS cycle_days
 		FROM products p
-		LEFT JOIN order_items oi ON p.id = oi.product_id
-		LEFT JOIN orders o ON oi.order_id = o.id
-			AND o.status NOT IN ('cancelled', 'expired')
-			AND o.created_at >= NOW() - (? * INTERVAL '1 day')
-		GROUP BY p.id, p.name, p.stock_quantity, p.safety_stock
-		HAVING (ROUND(COALESCE(SUM(oi.quantity), 0)::numeric / NULLIF(?, 0), 2) * ?)
+		LEFT JOIN (
+			SELECT item->>'productId' AS product_id,
+				SUM((item->>'quantity')::int) AS total_qty
+			FROM orders o
+			CROSS JOIN LATERAL jsonb_array_elements(o.items) AS item
+			WHERE o.status NOT IN ('cancelled', 'expired')
+				AND o.created_at >= NOW() - (? * INTERVAL '1 day')
+			GROUP BY item->>'productId'
+		) oi ON oi.product_id = p.id
+		WHERE p.deleted_at IS NULL
+			AND (ROUND(COALESCE(oi.total_qty, 0)::numeric / NULLIF(?, 0), 2) * ?)
 			+ COALESCE(p.safety_stock, 0)
 			- p.stock_quantity > 0
 		ORDER BY suggested_qty DESC

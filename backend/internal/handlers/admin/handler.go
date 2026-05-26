@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"candypro/api/internal/config"
+	"candypro/api/internal/pkg/eino"
 	"candypro/api/internal/pkg/storage"
 	productRepo "candypro/api/internal/repository/product"
 	servicesCommon "candypro/api/internal/services/common"
@@ -19,6 +20,7 @@ type Handler struct {
 	countryPaymentPolicy *orderSvc.CountryPaymentPolicyService
 	aiService            *tradeSvc.AIService
 	tradeAgent           adk.Agent
+	checkPointStore      *eino.PostgresCheckPointStore
 	storage              storage.StorageService
 	Translations         *TranslationHandler
 }
@@ -52,10 +54,15 @@ func (h *Handler) SupplierRepo() *productRepo.SupplierRepository {
 	return h.services.Supplier
 }
 
-// AttachTradeAgent wires the 13-tool TradeAgent into the admin AI service and stores it for SSE use.
+// AttachTradeAgent wires the TradeAgent into the admin AI service and stores it for SSE use.
 func (h *Handler) AttachTradeAgent(agent adk.Agent) {
 	h.tradeAgent = agent
 	if h.aiService != nil {
 		h.aiService.AttachAgent(agent)
 	}
+}
+
+// AttachCheckPointStore wires PostgreSQL checkpoint persistence for admin SSE agents.
+func (h *Handler) AttachCheckPointStore(store *eino.PostgresCheckPointStore) {
+	h.checkPointStore = store
 }

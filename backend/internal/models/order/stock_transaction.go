@@ -13,6 +13,7 @@ const (
 	StockReasonManualAdjustment = "manual_adjustment"
 	StockReasonDispatched       = "dispatched"
 	StockReasonGoodsIssued      = "goods_issued"
+	StockReasonGoodsReceived    = "goods_received"
 	StockReasonStockReserved    = "stock_reserved"
 	StockReasonStockReleased    = "stock_released"
 	StockReasonStockDeducted    = "stock_deducted"

@@ -1,5 +1,6 @@
 {
   "skip_to_content": "Skip to main content",
+  "javascript_required": "This site works best with JavaScript enabled. Use the links below to continue browsing.",
   "loading": "Loading…",
   "close": "Close",
   "whatsapp": {
@@ -58,6 +59,7 @@
       "ai_draft_failed": "Could not generate draft order. Please try again.",
       "ai_confirm_failed": "Could not confirm draft. Please try again.",
       "manual_order_failed": "Could not create order. Please try again.",
+      "request_failed": "Request failed. Please try again.",
       "trade_load_failed": "Could not load trade details.",
       "status_failed": "Could not update status.",
       "document_confirm_failed": "Could not confirm document.",
@@ -73,6 +75,7 @@
       "company_verify_failed": "Could not verify company.",
       "inquiry_convert_failed": "Could not convert inquiry.",
       "payment_confirm_failed": "Could not confirm payment.",
+      "payment_failed": "Online payment failed. Please try again.",
       "fetch_payments_failed": "Could not load payments.",
       "product_price_required": "Base price must be greater than zero.",
       "product_status_transition_invalid": "Invalid status transition. Allowed: draft → active, active ↔ inactive.",
@@ -202,9 +205,20 @@
     },
     "shipment_status": {
       "pending": "Pending",
+      "dispatched": "Dispatched",
       "in_transit": "In transit",
       "delivered": "Delivered",
       "exception": "Exception",
+      "unknown": "Unknown"
+    },
+    "shipment_event_type": {
+      "dispatched": "Dispatched",
+      "picked_up": "Picked up",
+      "in_transit": "In transit",
+      "arrived_at_port": "Arrived at port",
+      "customs_cleared": "Customs cleared",
+      "out_for_delivery": "Out for delivery",
+      "delivered": "Delivered",
       "unknown": "Unknown"
     },
     "carrier": {
@@ -227,6 +241,7 @@
     "invoice_type": {
       "invoice": "Invoice",
       "proforma": "Proforma",
+      "commercial": "Commercial Invoice",
       "credit_note": "Credit Note",
       "unknown": "Unknown"
     },
@@ -349,6 +364,8 @@
     "go_to_homepage": "Go to homepage",
     "main_navigation": "Main navigation",
     "language": "Language",
+    "dark_mode": "Switch to dark mode",
+    "light_mode": "Switch to light mode",
     "contact_whatsapp": "Contact us on WhatsApp",
     "toggle_menu": "Toggle menu",
     "mobile_navigation": "Mobile navigation",
@@ -424,8 +441,17 @@
     "company_tagline": "B2B Candy Manufacturing"
   },
   "form": {
-    "phone_placeholder": "+86 123 4567 890"
+    "phone_placeholder": "+86 123 4567 890",
+    "yes": "Yes",
+    "no": "No"
   },
   "yes": "Yes",
-  "no": "No"
+  "no": "No",
+  "cookie_consent": {
+    "title": "Cookie Preferences",
+    "message": "We use cookies to enhance your browsing experience, analyze site traffic, and personalize content. By clicking 'Accept All', you consent to our use of all cookies. You can choose 'Essential Only' to reject non-essential cookies.",
+    "accept_all": "Accept All",
+    "essential_only": "Essential Only",
+    "learn_more": "Learn more about our Cookie Policy"
+  }
 }

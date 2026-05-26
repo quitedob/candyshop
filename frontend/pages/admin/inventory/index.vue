@@ -6,25 +6,96 @@
         <p class="mt-1 text-sm text-gray-600">{{ t('admin.inventory.description') }}</p>
       </div>
       <div class="mt-4 sm:mt-0 flex items-center gap-3">
-        <button @click="exportSelected" :disabled="selectedIds.size === 0" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+        <button v-if="inventoryTab === 'stock'" @click="exportSelected" :disabled="selectedIds.size === 0" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
           <Icon name="heroicons:arrow-down-tray" class="h-4 w-4" aria-hidden="true" />
           {{ selectedIds.size > 0 ? t('admin.inventory.export_selected') + ` (${selectedIds.size})` : t('admin.inventory.export_selected') }}
         </button>
-        <button @click="openImportModal" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+        <button v-if="inventoryTab === 'stock'" @click="openImportModal" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
           <Icon name="heroicons:arrow-up-tray" class="h-4 w-4" aria-hidden="true" />
           {{ t('admin.inventory.import_xlsx') }}
         </button>
-        <button @click="downloadTemplate" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+        <button v-if="inventoryTab === 'stock'" @click="downloadTemplate" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
           <Icon name="heroicons:document-arrow-down" class="h-4 w-4" aria-hidden="true" />
           {{ t('admin.inventory.import_download_template') }}
         </button>
-        <button @click="openAdjustmentModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors">
+        <button v-if="inventoryTab === 'stock'" @click="openAdjustmentModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors">
           <Icon name="heroicons:adjustments-horizontal" class="h-4 w-4" aria-hidden="true" />
           {{ t('admin.inventory.adjust_stock') }}
         </button>
       </div>
     </div>
 
+    <!-- Tabs: stock / warehouses / transfers -->
+    <div class="mt-6 border-b border-gray-200">
+      <nav class="-mb-px flex gap-6">
+        <button type="button" :class="inventoryTab === 'stock' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500'" class="whitespace-nowrap border-b-2 py-3 text-sm font-medium" @click="inventoryTab = 'stock'">{{ t('admin.inventory.tab_stock') }}</button>
+        <button v-if="enableMultiWarehouse" type="button" :class="inventoryTab === 'warehouses' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500'" class="whitespace-nowrap border-b-2 py-3 text-sm font-medium" @click="inventoryTab = 'warehouses'; fetchWarehouses()">{{ t('admin.inventory.tab_warehouses') }}</button>
+        <button v-if="enableMultiWarehouse" type="button" :class="inventoryTab === 'transfers' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500'" class="whitespace-nowrap border-b-2 py-3 text-sm font-medium" @click="inventoryTab = 'transfers'; fetchTransfers()">{{ t('admin.inventory.tab_transfers') }}</button>
+      </nav>
+    </div>
+
+    <!-- Warehouses tab（多仓库功能暂隐藏） -->
+    <div v-if="enableMultiWarehouse && inventoryTab === 'warehouses'" class="mt-6 space-y-4">
+      <div class="flex justify-end">
+        <button type="button" class="rounded-lg bg-orange-600 px-4 py-2 text-sm text-white hover:bg-orange-700" @click="openWarehouseModal()">{{ t('admin.inventory.add_warehouse') }}</button>
+      </div>
+      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-3 text-start font-semibold text-gray-600">{{ t('admin.inventory.wh_code') }}</th>
+              <th class="px-4 py-3 text-start font-semibold text-gray-600">{{ t('admin.inventory.wh_name') }}</th>
+              <th class="px-4 py-3 text-start font-semibold text-gray-600">{{ t('admin.inventory.wh_country') }}</th>
+              <th class="px-4 py-3 text-start font-semibold text-gray-600">{{ t('admin.inventory.col_actions') }}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <tr v-if="warehousesPending"><td colspan="4" class="px-4 py-8 text-center text-gray-500">{{ t('admin.inventory.loading') }}</td></tr>
+            <tr v-else-if="!warehouses.length"><td colspan="4" class="px-4 py-8 text-center text-gray-500">{{ t('admin.inventory.no_warehouses') }}</td></tr>
+            <tr v-else v-for="wh in warehouses" :key="wh.id">
+              <td class="px-4 py-3 font-mono">{{ wh.code }}</td>
+              <td class="px-4 py-3">{{ wh.name }}</td>
+              <td class="px-4 py-3">{{ wh.country || '-' }}</td>
+              <td class="px-4 py-3">
+                <button type="button" class="text-orange-600 hover:text-orange-900 me-3" @click="openWarehouseModal(wh)">{{ t('admin.inventory.edit') }}</button>
+                <button type="button" class="text-gray-600 hover:text-gray-900" @click="openWarehouseStockModal(wh)">{{ t('admin.inventory.update_stock') }}</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Transfers tab -->
+    <div v-else-if="enableMultiWarehouse && inventoryTab === 'transfers'" class="mt-6 space-y-4">
+      <div class="flex justify-end">
+        <button type="button" class="rounded-lg bg-orange-600 px-4 py-2 text-sm text-white hover:bg-orange-700" @click="openTransferModal">{{ t('admin.inventory.create_transfer') }}</button>
+      </div>
+      <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-3 text-start font-semibold text-gray-600">{{ t('admin.inventory.transfer_no') }}</th>
+              <th class="px-4 py-3 text-start font-semibold text-gray-600">{{ t('admin.inventory.from_wh') }}</th>
+              <th class="px-4 py-3 text-start font-semibold text-gray-600">{{ t('admin.inventory.to_wh') }}</th>
+              <th class="px-4 py-3 text-start font-semibold text-gray-600">{{ t('admin.inventory.col_status') }}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <tr v-if="transfersPending"><td colspan="4" class="px-4 py-8 text-center text-gray-500">{{ t('admin.inventory.loading') }}</td></tr>
+            <tr v-else-if="!transfers.length"><td colspan="4" class="px-4 py-8 text-center text-gray-500">{{ t('admin.inventory.no_transfers') }}</td></tr>
+            <tr v-else v-for="tr in transfers" :key="tr.id">
+              <td class="px-4 py-3 font-mono">{{ tr.transferNumber || tr.id }}</td>
+              <td class="px-4 py-3">{{ tr.fromWarehouseId }}</td>
+              <td class="px-4 py-3">{{ tr.toWarehouseId }}</td>
+              <td class="px-4 py-3">{{ tr.status }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <template v-else>
     <!-- Stats Cards -->
     <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
@@ -80,7 +151,7 @@
           <div class="relative">
             <label for="inventory-search" class="sr-only">{{ t('admin.inventory.search') }}</label>
             <Icon name="heroicons:magnifying-glass" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" aria-hidden="true" />
-            <input id="inventory-search" v-model="searchQuery" name="search" type="text" autocomplete="off" :placeholder="t('admin.inventory.search')" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+            <input id="inventory-search" v-model="searchQuery" name="search" type="text" autocomplete="off" :placeholder="t('admin.inventory.search')" class="w-full ps-10 pe-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
           </div>
         </div>
         <label for="inventory-stockFilter" class="sr-only">{{ t('admin.inventory.filter_stock') }}</label>
@@ -93,7 +164,7 @@
         <label for="inventory-categoryFilter" class="sr-only">{{ t('admin.inventory.filter_category') }}</label>
         <select id="inventory-categoryFilter" v-model="categoryFilter" name="categoryFilter" autocomplete="off" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
           <option value="">{{ t('admin.inventory.all_categories') }}</option>
-          <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+          <option v-for="cat in categoryOptions" :key="cat.slug" :value="cat.slug">{{ cat.label }}</option>
         </select>
         <button v-if="searchQuery || stockFilter !== 'all' || categoryFilter" @click="clearFilters" class="text-sm text-orange-600 hover:text-orange-800">
           {{ t('admin.inventory.clear_filters') }}
@@ -129,15 +200,15 @@
               <th class="px-4 py-3 w-10">
                 <input type="checkbox" name="selectAll" :checked="isAllSelected" @change="toggleSelectAll" class="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500" />
               </th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.inventory.col_product') }}</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.inventory.col_category') }}</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.inventory.col_sku') }}</th>
-              <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.inventory.col_stock') }}</th>
-              <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.inventory.col_moq') }}</th>
-              <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.inventory.col_unit_value') }}</th>
-              <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.inventory.col_total_value') }}</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.inventory.col_status') }}</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.inventory.col_actions') }}</th>
+              <th class="px-6 py-3 text-start text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.inventory.col_product') }}</th>
+              <th class="px-6 py-3 text-start text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.inventory.col_category') }}</th>
+              <th class="px-6 py-3 text-start text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.inventory.col_sku') }}</th>
+              <th class="px-6 py-3 text-end text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.inventory.col_stock') }}</th>
+              <th class="px-6 py-3 text-end text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.inventory.col_moq') }}</th>
+              <th class="px-6 py-3 text-end text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.inventory.col_unit_value') }}</th>
+              <th class="px-6 py-3 text-end text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.inventory.col_total_value') }}</th>
+              <th class="px-6 py-3 text-start text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.inventory.col_status') }}</th>
+              <th class="px-6 py-3 text-start text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.inventory.col_actions') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 bg-white">
@@ -161,14 +232,14 @@
                     <Icon v-else name="heroicons:cube" class="h-5 w-5 text-orange-300" aria-hidden="true" />
                   </div>
                   <div>
-                    <div class="font-medium text-gray-900">{{ item.name }}</div>
+                    <div class="font-medium text-gray-900">{{ tField(item, 'name') }}</div>
                     <div class="text-xs text-gray-500">{{ item.slug }}</div>
                   </div>
                 </div>
               </td>
-              <td class="px-6 py-4 text-sm text-gray-600">{{ item.category || '-' }}</td>
+              <td class="px-6 py-4 text-sm text-gray-600">{{ categoryLabel(item) }}</td>
               <td class="px-6 py-4 text-sm text-gray-600 font-mono">{{ item.id?.substring(0, 8).toUpperCase() || '-' }}</td>
-              <td class="px-6 py-4 text-sm text-right">
+              <td class="px-6 py-4 text-sm text-end">
                 <div class="flex items-center justify-end gap-2">
                   <span :class="stockStatusClass(item.stockQuantity, item.moq)" class="font-semibold">{{ item.stockQuantity || 0 }}</span>
                   <button @click="openAdjustmentModal(item)" class="p-1 text-orange-600 hover:bg-orange-50 rounded transition-colors" :aria-label="t('admin.inventory.adjust_stock')">
@@ -176,16 +247,16 @@
                   </button>
                 </div>
               </td>
-              <td class="px-6 py-4 text-sm text-right text-gray-600">{{ item.moq || 0 }}</td>
-              <td class="px-6 py-4 text-sm text-right text-gray-600">{{ cur(item.basePrice) }} {{ formatNumber(item.basePrice || 0) }}</td>
-              <td class="px-6 py-4 text-sm text-right font-medium text-gray-900">{{ cur(item.basePrice) }} {{ formatNumber((item.stockQuantity || 0) * (item.basePrice || 0)) }}</td>
+              <td class="px-6 py-4 text-sm text-end text-gray-600">{{ item.moq || 0 }}</td>
+              <td class="px-6 py-4 text-sm text-end text-gray-600">{{ cur(item.basePrice) }} {{ formatNumber(item.basePrice || 0) }}</td>
+              <td class="px-6 py-4 text-sm text-end font-medium text-gray-900">{{ cur(item.basePrice) }} {{ formatNumber((item.stockQuantity || 0) * (item.basePrice || 0)) }}</td>
               <td class="px-6 py-4">
                 <span :class="stockBadgeClass(item.stockQuantity, item.moq)" class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold">
                   {{ stockStatusLabel(item.stockQuantity, item.moq) }}
                 </span>
               </td>
               <td class="px-6 py-4 text-sm">
-                <button @click="viewHistory(item)" class="text-orange-600 hover:text-orange-900 mr-3">{{ t('admin.inventory.history') }}</button>
+                <button @click="viewHistory(item)" class="text-orange-600 hover:text-orange-900 me-3">{{ t('admin.inventory.history') }}</button>
               </td>
             </tr>
           </tbody>
@@ -207,12 +278,13 @@
         </div>
       </div>
     </div>
+    </template>
 
     <!-- Import XLSX Modal -->
     <div v-if="showImportModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-screen items-center justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
         <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closeImportModal" :aria-label="t('close')"></button>
-        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl sm:my-8 sm:max-w-5xl sm:align-middle">
+        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-start align-bottom shadow-xl sm:my-8 sm:max-w-5xl sm:align-middle">
           <div class="bg-gradient-to-r from-orange-500 to-amber-600 px-6 py-4 flex items-center justify-between">
             <div>
               <h3 class="text-lg font-semibold text-white">{{ t('admin.inventory.import_title') }}</h3>
@@ -259,7 +331,10 @@
 
               <!-- AI mapping banner -->
               <div v-if="importPreview.aiMapping && Object.keys(importPreview.aiMapping).length > 0" class="mb-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p class="text-sm font-medium text-blue-800">{{ t('admin.inventory.import_ai_mapping') }}</p>
+                <p class="text-sm font-medium text-blue-800 inline-flex items-center">
+                  {{ t('admin.inventory.import_ai_mapping') }}
+                  <AiHelpHint topic="inventory_import_ai" size="sm" />
+                </p>
                 <p class="text-xs text-blue-600 mt-1">{{ aiMappingSummary }}</p>
               </div>
 
@@ -288,8 +363,8 @@
                 <table class="min-w-full divide-y divide-gray-200 text-xs">
                   <thead class="bg-gray-50 sticky top-0">
                     <tr>
-                      <th class="px-3 py-2 text-left font-semibold text-gray-600">#</th>
-                      <th v-for="(h, i) in importPreview.headers" :key="i" class="px-3 py-2 text-left font-semibold text-gray-600 whitespace-nowrap">
+                      <th class="px-3 py-2 text-start font-semibold text-gray-600">#</th>
+                      <th v-for="(h, i) in importPreview.headers" :key="i" class="px-3 py-2 text-start font-semibold text-gray-600 whitespace-nowrap">
                         <div class="flex items-center gap-1">
                           {{ h }}
                           <Icon v-if="importPreview.imageColumns?.includes(i)" name="heroicons:photo" class="h-3 w-3 text-emerald-600" :title="$t('inventory.image_column')" aria-hidden="true" />
@@ -336,7 +411,7 @@
     <div v-if="showBatchEditModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-screen items-center justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
         <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closeBatchEditModal" :aria-label="t('close')"></button>
-        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl sm:my-8 sm:max-w-lg sm:align-middle">
+        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-start align-bottom shadow-xl sm:my-8 sm:max-w-lg sm:align-middle">
           <div class="bg-gradient-to-r from-orange-500 to-amber-600 px-6 py-4 flex items-center justify-between">
             <div>
               <h3 class="text-lg font-semibold text-white">{{ t('admin.inventory.batch_edit_title') }}</h3>
@@ -423,7 +498,7 @@
     <div v-if="showBatchDeleteModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-screen items-center justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
         <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closeBatchDeleteModal" :aria-label="t('close')"></button>
-        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl sm:my-8 sm:max-w-md sm:align-middle">
+        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-start align-bottom shadow-xl sm:my-8 sm:max-w-md sm:align-middle">
           <div class="bg-gradient-to-r from-red-500 to-rose-600 px-6 py-4 flex items-center justify-between">
             <div>
               <h3 class="text-lg font-semibold text-white">{{ t('admin.inventory.batch_delete_title') }}</h3>
@@ -462,10 +537,10 @@
     <div v-if="showAdjustmentModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
         <button type="button" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity w-full border-0 cursor-pointer" @click="closeAdjustmentModal" :aria-label="t('close')"></button>
-        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl sm:my-8 sm:max-w-lg sm:align-middle">
+        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-start align-bottom shadow-xl sm:my-8 sm:max-w-lg sm:align-middle">
           <div class="bg-gradient-to-r from-orange-500 to-amber-600 px-6 py-4">
             <h3 class="text-lg font-semibold text-white">{{ t('admin.inventory.adjust_title') }}</h3>
-            <p class="text-sm text-orange-100 mt-0.5">{{ adjustmentProduct?.name }}</p>
+            <p class="text-sm text-orange-100 mt-0.5">{{ tField(adjustmentProduct, 'name') }}</p>
           </div>
           <div class="p-6 space-y-4">
             <div class="grid grid-cols-2 gap-4">
@@ -529,11 +604,11 @@
     <div v-if="showHistoryModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
         <button type="button" class="fixed inset-0 w-full h-full bg-gray-500 bg-opacity-75 transition-opacity border-0 cursor-pointer" @click="showHistoryModal = false" :aria-label="t('close')" />
-        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-left align-bottom shadow-xl sm:my-8 sm:max-w-2xl sm:align-middle">
+        <div class="inline-block w-full transform overflow-hidden rounded-xl bg-white text-start align-bottom shadow-xl sm:my-8 sm:max-w-2xl sm:align-middle">
           <div class="bg-gradient-to-r from-gray-700 to-gray-900 px-6 py-4 flex items-center justify-between">
             <div>
               <h3 class="text-lg font-semibold text-white">{{ t('admin.inventory.history_title') }}</h3>
-              <p class="text-sm text-gray-300 mt-0.5">{{ historyProduct?.name }}</p>
+              <p class="text-sm text-gray-300 mt-0.5">{{ tField(historyProduct, 'name') }}</p>
             </div>
             <button @click="showHistoryModal = false" class="text-gray-300 hover:text-white" :aria-label="t('close')">
               <Icon name="heroicons:x-mark" class="h-5 w-5" aria-hidden="true" />
@@ -564,20 +639,73 @@
         </div>
       </div>
     </div>
+
+    <!-- Warehouse Modal -->
+    <div v-if="showWarehouseModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div class="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
+        <h3 class="text-lg font-semibold mb-4">{{ warehouseForm.id ? t('admin.inventory.edit') : t('admin.inventory.add_warehouse') }}</h3>
+        <form class="space-y-3" @submit.prevent="saveWarehouse">
+          <input v-model="warehouseForm.id" :placeholder="t('admin.inventory.wh_id')" required class="w-full border rounded-lg px-3 py-2 text-sm font-mono" />
+          <input v-model="warehouseForm.code" :placeholder="t('admin.inventory.wh_code')" required class="w-full border rounded-lg px-3 py-2 text-sm" />
+          <input v-model="warehouseForm.name" :placeholder="t('admin.inventory.wh_name')" required class="w-full border rounded-lg px-3 py-2 text-sm" />
+          <input v-model="warehouseForm.country" :placeholder="t('admin.inventory.wh_country')" class="w-full border rounded-lg px-3 py-2 text-sm" />
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="px-4 py-2 border rounded-lg text-sm" @click="showWarehouseModal = false">{{ t('admin.inventory.cancel') }}</button>
+            <button type="submit" class="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm">{{ t('admin.inventory.save') }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Warehouse Stock Modal -->
+    <div v-if="showWarehouseStockModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div class="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
+        <h3 class="text-lg font-semibold mb-4">{{ t('admin.inventory.update_stock') }} — {{ stockWarehouse?.name }}</h3>
+        <form class="space-y-3" @submit.prevent="saveWarehouseStock">
+          <input v-model="warehouseStockForm.productId" :placeholder="t('admin.inventory.product_id')" required class="w-full border rounded-lg px-3 py-2 text-sm font-mono" />
+          <input v-model.number="warehouseStockForm.quantity" type="number" min="0" :placeholder="t('admin.inventory.col_stock')" required class="w-full border rounded-lg px-3 py-2 text-sm" />
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="px-4 py-2 border rounded-lg text-sm" @click="showWarehouseStockModal = false">{{ t('admin.inventory.cancel') }}</button>
+            <button type="submit" class="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm">{{ t('admin.inventory.save') }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Transfer Modal -->
+    <div v-if="showTransferModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div class="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
+        <h3 class="text-lg font-semibold mb-4">{{ t('admin.inventory.create_transfer') }}</h3>
+        <form class="space-y-3" @submit.prevent="saveTransfer">
+          <input v-model="transferForm.fromWarehouseId" :placeholder="t('admin.inventory.from_wh')" required class="w-full border rounded-lg px-3 py-2 text-sm" />
+          <input v-model="transferForm.toWarehouseId" :placeholder="t('admin.inventory.to_wh')" required class="w-full border rounded-lg px-3 py-2 text-sm" />
+          <input v-model="transferForm.productId" :placeholder="t('admin.inventory.product_id')" required class="w-full border rounded-lg px-3 py-2 text-sm font-mono" />
+          <input v-model.number="transferForm.quantity" type="number" min="1" :placeholder="t('admin.inventory.qty')" required class="w-full border rounded-lg px-3 py-2 text-sm" />
+          <textarea v-model="transferForm.notes" rows="2" :placeholder="t('admin.inventory.notes')" class="w-full border rounded-lg px-3 py-2 text-sm" />
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="px-4 py-2 border rounded-lg text-sm" @click="showTransferModal = false">{{ t('admin.inventory.cancel') }}</button>
+            <button type="submit" class="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm">{{ t('admin.inventory.save') }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useTranslation } from '~/composables/useTranslation'
 
 definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
 const api = useApi()
+const { enableMultiWarehouse } = useFeatureFlags()
 const { t } = useI18n()
+const { tField } = useTranslation()
 const { currencyOrDefault: cur, formatNumber, formatDate } = useDisplay()
 
 const items = ref<any[]>([])
-const categories = ref<string[]>([])
+const categoryCatalog = ref<any[]>([])
 const pagination = ref<any>(null)
 const pending = ref(true)
 const error = ref('')
@@ -597,6 +725,20 @@ const adjustmentError = ref('')
 const showHistoryModal = ref(false)
 const historyProduct = ref<any>(null)
 const stockHistory = ref<any[]>([])
+
+// Warehouses & transfers tabs
+const inventoryTab = ref<'stock' | 'warehouses' | 'transfers'>('stock')
+const warehouses = ref<any[]>([])
+const transfers = ref<any[]>([])
+const warehousesPending = ref(false)
+const transfersPending = ref(false)
+const showWarehouseModal = ref(false)
+const showWarehouseStockModal = ref(false)
+const showTransferModal = ref(false)
+const stockWarehouse = ref<any>(null)
+const warehouseForm = reactive({ id: '', code: '', name: '', country: '', type: 'factory', isActive: true })
+const warehouseStockForm = reactive({ productId: '', quantity: 0 })
+const transferForm = reactive({ fromWarehouseId: '', toWarehouseId: '', productId: '', quantity: 1, notes: '' })
 
 // Multi-select
 const selectedIds = ref<Set<string>>(new Set())
@@ -632,9 +774,31 @@ const stats = computed(() => {
   return { totalProducts: total, lowStock: low, outOfStock: out, totalValue: value }
 })
 
+const categoryOptions = computed(() =>
+  categoryCatalog.value.map(cat => ({
+    slug: cat.slug,
+    label: tField(cat, 'name') || cat.name || cat.slug,
+  })).sort((a, b) => a.label.localeCompare(b.label)),
+)
+
+const categoryBySlug = computed(() => {
+  const map = new Map<string, any>()
+  for (const cat of categoryCatalog.value) map.set(cat.slug, cat)
+  return map
+})
+
+const categoryLabel = (item: any) => {
+  const slug = item?.categorySlug
+  if (slug && categoryBySlug.value.has(slug)) {
+    const cat = categoryBySlug.value.get(slug)
+    return tField(cat, 'name') || cat?.name || item.category || '-'
+  }
+  return item?.category || '-'
+}
+
 const filteredItems = computed(() => items.value.filter(item => {
-  const matchesSearch = !searchQuery.value || item.name?.toLowerCase().includes(searchQuery.value.toLowerCase()) || item.slug?.toLowerCase().includes(searchQuery.value.toLowerCase())
-  const matchesCategory = !categoryFilter.value || item.category === categoryFilter.value
+  const matchesSearch = !searchQuery.value || (item.name || '').toLowerCase().includes(searchQuery.value.toLowerCase()) || (item.slug || '').toLowerCase().includes(searchQuery.value.toLowerCase())
+  const matchesCategory = !categoryFilter.value || item.categorySlug === categoryFilter.value
   const matchesStock = (stockFilter.value === 'all') || (stockFilter.value === 'low' && item.stockQuantity > 0 && item.stockQuantity <= (item.moq || 10)) || (stockFilter.value === 'out' && (!item.stockQuantity || item.stockQuantity <= 0)) || (stockFilter.value === 'in' && item.stockQuantity > (item.moq || 10))
   return matchesSearch && matchesCategory && matchesStock
 }))
@@ -753,13 +917,20 @@ const submitBatchDelete = async () => {
 
 // ── API ──
 
+const fetchCategories = async () => {
+  try {
+    categoryCatalog.value = await api.adminGetCategories()
+  } catch {
+    categoryCatalog.value = []
+  }
+}
+
 const fetchInventory = async () => {
   pending.value = true; error.value = ''
   try {
     const res = await api.get<any>('/admin/inventory', { page: page.value, limit: pageSize })
     items.value = res.data || []
     pagination.value = res.pagination
-    categories.value = Array.from(new Set(items.value.map((i: any) => i.category).filter(Boolean)))
   } catch (err: any) {
     error.value = err?.message || t('errors.api.load_failed')
   } finally { pending.value = false }
@@ -803,7 +974,7 @@ const exportSelected = async () => {
 const downloadTemplate = async () => {
   // Generate a template XLSX with headers matching product fields
   const headers = ['Name', 'Category', 'Category Slug', 'Base Price', 'MOQ', 'Stock', 'Lead Time', 'Halal', 'OEM', 'HS Code', 'Shelf Life', 'Storage', 'Status', 'Thumbnail', 'Images', 'Flavors', 'Shapes', 'Ingredients', 'Allergens', 'Certifications', 'Description', 'Summary']
-  const exampleRow = ['Example Candy', 'Hard Candy', 'hard-candy', '0.50', '1000', '5000', '15 days', 'Yes', 'Yes', '170490', '12 months', 'Cool dry place', 'active', 'https://example.com/image.jpg', 'https://example.com/img1.jpg, https://example.com/img2.jpg', 'Strawberry, Mint', 'Round, Star', 'Sugar, Glucose', 'None', 'ISO, HACCP', 'A delicious candy product', 'Premium quality candy']
+  const exampleRow = ['Example Candy', 'Hard Candy', 'hard-candy', '0.50', '1000', '5000', '', 'Yes', 'Yes', '170490', '12 months', 'Cool dry place', 'active', 'https://example.com/image.jpg', 'https://example.com/img1.jpg, https://example.com/img2.jpg', 'Strawberry, Mint', 'Round, Star', 'Sugar, Glucose', 'None', 'ISO, HACCP', 'A delicious candy product', 'Premium quality candy']
   const csvContent = [headers.join(','), exampleRow.join(',')].join('\n')
   const blob = new Blob(['﻿' + csvContent], { type: 'text/csv' })
   const url = URL.createObjectURL(blob)
@@ -947,5 +1118,64 @@ const stockStatusLabel = (qty: number, moq: number) => { if (!qty || qty <= 0) r
 const prevPage = () => { if (page.value > 1) { page.value -= 1; fetchInventory() } }
 const nextPage = () => { if (pagination.value && page.value < pagination.value.totalPages) { page.value += 1; fetchInventory() } }
 
-onMounted(fetchInventory)
+const fetchWarehouses = async () => {
+  warehousesPending.value = true
+  try { warehouses.value = (await api.get<any[]>('/admin/warehouses')) || [] }
+  catch { warehouses.value = [] }
+  finally { warehousesPending.value = false }
+}
+
+const fetchTransfers = async () => {
+  transfersPending.value = true
+  try {
+    const res = await api.get<any>('/admin/inventory/transfers', { page: 1, limit: 50 })
+    transfers.value = res.data || []
+  } catch { transfers.value = [] }
+  finally { transfersPending.value = false }
+}
+
+const openWarehouseModal = (wh?: any) => {
+  if (wh) Object.assign(warehouseForm, { id: wh.id, code: wh.code, name: wh.name, country: wh.country || '', type: wh.type || 'factory', isActive: wh.isActive !== false })
+  else Object.assign(warehouseForm, { id: '', code: '', name: '', country: '', type: 'factory', isActive: true })
+  showWarehouseModal.value = true
+}
+
+const saveWarehouse = async () => {
+  await api.post('/admin/warehouses', { ...warehouseForm })
+  showWarehouseModal.value = false
+  await fetchWarehouses()
+}
+
+const openWarehouseStockModal = (wh: any) => {
+  stockWarehouse.value = wh
+  warehouseStockForm.productId = ''
+  warehouseStockForm.quantity = 0
+  showWarehouseStockModal.value = true
+}
+
+const saveWarehouseStock = async () => {
+  await api.put(`/admin/warehouses/${stockWarehouse.value.id}/stock`, { ...warehouseStockForm })
+  showWarehouseStockModal.value = false
+}
+
+const openTransferModal = () => {
+  Object.assign(transferForm, { fromWarehouseId: '', toWarehouseId: '', productId: '', quantity: 1, notes: '' })
+  showTransferModal.value = true
+}
+
+const saveTransfer = async () => {
+  await api.post('/admin/inventory/transfer', {
+    fromWarehouseId: transferForm.fromWarehouseId,
+    toWarehouseId: transferForm.toWarehouseId,
+    notes: transferForm.notes,
+    items: [{ productId: transferForm.productId, quantity: transferForm.quantity }],
+  })
+  showTransferModal.value = false
+  await fetchTransfers()
+}
+
+onMounted(async () => {
+  await fetchCategories()
+  await fetchInventory()
+})
 </script>

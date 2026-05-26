@@ -5,6 +5,7 @@ import (
 	"context"
 	"strings"
 
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -55,6 +56,18 @@ func (r *ProductRepository) ListWarehouses(ctx context.Context) ([]modelsProduct
 	return rows, err
 }
 
+// GetDefaultWarehouseID 返回默认活跃仓库 ID（is_default 优先，否则 MAIN）
+func (r *ProductRepository) GetDefaultWarehouseID(ctx context.Context) (string, error) {
+	var w modelsProduct.Warehouse
+	if err := r.db.WithContext(ctx).Where("is_default = ? AND is_active = ?", true, true).First(&w).Error; err == nil {
+		return w.ID, nil
+	}
+	if err := r.db.WithContext(ctx).Where("code = ? AND is_active = ?", "MAIN", true).First(&w).Error; err == nil {
+		return w.ID, nil
+	}
+	return "", gorm.ErrRecordNotFound
+}
+
 // SaveWarehouse 创建或全量更新仓库
 func (r *ProductRepository) SaveWarehouse(ctx context.Context, w *modelsProduct.Warehouse) error {
 	return r.db.WithContext(ctx).Save(w).Error
@@ -97,14 +110,18 @@ func (r *ProductRepository) ListChannelInventoriesForProduct(ctx context.Context
 	return rows, err
 }
 
-// FindChannelInventory 按产品与渠道取单行
+// FindChannelInventory 按产品与渠道取单行；无记录时返回 gorm.ErrRecordNotFound（不触发 GORM error 日志）
 func (r *ProductRepository) FindChannelInventory(ctx context.Context, productID, channelCode string) (*modelsProduct.ChannelInventory, error) {
 	var row modelsProduct.ChannelInventory
 	err := r.db.WithContext(ctx).
 		Where("product_id = ? AND UPPER(channel_code) = UPPER(?)", productID, channelCode).
-		First(&row).Error
+		Limit(1).
+		Find(&row).Error
 	if err != nil {
 		return nil, err
+	}
+	if row.ID == 0 {
+		return nil, gorm.ErrRecordNotFound
 	}
 	return &row, nil
 }
@@ -118,4 +135,59 @@ func (r *ProductRepository) UpsertChannelInventory(ctx context.Context, row *mod
 			"sync_status", "last_synced_at", "sync_notes", "updated_at",
 		}),
 	}).Create(row).Error
+}
+
+// SumActiveOEMHoldsByProductIDs 批量返回多个产品当前 active OEM 预留量。
+// 返回 map[productID]quantity；不在结果中视为 0。
+//
+// E-1: 取代每行调用 SumActiveOEMHoldsForProduct 的 N+1 模式。
+func (r *ProductRepository) SumActiveOEMHoldsByProductIDs(ctx context.Context, productIDs []string) (map[string]int64, error) {
+	if len(productIDs) == 0 {
+		return map[string]int64{}, nil
+	}
+	type row struct {
+		ProductID string
+		Total     int64
+	}
+	var rows []row
+	err := r.db.WithContext(ctx).
+		Model(&modelsProduct.OEMProjectInventoryHold{}).
+		Select("product_id AS product_id, COALESCE(SUM(quantity),0) AS total").
+		Where("product_id IN ? AND status = ?", productIDs, "active").
+		Group("product_id").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]int64, len(rows))
+	for _, r := range rows {
+		out[r.ProductID] = r.Total
+	}
+	return out, nil
+}
+
+// FindChannelInventoriesByProductIDs 批量查询渠道库存行，按 (productID, channelCode) 索引。
+// 仅返回查询的渠道；productIDs 为空或 channelCode 为空时返回空 map。
+//
+// E-1: 取代逐行 FindChannelInventory 的 N+1 模式。
+func (r *ProductRepository) FindChannelInventoriesByProductIDs(ctx context.Context, productIDs []string, channelCode string) (map[string]*modelsProduct.ChannelInventory, error) {
+	out := make(map[string]*modelsProduct.ChannelInventory)
+	if len(productIDs) == 0 {
+		return out, nil
+	}
+	ch := strings.TrimSpace(channelCode)
+	if ch == "" {
+		return out, nil
+	}
+	var rows []modelsProduct.ChannelInventory
+	err := r.db.WithContext(ctx).
+		Where("product_id IN ? AND UPPER(channel_code) = UPPER(?)", productIDs, ch).
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	for i := range rows {
+		out[rows[i].ProductID] = &rows[i]
+	}
+	return out, nil
 }

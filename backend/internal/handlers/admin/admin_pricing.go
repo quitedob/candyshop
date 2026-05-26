@@ -5,6 +5,7 @@ import (
 	"candypro/api/internal/pkg/crypto"
 	"candypro/api/internal/pkg/pagination"
 	"candypro/api/internal/pkg/response"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -70,6 +71,7 @@ func (h *Handler) AdminCreatePriceList(c *gin.Context) {
 		return
 	}
 
+	h.logActivityAudit(c, "create", "pricing", list.ID, "", list.Name)
 	c.JSON(http.StatusCreated, list)
 }
 
@@ -93,6 +95,7 @@ func (h *Handler) AdminUpdatePriceList(c *gin.Context) {
 		response.ErrorResp(c, http.StatusNotFound, "price_list_not_found")
 		return
 	}
+	oldName := list.Name
 
 	var req adminUpdatePriceListRequest
 	if !response.BindJSONOrInvalid(c, &req) {
@@ -118,6 +121,7 @@ func (h *Handler) AdminUpdatePriceList(c *gin.Context) {
 		return
 	}
 
+	h.logActivityAudit(c, "update", "pricing", id, oldName, list.Name)
 	c.JSON(http.StatusOK, list)
 }
 
@@ -129,11 +133,21 @@ func (h *Handler) AdminDeletePriceList(c *gin.Context) {
 	}
 
 	id := c.Param("id")
+	rules, err := h.services.Price.GetPriceListRules(c.Request.Context(), id)
+	if err != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "price_fetch_failed")
+		return
+	}
+	if len(rules) > 0 {
+		response.InvalidResp(c, "price_list_has_rules")
+		return
+	}
 	if err := h.services.Price.DeletePriceList(c.Request.Context(), id); err != nil {
 		response.ErrorResp(c, http.StatusNotFound, "price_list_not_found")
 		return
 	}
 
+	h.logActivityAudit(c, "delete", "pricing", id, id, "")
 	c.JSON(http.StatusOK, gin.H{"message": "Price list deleted", "id": id})
 }
 
@@ -191,10 +205,26 @@ func (h *Handler) AdminSetProductPrice(c *gin.Context) {
 		minQty = 1
 	}
 
+	priceListID := strings.TrimSpace(req.PriceListID)
+	if _, err := h.services.Price.GetPriceList(c.Request.Context(), priceListID); err != nil {
+		response.ErrorResp(c, http.StatusNotFound, "price_list_not_found")
+		return
+	}
+
+	var oldPrice float64
+	if existing, err := h.services.Price.GetProductPrices(c.Request.Context(), productID); err == nil {
+		for _, r := range existing {
+			if r.PriceListID == priceListID && r.MinQuantity == minQty {
+				oldPrice = r.UnitPrice
+				break
+			}
+		}
+	}
+
 	rule := &modelsProduct.PriceRule{
 		ID:          crypto.GenerateID(),
 		ProductID:   productID,
-		PriceListID: strings.TrimSpace(req.PriceListID),
+		PriceListID: priceListID,
 		MinQuantity: minQty,
 		UnitPrice:   req.UnitPrice,
 		Currency:    currency,
@@ -207,6 +237,8 @@ func (h *Handler) AdminSetProductPrice(c *gin.Context) {
 		return
 	}
 
+	h.logActivityAudit(c, "update", "pricing", productID, fmt.Sprintf("%.2f", oldPrice),
+		fmt.Sprintf("%s:%.2f", priceListID, req.UnitPrice))
 	c.JSON(http.StatusCreated, rule)
 }
 
@@ -218,10 +250,12 @@ func (h *Handler) AdminDeleteProductPrice(c *gin.Context) {
 	}
 
 	priceID := c.Param("priceId")
+	productID := c.Param("id")
 	if err := h.services.Price.DeleteProductPrice(c.Request.Context(), priceID); err != nil {
 		response.ErrorResp(c, http.StatusNotFound, "price_rule_not_found")
 		return
 	}
+	h.logActivityAudit(c, "price_delete", productID, "", priceID, "")
 
 	c.JSON(http.StatusOK, gin.H{"message": "Price rule deleted", "id": priceID})
 }

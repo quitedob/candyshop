@@ -14,7 +14,7 @@ import (
 )
 
 type customerSendMessageRequest struct {
-	Message string `json:"message" binding:"required"`
+	Message string `json:"message"`
 }
 
 // CustomerGetOrderMessages returns paginated messages for an order.
@@ -56,7 +56,7 @@ func (h *Handler) CustomerGetOrderMessages(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// CustomerSendOrderMessage creates a new message from the customer on an order.
+// CustomerSendOrderMessage creates a new message from the customer on an order (JSON or multipart + files).
 func (h *Handler) CustomerSendOrderMessage(c *gin.Context) {
 	if h.services == nil {
 		response.ServiceUnavailableResp(c)
@@ -85,26 +85,44 @@ func (h *Handler) CustomerSendOrderMessage(c *gin.Context) {
 		return
 	}
 
-	var req customerSendMessageRequest
-	if !response.BindJSONOrInvalid(c, &req) {
-		return
+	msgText := ""
+	var attachments []string
+
+	ct := strings.ToLower(c.GetHeader("Content-Type"))
+	if strings.Contains(ct, "multipart/form-data") {
+		if err := c.Request.ParseMultipartForm(64 << 20); err != nil {
+			response.ErrorResp(c, http.StatusBadRequest, "form_parse_failed")
+			return
+		}
+		msgText = strings.TrimSpace(c.PostForm("message"))
+		var upErr error
+		attachments, upErr = h.uploadCustomerAttachments(c, c.Request.MultipartForm.File["files"], "order-messages", maxCustomerMessageFiles)
+		if upErr != nil {
+			return
+		}
+	} else {
+		var req customerSendMessageRequest
+		if !response.BindJSONOrInvalid(c, &req) {
+			return
+		}
+		msgText = strings.TrimSpace(req.Message)
 	}
 
-	msg := strings.TrimSpace(req.Message)
-	if msg == "" {
+	if msgText == "" && len(attachments) == 0 {
 		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
 	now := time.Now()
 	message := &modelsOrder.OrderMessage{
-		ID:         crypto.GenerateID(),
-		OrderID:    orderID,
-		UserID:     userID,
-		SenderType: "customer",
-		Message:    msg,
-		CreatedAt:  now,
-		UpdatedAt:  now,
+		ID:          crypto.GenerateID(),
+		OrderID:     orderID,
+		UserID:      userID,
+		SenderType:  "customer",
+		Message:     msgText,
+		Attachments: attachments,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 
 	if err := h.services.OrderMessage.SendMessage(c.Request.Context(), message); err != nil {
@@ -112,7 +130,6 @@ func (h *Handler) CustomerSendOrderMessage(c *gin.Context) {
 		return
 	}
 
-	// Notify admin users about the new message
 	if h.services.User != nil && h.services.Notification != nil {
 		adminUsers, userErr := h.services.User.FindAdminUsers(c.Request.Context())
 		if userErr == nil {

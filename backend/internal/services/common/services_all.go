@@ -29,6 +29,8 @@ type Services struct {
 	AuthScope            *AuthScopeServices
 	System               *SystemServices
 	CountryPaymentPolicy *order.CountryPaymentPolicyService
+	NotificationOutbox   *repositoryCommon.NotificationOutboxRepository
+	NotificationRelay    *NotificationRelay
 }
 
 // NewServices creates all scoped services.
@@ -39,6 +41,7 @@ func NewServices(repos *repositoryCommon.Repositories, cfg *config.Config, db *g
 
 	publicSvcs := publicscope.New(repos.Public, cfg)
 	authScopeSvcs := authscopescope.New(repos.AuthScope, cfg)
+	notificationOutbox := repositoryCommon.NewNotificationOutboxRepository(db)
 
 	return &Services{
 		Public:               publicSvcs,
@@ -47,5 +50,7 @@ func NewServices(repos *repositoryCommon.Repositories, cfg *config.Config, db *g
 		AuthScope:            authScopeSvcs,
 		System:               systemscope.New(repos.System, cfg, publicSvcs.Search),
 		CountryPaymentPolicy: order.NewCountryPaymentPolicyService(db),
+		NotificationOutbox:   notificationOutbox,
+		NotificationRelay:    NewNotificationRelay(notificationOutbox, cfg),
 	}
 }

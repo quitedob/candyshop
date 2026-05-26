@@ -6,9 +6,13 @@ import (
 	modelsTrade "candypro/api/internal/models/trade"
 	modelsUser "candypro/api/internal/models/user"
 	"candypro/api/internal/pkg/dberror"
+	"candypro/api/internal/pkg/i18n"
 	"candypro/api/internal/pkg/pagination"
+	"candypro/api/internal/pkg/request"
 	"candypro/api/internal/pkg/response"
+	orderSvc "candypro/api/internal/services/order"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -16,10 +20,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var (
+	_ modelsCommon.PaginatedResponse
+	_ modelsOrder.Order
+)
+
 // AdminGetOrders returns all orders for admins.
 // @Summary Admin get orders
 // @Tags admin-orders
 // @Produce json
+// @Success 200 {object} modelsCommon.PaginatedResponse
 // @Router /admin/orders [get]
 func (h *Handler) AdminGetOrders(c *gin.Context) {
 	if h.services == nil {
@@ -60,7 +70,16 @@ func (h *Handler) AdminGetOrder(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, order)
+	resp := orderDetailResponse{Order: order, StatusHistory: []statusHistoryEntry{}, ActivityHistory: []activityHistoryEntry{}}
+	if h.services.ActivityLog != nil {
+		if logs, logErr := h.services.ActivityLog.FindByEntity(c.Request.Context(), "order", id); logErr == nil {
+			resp.StatusHistory = buildOrderStatusHistory(logs)
+			resp.ActivityHistory = buildOrderActivityHistory(logs)
+		}
+	}
+	resp.InventoryWarnings = h.buildOrderInventoryWarnings(c, order)
+
+	c.JSON(http.StatusOK, resp)
 }
 
 // AdminUpdateOrderStatus updates the status of an order.
@@ -78,7 +97,9 @@ func (h *Handler) AdminUpdateOrderStatus(c *gin.Context) {
 
 	id := c.Param("id")
 	var req struct {
-		Status string `json:"status"`
+		Status              string `json:"status"`
+		TrackingNumber      string `json:"trackingNumber"`
+		TrackingNumberSnake string `json:"tracking_number"`
 	}
 	if !response.BindJSONOrInvalid(c, &req) {
 		return
@@ -92,7 +113,10 @@ func (h *Handler) AdminUpdateOrderStatus(c *gin.Context) {
 
 	previousStatus := strings.ToLower(strings.TrimSpace(order.Status))
 	if req.Status != "" {
-		order.Status = req.Status
+		order.Status = strings.TrimSpace(req.Status)
+	}
+	if tracking := request.FirstNonEmpty(req.TrackingNumber, req.TrackingNumberSnake); tracking != "" {
+		order.TrackingNumber = tracking
 	}
 	targetStatus := strings.ToLower(strings.TrimSpace(order.Status))
 	if previousStatus != targetStatus {
@@ -102,41 +126,10 @@ func (h *Handler) AdminUpdateOrderStatus(c *gin.Context) {
 		}
 	}
 
-	// Per-customer payment policy: check company PaymentTerms and CreditLimit
-	company := h.resolveUserCompany(c, order.UserID)
-	if company != nil {
-		// Credit limit check before confirmation
-		if requiresPaidBeforeExecution(targetStatus) && !isPaidInFull(order.PaymentStatus) {
-			if requiresPrepaymentByTerms(company.PaymentTerms) {
-				response.ErrorResp(c, http.StatusUnprocessableEntity, "payment_policy_violation")
-				return
-			}
-			// For NET terms, check credit limit
-			if company.CreditLimit > 0 && order.TotalAmount > company.CreditLimit {
-				response.ErrorResp(c, http.StatusUnprocessableEntity, "credit_limit_exceeded")
-				return
-			}
-		}
-	} else {
-		// Fallback: country-based payment policy for users without a company
-		if h.requiresFullPrepaymentCountry(order.ShippingAddress.Country) &&
-			requiresPaidBeforeExecution(targetStatus) &&
-			!isPaidInFull(order.PaymentStatus) {
-			response.ErrorResp(c, http.StatusUnprocessableEntity, "payment_policy_violation")
-			return
-		}
-	}
-
-	// Reserve stock when admin confirms a pending order (stock not yet deducted)
-	if targetStatus == modelsOrder.OrderStatusConfirmed && !order.StockReserved && len(order.Items) > 0 {
-		if err := h.services.Order.ReserveOrderStock(c.Request.Context(), order); err != nil {
-			if errors.Is(err, modelsOrder.ErrInsufficientStock) {
-				response.ErrorResp(c, http.StatusUnprocessableEntity, "inventory_violation")
-				return
-			}
-			response.ErrorResp(c, http.StatusInternalServerError, "order_stock_reserve_failed")
-			return
-		}
+	// 执行阶段（confirmed 及以后）须已付款或部分付款
+	if paymentInsufficientForExecution(targetStatus, order.PaymentStatus) {
+		response.ErrorResp(c, http.StatusUnprocessableEntity, "payment_policy_violation")
+		return
 	}
 
 	if previousStatus != "cancelled" && targetStatus == "cancelled" && order.StockReserved {
@@ -146,19 +139,59 @@ func (h *Handler) AdminUpdateOrderStatus(c *gin.Context) {
 		}
 	}
 
+	// H-22: warn (audit) when cancelling an order with confirmed payments that
+	// have not been refunded. We don't auto-refund — that requires gateway-aware
+	// flows — but flag it loudly so finance reconciliation can act on it.
+	if previousStatus != "cancelled" && targetStatus == "cancelled" && h.services.Payment != nil {
+		count, total, perr := h.services.Payment.CountConfirmedPaymentsForOrder(c.Request.Context(), order.ID)
+		if perr == nil && count > 0 {
+			h.logOrderAudit(c, "order_cancel_with_unrefunded_payments",
+				order.ID, c.GetString("userID"),
+				fmt.Sprintf("count=%d", count),
+				fmt.Sprintf("total=%.2f %s", total, order.Currency),
+			)
+		}
+	}
+
 	now := time.Now()
 	order.UpdatedAt = now
+	if targetStatus == modelsOrder.OrderStatusConfirmed && previousStatus != targetStatus && h.services.Product != nil {
+		order.COGS = orderSvc.ComputeOrderCOGS(c.Request.Context(), order.Items, h.services.Product)
+	}
+
+	// H-12: re-validate payment status against the freshest read just before
+	// invoking the transactional update. This shrinks the check-then-act window
+	// — a webhook flipping payment between the original GetOrder() and the write
+	// would otherwise sneak past `paymentInsufficientForExecution`. The repo
+	// update itself takes a row lock, so this fetch + repo guard together
+	// approximate a SELECT FOR UPDATE on payment_status.
+	//
+	// R2 A-10: also detect concurrent admin/webhook writes by comparing Version
+	// on the freshest read against the version we loaded at the top. If it
+	// changed, our in-memory mutations were derived from stale state and the
+	// safest action is to ask the operator to refresh and re-decide rather
+	// than silently overwrite the competing change.
+	if requiresPaidBeforeExecution(targetStatus) {
+		fresh, freshErr := h.services.Order.GetOrder(c.Request.Context(), order.ID)
+		if freshErr == nil && fresh != nil {
+			if paymentInsufficientForExecution(targetStatus, fresh.PaymentStatus) {
+				response.ErrorResp(c, http.StatusUnprocessableEntity, "payment_policy_violation")
+				return
+			}
+			if fresh.Version != order.Version {
+				response.ErrorResp(c, http.StatusConflict, "order_modified_concurrently")
+				return
+			}
+		}
+	} else {
+		// Cheap version recheck for non-execution transitions too.
+		if fresh, freshErr := h.services.Order.GetOrder(c.Request.Context(), order.ID); freshErr == nil && fresh != nil && fresh.Version != order.Version {
+			response.ErrorResp(c, http.StatusConflict, "order_modified_concurrently")
+			return
+		}
+	}
 	if targetStatus == "confirmed" && order.ConfirmedAt == nil {
 		order.ConfirmedAt = &now
-		// Compute COGS from weighted average batch costs when first confirming
-		if order.COGS == 0 && h.services.Supplier != nil {
-			var totalCOGS float64
-			for _, item := range order.Items {
-				avgCost := h.services.Supplier.ComputeWeightedAvgCost(c.Request.Context(), item.ProductID)
-				totalCOGS += float64(item.Quantity) * avgCost
-			}
-			order.COGS = totalCOGS
-		}
 	}
 	if targetStatus == modelsOrder.OrderStatusShipped && order.ShippedAt == nil {
 		order.ShippedAt = &now
@@ -168,12 +201,17 @@ func (h *Handler) AdminUpdateOrderStatus(c *gin.Context) {
 	}
 
 	if err := h.services.Order.UpdateOrderForAdmin(c.Request.Context(), order, previousStatus, targetStatus); err != nil {
+		if errors.Is(err, modelsOrder.ErrInsufficientStock) {
+			response.ErrorResp(c, http.StatusUnprocessableEntity, "inventory_violation")
+			return
+		}
 		response.ErrorResp(c, http.StatusInternalServerError, "order_update_failed")
 		return
 	}
 
 	// Send status change email notification
 	if previousStatus != targetStatus {
+		h.logOrderAudit(c, "order_status_change", order.ID, c.GetString("userID"), previousStatus, targetStatus)
 		userEmail := ""
 		userName := ""
 		if order.User != nil {
@@ -190,12 +228,21 @@ func (h *Handler) AdminUpdateOrderStatus(c *gin.Context) {
 
 		// Send in-app notification
 		if h.services.Notification != nil {
+			statusLabel := targetStatus
+			statusKey := "enum.order_status_" + strings.ReplaceAll(targetStatus, "-", "_")
+			if msg := i18n.T(c, statusKey); msg != statusKey {
+				statusLabel = msg
+			}
+			vars := map[string]string{
+				"orderNumber": order.OrderNumber,
+				"statusLabel": statusLabel,
+			}
 			_ = h.services.Notification.Create(c.Request.Context(), &modelsCommon.Notification{
 				UserID:    order.UserID,
 				Type:      "order",
 				Reference: order.ID,
-				Title:     "Order " + strings.ToUpper(targetStatus[:1]) + targetStatus[1:],
-				Message:   "Your order #" + order.OrderNumber + " has been " + targetStatus + ".",
+				Title:     i18n.TWithVars(c, "notifications.order_status_updated_title", vars),
+				Message:   i18n.TWithVars(c, "notifications.order_status_updated_message", vars),
 			})
 		}
 	}

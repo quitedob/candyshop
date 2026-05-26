@@ -11,7 +11,7 @@ SALES CONTRACT STRUCTURE:
    3. UNIT PRICE & TOTAL AMOUNT: In specified currency
    4. PACKING: Standard export packing, details
    5. SHIPPING MARK: As specified by buyer
-   6. TIME OF SHIPMENT: Within X days after receipt of L/C or advance payment
+   6. TIME OF SHIPMENT: As confirmed at order time after receipt of L/C or advance payment
    7. PORT OF LOADING & DESTINATION
    8. INSURANCE: To be covered by Buyer/Seller
    9. TERMS OF PAYMENT: Detailed payment schedule

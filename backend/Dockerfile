@@ -22,8 +22,8 @@ FROM alpine:latest
 
 WORKDIR /app
 
-# Install ca-certificates for HTTPS
-RUN apk --no-cache add ca-certificates tzdata
+# Install ca-certificates for HTTPS and dumb-init for graceful shutdown
+RUN apk --no-cache add ca-certificates tzdata dumb-init
 
 # Create non-root user
 RUN adduser -D -g '' appuser
@@ -45,5 +45,6 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
-# Run the application
+# Run the application (dumb-init forwards signals to PID 1)
+ENTRYPOINT ["dumb-init", "--"]
 CMD ["./main"]

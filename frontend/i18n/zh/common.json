@@ -1,5 +1,6 @@
 {
   "skip_to_content": "跳转到主要内容",
+  "javascript_required": "本网站需要 JavaScript 以获得最佳体验。您可使用以下链接继续浏览。",
   "loading": "加载中…",
   "close": "关闭",
   "whatsapp": {
@@ -58,6 +59,7 @@
       "ai_draft_failed": "无法生成草稿订单，请稍后重试。",
       "ai_confirm_failed": "无法确认草稿，请稍后重试。",
       "manual_order_failed": "无法创建订单，请稍后重试。",
+      "request_failed": "请求失败，请稍后重试。",
       "trade_load_failed": "无法加载贸易详情。",
       "status_failed": "无法更新状态。",
       "document_confirm_failed": "无法确认单据。",
@@ -73,6 +75,7 @@
       "company_verify_failed": "无法验证企业。",
       "inquiry_convert_failed": "无法转换询价。",
       "payment_confirm_failed": "无法确认付款。",
+      "payment_failed": "在线支付失败，请重试。",
       "fetch_payments_failed": "无法加载付款记录。",
       "product_price_required": "产品价格必须大于零。",
       "product_status_transition_invalid": "状态变更无效。允许：草稿 → 上架，上架 ↔ 下架。",
@@ -202,9 +205,20 @@
     },
     "shipment_status": {
       "pending": "待发货",
+      "dispatched": "已发货",
       "in_transit": "运输中",
       "delivered": "已送达",
       "exception": "异常",
+      "unknown": "未知"
+    },
+    "shipment_event_type": {
+      "dispatched": "已发货",
+      "picked_up": "已揽收",
+      "in_transit": "运输中",
+      "arrived_at_port": "已到港",
+      "customs_cleared": "清关完成",
+      "out_for_delivery": "派送中",
+      "delivered": "已送达",
       "unknown": "未知"
     },
     "carrier": {
@@ -227,6 +241,7 @@
     "invoice_type": {
       "invoice": "发票",
       "proforma": "形式发票",
+      "commercial": "商业发票",
       "credit_note": "贷项通知单",
       "unknown": "未知"
     },
@@ -349,6 +364,8 @@
     "go_to_homepage": "返回首页",
     "main_navigation": "主导航",
     "language": "语言",
+    "dark_mode": "切换到暗色模式",
+    "light_mode": "切换到亮色模式",
     "contact_whatsapp": "通过 WhatsApp 联系我们",
     "toggle_menu": "切换菜单",
     "mobile_navigation": "移动端导航",
@@ -424,8 +441,17 @@
     "company_tagline": "B2B 糖果制造"
   },
   "form": {
-    "phone_placeholder": "+86 123 4567 890"
+    "phone_placeholder": "+86 123 4567 890",
+    "yes": "是",
+    "no": "否"
   },
   "yes": "是",
-  "no": "否"
+  "no": "否",
+  "cookie_consent": {
+    "title": "Cookie 偏好设置",
+    "message": "我们使用 Cookie 来提升您的浏览体验、分析网站流量和个性化内容。点击「全部接受」即表示您同意我们使用所有 Cookie。您可以选择「仅必要」以拒绝非必要 Cookie。",
+    "accept_all": "全部接受",
+    "essential_only": "仅必要",
+    "learn_more": "了解我们的 Cookie 政策"
+  }
 }

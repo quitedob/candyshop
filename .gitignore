@@ -108,3 +108,6 @@ backend/uploads/
 
 # Air live reload
 tmp/
+
+# Deployment output (build artifacts)
+output/

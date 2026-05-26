@@ -1,31 +1,31 @@
 {
-  "story": "Our Story",
-  "story_p1": "Founded in 2008, CandyPro began as a small family-owned candy factory with a simple mission: to create delicious, high-quality confectionery products that bring joy to people of all ages.",
-  "story_p2": "Over the years, we have grown from a local manufacturer to a trusted OEM partner for brands around the world. Today, our 20,000 square meter facility produces over 100 tons of candy daily, serving clients in more than 50 countries across Europe, the Americas, Southeast Asia, and the Middle East.",
-  "story_p3": "What sets us apart is our commitment to quality and innovation. We invest heavily in R&D, continuously improving our formulations and processes to meet the evolving needs of our clients. Our state-of-the-art production lines and rigorous quality control systems ensure that every product that leaves our facility meets the highest standards.",
-  "mission": "Our Mission",
-  "mission_desc": "To be the most trusted OEM candy manufacturing partner for global brands, delivering exceptional quality, innovation, and service that helps our clients succeed in their markets.",
-  "vision": "Our Vision",
-  "vision_desc": "To become the leading candy manufacturer in Asia, known for product excellence, operational efficiency, and sustainable practices that set industry benchmarks.",
-  "values": "Our Values",
-  "values_desc": "Quality, Integrity, Innovation, Partnership, Sustainability — these core values guide everything we do, from product development to customer service.",
-  "team": "Our Team",
-  "team_subtitle": "The experienced professionals behind our success",
-  "team_members": "Employees",
+  "story": "우리의 이야기",
+  "story_p1": "2008년에 설립된 CandyPro는 소규모 가족 경영 캔디 공장으로 시작하여, 모든 연령대의 사람들에게 기쁨을 선사하는 맛있고 고품질의 제과 제품을 만드는 것이라는 간단한 사명을 가지고 출발했습니다.",
+  "story_p2": "수년에 걸쳐 지역 제조업체에서 전 세계 브랜드의 신뢰받는 OEM 파트너로 성장했습니다. 오늘날 2만 제곱미터 규모의 시설에서 하루 100톤 이상의 캔디를 생산하며, 유럽, 아메리카, 동남아시아, 중동 등 50개국 이상의 고객에게 서비스를 제공합니다.",
+  "story_p3": "우리를 차별화하는 것은 품질과 혁신에 대한 헌신입니다. R&D에 적극 투자하여 고객의 변화하는 요구에 부응하기 위해 배합과 공정을 지속적으로 개선합니다. 최첨단 생산 라인과 엄격한 품질 관리 시스템을 통해 시설을 떠나는 모든 제품이 최고 수준의 기준을 충족하도록 보장합니다.",
+  "mission": "우리의 사명",
+  "mission_desc": "글로벌 브랜드를 위한 가장 신뢰받는 OEM 캔디 제조 파트너가 되어, 탁월한 품질, 혁신, 서비스를 제공함으로써 고객이 시장에서 성공할 수 있도록 돕는 것입니다.",
+  "vision": "우리의 비전",
+  "vision_desc": "아시아 최고의 캔디 제조업체가 되어, 제품 우수성, 운영 효율성, 지속 가능한 관행으로 업계 벤치마크를 설정하는 것으로 알려지는 것입니다.",
+  "values": "우리의 가치",
+  "values_desc": "품질, 정직, 혁신, 파트너십, 지속 가능성 — 이 핵심 가치는 제품 개발부터 고객 서비스까지 우리가 하는 모든 일을 이끕니다.",
+  "team": "우리 팀",
+  "team_subtitle": "우리의 성공을 이끄는 경험 많은 전문가들",
+  "team_members": "직원",
   "titles": {
-    "ceo": "Founder & CEO",
-    "qa_director": "Director of Quality Assurance",
-    "rd_manager": "R&D Manager",
-    "sales_director": "Sales Director",
-    "production_manager": "Production Manager",
-    "export_manager": "Export Manager"
+    "ceo": "창립자 및 CEO",
+    "qa_director": "품질 보증 이사",
+    "rd_manager": "R&D 매니저",
+    "sales_director": "영업 이사",
+    "production_manager": "생산 매니저",
+    "export_manager": "수출 매니저"
   },
   "cert_desc": {
-    "haccp": "Hazard Analysis and Critical Control Points",
-    "iso": "Food Safety Management System",
-    "brc": "Grade A Certification",
-    "halal": "Halal Certification"
+    "haccp": "위해요소 중점관리",
+    "iso": "식품 안전 관리 시스템",
+    "brc": "Grade A 인증",
+    "halal": "Halal 인증"
   },
-  "cta_title": "Let's Build Something Great Together",
-  "cta_subtitle": "We'd love to hear about your project and explore how we can help"
+  "cta_title": "함께 위대한 것을 만들어 봅시다",
+  "cta_subtitle": "귀하의 프로젝트에 대해 듣고, 어떻게 도울 수 있는지 함께 논의하고 싶습니다"
 }

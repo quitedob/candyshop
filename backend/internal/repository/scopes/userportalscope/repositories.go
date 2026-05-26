@@ -36,9 +36,13 @@ type Repositories struct {
 	Coupon           *order.CouponRepository
 	RequisitionList  *order.RequisitionListRepository
 	Webhook          *order.WebhookRepository
+	Event            *order.EventRepository
+	HookConfig       *order.HookRepository
+	HookExecution    *order.HookExecutionRepository
 	BuyerOrg       *order.BuyerOrgRepository
 	OrgMember      *order.OrgMemberRepository
 	ApprovalAction *order.ApprovalActionRepository
+	Channel        *product.ChannelRepository
 }
 
 func New(db *gorm.DB) *Repositories {
@@ -66,8 +70,12 @@ func New(db *gorm.DB) *Repositories {
 		Coupon:          order.NewCouponRepository(db),
 		RequisitionList: order.NewRequisitionListRepository(db),
 		Webhook:         order.NewWebhookRepository(db),
+		Event:           order.NewEventRepository(db),
+		HookConfig:      order.NewHookRepository(db),
+		HookExecution:   order.NewHookExecutionRepository(db),
 		BuyerOrg:       order.NewBuyerOrgRepository(db),
 		OrgMember:      order.NewOrgMemberRepository(db),
 		ApprovalAction: order.NewApprovalActionRepository(db),
+		Channel:        product.NewChannelRepository(db),
 	}
 }

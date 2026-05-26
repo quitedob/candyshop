@@ -1,176 +1,177 @@
 {
   "form": {
-    "title": "Send Us an Inquiry",
-    "subtitle": "Get a quote within 24 hours",
-    "company_name": "Company Name",
-    "contact_person": "Contact Person",
-    "email": "Email Address",
-    "whatsapp": "WhatsApp / Phone",
-    "target_country": "Target Country",
-    "estimated_quantity": "Estimated Quantity",
-    "interested_products": "Interested Product(s)",
-    "packaging_requirements": "Packaging Requirements",
-    "flavor_requirements": "Flavor Requirements",
-    "oem_needed": "OEM/Private Label Needed?",
-    "yes": "Yes",
-    "no": "No",
-    "expected_delivery": "Expected Delivery Date",
-    "message": "Additional Requirements",
-    "upload_files": "Upload Reference Images",
-    "remove_file": "Remove file",
-    "submit": "Send Inquiry",
-    "submitting": "Submitting...",
-    "success": "Thank you! Your inquiry has been received. We will contact you within 24 hours.",
-    "error": "Sorry, there was an error submitting your inquiry. Please try again or contact us via WhatsApp.",
-    "files_max": "Maximum {max} files allowed",
-    "file_too_large": "File {name} is too large. Maximum size is {max} MB.",
-    "file_type_unsupported": "File {name} is not a supported type. Use JPG, PNG, WebP, or PDF.",
-    "privacy_note": "Your information is secure and will not be shared.",
-    "message_placeholder": "Tell us more about your requirements...",
-    "summary": "Summary",
-    "not_specified": "Not specified",
-    "interested_products_hint": "Separate multiple products with commas",
+    "title": "문의 보내기",
+    "subtitle": "24시간 이내 견적 제공",
+    "company_name": "회사명",
+    "contact_person": "담당자",
+    "email": "이메일 주소",
+    "whatsapp": "WhatsApp / 전화",
+    "target_country": "목표 국가",
+    "estimated_quantity": "예상 수량",
+    "interested_products": "관심 제품",
+    "packaging_requirements": "패키징 요구사항",
+    "flavor_requirements": "맛 요구사항",
+    "oem_needed": "OEM/프라이빗 라벨 필요?",
+    "yes": "예",
+    "no": "아니오",
+    "expected_delivery": "희망 배송일",
+    "message": "추가 요구사항",
+    "upload_files": "참고 이미지 업로드",
+    "remove_file": "파일 제거",
+    "submit": "문의 보내기",
+    "submitting": "제출 중...",
+    "success": "감사합니다! 문의가 접수되었습니다. 24시간 이내에 연락드리겠습니다.",
+    "error": "문의 제출 중 오류가 발생했습니다. 다시 시도하거나 WhatsApp으로 문의해 주세요.",
+    "files_max": "최대 {max}개 파일까지 허용됩니다",
+    "file_too_large": "파일 {name}이(가) 너무 큽니다. 최대 크기는 {max} MB입니다.",
+    "file_type_unsupported": "파일 {name}은(는) 지원되지 않는 형식입니다. PDF, DOC, DOCX, CSV, XLSX, PNG, JPEG, JPG, MKV, MP4를 사용하세요.",
+    "privacy_note": "귀하의 정보는 안전하게 보호되며 공유되지 않습니다.",
+    "message_placeholder": "요구사항에 대해 더 자세히 알려주세요...",
+    "summary": "요약",
+    "not_specified": "미지정",
+    "interested_products_hint": "여러 제품은 쉼표로 구분하세요",
     "options": {
       "countries": {
-        "US": "United States",
-        "UK": "United Kingdom",
-        "DE": "Germany",
-        "FR": "France",
-        "CA": "Canada",
-        "AU": "Australia",
-        "JP": "Japan",
-        "KR": "South Korea",
-        "SG": "Singapore",
-        "MY": "Malaysia",
-        "TH": "Thailand",
-        "VN": "Vietnam",
-        "ID": "Indonesia",
-        "PH": "Philippines",
-        "OTHER": "Other"
+        "US": "미국",
+        "UK": "영국",
+        "DE": "독일",
+        "FR": "프랑스",
+        "CA": "캐나다",
+        "AU": "호주",
+        "JP": "일본",
+        "KR": "대한민국",
+        "CN": "중국",
+        "SG": "싱가포르",
+        "MY": "말레이시아",
+        "TH": "태국",
+        "VN": "베트남",
+        "ID": "인도네시아",
+        "PH": "필리핀",
+        "OTHER": "기타"
       },
       "quantities": {
-        "100-500": "100 - 500 pcs",
-        "500-1000": "500 - 1,000 pcs",
-        "1000-5000": "1,000 - 5,000 pcs",
-        "5000-10000": "5,000 - 10,000 pcs",
-        "10000+": "10,000+ pcs"
+        "100-500": "100 - 500개",
+        "500-1000": "500 - 1,000개",
+        "1000-5000": "1,000 - 5,000개",
+        "5000-10000": "5,000 - 10,000개",
+        "10000+": "10,000개 이상"
       }
     }
   },
   "contact": {
-    "title": "Contact Us",
-    "subtitle": "Get in touch with our team",
-    "address": "Address",
-    "phone": "Phone",
-    "email": "Email",
+    "title": "문의하기",
+    "subtitle": "저희 팀에 연락하세요",
+    "address": "주소",
+    "phone": "전화",
+    "email": "이메일",
     "whatsapp": "WhatsApp",
-    "hours": "Business Hours",
-    "working_hours": "Monday - Friday: 9:00 AM - 6:00 PM (GMT+8)",
-    "social_media": "Follow Us",
-    "factory_location": "Factory Location",
-    "send_inquiry": "Send Inquiry",
-    "quick_contact": "Quick Contact",
-    "loading_form": "Loading form...",
-    "global_presence_title": "Global Presence",
-    "global_presence_subtitle": "Our offices and representatives around the world",
-    "faq_title": "Frequently Asked Questions",
+    "hours": "영업 시간",
+    "working_hours": "월요일 - 금요일: 오전 9:00 - 오후 6:00 (GMT+8)",
+    "social_media": "팔로우",
+    "factory_location": "공장 위치",
+    "send_inquiry": "문의 보내기",
+    "quick_contact": "빠른 연락",
+    "loading_form": "양식 로딩 중...",
+    "global_presence_title": "글로벌 네트워크",
+    "global_presence_subtitle": "전 세계 사무소 및 대표",
+    "faq_title": "자주 묻는 질문",
     "offices": {
-      "headquarters_country": "China (Headquarters)",
+      "headquarters_country": "중국 (본사)",
       "headquarters_address": "123 Industrial Zone, Sweet City",
-      "us_country": "United States",
+      "us_country": "미국",
       "us_address": "456 Market Street, San Francisco, CA",
-      "uk_country": "United Kingdom",
+      "uk_country": "영국",
       "uk_address": "789 High Street, London",
       "uae_country": "UAE",
       "uae_address": "321 Business Bay, Dubai"
     },
-    "whatsapp_desc": "Get instant response to your inquiries",
+    "whatsapp_desc": "문의에 즉시 응답받으세요",
     "faq": {
-      "response_time_q": "How quickly will I receive a response?",
-      "response_time_a": "We typically respond to all inquiries within 24 hours during business days. For urgent matters, we recommend contacting us via WhatsApp for immediate assistance.",
-      "visit_factory_q": "Can I visit your factory?",
-      "visit_factory_a": "Yes, we welcome clients to visit our facility. Please contact us in advance to schedule a visit, and we can arrange factory tours and face-to-face meetings."
+      "response_time_q": "얼마나 빨리 답변을 받을 수 있나요?",
+      "response_time_a": "영업일 기준 24시간 이내에 모든 문의에 응답합니다. 긴급한 경우 WhatsApp으로 연락하시면 즉시 도움을 받으실 수 있습니다.",
+      "visit_factory_q": "공장을 방문할 수 있나요?",
+      "visit_factory_a": "네, 고객의 공장 방문을 환영합니다. 방문을 원하시면 사전에 연락해 주시면 공장 투어와 대면 미팅을 준비해 드립니다."
     }
   },
   "faq": {
-    "title": "Frequently Asked Questions",
-    "subtitle": "Find answers to common questions about our services",
-    "still_questions": "Still Have Questions?",
-    "contact_description": "Our team is here to help. Contact us for personalized assistance.",
+    "title": "자주 묻는 질문",
+    "subtitle": "서비스에 대한 일반적인 질문에 대한 답변",
+    "still_questions": "아직 궁금한 점이 있으신가요?",
+    "contact_description": "저희 팀이 도와드리겠습니다. 맞춤형 지원을 위해 문의해 주세요.",
     "categories": {
-      "general": "General",
-      "ordering": "Ordering",
-      "oem": "OEM/Private Label",
-      "shipping": "Shipping"
+      "general": "일반",
+      "ordering": "주문",
+      "oem": "OEM/프라이빗 라벨",
+      "shipping": "배송"
     },
     "items": [
       {
-        "question": "What is your minimum order quantity (MOQ)?",
-        "answer": "Our MOQ varies by product type. For standard products, MOQ starts from 1,000 pieces. For custom OEM orders, the minimum is typically 3,000 pieces depending on the complexity of customization required."
+        "question": "최소 주문 수량(MOQ)은 얼마인가요?",
+        "answer": "MOQ는 제품 유형에 따라 다릅니다. 표준 제품은 1,000개부터, 맞춤 OEM 주문은 보통 맞춤화 복잡도에 따라 3,000개부터 시작합니다."
       },
       {
-        "question": "What certifications do you have?",
-        "answer": "We hold multiple international certifications including HACCP, ISO22000, BRC Grade A, Halal, and FDA registration. All our products meet strict international food safety standards."
+        "question": "어떤 인증을 보유하고 있나요?",
+        "answer": "HACCP, ISO22000, BRC Grade A, Halal, FDA 등록 등 다양한 국제 인증을 보유하고 있습니다. 모든 제품은 엄격한 국제 식품 안전 기준을 충족합니다."
       },
       {
-        "question": "Can I get samples before placing an order?",
-        "answer": "Yes, we provide samples for quality evaluation. Standard samples are free (you pay shipping), and custom samples require a mold fee which is refundable upon placing a bulk order."
+        "question": "주문 전에 샘플을 받을 수 있나요?",
+        "answer": "네, 품질 평가를 위한 샘플을 제공합니다. 표준 샘플은 무료(배송비 별도)이며, 맞춤 샘플은 금형 비용이 필요하며 대량 주문 시 환불됩니다."
       },
       {
-        "question": "What payment methods do you accept?",
-        "answer": "We accept T/T (bank transfer), L/C (Letter of Credit), PayPal for sample orders, and Western Union. Payment terms are typically 30% deposit and 70% before shipment."
+        "question": "어떤 결제 방법을 사용하나요?",
+        "answer": "T/T(은행 송금), L/C(신용장), 샘플 주문용 PayPal, Western Union을 사용합니다. 결제 조건은 일반적으로 30% 선금 및 70% 선적 전입니다."
       },
       {
-        "question": "How do I place an order?",
-        "answer": "You can submit an inquiry through our website, email us directly, or contact us via WhatsApp. Our sales team will respond within 24 hours with a quote and order confirmation process."
+        "question": "주문은 어떻게 하나요?",
+        "answer": "웹사이트를 통해 문의를 제출하거나, 이메일로 직접 연락하거나, WhatsApp으로 문의하실 수 있습니다. 영업팀이 24시간 이내에 견적과 주문 확인 절차를 안내해 드립니다."
       },
       {
-        "question": "What is your lead time?",
-        "answer": "Standard orders: 2-3 weeks after deposit confirmation. Custom OEM orders: 4-6 weeks depending on complexity. Rush orders may be available for an additional fee."
+        "question": "납기는 얼마나 걸리나요?",
+        "answer": "생산 및 납기 일정은 주문 확인 시 영업팀이 안내합니다. 긴급 주문은 추가 비용이 있을 수 있습니다. 본 사이트에는 고정 주/월 수치를 게시하지 않습니다."
       },
       {
-        "question": "Can I modify my order after it's placed?",
-        "answer": "Modifications are possible within 48 hours of order confirmation, provided production hasn't started. Once production begins, changes may incur additional costs."
+        "question": "주문 후 수정할 수 있나요?",
+        "answer": "주문 확인 후 48시간 이내, 생산이 시작되지 않은 경우 수정이 가능합니다. 생산 시작 후에는 추가 비용이 발생할 수 있습니다."
       },
       {
-        "question": "What OEM services do you offer?",
-        "answer": "We offer full OEM/ODM services including custom formula development, private label packaging, custom shapes and flavors, branded packaging design, and turnkey solutions from concept to delivery."
+        "question": "어떤 OEM 서비스를 제공하나요?",
+        "answer": "맞춤 배합 개발, 프라이빗 라벨 패키징, 맞춤 모양 및 맛, 브랜드 패키징 디자인, 컨셉부터 배송까지 원스톱 솔루션 등 풀 OEM/ODM 서비스를 제공합니다."
       },
       {
-        "question": "What is the MOQ for custom OEM orders?",
-        "answer": "Custom OEM orders start at 3,000 pieces per SKU. For complex custom molds or unique formulations, higher MOQs may apply. We can discuss specific requirements for your project."
+        "question": "맞춤 OEM 주문의 MOQ는 얼마인가요?",
+        "answer": "맞춤 OEM 주문은 SKU당 3,000개부터 시작합니다. 복잡한 맞춤 금형이나 독특한 배합의 경우 더 높은 MOQ가 적용될 수 있습니다. 프로젝트별 요구사항을 논의할 수 있습니다."
       },
       {
-        "question": "How long does custom product development take?",
-        "answer": "Custom formulation: 2-4 weeks. Mold creation: 3-5 weeks. Packaging design: 1-2 weeks. Full production: 4-6 weeks after sample approval. Total timeline is typically 8-12 weeks for new OEM products."
+        "question": "맞춤 제품 개발에는 얼마나 걸리나요?",
+        "answer": "맞춤 개발 일정은 요건 검토 후 팀이 평가하며 견적 또는 주문 확인에서만 제공합니다."
       },
       {
-        "question": "Do you provide design services for packaging?",
-        "answer": "Yes, we have an in-house design team that can create packaging designs, logos, and branding elements. Design services are included for orders meeting minimum quantity requirements."
+        "question": "패키징 디자인 서비스를 제공하나요?",
+        "answer": "네, 패키징 디자인, 로고, 브랜딩 요소를 제작하는 사내 디자인 팀이 있습니다. 최소 수량 요건을 충족하는 주문에 디자인 서비스가 포함됩니다."
       },
       {
-        "question": "What shipping methods do you offer?",
-        "answer": "We offer sea freight (FCL/LCL), air freight, and express courier (DHL, FedEx, UPS). Sea freight is most economical for large orders, while air and express are faster for smaller quantities."
+        "question": "어떤 배송 방법을 제공하나요?",
+        "answer": "해상 운송(FCL/LCL), 항공 운송, 특급 택배(DHL, FedEx, UPS)를 제공합니다. 대량 주문에는 해상 운송이 가장 경제적이며, 소량에는 항공 및 특급이 더 빠릅니다."
       },
       {
-        "question": "Do you ship worldwide?",
-        "answer": "Yes, we ship to over 50 countries worldwide. We have experience with various import regulations and can provide necessary documentation for customs clearance."
+        "question": "전 세계로 배송하나요?",
+        "answer": "네, 전 세계 50개국 이상으로 배송합니다. 다양한 수입 규정에 대한 경험이 있으며 통관에 필요한 서류를 제공합니다."
       },
       {
-        "question": "What are the shipping costs?",
-        "answer": "Shipping costs depend on order volume, destination, and shipping method. We provide detailed quotes including shipping costs. For large orders, we can offer competitive freight rates through our logistics partners."
+        "question": "배송 비용은 얼마인가요?",
+        "answer": "배송 비용은 주문량, 목적지, 배송 방법에 따라 다릅니다. 배송 비용을 포함한 상세 견적을 제공합니다. 대량 주문의 경우 물류 파트너를 통해 경쟁력 있는 운임을 제공할 수 있습니다."
       },
       {
-        "question": "Can you handle customs clearance?",
-        "answer": "We provide all necessary export documentation (commercial invoice, packing list, certificates of origin, health certificates). For import clearance, we work with experienced freight forwarders who can assist at destination ports."
+        "question": "통관 처리를 도와주나요?",
+        "answer": "수출에 필요한 모든 서류(상업 송장, 포장 명세서, 원산지 증명서, 위생 증명서)를 제공합니다. 수입 통관의 경우 목적지 항구에서 지원하는 경험 많은 화물 운송업체와 협력합니다."
       }
     ]
   },
   "input_file": {
-    "upload": "Click to upload or drag and drop",
-    "max_size": "Max {size} MB per file",
-    "error_too_large": "File \"{name}\" exceeds {max} MB limit",
-    "error_type": "File \"{name}\" is not a supported type",
-    "error_max_files": "Maximum {count} files allowed"
+    "upload": "클릭하여 업로드하거나 드래그 앤 드롭",
+    "max_size": "파일당 최대 {size} MB",
+    "error_too_large": "파일 \"{name}\"이(가) {max} MB 제한을 초과합니다",
+    "error_type": "파일 \"{name}\"은(는) 지원되지 않는 형식입니다",
+    "error_max_files": "최대 {count}개 파일까지 허용됩니다"
   }
 }

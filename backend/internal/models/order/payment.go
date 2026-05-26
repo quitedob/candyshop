@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // Payment method constants (enum-ish)
@@ -70,18 +72,23 @@ type Payment struct {
 	Amount      float64    `json:"amount" gorm:"not null"`
 	Currency    string     `json:"currency" gorm:"default:'USD'"`
 	Method      string     `json:"method"` // bank_transfer, credit_card, letter_of_credit, wire, stripe, paypal
-	Status      string     `json:"status" gorm:"default:'pending'"`
+	Status      string     `json:"status" gorm:"default:'pending';index"`
 	Reference   string     `json:"reference"`
 	ProofURL    string     `json:"proofUrl"`
 	Notes       string     `json:"notes"`
 	ConfirmedBy *string    `json:"confirmedBy" gorm:"index"`
 	ConfirmedAt *time.Time `json:"confirmedAt"`
 	// Gateway fields for processor-linked payments (Stripe, PayPal, etc.)
-	GatewayTransactionID *string `json:"gatewayTransactionId,omitempty"`
+	GatewayTransactionID *string `json:"gatewayTransactionId,omitempty" gorm:"index"`
 	AuthorizedAmount     float64 `json:"authorizedAmount"`
 	CapturedAmount       float64 `json:"capturedAmount"`
 	RefundedAmount       float64 `json:"refundedAmount"`
 	GatewayMetadata      string  `json:"gatewayMetadata,omitempty"` // JSONB: raw gateway response
 	CreatedAt            time.Time `json:"createdAt"`
 	UpdatedAt            time.Time `json:"updatedAt"`
+	// Version is the optimistic-lock counter (C-5).
+	Version int64 `json:"version" gorm:"default:0"`
+	// DeletedAt enables soft delete on payments (C-9). Refunded payments are
+	// kept active; only operationally void rows are soft-deleted.
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 }

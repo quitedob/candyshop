@@ -10,7 +10,7 @@
 
     <!-- FAQ Categories -->
     <section class="faq-content section section-lg">
-      <div class="container container-narrow">
+      <div class="container">
         <!-- Category Tabs -->
         <div class="faq-tabs">
           <button
@@ -126,7 +126,7 @@ watch(activeCategory, () => {
 })
 
 // SEO
-useSeo({
+usePageOgImage({
   title: t('seo.faq_title'),
   description: t('seo.faq_description'),
   ogType: 'website',

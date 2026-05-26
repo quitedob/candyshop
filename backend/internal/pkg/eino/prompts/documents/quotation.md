@@ -9,7 +9,7 @@ QUOTATION STRUCTURE:
 4. VALIDITY: "This quotation is valid until YYYY-MM-DD"
 5. PRODUCT & PRICING TABLE:
    - Columns: No. | Product Name | Specification | MOQ | Unit Price | Quantity | Subtotal
-   - Include packaging type, lead time per product
+   - Include packaging type; lead time per product (use the confirmed value from source data or order context only — do not invent week/month estimates)
 6. PRICING SUMMARY:
    - Subtotal, Discount (if any), Total
    - Currency: USD/EUR/CNY

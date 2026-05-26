@@ -1,10 +1,12 @@
 package admin
 
 import (
+	"encoding/json"
 	modelsCommon "candypro/api/internal/models/common"
 	modelsProduct "candypro/api/internal/models/product"
 	"candypro/api/internal/pkg/crypto"
 	"candypro/api/internal/pkg/dberror"
+	"candypro/api/internal/pkg/i18n"
 	"candypro/api/internal/pkg/response"
 	"candypro/api/internal/pkg/sanitize"
 	"net/http"
@@ -24,6 +26,7 @@ type adminProductUpdateRequest struct {
 	Category       *string              `json:"category"`
 	CategorySlug   *string              `json:"categorySlug"`
 	Thumbnail      *string              `json:"thumbnail"`
+	OgImage        *string              `json:"ogImage"`
 	Images         *[]string            `json:"images"`
 	OEMAvailable   *bool                `json:"oemAvailable"`
 	HalalCertified *bool                `json:"halalCertified"`
@@ -141,12 +144,15 @@ func (h *Handler) AdminCreateProduct(c *gin.Context) {
 		return
 	}
 	if product.MOQ < 1 {
-		product.MOQ = 1
+		response.InvalidResp(c, "product_moq_min_1")
+		return
 	}
 	if product.BasePrice <= 0 {
 		response.InvalidResp(c, "product_price_required")
 		return
 	}
+
+	syncProductScalarsFromLocale(&product, i18n.DefaultLocale())
 
 	now := time.Now()
 	if product.CreatedAt.IsZero() {
@@ -170,6 +176,7 @@ func (h *Handler) AdminCreateProduct(c *gin.Context) {
 		return
 	}
 
+	h.logActivityAudit(c, "create", "product", product.ID, "", product.Name)
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Product created successfully",
 		"product": product,
@@ -194,6 +201,7 @@ func (h *Handler) AdminUpdateProduct(c *gin.Context) {
 		response.ErrorResp(c, http.StatusNotFound, "product_not_found")
 		return
 	}
+	oldName := product.Name
 
 	var req adminProductUpdateRequest
 	if !response.BindJSONOrInvalid(c, &req) {
@@ -216,6 +224,7 @@ func (h *Handler) AdminUpdateProduct(c *gin.Context) {
 	}
 
 	applyProductPatch(product, req)
+	syncProductScalarsFromLocale(product, i18n.DefaultLocale())
 	product.UpdatedAt = time.Now()
 
 	if rawID, ok := c.Get("userID"); ok {
@@ -243,16 +252,11 @@ func (h *Handler) AdminUpdateProduct(c *gin.Context) {
 		return
 	}
 
+	h.logActivityAudit(c, "update", "product", id, oldName, product.Name)
+
 	out := gin.H{
 		"message": "Product updated successfully",
 		"product": product,
-	}
-	if country := strings.TrimSpace(c.Query("complianceSuggestCountry")); country != "" && h.aiService != nil {
-		q := strings.TrimSpace(product.Name) + " " + strings.TrimSpace(product.Ingredients) + " " + strings.TrimSpace(product.Allergens)
-		out["complianceCopilot"] = gin.H{
-			"disclaimer": "RAG output is not legal advice; hard rules and profiles still govern release.",
-			"lookup":     h.aiService.LookupCompliance(country, q, 5),
-		}
 	}
 	c.JSON(http.StatusOK, out)
 }
@@ -270,7 +274,8 @@ func (h *Handler) AdminDeleteProduct(c *gin.Context) {
 	}
 
 	id := c.Param("id")
-	if _, err := h.services.Product.GetProductByID(c.Request.Context(), id); err != nil {
+	existing, err := h.services.Product.GetProductByID(c.Request.Context(), id)
+	if err != nil {
 		response.ErrorResp(c, http.StatusNotFound, "product_not_found")
 		return
 	}
@@ -280,6 +285,7 @@ func (h *Handler) AdminDeleteProduct(c *gin.Context) {
 		return
 	}
 
+	h.logActivityAudit(c, "delete", "product", id, existing.Name, "")
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Product deleted successfully",
 		"id":      id,
@@ -310,6 +316,9 @@ func applyProductPatch(product *modelsProduct.Product, req adminProductUpdateReq
 	}
 	if req.Thumbnail != nil {
 		product.Thumbnail = strings.TrimSpace(*req.Thumbnail)
+	}
+	if req.OgImage != nil {
+		product.OgImage = strings.TrimSpace(*req.OgImage)
 	}
 	if req.Images != nil {
 		product.Images = modelsCommon.StringArray(*req.Images)
@@ -500,6 +509,56 @@ func applyProductPatch(product *modelsProduct.Product, req adminProductUpdateReq
 	}
 	if product.Slug == "" && product.Name != "" {
 		product.Slug = buildProductSlug(product.Name)
+	}
+}
+
+// syncProductScalarsFromLocale 将指定语言的翻译字段同步到产品标量列（供搜索/兼容旧逻辑）。
+func syncProductScalarsFromLocale(product *modelsProduct.Product, locale string) {
+	if product.Translations == nil {
+		return
+	}
+	fields, ok := product.Translations[locale]
+	if !ok {
+		return
+	}
+	if v := strings.TrimSpace(fields["name"]); v != "" {
+		product.Name = v
+	}
+	if v := strings.TrimSpace(fields["summary"]); v != "" {
+		product.Summary = v
+	}
+	if v := strings.TrimSpace(fields["description"]); v != "" {
+		product.Description = sanitize.HTML(v)
+	}
+	if v := strings.TrimSpace(fields["category"]); v != "" {
+		product.Category = v
+	}
+	if v := strings.TrimSpace(fields["ingredients"]); v != "" {
+		product.Ingredients = v
+	}
+	if v := strings.TrimSpace(fields["allergens"]); v != "" {
+		product.Allergens = v
+	}
+	if v := strings.TrimSpace(fields["storage"]); v != "" {
+		product.Storage = v
+	}
+	if v := strings.TrimSpace(fields["shelfLife"]); v != "" {
+		product.ShelfLife = v
+	}
+	if v := strings.TrimSpace(fields["leadTime"]); v != "" {
+		product.LeadTime = v
+	}
+	if v := strings.TrimSpace(fields["flavors"]); v != "" {
+		var arr []string
+		if json.Unmarshal([]byte(v), &arr) == nil && len(arr) > 0 {
+			product.Flavors = modelsCommon.StringArray(arr)
+		}
+	}
+	if v := strings.TrimSpace(fields["shapes"]); v != "" {
+		var arr []string
+		if json.Unmarshal([]byte(v), &arr) == nil && len(arr) > 0 {
+			product.Shapes = modelsCommon.StringArray(arr)
+		}
 	}
 }
 

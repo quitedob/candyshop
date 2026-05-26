@@ -65,7 +65,7 @@ interface OrganizationSchema {
 }
 
 export const useSeo = (options: SEOOptions = {}) => {
-  const { t, locale, locales } = useI18n()
+  const { t } = useI18n()
   const config = useRuntimeConfig()
   const route = useRoute()
 
@@ -73,23 +73,6 @@ export const useSeo = (options: SEOOptions = {}) => {
   const defaultTitle = t('seo.default_title')
   const defaultDescription = t('seo.default_description')
 
-  // Determine locale codes used in the app
-  const localeCodes = (locales.value as any[]).map((l: any) => l.code) as string[]
-  const defaultLocaleCode = 'zh'
-
-  // Strip any locale prefix to get the bare path (e.g. /en/about → /about)
-  const stripLocalePrefix = (path: string): string => {
-    for (const code of localeCodes) {
-      const prefix = `/${code}`
-      if (path === prefix) return '/'
-      if (path.startsWith(`${prefix}/`)) return path.slice(prefix.length)
-    }
-    return path
-  }
-
-  const barePath = stripLocalePrefix(route.path)
-
-  // Unwrap MaybeRef values
   const title = toValue(options.title) || defaultTitle
   const description = toValue(options.description) || defaultDescription
   const ogImage = toValue(options.ogImage)
@@ -97,77 +80,32 @@ export const useSeo = (options: SEOOptions = {}) => {
     ? (ogImage.startsWith('http') ? ogImage : new URL(ogImage, siteUrl).href)
     : ''
 
-  // Build full URL for path
-  const fullUrl = (path: string) => {
-    return new URL(path, siteUrl).href
-  }
+  const pageUrl = new URL(route.path, siteUrl).href
 
-  // Build canonical URL
-  const canonical = options.canonical || fullUrl(route.path)
-
-  // Use Head for meta tags
-  const headOptions: {
-    title?: string
-    meta: { name?: string; property?: string; content: string; hid?: string }[]
-    link?: ({ rel: string; href: string; hid?: string } | { rel: string; href: string; hreflang: string; hid: string } | { rel: string; href: string; type: string })[]
-    htmlAttrs?: { lang: string }
-    script?: { type: string; innerHTML: string; tagPosition?: 'head' | 'bodyClose' | 'bodyOpen' }[]
-  } = {
+  useHead({
     title,
     meta: [
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { name: 'description', content: description },
-      { name: 'format-detection', content: 'telephone=no' },
-
-      // Open Graph
       { property: 'og:title', content: title },
       { property: 'og:description', content: description },
       { property: 'og:type', content: options.ogType || 'website' },
-      { property: 'og:url', content: canonical },
+      { property: 'og:url', content: options.canonical || pageUrl },
       { property: 'og:site_name', content: 'CandyPro OEM' },
       ...(resolvedOgImage ? [{ property: 'og:image', content: resolvedOgImage }] : []),
-
-      // Twitter Card
       { name: 'twitter:card', content: options.twitterCard || 'summary_large_image' },
       { name: 'twitter:title', content: title },
       { name: 'twitter:description', content: description },
       ...(resolvedOgImage ? [{ name: 'twitter:image', content: resolvedOgImage }] : []),
-
-      // Robots
-      ...(options.noindex ? [{ name: 'robots', content: 'noindex, nofollow' }] : [])
+      ...(options.noindex ? [{ name: 'robots', content: 'noindex, nofollow' }] : []),
     ],
-    link: [
-      { rel: 'canonical', href: canonical, hid: 'canonical' },
-
-      // Alternate language links — bidirectional hreflang
-      ...localeCodes.map(code => ({
-        rel: 'alternate' as const,
-        hreflang: code,
-        href: fullUrl(code === defaultLocaleCode ? barePath : `/${code}${barePath === '/' ? '' : barePath}`),
-      })),
-      // x-default points to the default locale
-      {
-        rel: 'alternate' as const,
-        hreflang: 'x-default',
-        href: fullUrl(defaultLocaleCode === 'zh' ? barePath : `/${defaultLocaleCode}${barePath === '/' ? '' : barePath}`),
-      },
-    ],
-    htmlAttrs: {
-      lang: locale.value
-    },
-    // Add structured data as JSON-LD script
     ...(options.schema ? {
-      script: [
-        {
-          type: 'application/ld+json',
-          innerHTML: JSON.stringify(options.schema),
-          tagPosition: 'head'
-        }
-      ]
-    } : {})
-  }
-
-  useHead(headOptions)
+      script: [{
+        type: 'application/ld+json',
+        innerHTML: JSON.stringify(options.schema),
+        tagPosition: 'head',
+      }],
+    } : {}),
+  })
 }
 
 /**

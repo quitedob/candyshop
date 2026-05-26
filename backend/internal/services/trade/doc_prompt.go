@@ -9,7 +9,7 @@ import (
 )
 
 // BuildTradeDocGenerationPrompt builds an AI prompt for generating a trade document.
-func BuildTradeDocGenerationPrompt(docType string, trade *tradeModels.TradeTransaction, userPrompt, extraContext string) string {
+func BuildTradeDocGenerationPrompt(docType string, trade *tradeModels.TradeTransaction, userPrompt, extraContext, orderContext string) string {
 	var builder strings.Builder
 
 	builder.WriteString(fmt.Sprintf("You are a trade document assistant. Generate a %s for the following trade transaction.\n\n", docTypeLabel(docType)))
@@ -19,6 +19,12 @@ func BuildTradeDocGenerationPrompt(docType string, trade *tradeModels.TradeTrans
 	builder.WriteString(fmt.Sprintf("Currency: %s\n", trade.Currency))
 	builder.WriteString(fmt.Sprintf("Total Amount: %.2f\n", trade.TotalAmount))
 	builder.WriteString(fmt.Sprintf("Terms: %s\n", trade.Terms))
+
+	if strings.TrimSpace(orderContext) != "" {
+		builder.WriteString("\nLinked Order Data (use line items for document content):\n")
+		builder.WriteString(orderContext)
+		builder.WriteString("\n")
+	}
 
 	if extraContext != "" {
 		builder.WriteString(fmt.Sprintf("\nAdditional Context:\n%s\n", extraContext))

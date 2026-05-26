@@ -8,6 +8,7 @@ import (
 	orderSvc "candypro/api/internal/services/order"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -144,7 +145,7 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 	if len(inventory.Violations) > 0 {
 		response.ErrorRespDetail(c, http.StatusUnprocessableEntity, "inventory_violation", gin.H{
 			"violations": inventory.Violations,
-			"warnings":   inventory.Warnings,
+			"warnings":   formatAdminInventoryWarnings(c, inventory.Warnings, productByID),
 		})
 		return
 	}
@@ -171,10 +172,10 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 		OrderNumber:     orderNumber,
 		UserID:          userID,
 		InquiryID:       &inquiryID,
-		Status:          "pending",
+		Status:          modelsOrder.OrderStatusPendingConfirm,
 		PaymentStatus:   "unpaid",
 		Items:           items,
-		StockReserved:   true,
+		StockReserved:   false,
 		Subtotal:        subtotal,
 		TaxAmount:       0,
 		ShippingAmount:  0,
@@ -184,8 +185,9 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now(),
 	}
+	h.assignOrderWarehouseID(c, &order.WarehouseID)
 
-	if err := h.services.Order.CreateOrderWithStockReservation(c.Request.Context(), order); err != nil {
+	if err := h.services.Order.CreateOrder(c.Request.Context(), order); err != nil {
 		if errors.Is(err, modelsOrder.ErrInsufficientStock) {
 			response.ErrorResp(c, http.StatusUnprocessableEntity, "inventory_violation")
 			return
@@ -196,6 +198,11 @@ func (h *Handler) AdminConvertInquiryToOrder(c *gin.Context) {
 
 	// Auto-create a trade transaction linked to this order
 	autoCreateTradeFromOrder(c, h, order, inquiry)
+
+	// 转化成功后标记询价为 won，防止重复转化
+	if err := h.services.Inquiry.UpdateInquiryStatus(c.Request.Context(), inquiryID, "won"); err != nil {
+		log.Printf("admin: failed to mark inquiry %s as won: %v", inquiryID, err)
+	}
 
 	c.JSON(http.StatusCreated, order)
 }

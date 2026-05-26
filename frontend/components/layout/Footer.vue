@@ -129,16 +129,18 @@
           <ul class="footer__legal">
             <li><NuxtLink :to="localePath('/privacy')">{{ $t('footer.privacy_policy') }}</NuxtLink></li>
             <li><NuxtLink :to="localePath('/terms')">{{ $t('footer.terms_of_service') }}</NuxtLink></li>
+            <li><NuxtLink :to="localePath('/legal/cookies')">{{ $t('footer.cookie_policy') }}</NuxtLink></li>
+            <li><NuxtLink :to="localePath('/legal/returns')">{{ $t('footer.returns_policy') }}</NuxtLink></li>
+            <li><NuxtLink :to="localePath('/legal/shipping')">{{ $t('footer.shipping_policy') }}</NuxtLink></li>
+            <li><NuxtLink :to="localePath('/legal/data-processing')">{{ $t('footer.data_processing') }}</NuxtLink></li>
+            <li><NuxtLink :to="localePath('/legal/translation-disclaimer')">{{ $t('footer.translation_disclaimer') }}</NuxtLink></li>
+            <li><NuxtLink :to="localePath('/legal/impressum')">{{ $t('footer.impressum') }}</NuxtLink></li>
           </ul>
+          <p class="footer__translation-note">
+            {{ $t('legal.translation_accuracy_desc') }}
+          </p>
           <div class="footer__lang">
-            <button
-              v-for="loc in locales"
-              :key="loc.code"
-              :class="['footer__lang-btn', { 'footer__lang-btn--active': loc.code === currentLocale }]"
-              @click="switchLocale(loc.code)"
-            >
-              {{ $t(`languages.${loc.code}_short`) }}
-            </button>
+            <LanguageSwitcher />
           </div>
         </div>
       </div>
@@ -150,7 +152,7 @@
 import { computed } from 'vue'
 import { useI18n, useLocalePath } from '#i18n'
 
-const { t, locale, setLocale, locales } = useI18n()
+const { t, locale } = useI18n()
 const localePath = useLocalePath()
 const config = useRuntimeConfig()
 const { isAuthenticated, isAdmin } = useAuth()
@@ -158,8 +160,6 @@ const { isAuthenticated, isAdmin } = useAuth()
 const currentYear = computed(() => new Date().getFullYear())
 const certifications = ['HACCP', 'ISO22000', 'BRC', 'HALAL', 'FDA']
 const hydrated = ref(false)
-
-const currentLocale = computed(() => locale.value)
 
 const whatsappUrl = computed(() => {
   const number = config.public.whatsappNumber
@@ -179,16 +179,6 @@ const portalLabel = computed(() => {
 })
 
 onMounted(() => { hydrated.value = true })
-
-const LOCALE_STORAGE_KEY = 'user-locale'
-
-const switchLocale = async (newLocale: string) => {
-  if (import.meta.client) {
-    localStorage.setItem(LOCALE_STORAGE_KEY, newLocale)
-    document.cookie = `user-locale=${newLocale}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`
-  }
-  await setLocale(newLocale)
-}
 </script>
 
 <style scoped>
@@ -441,6 +431,14 @@ const switchLocale = async (newLocale: string) => {
 
 .footer__legal a:hover {
   color: var(--color-text-on-primary);
+}
+
+.footer__translation-note {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  margin: var(--spacing-sm) 0 0;
+  max-width: 600px;
 }
 
 /* ── Language Switcher ── */

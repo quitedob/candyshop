@@ -1,6 +1,9 @@
 package config
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 // AIConfig holds AI-related configuration
 type AIConfig struct {
@@ -13,6 +16,8 @@ type AIConfig struct {
 	SemanticSearchMode   string
 	RetryMaxAttempts     int
 	RetryIntervalSec     int
+	HTTPTimeout          time.Duration
+	TranslateRetryMax    int
 	// PublicRoutesDisabled 为 true 时关闭 /system 下无需登录的 AI（chatbot、推荐、语义搜索），防滥用与控成本
 	PublicRoutesDisabled bool
 }
@@ -29,6 +34,8 @@ func LoadAIConfig() AIConfig {
 		SemanticSearchMode:   getSemanticSearchMode(),
 		RetryMaxAttempts:     getEnvInt("AI_RETRY_MAX_ATTEMPTS", 10),
 		RetryIntervalSec:     getEnvInt("AI_RETRY_INTERVAL_SEC", 3),
+		HTTPTimeout:          time.Duration(getEnvInt("AI_HTTP_TIMEOUT_SEC", 90)) * time.Second,
+		TranslateRetryMax:    getEnvInt("AI_TRANSLATE_RETRY_MAX", 2),
 		PublicRoutesDisabled: getEnv("DISABLE_PUBLIC_AI_ROUTES", "") == "true",
 	}
 }

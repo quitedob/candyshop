@@ -37,7 +37,7 @@
       "feature1": "Custom formula development",
       "feature2": "Private label packaging",
       "feature3": "Low MOQ from 1000 pcs",
-      "feature4": "Fast lead time 2-4 weeks",
+      "feature4": "Lead times confirmed per order",
       "feature5": "Sample approval process"
     },
     "global": {
@@ -59,7 +59,7 @@
       "q1": "What is your minimum order quantity (MOQ)?",
       "a1": "Our MOQ varies by product type, starting from 1,000 pieces for standard items and 3,000 pieces for custom OEM orders.",
       "q2": "How long is your lead time?",
-      "a2": "Standard orders take 2-3 weeks, while custom OEM orders typically require 4-6 weeks depending on complexity.",
+      "a2": "Lead times are provided by our sales team in your order confirmation — not as fixed estimates on this website.",
       "q3": "Do you provide samples?",
       "a3": "Yes, we provide samples for quality evaluation. Sample fees are refundable upon placing a bulk order.",
       "q4": "What certifications do you have?",

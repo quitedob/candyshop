@@ -3,9 +3,12 @@ package admin
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	modelsOrder "candypro/api/internal/models/order"
+	modelsProduct "candypro/api/internal/models/product"
+	"candypro/api/internal/pkg/pagination"
 	"candypro/api/internal/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +26,7 @@ func (h *Handler) AdminCreateFulfillment(c *gin.Context) {
 		return
 	}
 	var req struct {
-		WarehouseID string `json:"warehouseId" binding:"required"`
+		WarehouseID string `json:"warehouseId"`
 		Notes       string `json:"notes"`
 		Items       []struct {
 			OrderItemIdx int    `json:"orderItemIdx" binding:"required,min=0"`
@@ -34,7 +37,15 @@ func (h *Handler) AdminCreateFulfillment(c *gin.Context) {
 	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
-	if req.WarehouseID == "" {
+	warehouseID := req.WarehouseID
+	if warehouseID == "" {
+		var wid *string
+		h.assignOrderWarehouseID(c, &wid)
+		if wid != nil {
+			warehouseID = *wid
+		}
+	}
+	if warehouseID == "" {
 		response.InvalidResp(c, "warehouse_id_required")
 		return
 	}
@@ -42,7 +53,7 @@ func (h *Handler) AdminCreateFulfillment(c *gin.Context) {
 	fulfillment := &modelsOrder.Fulfillment{
 		ID:          fmt.Sprintf("FUL%d", time.Now().UnixNano()),
 		OrderID:     orderID,
-		WarehouseID: req.WarehouseID,
+		WarehouseID: warehouseID,
 		Status:      modelsOrder.FulfillmentStatusPending,
 		Notes:       req.Notes,
 	}
@@ -55,11 +66,41 @@ func (h *Handler) AdminCreateFulfillment(c *gin.Context) {
 		}
 	}
 
-	if err := h.services.Fulfillment.Create(c.Request.Context(), fulfillment, items, req.WarehouseID); err != nil {
+	if err := h.services.Fulfillment.Create(c.Request.Context(), fulfillment, items, warehouseID); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "fulfillment_create_failed")
 		return
 	}
+	h.logActivityAudit(c, "fulfillment_create", "fulfillment", fulfillment.ID, "", orderID)
 	c.JSON(http.StatusCreated, fulfillment)
+}
+
+// AdminGetFulfillments handles GET /api/v1/admin/fulfillments — paginated list with orderNumber join.
+func (h *Handler) AdminGetFulfillments(c *gin.Context) {
+	if h.services == nil || h.services.Fulfillment == nil {
+		response.ServiceUnavailableResp(c)
+		return
+	}
+	page, limit := pagination.ParsePagination(c, 20, 100)
+	status := strings.TrimSpace(c.Query("status"))
+
+	rows, total, err := h.services.Fulfillment.ListPaginated(c.Request.Context(), page, limit, status)
+	if err != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "fulfillment_list_failed")
+		return
+	}
+	totalPages := int(total) / limit
+	if int(total)%limit > 0 {
+		totalPages++
+	}
+	c.JSON(http.StatusOK, modelsProduct.PaginatedResponse{
+		Data: rows,
+		Pagination: modelsProduct.Pagination{
+			Total:      int(total),
+			Page:       page,
+			Limit:      limit,
+			TotalPages: totalPages,
+		},
+	})
 }
 
 // AdminListFulfillments handles GET /api/v1/admin/orders/:id/fulfillments
@@ -104,6 +145,8 @@ func (h *Handler) AdminShipFulfillment(c *gin.Context) {
 		response.ErrorResp(c, http.StatusInternalServerError, "fulfillment_ship_failed")
 		return
 	}
+	h.syncFulfillmentTrackingToOrderAndTrade(c, id, req.TrackingNumber, req.Carrier)
+	h.logActivityAudit(c, "fulfillment_ship", "fulfillment", id, req.Carrier, req.TrackingNumber)
 	c.JSON(http.StatusOK, gin.H{"status": "shipped"})
 }
 
@@ -123,6 +166,7 @@ func (h *Handler) AdminDeliverFulfillment(c *gin.Context) {
 		response.ErrorResp(c, http.StatusInternalServerError, "fulfillment_deliver_failed")
 		return
 	}
+	h.logActivityAudit(c, "fulfillment_deliver", "fulfillment", id, "", "delivered")
 	c.JSON(http.StatusOK, gin.H{"status": "delivered"})
 }
 
@@ -141,5 +185,6 @@ func (h *Handler) AdminCancelFulfillment(c *gin.Context) {
 		response.ErrorResp(c, http.StatusInternalServerError, "fulfillment_cancel_failed")
 		return
 	}
+	h.logActivityAudit(c, "fulfillment_cancel", "fulfillment", id, "", "cancelled")
 	c.JSON(http.StatusOK, gin.H{"status": "cancelled"})
 }

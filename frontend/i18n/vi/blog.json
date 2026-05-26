@@ -1,35 +1,35 @@
 {
   "blog": {
-    "title": "Blog & Resources",
+    "title": "Blog & Tài nguyên",
     "categories": {
-      "compliance": "Compliance",
-      "product_knowledge": "Product Knowledge",
-      "packaging": "Packaging Trends",
-      "market_insights": "Market Insights"
+      "compliance": "Tuân thủ",
+      "product_knowledge": "Kiến thức sản phẩm",
+      "packaging": "Xu hướng bao bì",
+      "market_insights": "Thông tin thị trường"
     },
-    "read_more": "Read More",
-    "related_articles": "Related Articles",
-    "share": "Share Article",
-    "table_of_contents": "Table of Contents"
+    "read_more": "Đọc thêm",
+    "related_articles": "Bài viết liên quan",
+    "share": "Chia sẻ bài viết",
+    "table_of_contents": "Mục lục"
   },
   "blog_extra": {
-    "featured": "Featured",
-    "stay_updated": "Stay Updated",
-    "subscribe_desc": "Get the latest industry insights and compliance updates delivered to your inbox",
-    "email_placeholder": "Enter your email",
-    "all_posts": "All Posts",
-    "loading_posts": "Loading posts...",
-    "no_posts": "No posts found in this category.",
-    "newsletter_invalid": "Please enter a valid email address.",
-    "newsletter_redirect": "Opening the contact form…",
-    "cta_questions": "Have questions about our candy manufacturing capabilities?",
-    "cta_heading": "Learn More About Our Services",
-    "min_read": "{count} min read",
+    "featured": "Nổi bật",
+    "stay_updated": "Cập nhật thông tin",
+    "subscribe_desc": "Nhận thông tin mới nhất về ngành và cập nhật tuân thủ qua email",
+    "email_placeholder": "Nhập email của bạn",
+    "all_posts": "Tất cả bài viết",
+    "loading_posts": "Đang tải bài viết...",
+    "no_posts": "Không tìm thấy bài viết trong danh mục này.",
+    "newsletter_invalid": "Vui lòng nhập địa chỉ email hợp lệ.",
+    "newsletter_redirect": "Đang mở biểu mẫu liên hệ…",
+    "cta_questions": "Bạn có câu hỏi về năng lực sản xuất kẹo của chúng tôi?",
+    "cta_heading": "Tìm hiểu thêm về dịch vụ",
+    "min_read": "{count} phút đọc",
     "share_twitter": "Twitter",
     "share_linkedin": "LinkedIn",
     "share_facebook": "Facebook",
-    "share_copy_link": "Copy Link",
-    "share_copied": "Copied!",
-    "seo_description": "Industry insights, compliance knowledge, and product expertise for candy manufacturers."
+    "share_copy_link": "Sao chép liên kết",
+    "share_copied": "Đã sao chép!",
+    "seo_description": "Thông tin ngành, kiến thức tuân thủ và chuyên môn sản phẩm dành cho nhà sản xuất kẹo."
   }
 }

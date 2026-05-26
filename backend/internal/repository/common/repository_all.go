@@ -24,6 +24,9 @@ type Repositories struct {
 	AdminPortal *AdminPortalRepositories
 	AuthScope   *AuthScopeRepositories
 	System      *SystemRepositories
+	// Idempotency is shared across scopes — used by request middleware to
+	// dedupe retries on mutating endpoints (M-17).
+	Idempotency *IdempotencyKeyRepository
 }
 
 // NewRepositories creates all repositories
@@ -36,5 +39,6 @@ func NewRepositories(db *gorm.DB) *Repositories {
 		AdminPortal: adminportalscope.New(scoped.AdminPortal),
 		AuthScope:   authscopescope.New(scoped.AuthScope),
 		System:      systemscope.New(scoped.System),
+		Idempotency: NewIdempotencyKeyRepository(db),
 	}
 }

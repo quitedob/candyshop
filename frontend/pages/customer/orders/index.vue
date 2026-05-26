@@ -130,13 +130,37 @@ const fetchOrders = async () => {
 }
 
 const statusBadge = (status: string) => {
-  if (status === 'pending_confirmation') return 'bg-orange-100 text-orange-800'
-  if (status === 'pending' || status === 'processing' || status === 'production') return 'bg-yellow-100 text-yellow-800'
-  if (status === 'confirmed') return 'bg-amber-100 text-amber-800'
-  if (status === 'shipped') return 'bg-orange-100 text-orange-800'
-  if (status === 'delivered') return 'bg-green-100 text-green-800'
-  if (status === 'cancelled') return 'bg-red-100 text-red-800'
-  return 'bg-gray-100 text-gray-800'
+  // H-11: cover all 13 backend order statuses; previously 6 were missing.
+  switch (status) {
+    case 'pending_confirmation':
+      return 'bg-orange-100 text-orange-800'
+    case 'pending_approval':
+      return 'bg-purple-100 text-purple-800'
+    case 'pending':
+    case 'processing':
+      return 'bg-yellow-100 text-yellow-800'
+    case 'confirmed':
+      return 'bg-amber-100 text-amber-800'
+    case 'production':
+      return 'bg-yellow-100 text-yellow-800'
+    case 'partially_shipped':
+    case 'shipped':
+      return 'bg-orange-100 text-orange-800'
+    case 'partially_delivered':
+      return 'bg-emerald-100 text-emerald-800'
+    case 'delivered':
+      return 'bg-green-100 text-green-800'
+    case 'partially_returned':
+      return 'bg-rose-100 text-rose-800'
+    case 'returned':
+      return 'bg-rose-200 text-rose-900'
+    case 'cancelled':
+      return 'bg-red-100 text-red-800'
+    case 'expired':
+      return 'bg-gray-200 text-gray-700'
+    default:
+      return 'bg-gray-100 text-gray-800'
+  }
 }
 
 const nextPage = () => {

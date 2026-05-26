@@ -2,6 +2,8 @@ package order
 
 import (
 	"context"
+	"errors"
+	"strings"
 
 	modelsOrder "candypro/api/internal/models/order"
 
@@ -27,19 +29,29 @@ func (r *TaxRepository) FindByCountry(ctx context.Context, country string) ([]mo
 }
 
 // FindBestRate returns the most specific active tax rate for a country and optional region.
+// Regional rates (e.g. NY) take precedence over country-wide fallbacks (e.g. US Export 0%).
 func (r *TaxRepository) FindBestRate(ctx context.Context, country, region string) (*modelsOrder.TaxRate, error) {
-	var rate modelsOrder.TaxRate
-	q := r.db.WithContext(ctx).
-		Where("country = ? AND is_active = true", country)
+	region = strings.TrimSpace(region)
 	if region != "" {
-		q = q.Where("region = ? OR region = ''", region).
-			Order("CASE WHEN region = '' THEN 1 ELSE 0 END ASC")
+		var regional modelsOrder.TaxRate
+		err := r.db.WithContext(ctx).
+			Where("country = ? AND region = ? AND is_active = true", country, region).
+			First(&regional).Error
+		if err == nil {
+			return &regional, nil
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
 	}
-	err := q.First(&rate).Error
+	var fallback modelsOrder.TaxRate
+	err := r.db.WithContext(ctx).
+		Where("country = ? AND region = '' AND is_active = true", country).
+		First(&fallback).Error
 	if err != nil {
 		return nil, err
 	}
-	return &rate, nil
+	return &fallback, nil
 }
 
 // Standard CRUD

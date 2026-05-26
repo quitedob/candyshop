@@ -1,12 +1,21 @@
 package public
 
 import (
+	modelsCommon "candypro/api/internal/models/common"
+	modelsProduct "candypro/api/internal/models/product"
 	"candypro/api/internal/pkg/pagination"
 	apiresp "candypro/api/internal/pkg/response"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+)
+
+var (
+	_ modelsProduct.PaginatedResponse
+	_ modelsProduct.BlogPost
+	_ modelsProduct.CaseStudy
+	_ modelsCommon.ErrorResponse
 )
 
 // ===== Content =====

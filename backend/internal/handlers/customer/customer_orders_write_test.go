@@ -13,8 +13,8 @@ import (
 	modelsCommon "candypro/api/internal/models/common"
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
-	orderRepo "candypro/api/internal/repository/order"
 	modelsUser "candypro/api/internal/models/user"
+	orderRepo "candypro/api/internal/repository/order"
 	servicesCommon "candypro/api/internal/services/common"
 	inquiryService "candypro/api/internal/services/inquiry"
 	orderService "candypro/api/internal/services/order"
@@ -77,6 +77,10 @@ func (f *fakeProductRepo) FindAll(ctx context.Context, page, limit int, category
 	return []modelsProduct.Product{}, 0, nil
 }
 
+func (f *fakeProductRepo) FindAllForAdmin(ctx context.Context, page, limit int, categorySlug, status, search string) ([]modelsProduct.Product, int64, error) {
+	return []modelsProduct.Product{}, 0, nil
+}
+
 func (f *fakeProductRepo) FindBySlug(ctx context.Context, slug string) (*modelsProduct.Product, error) {
 	for _, p := range f.products {
 		if p.Slug == slug {
@@ -96,6 +100,20 @@ func (f *fakeProductRepo) FindByID(ctx context.Context, id string) (*modelsProdu
 	return &cp, nil
 }
 
+func (f *fakeProductRepo) FindByIDs(ctx context.Context, ids []string) ([]modelsProduct.Product, error) {
+	if len(ids) == 0 || f.products == nil {
+		return nil, nil
+	}
+	out := make([]modelsProduct.Product, 0, len(ids))
+	for _, id := range ids {
+		if p, ok := f.products[id]; ok {
+			cp := p
+			out = append(out, cp)
+		}
+	}
+	return out, nil
+}
+
 func (f *fakeProductRepo) FindFeatured(ctx context.Context, limit int) ([]modelsProduct.Product, error) {
 	return []modelsProduct.Product{}, nil
 }
@@ -110,6 +128,10 @@ func (f *fakeProductRepo) Create(ctx context.Context, product *modelsProduct.Pro
 
 func (f *fakeProductRepo) Update(ctx context.Context, product *modelsProduct.Product) error {
 	return nil
+}
+
+func (f *fakeProductRepo) UpdateStockWithLock(ctx context.Context, productID string, newQty int) (int, error) {
+	return newQty, nil
 }
 
 func (f *fakeProductRepo) Delete(ctx context.Context, id string) error {
@@ -164,6 +186,11 @@ func (f *fakeProductRepo) SumActiveOEMHoldsForProduct(ctx context.Context, produ
 	return 0, nil
 }
 
+// SumActiveOEMHoldsByProductIDs E-1 批量查询：测试用空 map 返回零预留。
+func (f *fakeProductRepo) SumActiveOEMHoldsByProductIDs(ctx context.Context, productIDs []string) (map[string]int64, error) {
+	return map[string]int64{}, nil
+}
+
 func (f *fakeProductRepo) ListChannelInventoriesForProduct(ctx context.Context, productID string) ([]modelsProduct.ChannelInventory, error) {
 	return nil, nil
 }
@@ -172,8 +199,21 @@ func (f *fakeProductRepo) FindChannelInventory(ctx context.Context, productID, c
 	return nil, gorm.ErrRecordNotFound
 }
 
+// FindChannelInventoriesByProductIDs E-1 批量查询：测试用空 map 表示无渠道库存约束。
+func (f *fakeProductRepo) FindChannelInventoriesByProductIDs(ctx context.Context, productIDs []string, channelCode string) (map[string]*modelsProduct.ChannelInventory, error) {
+	return map[string]*modelsProduct.ChannelInventory{}, nil
+}
+
 func (f *fakeProductRepo) UpsertChannelInventory(ctx context.Context, row *modelsProduct.ChannelInventory) error {
 	return nil
+}
+
+func (f *fakeProductRepo) GetDefaultWarehouseID(ctx context.Context) (string, error) {
+	return "", nil
+}
+
+func (f *fakeProductRepo) ComputeWeightedAvgCost(ctx context.Context, productID string) float64 {
+	return 0
 }
 
 type fakeInquiryRepo struct{}
@@ -204,6 +244,9 @@ func (f *fakeInquiryRepo) CountAll(ctx context.Context) (int64, error) {
 }
 func (f *fakeInquiryRepo) CountByStatus(ctx context.Context, status string) (int64, error) {
 	return 0, nil
+}
+func (f *fakeInquiryRepo) CountByStatusGrouped(ctx context.Context) (map[string]int64, error) {
+	return nil, nil
 }
 func (f *fakeInquiryRepo) FindRecent(ctx context.Context, limit int) ([]modelsProduct.Inquiry, error) {
 	return []modelsProduct.Inquiry{}, nil
@@ -247,6 +290,12 @@ func (f *fakeOrderRepo) Update(ctx context.Context, order *modelsOrder.Order) er
 func (f *fakeOrderRepo) UpdateWithOutbox(ctx context.Context, order *modelsOrder.Order, outbox *modelsOrder.EventOutbox) error {
 	return nil
 }
+func (f *fakeOrderRepo) UpdateWithOptionalStockReservationAndOutbox(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int, reserve bool, outbox *modelsOrder.EventOutbox) error {
+	if reserve {
+		order.StockReserved = true
+	}
+	return nil
+}
 func (f *fakeOrderRepo) ListPendingOutbox(ctx context.Context, eventType string, limit int) ([]modelsOrder.EventOutbox, error) {
 	return nil, nil
 }
@@ -272,11 +321,11 @@ func (f *fakeOrderRepo) ReleaseStockForOrder(ctx context.Context, order *modelsO
 	return nil
 }
 func (f *fakeOrderRepo) ReserveStockForOrder(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error {
-		cp := *order
-		cp.StockReserved = true
-		f.createdOrder = &cp
-		return nil
-	}
+	cp := *order
+	cp.StockReserved = true
+	f.createdOrder = &cp
+	return nil
+}
 func (f *fakeOrderRepo) DeleteWithStockRestore(ctx context.Context, order *modelsOrder.Order, stockDeltas map[string]int) error {
 	f.createdOrder = nil
 	return nil

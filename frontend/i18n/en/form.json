@@ -24,7 +24,7 @@
     "error": "Sorry, there was an error submitting your inquiry. Please try again or contact us via WhatsApp.",
     "files_max": "Maximum {max} files allowed",
     "file_too_large": "File {name} is too large. Maximum size is {max} MB.",
-    "file_type_unsupported": "File {name} is not a supported type. Use JPG, PNG, WebP, or PDF.",
+    "file_type_unsupported": "File {name} is not a supported type. Use PDF, DOC, DOCX, CSV, XLSX, PNG, JPEG, JPG, MKV, or MP4.",
     "privacy_note": "Your information is secure and will not be shared.",
     "message_placeholder": "Tell us more about your requirements...",
     "summary": "Summary",
@@ -40,6 +40,7 @@
         "AU": "Australia",
         "JP": "Japan",
         "KR": "South Korea",
+        "CN": "China",
         "SG": "Singapore",
         "MY": "Malaysia",
         "TH": "Thailand",
@@ -126,7 +127,7 @@
       },
       {
         "question": "What is your lead time?",
-        "answer": "Standard orders: 2-3 weeks after deposit confirmation. Custom OEM orders: 4-6 weeks depending on complexity. Rush orders may be available for an additional fee."
+        "answer": "Production and delivery timelines are provided by our sales team when your order is confirmed. Rush orders may incur an additional fee. This website does not publish fixed week or month estimates."
       },
       {
         "question": "Can I modify my order after it's placed?",
@@ -142,7 +143,7 @@
       },
       {
         "question": "How long does custom product development take?",
-        "answer": "Custom formulation: 2-4 weeks. Mold creation: 3-5 weeks. Packaging design: 1-2 weeks. Full production: 4-6 weeks after sample approval. Total timeline is typically 8-12 weeks for new OEM products."
+        "answer": "Custom development schedules are assessed by our team after reviewing your requirements and provided only in your quotation or order confirmation."
       },
       {
         "question": "Do you provide design services for packaging?",

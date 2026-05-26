@@ -30,7 +30,7 @@
             class="category-card"
           >
             <div class="category-card__image">
-              <img :src="category.image" :alt="category.name" loading="lazy" />
+              <img :src="category.image" :alt="tField(category, 'name')" loading="lazy" />
               <div class="category-card__overlay">
                 <span class="category-card__arrow">
                   <Icon name="lucide:arrow-right" size="24" />
@@ -38,9 +38,9 @@
               </div>
             </div>
             <div class="category-card__content">
-              <h2 class="category-card__title">{{ category.name }}</h2>
+              <h2 class="category-card__title">{{ tField(category, 'name') }}</h2>
               <p class="category-card__count">{{ category.productCount }} {{ $t('product.products') }}</p>
-              <p class="category-card__description">{{ category.description }}</p>
+              <p class="category-card__description">{{ tField(category, 'description') }}</p>
             </div>
           </NuxtLink>
         </div>
@@ -92,8 +92,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n, useLocalePath } from '#i18n'
+import { useTranslation } from '~/composables/useTranslation'
 
 const { t, locale } = useI18n()
+const { tField } = useTranslation()
 const localePath = useLocalePath()
 const { isAuthenticated, isAdmin, isPending, user } = useAuth()
 const { getCategories, getProducts } = useApi()
@@ -139,17 +141,17 @@ const { data: productsData, status: productsStatus, error: productsError, refres
 const products = computed(() => productsData.value || [])
 
 const categories = computed(() => {
-  return (categoriesData.value || []).map(category => ({
+  const data = categoriesData.value
+  if (!Array.isArray(data)) return []
+  return data.map(category => ({
+    ...category,
     slug: category.slug,
-    name: category.name || t(`product.categories.${category.slug.replace(/-/g, '_')}`),
-    count: category.productCount || 0,
-    description: category.description || t(`product.category_descriptions.${category.slug.replace(/-/g, '_')}`),
     image: category.thumbnail || `/images/categories/${category.slug}.jpg`
   }))
 })
 
 // SEO
-useSeo({
+usePageOgImage({
   title: t('seo.products_title'),
   description: t('seo.products_description'),
   ogType: 'website'

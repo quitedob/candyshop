@@ -144,7 +144,14 @@ func (h *Handler) AdminCreatePO(c *gin.Context) {
 		CreatedBy:   userID,
 	}
 	if req.ExpectedDate != "" {
-		t, _ := time.Parse(time.RFC3339, req.ExpectedDate)
+		// R2 A-3: previously the error was discarded, silently dropping the
+		// expected delivery date on malformed input. Reject so the buyer sees
+		// the typo instead of a PO with no commitment date.
+		t, err := time.Parse(time.RFC3339, req.ExpectedDate)
+		if err != nil {
+			response.InvalidResp(c, "invalid_expected_date")
+			return
+		}
 		po.ExpectedDate = &t
 	}
 	items := make([]modelsProduct.PurchaseOrderItem, len(req.Items))

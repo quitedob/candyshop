@@ -64,6 +64,7 @@ func (h *Handler) CustomerCreateReturn(c *gin.Context) {
 		response.ErrorResp(c, http.StatusInternalServerError, "return_create_failed")
 		return
 	}
+	h.emitLifecycleEvent(c, modelsOrder.WebhookEventReturnCreated, ret.ID, ret)
 	c.JSON(http.StatusCreated, ret)
 }
 
@@ -92,10 +93,19 @@ func (h *Handler) CustomerGetReturn(c *gin.Context) {
 		response.ServiceUnavailableResp(c)
 		return
 	}
+	userID, ok := contextUserID(c)
+	if !ok {
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
 	id := c.Param("id")
 	ret, items, err := h.services.Return.FindByID(c.Request.Context(), id)
 	if err != nil {
 		response.ErrorResp(c, http.StatusNotFound, "return_not_found")
+		return
+	}
+	if ret.UserID != userID {
+		response.ErrorResp(c, http.StatusForbidden, "forbidden")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"return": ret, "items": items})

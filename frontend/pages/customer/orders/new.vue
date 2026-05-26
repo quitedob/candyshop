@@ -128,7 +128,7 @@
             <tbody class="divide-y divide-gray-200 bg-white">
               <tr v-for="(item, idx) in selectedProducts" :key="item.id">
                 <td class="px-4 py-2 text-sm text-gray-700">
-                  <div class="font-medium text-gray-900">{{ item.name }}</div>
+                  <div class="font-medium text-gray-900">{{ tField(item, 'name') }}</div>
                   <div class="text-xs text-gray-500">ID: {{ item.id }}</div>
                 </td>
                 <td class="px-4 py-2 text-sm text-gray-700">
@@ -228,18 +228,18 @@
             <input v-model="manualForm.currency" type="text" :placeholder="t('defaults.currency')" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm uppercase focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.tax_amount') }}</label>
-            <input v-model.number="manualForm.taxAmount" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
+            <label class="block text-sm font-medium text-gray-700">{{ t('customer.cart.incoterms_label') }}</label>
+            <select v-model="selectedIncoterms" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500">
+              <option v-for="opt in incotermsOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
+            <p v-if="incotermsHint(selectedIncoterms)" class="mt-1 text-xs text-amber-700">{{ incotermsHint(selectedIncoterms) }}</p>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.shipping_amount') }}</label>
-            <input v-model.number="manualForm.shippingAmount" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
-          </div>
-          <div>
+          <div class="md:col-span-2">
             <label class="block text-sm font-medium text-gray-700">{{ t('customer.orders_new.related_inquiry') }}</label>
             <input v-model="manualForm.inquiryId" type="text" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
           </div>
         </div>
+        <p class="text-xs text-gray-500">{{ t('customer.cart.tax_shipping_server_calc') }}</p>
         <div class="space-y-3">
           <div v-for="(item, idx) in manualForm.items" :key="`manual-item-${idx}`" class="grid grid-cols-1 gap-3 rounded-md border border-gray-200 p-3 md:grid-cols-12">
             <div class="md:col-span-4">
@@ -286,14 +286,18 @@
 
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
+import { useTranslation } from '~/composables/useTranslation'
 
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 type ManualItem = { productId: string; quantity: number; unitPrice: number; specifications: string }
 
 const { t } = useI18n()
+const { tField } = useTranslation()
 const localePath = useLocalePath()
 const { currencyOrDefault: cur, cell, enumLabel, formatNumber } = useDisplay()
+const { incotermsOptions, defaultIncoterms, incotermsHint } = useIncotermsOptions()
+const selectedIncoterms = ref(defaultIncoterms())
 const api = useApi()
 
 const shippingAddress = reactive({ street: '', city: '', state: '', zipCode: '', country: '' })
@@ -305,7 +309,7 @@ const aiForm = reactive({
 })
 
 const manualForm = reactive({
-  currency: cur(null), taxAmount: 0, shippingAmount: 0, inquiryId: '',
+  currency: cur(null), inquiryId: '',
   items: [{ productId: '', quantity: 1, unitPrice: 0, specifications: '' }] as ManualItem[]
 })
 
@@ -450,7 +454,7 @@ const submitManualOrder = async () => {
   try {
     const res = await api.createOrder({
       items: cleanItems, currency: cur(manualForm.currency).toUpperCase(),
-      taxAmount: Number(manualForm.taxAmount) || 0, shippingAmount: Number(manualForm.shippingAmount) || 0,
+      incoterms: selectedIncoterms.value,
       shippingAddress: buildSharedAddressPayload(), inquiryId: manualForm.inquiryId.trim() || undefined
     })
     const createdId = res.order?.id

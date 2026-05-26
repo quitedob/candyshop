@@ -1,6 +1,8 @@
 <template>
   <div class="currency-selector">
+    <label for="currency-select" class="sr-only">{{ $t('common.currency') }}</label>
     <select
+      id="currency-select"
       :value="currency.selectedCurrency.value"
       class="currency-selector__dropdown"
       @change="currency.setCurrency(($event.target as HTMLSelectElement).value)"

@@ -34,7 +34,14 @@
 <script setup lang="ts">
 const { t } = useI18n()
 definePageMeta({ layout: 'default' })
-useHead({
-  title: () => t('legal.data_processing_title'),
+usePageOgImage({
+  title: t('legal.data_processing_title'),
+  description: t('legal.data_processing_subtitle'),
+  schema: {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: t('legal.data_processing_title'),
+    description: t('legal.data_processing_subtitle'),
+  },
 })
 </script>

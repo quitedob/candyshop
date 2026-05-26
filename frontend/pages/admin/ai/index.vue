@@ -2,7 +2,10 @@
   <div class="ai-dashboard">
     <div class="flex items-center justify-between mb-6">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">{{ t('admin.ai.title') }}</h1>
+        <h1 class="text-2xl font-bold text-gray-900 inline-flex items-center">
+          {{ t('admin.ai.title') }}
+          <AiHelpHint topic="ai_console" />
+        </h1>
         <p class="text-gray-600 text-sm mt-1">{{ t('admin.ai.description') }}</p>
       </div>
       <button
@@ -194,7 +197,26 @@
                 <option value="b2b-coordinator">{{ t('admin.ai.mode_b2b') }}</option>
                 <option value="plan-order">{{ t('admin.ai.mode_plan') }}</option>
                 <option value="trade-assistant">{{ t('admin.ai.mode_trade') }}</option>
+                <option value="chatbot">{{ t('admin.ai.mode_chatbot') }}</option>
+                <option value="recommend">{{ t('admin.ai.mode_recommend') }}</option>
+                <option value="search">{{ t('admin.ai.mode_search') }}</option>
+                <option value="translate">{{ t('admin.ai.mode_translate') }}</option>
+                <option value="analyze-inquiry">{{ t('admin.ai.mode_analyze_inquiry') }}</option>
+                <option value="generate-quotation">{{ t('admin.ai.mode_generate_quotation') }}</option>
               </select>
+            </div>
+            <div v-if="showOrderPicker">
+              <label class="block text-xs text-gray-500 mb-1">{{ t('admin.ai.order_context') }}</label>
+              <select
+                v-model="selectedOrderId"
+                class="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs focus:border-orange-400 focus:outline-none"
+              >
+                <option value="">{{ t('admin.ai.order_none') }}</option>
+                <option v-for="o in orderOptions" :key="o.id" :value="o.id">
+                  {{ o.label }}
+                </option>
+              </select>
+              <p class="mt-1 text-[10px] text-gray-400">{{ t('admin.ai.order_context_hint') }}</p>
             </div>
           </div>
         </div>
@@ -208,7 +230,75 @@ definePageMeta({ layout: 'admin', middleware: ['auth'] })
 const { t } = useI18n()
 const { enumLabel } = useDisplay()
 const { sanitize } = useSanitizer()
-const authToken = useCookie<string | null>('auth_token')
+const api = useApi()
+const runtimeConfig = useRuntimeConfig()
+const apiBase = runtimeConfig.public.apiBase || '/api/v1'
+
+/** 按 Agent 模式映射后端端点 */
+function agentStreamPath(mode: string): string | null {
+  switch (mode) {
+    case 'plan-order':
+      return `${apiBase}/system/ai/order-processing`
+    case 'trade-assistant':
+      return `${apiBase}/system/ai/trade-assistant`
+    case 'b2b-coordinator':
+      return `${apiBase}/system/ai/b2b-coordinator`
+    default:
+      return null
+  }
+}
+
+/** 非流式 JSON 模式（Cookie 鉴权，勿发送无效 Bearer 以免覆盖 HttpOnly JWT） */
+async function callJsonMode(mode: string, text: string, orderId?: string): Promise<string> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  const init = (body: unknown) => ({
+    method: 'POST' as const,
+    headers,
+    credentials: 'include' as RequestCredentials,
+    body: JSON.stringify(body),
+  })
+  if (mode === 'chatbot') {
+    if (orderId) {
+      const res = await fetch(`${apiBase}/system/chatbot/order`, init({ message: text, orderId }))
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      return data.reply || data.message || JSON.stringify(data)
+    }
+    const res = await fetch(`${apiBase}/system/chatbot`, init({ message: text }))
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+    return data.reply || data.message || JSON.stringify(data)
+  }
+  if (mode === 'recommend') {
+    const res = await fetch(`${apiBase}/system/recommend-products`, init({ query: text }))
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+    return JSON.stringify(data.recommendations || data.products || data, null, 2)
+  }
+  if (mode === 'search') {
+    const res = await fetch(`${apiBase}/system/search`, init({ query: text }))
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+    return JSON.stringify(data.results || data, null, 2)
+  }
+  if (mode === 'translate') {
+    const res = await fetch(`${apiBase}/system/translate`, init({ text, targetLang: 'en' }))
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+    return data.translated || data.translation || JSON.stringify(data)
+  }
+  if (mode === 'analyze-inquiry') {
+    const res = await fetch(`${apiBase}/system/analyze-inquiry`, init({ inquiryText: text }))
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return JSON.stringify(await res.json(), null, 2)
+  }
+  if (mode === 'generate-quotation') {
+    const res = await fetch(`${apiBase}/system/generate-quotation`, init({ requirements: text }))
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return JSON.stringify(await res.json(), null, 2)
+  }
+  throw new Error('unknown mode')
+}
 
 interface Message {
   role: 'user' | 'assistant'
@@ -250,6 +340,27 @@ const config = reactive({
   temperature: 0.7,
   agentMode: 'b2b-coordinator',
 })
+
+/** Chatbot / 订单处理模式可选绑定订单上下文 */
+const selectedOrderId = ref('')
+const orderOptions = ref<{ id: string; label: string }[]>([])
+
+const showOrderPicker = computed(() =>
+  config.agentMode === 'chatbot' || config.agentMode === 'plan-order',
+)
+
+const loadOrderOptions = async () => {
+  try {
+    const res = await api.get<any>('/admin/orders', { page: 1, limit: 80 })
+    const rows = Array.isArray(res?.data) ? res.data : []
+    orderOptions.value = rows.map((o: any) => ({
+      id: String(o.id),
+      label: `${o.orderNumber || o.id} · ${o.status || ''} · ${o.totalAmount ?? ''} ${o.currency || ''}`.trim(),
+    }))
+  } catch {
+    orderOptions.value = []
+  }
+}
 
 const suggestions = computed(() => [
   t('admin.ai.suggestion_1'),
@@ -312,43 +423,55 @@ async function sendMessage(text: string) {
   isStreaming.value = true
   abortController.value = new AbortController()
 
+  const streamUrl = agentStreamPath(config.agentMode)
+  if (!streamUrl) {
+    try {
+      assistantMsg.content = await callJsonMode(
+        config.agentMode,
+        text,
+        selectedOrderId.value || undefined,
+      )
+    } catch (err: unknown) {
+      assistantMsg.content = `Error: ${err instanceof Error ? err.message : 'Unknown error'}`
+    }
+    assistantMsg.streaming = false
+    isStreaming.value = false
+    scrollToBottom()
+    return
+  }
+
   try {
-    const response = await fetch('/api/v1/system/agent/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken.value}`,
-      },
-      body: JSON.stringify({
-        message: text,
-        agent_mode: config.agentMode,
-        temperature: config.temperature,
-      }),
+    let url = `${streamUrl}?query=${encodeURIComponent(text)}`
+    if (selectedOrderId.value && config.agentMode === 'plan-order') {
+      url += `&orderId=${encodeURIComponent(selectedOrderId.value)}`
+    }
+    const response = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
       signal: abortController.value.signal,
     })
 
-    if (!response.ok) throw new Error('Failed to connect')
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
     if (!response.body) throw new Error('No response body')
 
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
-    let buffer = ''
+    let partialEvent = ''
 
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
 
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n')
-      buffer = lines.pop() || ''
+      partialEvent += decoder.decode(value, { stream: true })
+      const parts = partialEvent.split('\n\n')
+      partialEvent = parts.pop() || ''
 
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue
+      for (const part of parts) {
+        if (!part.startsWith('data: ')) continue
         try {
-          const event = JSON.parse(line.slice(6))
-          handleSSEEvent(event, assistantMsg)
+          handleSSEEvent(JSON.parse(part.slice(6)), assistantMsg)
         } catch {
-          // Partial or invalid JSON, skip
+          // 不完整 JSON，跳过
         }
       }
     }
@@ -369,43 +492,58 @@ async function sendMessage(text: string) {
 }
 
 function handleSSEEvent(event: Record<string, unknown>, msg: Message) {
-  switch (event.type) {
-    case 'content':
-      msg.content += (event.content as string) || ''
-      scrollToBottom()
-      break
-    case 'tool_call':
-      if (event.tool_calls) {
-        const calls = event.tool_calls as ToolCall[]
-        if (!msg.toolCalls) msg.toolCalls = []
-        msg.toolCalls.push(...calls)
-        calls.forEach((tc) => {
-          toolHistory.value.unshift({
-            id: tc.id,
-            name: tc.name,
-            status: 'success',
-            time: new Date().toLocaleTimeString(),
-          })
+  const type = event.type as string
+  const content = (event.content as string) || ''
+
+  if (type === 'message' || type === 'tool_result') {
+    if (content) {
+      msg.content += (msg.content ? '\n\n' : '') + content
+    }
+    const rawCalls = event.tool_calls as Array<{ id?: string; function?: { name?: string; arguments?: string } }> | undefined
+    if (rawCalls?.length) {
+      if (!msg.toolCalls) msg.toolCalls = []
+      for (const tc of rawCalls) {
+        const name = tc.function?.name || 'tool'
+        msg.toolCalls.push({
+          id: tc.id || name,
+          name,
+          args: tc.function?.arguments ? { raw: tc.function.arguments } : {},
+        })
+        toolHistory.value.unshift({
+          id: tc.id || `${name}-${Date.now()}`,
+          name,
+          status: 'success',
+          time: new Date().toLocaleTimeString(),
         })
       }
-      break
-    case 'tool_result':
-      msg.content += `\n\n${t('admin.ai.tool_completed')}`
-      scrollToBottom()
-      break
-    case 'hitl_approval':
+    }
+    scrollToBottom()
+    return
+  }
+
+  if (type === 'stream_chunk' || type === 'tool_result_chunk') {
+    msg.content += content
+    scrollToBottom()
+    return
+  }
+
+  if (type === 'action') {
+    if (event.action_type === 'interrupted') {
       pendingActions.value.push({
-        id: event.action_id as string,
-        label: event.action_type as string,
-        detail: event.content as string,
+        id: `hitl-${Date.now()}`,
+        label: (event.action_type as string) || 'approval',
+        detail: content,
       })
-      break
-    case 'error':
-      msg.content += `\n\nError: ${event.error}`
-      break
-    case 'done':
+    }
+    if (event.action_type === 'exit') {
       msg.streaming = false
-      break
+    }
+    return
+  }
+
+  if (type === 'error') {
+    msg.content += `\n\nError: ${event.error}`
+    scrollToBottom()
   }
 }
 
@@ -422,6 +560,7 @@ async function rejectAction(id: string) {
 
 onMounted(() => {
   inputEl.value?.focus()
+  loadOrderOptions()
 })
 </script>
 

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	modelsOrder "candypro/api/internal/models/order"
+	countrypkg "candypro/api/internal/pkg/country"
 	"candypro/api/internal/pkg/crypto"
 )
 
@@ -50,12 +51,22 @@ func (s *TaxService) DeleteRate(ctx context.Context, id string) error {
 }
 
 // CalculateTax calculates tax amount for a given subtotal, country, and optional region.
-// Returns the tax amount and the applied rate name, or 0 if no rate matches.
+// Returns the tax amount, the applied rate's name and rate value, and a configured flag
+// that is true when a tax rate was found. When no rate matches the function returns
+// (0, "", 0, nil, false) — callers can use the flag to distinguish "0% configured rate"
+// from "tax not configured for destination" so checkout can surface a clearer warning
+// instead of silently treating uncovered destinations as tax-exempt (M-10).
 func (s *TaxService) CalculateTax(ctx context.Context, subtotal float64, country, region string) (float64, string, float64, error) {
+	amount, name, rate, _, err := s.CalculateTaxWithFlag(ctx, subtotal, country, region)
+	return amount, name, rate, err
+}
+
+// CalculateTaxWithFlag is the configured-aware variant of CalculateTax (M-10).
+func (s *TaxService) CalculateTaxWithFlag(ctx context.Context, subtotal float64, country, region string) (float64, string, float64, bool, error) {
+	country = countrypkg.NormalizeCountryCode(country)
 	rate, err := s.repo.FindBestRate(ctx, country, region)
-	if err != nil {
-		return 0, "", 0, nil // no rate found, return 0 silently
+	if err != nil || rate == nil {
+		return 0, "", 0, false, nil
 	}
-	taxAmount := subtotal * rate.Rate
-	return taxAmount, rate.Name, rate.Rate, nil
+	return subtotal * rate.Rate, rate.Name, rate.Rate, true, nil
 }

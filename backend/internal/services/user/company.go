@@ -3,8 +3,10 @@ package user
 import (
 	modelsProduct "candypro/api/internal/models/product"
 	modelsUser "candypro/api/internal/models/user"
+	"candypro/api/internal/pkg/crypto"
 	"context"
 	"fmt"
+	"strings"
 )
 
 type companyRepository interface {
@@ -75,6 +77,41 @@ func (s *CompanyService) UpdateCompany(ctx context.Context, company *modelsUser.
 // DeleteCompany deletes a company.
 func (s *CompanyService) DeleteCompany(ctx context.Context, id string) error {
 	return s.repo.Delete(ctx, id)
+}
+
+// EnsureCompanyForUser 若用户尚未关联公司，则根据其 Company 名称自动创建 pending 公司并回写 CompanyID。
+func (s *CompanyService) EnsureCompanyForUser(ctx context.Context, user *modelsUser.User) (*modelsUser.Company, error) {
+	if user == nil {
+		return nil, fmt.Errorf("user is nil")
+	}
+	if user.CompanyID != nil && strings.TrimSpace(*user.CompanyID) != "" {
+		company, err := s.repo.FindByID(ctx, *user.CompanyID)
+		if err == nil {
+			return company, nil
+		}
+	}
+
+	name := strings.TrimSpace(user.Company)
+	if name == "" {
+		return nil, nil
+	}
+
+	company := &modelsUser.Company{
+		ID:     crypto.GenerateID(),
+		Name:   name,
+		Status: "pending",
+	}
+	if err := s.repo.Create(ctx, company); err != nil {
+		return nil, err
+	}
+
+	user.CompanyID = &company.ID
+	if s.user != nil {
+		if err := s.user.UpdateUser(ctx, user); err != nil {
+			return nil, err
+		}
+	}
+	return company, nil
 }
 
 // VerifyCompany verifies or rejects a company and updates linked user status.

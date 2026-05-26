@@ -1,176 +1,177 @@
 {
   "form": {
-    "title": "Send Us an Inquiry",
-    "subtitle": "Get a quote within 24 hours",
-    "company_name": "Company Name",
-    "contact_person": "Contact Person",
-    "email": "Email Address",
-    "whatsapp": "WhatsApp / Phone",
-    "target_country": "Target Country",
-    "estimated_quantity": "Estimated Quantity",
-    "interested_products": "Interested Product(s)",
-    "packaging_requirements": "Packaging Requirements",
-    "flavor_requirements": "Flavor Requirements",
-    "oem_needed": "OEM/Private Label Needed?",
-    "yes": "Yes",
-    "no": "No",
-    "expected_delivery": "Expected Delivery Date",
-    "message": "Additional Requirements",
-    "upload_files": "Upload Reference Images",
-    "remove_file": "Remove file",
-    "submit": "Send Inquiry",
-    "submitting": "Submitting...",
-    "success": "Thank you! Your inquiry has been received. We will contact you within 24 hours.",
-    "error": "Sorry, there was an error submitting your inquiry. Please try again or contact us via WhatsApp.",
-    "files_max": "Maximum {max} files allowed",
-    "file_too_large": "File {name} is too large. Maximum size is {max} MB.",
-    "file_type_unsupported": "File {name} is not a supported type. Use JPG, PNG, WebP, or PDF.",
-    "privacy_note": "Your information is secure and will not be shared.",
-    "message_placeholder": "Tell us more about your requirements...",
-    "summary": "Summary",
-    "not_specified": "Not specified",
-    "interested_products_hint": "Separate multiple products with commas",
+    "title": "お問い合わせ",
+    "subtitle": "24時間以内に見積もりをご返信",
+    "company_name": "会社名",
+    "contact_person": "担当者名",
+    "email": "メールアドレス",
+    "whatsapp": "WhatsApp / 電話",
+    "target_country": "対象国",
+    "estimated_quantity": "予定数量",
+    "interested_products": "関心のある製品",
+    "packaging_requirements": "包装要件",
+    "flavor_requirements": "フレーバー要件",
+    "oem_needed": "OEM / プライベートラベルが必要ですか？",
+    "yes": "はい",
+    "no": "いいえ",
+    "expected_delivery": "希望納期",
+    "message": "その他の要件",
+    "upload_files": "参考画像をアップロード",
+    "remove_file": "ファイルを削除",
+    "submit": "お問い合わせを送信",
+    "submitting": "送信中...",
+    "success": "ありがとうございます。お問い合わせを受け付けました。24時間以内にご連絡いたします。",
+    "error": "送信に失敗しました。もう一度お試しいただくか、WhatsAppでご連絡ください。",
+    "files_max": "最大 {max} ファイルまで",
+    "file_too_large": "ファイル {name} が大きすぎます。最大 {max} MB です。",
+    "file_type_unsupported": "ファイル {name} はサポートされていません。PDF、DOC、DOCX、CSV、XLSX、PNG、JPEG、JPG、MKV、MP4 をご利用ください。",
+    "privacy_note": "お客様の情報は安全に管理し、第三者と共有しません。",
+    "message_placeholder": "要件について詳しくお聞かせください...",
+    "summary": "概要",
+    "not_specified": "未指定",
+    "interested_products_hint": "複数の製品はカンマで区切ってください",
     "options": {
       "countries": {
-        "US": "United States",
-        "UK": "United Kingdom",
-        "DE": "Germany",
-        "FR": "France",
-        "CA": "Canada",
-        "AU": "Australia",
-        "JP": "Japan",
-        "KR": "South Korea",
-        "SG": "Singapore",
-        "MY": "Malaysia",
-        "TH": "Thailand",
-        "VN": "Vietnam",
-        "ID": "Indonesia",
-        "PH": "Philippines",
-        "OTHER": "Other"
+        "US": "アメリカ合衆国",
+        "UK": "イギリス",
+        "DE": "ドイツ",
+        "FR": "フランス",
+        "CA": "カナダ",
+        "AU": "オーストラリア",
+        "JP": "日本",
+        "KR": "韓国",
+        "CN": "中国",
+        "SG": "シンガポール",
+        "MY": "マレーシア",
+        "TH": "タイ",
+        "VN": "ベトナム",
+        "ID": "インドネシア",
+        "PH": "フィリピン",
+        "OTHER": "その他"
       },
       "quantities": {
-        "100-500": "100 - 500 pcs",
-        "500-1000": "500 - 1,000 pcs",
-        "1000-5000": "1,000 - 5,000 pcs",
-        "5000-10000": "5,000 - 10,000 pcs",
-        "10000+": "10,000+ pcs"
+        "100-500": "100〜500個",
+        "500-1000": "500〜1,000個",
+        "1000-5000": "1,000〜5,000個",
+        "5000-10000": "5,000〜10,000個",
+        "10000+": "10,000個以上"
       }
     }
   },
   "contact": {
-    "title": "Contact Us",
-    "subtitle": "Get in touch with our team",
-    "address": "Address",
-    "phone": "Phone",
-    "email": "Email",
+    "title": "お問い合わせ",
+    "subtitle": "チームまでご連絡ください",
+    "address": "住所",
+    "phone": "電話",
+    "email": "メール",
     "whatsapp": "WhatsApp",
-    "hours": "Business Hours",
-    "working_hours": "Monday - Friday: 9:00 AM - 6:00 PM (GMT+8)",
-    "social_media": "Follow Us",
-    "factory_location": "Factory Location",
-    "send_inquiry": "Send Inquiry",
-    "quick_contact": "Quick Contact",
-    "loading_form": "Loading form...",
-    "global_presence_title": "Global Presence",
-    "global_presence_subtitle": "Our offices and representatives around the world",
-    "faq_title": "Frequently Asked Questions",
+    "hours": "営業時間",
+    "working_hours": "月曜〜金曜：9:00〜18:00（GMT+8）",
+    "social_media": "フォローする",
+    "factory_location": "工場所在地",
+    "send_inquiry": "お問い合わせを送信",
+    "quick_contact": "クイックコンタクト",
+    "loading_form": "フォームを読み込み中...",
+    "global_presence_title": "グローバル拠点",
+    "global_presence_subtitle": "世界各地のオフィスと担当者",
+    "faq_title": "よくある質問",
     "offices": {
-      "headquarters_country": "China (Headquarters)",
+      "headquarters_country": "中国（本社）",
       "headquarters_address": "123 Industrial Zone, Sweet City",
-      "us_country": "United States",
+      "us_country": "アメリカ合衆国",
       "us_address": "456 Market Street, San Francisco, CA",
-      "uk_country": "United Kingdom",
+      "uk_country": "イギリス",
       "uk_address": "789 High Street, London",
       "uae_country": "UAE",
       "uae_address": "321 Business Bay, Dubai"
     },
-    "whatsapp_desc": "Get instant response to your inquiries",
+    "whatsapp_desc": "お問い合わせに迅速にお応えします",
     "faq": {
-      "response_time_q": "How quickly will I receive a response?",
-      "response_time_a": "We typically respond to all inquiries within 24 hours during business days. For urgent matters, we recommend contacting us via WhatsApp for immediate assistance.",
-      "visit_factory_q": "Can I visit your factory?",
-      "visit_factory_a": "Yes, we welcome clients to visit our facility. Please contact us in advance to schedule a visit, and we can arrange factory tours and face-to-face meetings."
+      "response_time_q": "返信はどのくらいで届きますか？",
+      "response_time_a": "営業日は通常24時間以内にご返信します。お急ぎの場合はWhatsAppでのご連絡をおすすめします。",
+      "visit_factory_q": "工場見学は可能ですか？",
+      "visit_factory_a": "はい、工場見学を歓迎しています。事前にご連絡いただければ、工場ツアーと対面ミーティングを手配いたします。"
     }
   },
   "faq": {
-    "title": "Frequently Asked Questions",
-    "subtitle": "Find answers to common questions about our services",
-    "still_questions": "Still Have Questions?",
-    "contact_description": "Our team is here to help. Contact us for personalized assistance.",
+    "title": "よくある質問",
+    "subtitle": "サービスに関するよくある質問への回答",
+    "still_questions": "まだご質問がありますか？",
+    "contact_description": "チームがサポートいたします。個別のご相談はお問い合わせください。",
     "categories": {
-      "general": "General",
-      "ordering": "Ordering",
-      "oem": "OEM/Private Label",
-      "shipping": "Shipping"
+      "general": "一般",
+      "ordering": "注文",
+      "oem": "OEM / プライベートラベル",
+      "shipping": "配送"
     },
     "items": [
       {
-        "question": "What is your minimum order quantity (MOQ)?",
-        "answer": "Our MOQ varies by product type. For standard products, MOQ starts from 1,000 pieces. For custom OEM orders, the minimum is typically 3,000 pieces depending on the complexity of customization required."
+        "question": "最小発注数量（MOQ）はいくらですか？",
+        "answer": "製品タイプにより異なります。標準品は1,000個から、カスタムOEM注文は通常3,000個から（カスタマイズの複雑さにより変動）です。"
       },
       {
-        "question": "What certifications do you have?",
-        "answer": "We hold multiple international certifications including HACCP, ISO22000, BRC Grade A, Halal, and FDA registration. All our products meet strict international food safety standards."
+        "question": "どのような認証を取得していますか？",
+        "answer": "HACCP、ISO22000、BRCグレードA、Halal、FDA登録など国際認証を取得しています。すべての製品は厳格な国際食品安全基準に適合しています。"
       },
       {
-        "question": "Can I get samples before placing an order?",
-        "answer": "Yes, we provide samples for quality evaluation. Standard samples are free (you pay shipping), and custom samples require a mold fee which is refundable upon placing a bulk order."
+        "question": "注文前にサンプルは入手できますか？",
+        "answer": "はい、品質評価用のサンプルを提供しています。標準サンプルは無料（送料のみ）、カスタムサンプルは金型費用がかかりますが一括注文時に返金されます。"
       },
       {
-        "question": "What payment methods do you accept?",
-        "answer": "We accept T/T (bank transfer), L/C (Letter of Credit), PayPal for sample orders, and Western Union. Payment terms are typically 30% deposit and 70% before shipment."
+        "question": "どのような支払方法がありますか？",
+        "answer": "T/T（銀行振込）、L/C（信用状）、サンプル注文はPayPal、Western Unionに対応。通常は着手金30％、出荷前70％です。"
       },
       {
-        "question": "How do I place an order?",
-        "answer": "You can submit an inquiry through our website, email us directly, or contact us via WhatsApp. Our sales team will respond within 24 hours with a quote and order confirmation process."
+        "question": "注文方法は？",
+        "answer": "ウェブサイトのお問い合わせ、メール、WhatsAppでご連絡ください。営業チームが24時間以内に見積もりと注文確認手順をご案内します。"
       },
       {
-        "question": "What is your lead time?",
-        "answer": "Standard orders: 2-3 weeks after deposit confirmation. Custom OEM orders: 4-6 weeks depending on complexity. Rush orders may be available for an additional fee."
+        "question": "リードタイムはどのくらいですか？",
+        "answer": "生産・納期は注文確認時に営業チームからご案内します。急ぎ注文は追加料金の場合があります。当サイトでは固定の週数・月数は掲載しません。"
       },
       {
-        "question": "Can I modify my order after it's placed?",
-        "answer": "Modifications are possible within 48 hours of order confirmation, provided production hasn't started. Once production begins, changes may incur additional costs."
+        "question": "注文確定後に変更できますか？",
+        "answer": "注文確定後48時間以内、生産開始前であれば変更可能です。生産開始後は追加費用が発生する場合があります。"
       },
       {
-        "question": "What OEM services do you offer?",
-        "answer": "We offer full OEM/ODM services including custom formula development, private label packaging, custom shapes and flavors, branded packaging design, and turnkey solutions from concept to delivery."
+        "question": "どのようなOEMサービスを提供していますか？",
+        "answer": "カスタム処方開発、プライベートラベル包装、カスタム形状・フレーバー、ブランド包装デザイン、コンセプトから納品までのターンキーソリューションなどフルOEM/ODMサービスを提供しています。"
       },
       {
-        "question": "What is the MOQ for custom OEM orders?",
-        "answer": "Custom OEM orders start at 3,000 pieces per SKU. For complex custom molds or unique formulations, higher MOQs may apply. We can discuss specific requirements for your project."
+        "question": "カスタムOEM注文のMOQは？",
+        "answer": "カスタムOEMはSKUあたり3,000個から。複雑な金型や独自処方ではMOQが高くなる場合があります。プロジェクトごとにご相談ください。"
       },
       {
-        "question": "How long does custom product development take?",
-        "answer": "Custom formulation: 2-4 weeks. Mold creation: 3-5 weeks. Packaging design: 1-2 weeks. Full production: 4-6 weeks after sample approval. Total timeline is typically 8-12 weeks for new OEM products."
+        "question": "カスタム製品開発にはどのくらいかかりますか？",
+        "answer": "カスタム開発スケジュールは要件確認後にチームが評価し、見積または注文確認でのみご案内します。"
       },
       {
-        "question": "Do you provide design services for packaging?",
-        "answer": "Yes, we have an in-house design team that can create packaging designs, logos, and branding elements. Design services are included for orders meeting minimum quantity requirements."
+        "question": "包装のデザインサービスはありますか？",
+        "answer": "はい、社内デザインチームが包装デザイン、ロゴ、ブランディング要素を作成できます。最小数量を満たす注文にはデザインサービスが含まれます。"
       },
       {
-        "question": "What shipping methods do you offer?",
-        "answer": "We offer sea freight (FCL/LCL), air freight, and express courier (DHL, FedEx, UPS). Sea freight is most economical for large orders, while air and express are faster for smaller quantities."
+        "question": "どのような配送方法がありますか？",
+        "answer": "海上輸送（FCL/LCL）、航空輸送、宅配（DHL、FedEx、UPS）に対応。大量注文は海上輸送が最も経済的、少量は航空・宅配が迅速です。"
       },
       {
-        "question": "Do you ship worldwide?",
-        "answer": "Yes, we ship to over 50 countries worldwide. We have experience with various import regulations and can provide necessary documentation for customs clearance."
+        "question": "世界中に配送できますか？",
+        "answer": "はい、50カ国以上に配送実績があります。各種輸入規制に精通し、通関に必要な書類を提供できます。"
       },
       {
-        "question": "What are the shipping costs?",
-        "answer": "Shipping costs depend on order volume, destination, and shipping method. We provide detailed quotes including shipping costs. For large orders, we can offer competitive freight rates through our logistics partners."
+        "question": "配送費用はいくらですか？",
+        "answer": "注文量、仕向地、配送方法により異なります。配送費用を含む詳細見積もりをご提示します。大量注文では物流パートナー経由の競争力のある運賃を提供できます。"
       },
       {
-        "question": "Can you handle customs clearance?",
-        "answer": "We provide all necessary export documentation (commercial invoice, packing list, certificates of origin, health certificates). For import clearance, we work with experienced freight forwarders who can assist at destination ports."
+        "question": "通関手続きの支援はありますか？",
+        "answer": "商業インボイス、パッキングリスト、原産地証明、衛生証明など輸出に必要な書類をすべて提供します。輸入通関は目的地のフォワーダーが支援できます。"
       }
     ]
   },
   "input_file": {
-    "upload": "Click to upload or drag and drop",
-    "max_size": "Max {size} MB per file",
-    "error_too_large": "File \"{name}\" exceeds {max} MB limit",
-    "error_type": "File \"{name}\" is not a supported type",
-    "error_max_files": "Maximum {count} files allowed"
+    "upload": "クリックまたはドラッグ＆ドロップでアップロード",
+    "max_size": "1ファイル最大 {size} MB",
+    "error_too_large": "ファイル「{name}」が {max} MB の上限を超えています",
+    "error_type": "ファイル「{name}」はサポートされていない形式です",
+    "error_max_files": "最大 {count} ファイルまで"
   }
 }

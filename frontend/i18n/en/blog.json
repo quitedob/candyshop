@@ -1,6 +1,6 @@
 {
   "blog": {
-    "title": "Blog & Resources",
+    "title": "Blog & Insights",
     "categories": {
       "compliance": "Compliance",
       "product_knowledge": "Product Knowledge",
@@ -15,7 +15,7 @@
   "blog_extra": {
     "featured": "Featured",
     "stay_updated": "Stay Updated",
-    "subscribe_desc": "Get the latest industry insights and compliance updates delivered to your inbox",
+    "subscribe_desc": "Industry insights, compliance updates, and product knowledge for B2B buyers.",
     "email_placeholder": "Enter your email",
     "all_posts": "All Posts",
     "loading_posts": "Loading posts...",

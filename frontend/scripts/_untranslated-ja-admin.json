@@ -1,0 +1,1612 @@
+{
+  "CandyPro 管理后台": {
+    "key": "admin.brand",
+    "en": "CandyPro Admin",
+    "loc": "CandyPro 管理画面"
+  },
+  "OEM项目": {
+    "key": "admin.oemProjects.title",
+    "en": "OEM Projects",
+    "loc": "OEM プロジェクト"
+  },
+  "XLSX 工具": {
+    "key": "admin.xlsx.title",
+    "en": "XLSX Tools",
+    "loc": "XLSX ツール"
+  },
+  "本周新增 {count}": {
+    "key": "admin.dashboard.new_users_this_week",
+    "en": "{count} new this week",
+    "loc": "今週 {count} 件の新規"
+  },
+  "RFM 分析": {
+    "key": "admin.reports.rfm",
+    "en": "RFM Analysis",
+    "loc": "RFM 分析"
+  },
+  "显示第 {from} 到 {to} 条，共 {total} 条": {
+    "key": "admin.returns.showing",
+    "en": "Showing {from} to {to} of {total}",
+    "loc": "{total} 件中 {from} ～ {to} 件を表示"
+  },
+  "管理询价记录，支持完整的增删改查和转化操作。": {
+    "key": "admin.inquiryDetail.description",
+    "en": "Manage inquiry records with complete CRUD and conversion actions.",
+    "loc": "完全な CRUD とコンバージョン操作でお問い合わせを管理します。"
+  },
+  "需要OEM": {
+    "key": "admin.inquiryDetail.oem_needed",
+    "en": "OEM Needed",
+    "loc": "OEM 対応"
+  },
+  "管理订单生命周期，支持完整的增删改查操作。": {
+    "key": "admin.orders.description",
+    "en": "Manage order lifecycle with complete CRUD operations.",
+    "loc": "完全な CRUD 操作で注文ライフサイクルを管理します。"
+  },
+  "AI 生成": {
+    "key": "admin.orders.ai_generate",
+    "en": "AI Generate",
+    "loc": "AI Generate"
+  },
+  "转为MD": {
+    "key": "admin.orders.convert_to_md",
+    "en": "Convert to MD",
+    "loc": "Convert to MD"
+  },
+  "确定要退款此付款？": {
+    "key": "admin.orders.confirm_refund",
+    "en": "Are you sure you want to refund this payment?",
+    "loc": "Are you sure you want to refund this payment?"
+  },
+  "州 / 省": {
+    "key": "admin.inquiryDetail.shipping_state",
+    "en": "State / Province",
+    "loc": "都道府県 / Province"
+  },
+  "包装类型": {
+    "key": "admin.inquiryDetail.packaging_type",
+    "en": "Packaging Type",
+    "loc": "Packaging タイプ"
+  },
+  "包装重量 (g)": {
+    "key": "admin.inquiryDetail.packaging_weight",
+    "en": "Packaging Weight (g)",
+    "loc": "Packaging Weight (g)"
+  },
+  "无附件": {
+    "key": "admin.inquiryDetail.no_files",
+    "en": "No files",
+    "loc": "No files"
+  },
+  "与买家的价格谈判和还盘管理。": {
+    "key": "admin.inquiryDetail.negotiation_description",
+    "en": "Counter-offers and price negotiation with the buyer.",
+    "loc": "Counter-offers and price negotiation with the buyer."
+  },
+  "还盘": {
+    "key": "admin.inquiryDetail.offer_round",
+    "en": "Offer",
+    "loc": "Offer"
+  },
+  "管理产品目录，支持完整的增删改查操作。": {
+    "key": "admin.products.description",
+    "en": "Manage product catalog with complete CRUD operations.",
+    "loc": "製品カタログを完全な CRUD 操作で管理します。"
+  },
+  "按产品名称或 SKU 搜索...": {
+    "key": "admin.products.search_placeholder",
+    "en": "Search by product name or SKU...",
+    "loc": "製品名または SKU で検索..."
+  },
+  "分类 Slug": {
+    "key": "admin.products.category_slug",
+    "en": "Category Slug",
+    "loc": "カテゴリ Slug"
+  },
+  "基础价格 (美元)": {
+    "key": "admin.products.base_price",
+    "en": "Base Price (USD)",
+    "loc": "基本価格 (USD)"
+  },
+  "缩略图": {
+    "key": "admin.content.content_thumbnail",
+    "en": "Thumbnail",
+    "loc": "Thumbnail"
+  },
+  "可选。覆盖缩略图用于 Facebook/LinkedIn 预览，建议 1200×630。": {
+    "key": "admin.products.og_image_hint",
+    "en": "Optional. Overrides thumbnail for Facebook/LinkedIn previews. 1200×630 recommended.",
+    "loc": "任意。Facebook/LinkedIn プレビュー用にサムネイルを上書き。1200×630 推奨。"
+  },
+  "图片（逗号分隔）": {
+    "key": "admin.products.images",
+    "en": "Images (comma separated)",
+    "loc": "Images (comma separated)"
+  },
+  "口味（逗号分隔）": {
+    "key": "admin.products.flavors",
+    "en": "Flavors (comma separated)",
+    "loc": "Flavors (comma separated)"
+  },
+  "形状（逗号分隔）": {
+    "key": "admin.products.shapes",
+    "en": "Shapes (comma separated)",
+    "loc": "Shapes (comma separated)"
+  },
+  "单颗净重 (g)": {
+    "key": "admin.products.field_net_weight_per_piece",
+    "en": "Net Weight/Piece (g)",
+    "loc": "Net Weight/Piece (g)"
+  },
+  "每包净重 (g)": {
+    "key": "admin.products.field_net_weight_per_pack",
+    "en": "Net Weight/Pack (g)",
+    "loc": "Net Weight/Pack (g)"
+  },
+  "每箱毛重 (kg)": {
+    "key": "admin.products.field_gross_weight_per_carton",
+    "en": "Gross Weight/Carton (kg)",
+    "loc": "Gross Weight/Carton (kg)"
+  },
+  "每包颗数": {
+    "key": "admin.products.field_pieces_per_pack",
+    "en": "Pieces/Pack",
+    "loc": "Pieces/Pack"
+  },
+  "每箱包数": {
+    "key": "admin.products.field_packs_per_carton",
+    "en": "Packs/Carton",
+    "loc": "Packs/Carton"
+  },
+  "长度 (mm)": {
+    "key": "admin.products.field_length_mm",
+    "en": "Length (mm)",
+    "loc": "Length (mm)"
+  },
+  "宽度 (mm)": {
+    "key": "admin.products.field_width_mm",
+    "en": "Width (mm)",
+    "loc": "Width (mm)"
+  },
+  "高度 (mm)": {
+    "key": "admin.products.field_height_mm",
+    "en": "Height (mm)",
+    "loc": "Height (mm)"
+  },
+  "无麸质": {
+    "key": "admin.products.field_gluten_free",
+    "en": "Gluten-Free",
+    "loc": "Gluten-Free"
+  },
+  "无糖": {
+    "key": "admin.products.field_sugar_free",
+    "en": "Sugar-Free",
+    "loc": "Sugar-Free"
+  },
+  "有机": {
+    "key": "admin.products.field_organic",
+    "en": "Organic",
+    "loc": "Organic"
+  },
+  "能量 (kcal)": {
+    "key": "admin.products.field_energy_kcal",
+    "en": "Energy (kcal)",
+    "loc": "エネルギー (kcal)"
+  },
+  "脂肪 (g)": {
+    "key": "admin.products.field_fat_g",
+    "en": "Fat (g)",
+    "loc": "Fat (g)"
+  },
+  "饱和脂肪 (g)": {
+    "key": "admin.products.field_saturated_fat_g",
+    "en": "Saturated Fat (g)",
+    "loc": "Saturated Fat (g)"
+  },
+  "碳水化合物 (g)": {
+    "key": "admin.products.field_carbohydrates_g",
+    "en": "Carbohydrates (g)",
+    "loc": "Carbohydrates (g)"
+  },
+  "糖 (g)": {
+    "key": "admin.products.field_sugars_g",
+    "en": "Sugars (g)",
+    "loc": "Sugars (g)"
+  },
+  "蛋白质 (g)": {
+    "key": "admin.products.field_protein_g",
+    "en": "Protein (g)",
+    "loc": "Protein (g)"
+  },
+  "盐 (g)": {
+    "key": "admin.products.field_salt_g",
+    "en": "Salt (g)",
+    "loc": "Salt (g)"
+  },
+  "膳食纤维 (g)": {
+    "key": "admin.products.field_fiber_g",
+    "en": "Fiber (g)",
+    "loc": "Fiber (g)"
+  },
+  "添加剂 (E编码)": {
+    "key": "admin.products.field_additives",
+    "en": "Additives (E-numbers)",
+    "loc": "Additives (E-numbers)"
+  },
+  "甜味剂类型": {
+    "key": "admin.products.field_sweetener_type",
+    "en": "Sweetener Type",
+    "loc": "Sweetener タイプ"
+  },
+  "可可固形物 %": {
+    "key": "admin.products.field_cocoa_solids_pct",
+    "en": "Cocoa Solids %",
+    "loc": "Cocoa Solids %"
+  },
+  "乳固形物 %": {
+    "key": "admin.products.field_milk_solids_pct",
+    "en": "Milk Solids %",
+    "loc": "Milk Solids %"
+  },
+  "可能含有": {
+    "key": "admin.products.field_may_contain",
+    "en": "May Contain",
+    "loc": "May Contain"
+  },
+  "水分活度 (aʷ)": {
+    "key": "admin.products.field_water_activity",
+    "en": "Water Activity (aʷ)",
+    "loc": "Water アクティビティ (aʷ)"
+  },
+  "GTIN / 条形码": {
+    "key": "admin.products.field_gtin",
+    "en": "GTIN / Barcode",
+    "loc": "GTIN / バーコード"
+  },
+  "初级包装": {
+    "key": "admin.products.field_primary_packaging",
+    "en": "Primary Packaging",
+    "loc": "Primary Packaging"
+  },
+  "内包装配置": {
+    "key": "admin.products.field_inner_pack_config",
+    "en": "Inner Pack Config",
+    "loc": "Inner Pack Config"
+  },
+  "托盘配置": {
+    "key": "admin.products.field_pallet_config",
+    "en": "Pallet Config",
+    "loc": "Pallet Config"
+  },
+  "流包装、铝箔、盒装、袋装、罐装": {
+    "key": "admin.products.packaging_placeholder",
+    "en": "flow-wrap, foil, box, bag, jar",
+    "loc": "flow-wrap, foil, box, bag, jar"
+  },
+  "例：每展示盒 12 个单位": {
+    "key": "admin.products.inner_pack_placeholder",
+    "en": "e.g. 12 units per display box",
+    "loc": "e.g. 12 units per display box"
+  },
+  "例：48 箱/层 × 5 层": {
+    "key": "admin.products.pallet_config_placeholder",
+    "en": "e.g. 48 cases/layer × 5 layers",
+    "loc": "e.g. 48 cases/layer × 5 layers"
+  },
+  "非转基因": {
+    "key": "admin.products.gmo_option_non_gmo",
+    "en": "Non-GMO",
+    "loc": "Non-GMO"
+  },
+  "无转基因认证": {
+    "key": "admin.products.gmo_option_gmo_free_certified",
+    "en": "GMO-Free Certified",
+    "loc": "GMO-Free Certified"
+  },
+  "英文": {
+    "key": "admin.products.locale_tab_en",
+    "en": "English",
+    "loc": "English"
+  },
+  "阿拉伯文": {
+    "key": "admin.products.locale_tab_ar",
+    "en": "Arabic",
+    "loc": "Arabic"
+  },
+  "韩文": {
+    "key": "admin.products.locale_tab_ko",
+    "en": "Korean",
+    "loc": "Korean"
+  },
+  "日文": {
+    "key": "admin.products.locale_tab_ja",
+    "en": "Japanese",
+    "loc": "Japanese"
+  },
+  "繁体中文": {
+    "key": "admin.products.locale_tab_zh-tw",
+    "en": "Traditional Chinese",
+    "loc": "Traditional Chinese"
+  },
+  "泰文": {
+    "key": "admin.products.locale_tab_th",
+    "en": "Thai",
+    "loc": "Thai"
+  },
+  "越南文": {
+    "key": "admin.products.locale_tab_vi",
+    "en": "Vietnamese",
+    "loc": "Vietnamese"
+  },
+  "印尼文": {
+    "key": "admin.products.locale_tab_id",
+    "en": "Indonesian",
+    "loc": "Indonesian"
+  },
+  "马来文": {
+    "key": "admin.products.locale_tab_ms",
+    "en": "Malay",
+    "loc": "Malay"
+  },
+  "正在生成产品数据...": {
+    "key": "admin.products.ai_generating",
+    "en": "Generating product data...",
+    "loc": "Generating product data..."
+  },
+  "例如：150g牛奶巧克力棒，含杏仁，纯素，12个月保质期，独立流包装，每展示盒24片，清真认证...": {
+    "key": "admin.products.ai_description_placeholder",
+    "en": "e.g., 150g milk chocolate bar with almonds, vegan, 12-month shelf life, individually flow-wrapped, 24 pieces per display box, halal certified...",
+    "loc": "例：150g アーモンド入りミルクチョコレート、ヴィーガン、賞味期限12か月、個包装、ディスプレイボックス24個入り、Halal 認証..."
+  },
+  "输入语言": {
+    "key": "admin.products.ai_language_label",
+    "en": "Source Language",
+    "loc": "Source Language"
+  },
+  "基本信息": {
+    "key": "admin.products.ai_section_basic",
+    "en": "Basic Information",
+    "loc": "Basic Information"
+  },
+  "市场代码": {
+    "key": "admin.products.market_code",
+    "en": "Market Code",
+    "loc": "Market コード"
+  },
+  "标签模板 ID": {
+    "key": "admin.products.label_template",
+    "en": "Label Template ID",
+    "loc": "Label Template ID"
+  },
+  "逗号分隔": {
+    "key": "admin.products.csv_hint",
+    "en": "Comma-separated",
+    "loc": "Comma-separated"
+  },
+  "重新加载": {
+    "key": "admin.products.reload_market",
+    "en": "Reload",
+    "loc": "Reload"
+  },
+  "市场画像已保存。": {
+    "key": "admin.products.market_saved",
+    "en": "Market profile saved.",
+    "loc": "Market profile saved."
+  },
+  "新增内容": {
+    "key": "admin.content.add_content",
+    "en": "Add Content",
+    "loc": "Add コンテンツ"
+  },
+  "可选。建议 1200×630，用于社交媒体链接预览。": {
+    "key": "admin.content.og_image_hint",
+    "en": "Optional. 1200×630 recommended for social previews.",
+    "loc": "任意. 1200×630 recommended for social previews."
+  },
+  "URL或上传": {
+    "key": "admin.content.url_or_upload",
+    "en": "URL or upload",
+    "loc": "URL またはアップロード"
+  },
+  "阅读时间(分钟)": {
+    "key": "admin.content.post_read_time",
+    "en": "Read Time (min)",
+    "loc": "Read 時間 (min)"
+  },
+  "标签(逗号分隔)": {
+    "key": "admin.content.post_tags",
+    "en": "Tags (comma separated)",
+    "loc": "Tags (comma separated)"
+  },
+  "作者名称": {
+    "key": "admin.content.author_name",
+    "en": "Author Name",
+    "loc": "Author 名称"
+  },
+  "作者头衔": {
+    "key": "admin.content.author_title",
+    "en": "Author Title",
+    "loc": "Author タイトル"
+  },
+  "作者头像URL": {
+    "key": "admin.content.author_avatar",
+    "en": "Author Avatar URL",
+    "loc": "著者アバター URL"
+  },
+  "作者简介": {
+    "key": "admin.content.author_bio",
+    "en": "Author Bio",
+    "loc": "Author Bio"
+  },
+  "客户名称": {
+    "key": "admin.content.case_client",
+    "en": "Client Name",
+    "loc": "Client 名称"
+  },
+  "行业": {
+    "key": "admin.content.case_industry",
+    "en": "Industry",
+    "loc": "Industry"
+  },
+  "地点": {
+    "key": "admin.shipments.event_location",
+    "en": "Location",
+    "loc": "Location"
+  },
+  "时间线": {
+    "key": "admin.oem.label_timeline",
+    "en": "Timeline",
+    "loc": "時間line"
+  },
+  "图片(逗号分隔URL)": {
+    "key": "admin.content.case_images",
+    "en": "Images (comma separated URLs)",
+    "loc": "画像（URL をカンマ区切り）"
+  },
+  "AI生成中...": {
+    "key": "admin.trades.ai_generating",
+    "en": "AI generating...",
+    "loc": "AI generating..."
+  },
+  "开始编写内容...": {
+    "key": "admin.content.editor_placeholder",
+    "en": "Start writing...",
+    "loc": "Start writing..."
+  },
+  "服务项目(逗号分隔)": {
+    "key": "admin.content.case_services",
+    "en": "Services (comma separated)",
+    "loc": "Services (comma separated)"
+  },
+  "挑战": {
+    "key": "admin.content.case_challenge",
+    "en": "Challenge",
+    "loc": "Challenge"
+  },
+  "成果": {
+    "key": "admin.content.case_result",
+    "en": "Result",
+    "loc": "Result"
+  },
+  "内容已更新": {
+    "key": "admin.content.updated_success",
+    "en": "Content updated successfully",
+    "loc": "コンテンツ updated successfully"
+  },
+  "内容已删除": {
+    "key": "admin.content.deleted_success",
+    "en": "Content deleted successfully",
+    "loc": "コンテンツ deleted successfully"
+  },
+  "原文语言": {
+    "key": "admin.content.ai_language_label",
+    "en": "Source Language",
+    "loc": "Source Language"
+  },
+  "选中标题、摘要或正文中的文字，按 Ctrl+K（Mac：⌘K）打开 AI 修订，预览 Diff 后接受或拒绝。": {
+    "key": "admin.content.inline_ai_hint",
+    "en": "Select text in title, excerpt, or body, then press Ctrl+K (Mac: ⌘K) for AI edit with diff preview — Accept or Reject.",
+    "loc": "タイトル、抜粋、本文でテキストを選択し、Ctrl+K（Mac：⌘K）で AI 編集（Diff プレビュー）— 承認または拒否。"
+  },
+  "AI 修订选区": {
+    "key": "admin.content.inline_ai_title",
+    "en": "Edit selection",
+    "loc": "編集 selection"
+  },
+  "描述要如何修改选中内容…": {
+    "key": "admin.content.inline_ai_placeholder",
+    "en": "Describe how to change the selection…",
+    "loc": "Describe how to change the selection…"
+  },
+  "选区": {
+    "key": "admin.content.inline_ai_selection",
+    "en": "Selection",
+    "loc": "Selection"
+  },
+  "生成修订": {
+    "key": "admin.content.inline_ai_generate",
+    "en": "Generate edit",
+    "loc": "Generate edit"
+  },
+  "AI 修订中…": {
+    "key": "admin.content.inline_ai_loading",
+    "en": "Revising…",
+    "loc": "Revising…"
+  },
+  "修改前": {
+    "key": "admin.content.inline_ai_before",
+    "en": "Before",
+    "loc": "Before"
+  },
+  "修改后": {
+    "key": "admin.content.inline_ai_after",
+    "en": "After",
+    "loc": "After"
+  },
+  "重新生成": {
+    "key": "admin.content.ai_regenerate",
+    "en": "Regenerate",
+    "loc": "Regenerate"
+  },
+  "AI 局部修订": {
+    "key": "admin.content.ai_revise_title",
+    "en": "AI targeted revision",
+    "loc": "AI targeted revision"
+  },
+  "在正文中选中一段文字，或选择修订范围，描述要如何修改（类似 Cursor 局部编辑）。": {
+    "key": "admin.content.ai_revise_hint",
+    "en": "Select text in the body or pick a scope, then describe the fix (Cursor-style partial edit).",
+    "loc": "本文でテキストを選択するか範囲を選び、修正内容を記述します（Cursor 式部分編集）。"
+  },
+  "例如：标题缩短一些；第二段补充欧盟法规细节；语气更专业…": {
+    "key": "admin.content.ai_revise_placeholder",
+    "en": "e.g. Shorten the title; add EU compliance details in paragraph 2; use a more professional tone…",
+    "loc": "e.g. Shorten the title; add EU compliance details in paragraph 2; use a more professional tone…"
+  },
+  "已选中片段": {
+    "key": "admin.content.ai_revise_selected",
+    "en": "Selected excerpt",
+    "loc": "Selected excerpt"
+  },
+  "修订范围": {
+    "key": "admin.content.ai_revise_scope",
+    "en": "Revision scope",
+    "loc": "Revision scope"
+  },
+  "正文": {
+    "key": "admin.content.ai_revise_scope_content",
+    "en": "Body",
+    "loc": "Body"
+  },
+  "作者信息": {
+    "key": "admin.content.ai_revise_scope_author",
+    "en": "Author",
+    "loc": "Author"
+  },
+  "应用修订": {
+    "key": "admin.content.ai_revise_apply",
+    "en": "Apply revision",
+    "loc": "Apply revision"
+  },
+  "修订中…": {
+    "key": "admin.content.ai_revising",
+    "en": "Revising…",
+    "loc": "Revising…"
+  },
+  "已应用 AI 修订": {
+    "key": "admin.content.ai_revise_done",
+    "en": "AI revision applied",
+    "loc": "AI revision applied"
+  },
+  "留空则使用默认作者名称": {
+    "key": "admin.content.trans_author_name_placeholder",
+    "en": "Leave empty to use default author name",
+    "loc": "Leave empty to use default author name"
+  },
+  "留空则使用默认作者职称": {
+    "key": "admin.content.trans_author_title_placeholder",
+    "en": "Leave empty to use default author title",
+    "loc": "Leave empty to use default author title"
+  },
+  "缩略图 URL": {
+    "key": "admin.categories.thumbnail",
+    "en": "Thumbnail URL",
+    "loc": "サムネイル URL"
+  },
+  "请填写 Slug": {
+    "key": "admin.categories.slug_required",
+    "en": "Slug is required",
+    "loc": "Slug を入力してください"
+  },
+  "管理工厂认证（HACCP、ISO22000、BRC、HALAL等）": {
+    "key": "admin.certifications.description",
+    "en": "Manage factory certifications (HACCP, ISO22000, BRC, HALAL, etc.)",
+    "loc": "工場認証を管理（HACCP、ISO22000、BRC、HALAL など）"
+  },
+  "添加认证": {
+    "key": "admin.certifications.add_certification",
+    "en": "Add Certification",
+    "loc": "Add Certification"
+  },
+  "缩写": {
+    "key": "admin.certifications.abbreviation",
+    "en": "Abbreviation",
+    "loc": "Abbreviation"
+  },
+  "颁发机构": {
+    "key": "admin.certifications.issuer",
+    "en": "Issuer",
+    "loc": "Issuer"
+  },
+  "证书链接": {
+    "key": "admin.certifications.certificate_url",
+    "en": "Certificate URL",
+    "loc": "Certificate URL"
+  },
+  "徽章链接": {
+    "key": "admin.certifications.badge_url",
+    "en": "Badge URL",
+    "loc": "Badge URL"
+  },
+  "认证名称为必填项。": {
+    "key": "admin.certifications.name_required",
+    "en": "Certification name is required.",
+    "loc": "Certification name is required."
+  },
+  "确定删除此认证？": {
+    "key": "admin.certifications.confirm_delete",
+    "en": "Delete this certification?",
+    "loc": "削除 this certification?"
+  },
+  "认证更新成功。": {
+    "key": "admin.certifications.updated_success",
+    "en": "Certification updated successfully.",
+    "loc": "Certification updated successfully."
+  },
+  "认证删除成功。": {
+    "key": "admin.certifications.deleted_success",
+    "en": "Certification deleted successfully.",
+    "loc": "Certification deleted successfully."
+  },
+  "管理企业KYB认证、信用额度及价格体系。": {
+    "key": "admin.companies.description",
+    "en": "Manage company KYB verification, credit limits, and pricing tiers.",
+    "loc": "企業 KYB 認証、与信限度、価格体系を管理します。"
+  },
+  "按名称搜索...": {
+    "key": "admin.companies.search_placeholder",
+    "en": "Search by name...",
+    "loc": "検索 by name..."
+  },
+  "注册号": {
+    "key": "admin.companies.registration_number",
+    "en": "Registration Number",
+    "loc": "Registration Number"
+  },
+  "网站": {
+    "key": "admin.companies.website",
+    "en": "Website",
+    "loc": "Website"
+  },
+  "营业执照": {
+    "key": "admin.companies.business_license",
+    "en": "Business License",
+    "loc": "Business License"
+  },
+  "查看文档": {
+    "key": "admin.companies.view_document",
+    "en": "View Document",
+    "loc": "表示 Document"
+  },
+  "KYB备注": {
+    "key": "admin.companies.kyb_notes",
+    "en": "KYB Notes",
+    "loc": "KYB 備考"
+  },
+  "信用与定价": {
+    "key": "admin.companies.credit_pricing",
+    "en": "Credit & Pricing",
+    "loc": "Credit & 価格"
+  },
+  "KYB状态": {
+    "key": "admin.companies.kyb_status",
+    "en": "KYB Status",
+    "loc": "KYB ステータス"
+  },
+  "企业状态更新成功。": {
+    "key": "admin.companies.status_updated",
+    "en": "Company status updated successfully.",
+    "loc": "会社 status updated successfully."
+  },
+  "进口": {
+    "key": "admin.trades.import",
+    "en": "Import",
+    "loc": "Import"
+  },
+  "交易": {
+    "key": "admin.trades.transaction",
+    "en": "Transaction",
+    "loc": "Transaction"
+  },
+  "交货条款": {
+    "key": "admin.trades.delivery_terms",
+    "en": "Delivery Terms",
+    "loc": "Delivery Terms"
+  },
+  "文档": {
+    "key": "admin.trades.documents",
+    "en": "Documents",
+    "loc": "Documents"
+  },
+  "文档名称": {
+    "key": "admin.trades.doc_name",
+    "en": "Document Name",
+    "loc": "Document 名称"
+  },
+  "贸易状态更新成功。": {
+    "key": "admin.trades.status_updated",
+    "en": "Trade status updated successfully.",
+    "loc": "Trade status updated successfully."
+  },
+  "查看详情": {
+    "key": "admin.oemProjects.view_detail",
+    "en": "View Detail",
+    "loc": "表示 Detail"
+  },
+  "AI助手": {
+    "key": "admin.trades.ai_assistant",
+    "en": "AI Assistant",
+    "loc": "AI Assistant"
+  },
+  "使用AI协助处理贸易文档。": {
+    "key": "admin.trades.ai_assistant_desc",
+    "en": "Use AI to assist with trade documents.",
+    "loc": "Use AI to assist with trade documents."
+  },
+  "收起": {
+    "key": "admin.trades.collapse",
+    "en": "Collapse",
+    "loc": "Collapse"
+  },
+  "展开": {
+    "key": "admin.trades.expand",
+    "en": "Expand",
+    "loc": "Expand"
+  },
+  "调用的工具": {
+    "key": "admin.trades.tools_called",
+    "en": "Tools Called",
+    "loc": "終了ols Called"
+  },
+  "AI思考中...": {
+    "key": "admin.trades.ai_typing",
+    "en": "AI thinking...",
+    "loc": "AI thinking..."
+  },
+  "输入消息，按Enter发送...": {
+    "key": "admin.trades.ai_input_placeholder",
+    "en": "Type a message, press Enter to send...",
+    "loc": "メッセージを入力し、Enter で送信..."
+  },
+  "AI生成文档": {
+    "key": "admin.trades.ai_generate_doc",
+    "en": "AI Generate Doc",
+    "loc": "AI Generate Doc"
+  },
+  "生成 {type}": {
+    "key": "admin.trades.ai_generate_title",
+    "en": "Generate {type}",
+    "loc": "Generate {type}"
+  },
+  "上下文": {
+    "key": "admin.trades.ai_context_label",
+    "en": "Context",
+    "loc": "Context"
+  },
+  "输入AI生成文档所需的上下文信息...": {
+    "key": "admin.trades.ai_context_placeholder",
+    "en": "Enter context for AI document generation...",
+    "loc": "Enter context for AI document generation..."
+  },
+  "流式传输中断": {
+    "key": "admin.trades.ai_stream_interrupted",
+    "en": "Stream interrupted",
+    "loc": "Stream interrupted"
+  },
+  "文档生成成功": {
+    "key": "admin.trades.ai_doc_generated",
+    "en": "Document generated successfully",
+    "loc": "Document generated successfully"
+  },
+  "为此贸易交易生成 {type}。": {
+    "key": "admin.trades.ai_generate_prompt",
+    "en": "Generate a {type} for this trade transaction.",
+    "loc": "この貿易取引の {type} を生成します。"
+  },
+  "导出 XLSX": {
+    "key": "admin.trades.export_xlsx",
+    "en": "Export XLSX",
+    "loc": "XLSX エクスポート"
+  },
+  "快捷单证生成": {
+    "key": "admin.trades.quick_generate",
+    "en": "Quick Document Generation",
+    "loc": "Quick Document Generation"
+  },
+  "结算里程碑": {
+    "key": "admin.trades.settlements",
+    "en": "Settlements",
+    "loc": "Settlements"
+  },
+  "添加结算": {
+    "key": "admin.trades.add_settlement",
+    "en": "Add Settlement",
+    "loc": "Add Settlement"
+  },
+  "合规": {
+    "key": "admin.trades.compliance",
+    "en": "Compliance",
+    "loc": "Compliance"
+  },
+  "合规要求": {
+    "key": "admin.trades.compliance_item",
+    "en": "Requirement",
+    "loc": "Requirement"
+  },
+  "价格列表名称": {
+    "key": "admin.pricing.name",
+    "en": "Price List Name",
+    "loc": "Price 一覧 名称"
+  },
+  "确定删除此价格列表？": {
+    "key": "admin.pricing.confirm_delete_price_list",
+    "en": "Delete this price list?",
+    "loc": "削除 this price list?"
+  },
+  "定价规则": {
+    "key": "admin.pricing.pricing_rules",
+    "en": "Pricing Rules",
+    "loc": "価格 Rules"
+  },
+  "添加规则": {
+    "key": "admin.pricing.add_rule",
+    "en": "Add Rule",
+    "loc": "Add Rule"
+  },
+  "最小数量": {
+    "key": "admin.pricing.min_qty",
+    "en": "Min Qty",
+    "loc": "Min 数量"
+  },
+  "添加定价规则": {
+    "key": "admin.pricing.add_pricing_rule",
+    "en": "Add Pricing Rule",
+    "loc": "Add 価格 Rule"
+  },
+  "确定删除此定价规则？": {
+    "key": "admin.pricing.confirm_delete_price",
+    "en": "Delete this pricing rule?",
+    "loc": "削除 this pricing rule?"
+  },
+  "管理从询价到交货的OEM项目生命周期。": {
+    "key": "admin.oemProjects.description",
+    "en": "Manage OEM project lifecycle from inquiry to delivery.",
+    "loc": "お問い合わせから納品までの OEM プロジェクトライフサイクルを管理します。"
+  },
+  "返回OEM项目列表": {
+    "key": "admin.oemProjects.back",
+    "en": "Back to OEM Projects",
+    "loc": "OEM プロジェクト一覧へ戻る"
+  },
+  "交货": {
+    "key": "admin.oemProjects.delivery",
+    "en": "Delivery",
+    "loc": "Delivery"
+  },
+  "负责人": {
+    "key": "admin.oemProjects.col_assigned",
+    "en": "Assigned",
+    "loc": "Assigned"
+  },
+  "目标市场": {
+    "key": "admin.oemProjects.target_market",
+    "en": "Target Market",
+    "loc": "Target Market"
+  },
+  "进度跟踪": {
+    "key": "admin.oemProjects.step_tracker",
+    "en": "Step Tracker",
+    "loc": "Step Tracker"
+  },
+  "需求": {
+    "key": "admin.oemProjects.requirements",
+    "en": "Requirements",
+    "loc": "Requirements"
+  },
+  "口味": {
+    "key": "admin.oemProjects.flavor",
+    "en": "Flavor",
+    "loc": "Flavor"
+  },
+  "形状": {
+    "key": "admin.oemProjects.shape",
+    "en": "Shape",
+    "loc": "Shape"
+  },
+  "申请时间": {
+    "key": "admin.oemProjects.requested_date",
+    "en": "Requested",
+    "loc": "Requested"
+  },
+  "项目状态更新成功。": {
+    "key": "admin.oemProjects.status_updated",
+    "en": "Project status updated successfully.",
+    "loc": "Project status updated successfully."
+  },
+  "管理操作": {
+    "key": "admin.user_detail.admin_actions",
+    "en": "Admin Actions",
+    "loc": "Admin 操作"
+  },
+  "账户状态": {
+    "key": "admin.user_detail.account_status",
+    "en": "Account Status",
+    "loc": "Account ステータス"
+  },
+  "用户状态更新成功。": {
+    "key": "admin.user_detail.status_updated",
+    "en": "User status updated successfully.",
+    "loc": "User status updated successfully."
+  },
+  "保存资料": {
+    "key": "admin.user_detail.save_profile",
+    "en": "Save Profile",
+    "loc": "保存 Profile"
+  },
+  "用户资料更新成功。": {
+    "key": "admin.user_detail.profile_updated",
+    "en": "User profile updated successfully.",
+    "loc": "User profile updated successfully."
+  },
+  "更新角色": {
+    "key": "admin.user_detail.update_role",
+    "en": "Update Role",
+    "loc": "更新 Role"
+  },
+  "用户角色更新成功。": {
+    "key": "admin.user_detail.role_updated",
+    "en": "User role updated successfully.",
+    "loc": "User role updated successfully."
+  },
+  "危险操作": {
+    "key": "admin.user_detail.danger_zone",
+    "en": "Danger Zone",
+    "loc": "Danger Zone"
+  },
+  "删除用户": {
+    "key": "admin.user_detail.delete_user",
+    "en": "Delete User",
+    "loc": "削除 User"
+  },
+  "按产品名称或SKU搜索...": {
+    "key": "admin.inventory.search",
+    "en": "Search by product name or SKU...",
+    "loc": "製品名または SKU で検索..."
+  },
+  "显示第 {from} 至 {to} 条，共 {total} 条": {
+    "key": "admin.auditLog.showing",
+    "en": "Showing {from} to {to} of {total} results",
+    "loc": "{total} 件中 {from} ～ {to} 件を表示"
+  },
+  "增加": {
+    "key": "admin.inventory.type_add",
+    "en": "Add",
+    "loc": "Add"
+  },
+  "{from} → {to}": {
+    "key": "admin.inventory.from_to",
+    "en": "{from} → {to}",
+    "loc": "{from} → {to}"
+  },
+  "全选": {
+    "key": "admin.inventory.select_all",
+    "en": "Select All",
+    "loc": "Select すべて"
+  },
+  "已选 {count} 项": {
+    "key": "admin.inventory.selected_count",
+    "en": "{count} selected",
+    "loc": "{count} 件を選択"
+  },
+  "导入 XLSX": {
+    "key": "admin.inventory.import_xlsx",
+    "en": "Import XLSX",
+    "loc": "XLSX 取り込み"
+  },
+  "从 XLSX 导入产品": {
+    "key": "admin.inventory.import_title",
+    "en": "Import Products from XLSX",
+    "loc": "XLSX から製品を取り込み"
+  },
+  "点击或拖拽 XLSX 文件到此处": {
+    "key": "admin.inventory.import_drop_zone",
+    "en": "Click or drag XLSX file here",
+    "loc": "クリックまたは XLSX ファイルをここにドラッグ"
+  },
+  "列映射": {
+    "key": "admin.inventory.import_column_mapping",
+    "en": "Column Mapping",
+    "loc": "Column Mapping"
+  },
+  "检测到图片URL - 导入时将自动上传": {
+    "key": "admin.inventory.import_image_detected",
+    "en": "Image URLs detected - will be auto-uploaded on import",
+    "loc": "画像 URL を検出 — 取り込み時に自動アップロードします"
+  },
+  "请选择 XLSX 文件": {
+    "key": "admin.inventory.import_select_file",
+    "en": "Please select an XLSX file",
+    "loc": "XLSX ファイルを選択してください"
+  },
+  "导入完成：新建 {created} 项，更新 {updated} 项，错误 {errors} 项": {
+    "key": "admin.inventory.import_result",
+    "en": "Import complete: {created} created, {updated} updated, {errors} errors",
+    "loc": "取り込み完了：新規 {created} 件、更新 {updated} 件、エラー {errors} 件"
+  },
+  "正在解析文件...": {
+    "key": "admin.inventory.import_parsing",
+    "en": "Parsing file...",
+    "loc": "Parsing file..."
+  },
+  "正在编辑 {count} 个产品": {
+    "key": "admin.inventory.batch_edit_selected_count",
+    "en": "Editing {count} products",
+    "loc": "{count} 件の製品を編集中"
+  },
+  "字段": {
+    "key": "admin.inventory.batch_edit_field",
+    "en": "Field",
+    "loc": "Field"
+  },
+  "应用更改": {
+    "key": "admin.inventory.batch_edit_apply",
+    "en": "Apply Changes",
+    "loc": "Apply Changes"
+  },
+  "正在应用...": {
+    "key": "admin.inventory.batch_edit_applying",
+    "en": "Applying...",
+    "loc": "Applying..."
+  },
+  "更新 {updated} 项，{errors} 项错误": {
+    "key": "admin.inventory.batch_edit_result",
+    "en": "Updated {updated}, {errors} errors",
+    "loc": "更新 {updated} 件、{errors} 件エラー"
+  },
+  "基础价格": {
+    "key": "admin.inventory.batch_edit_field_basePrice",
+    "en": "Base Price",
+    "loc": "Base Price"
+  },
+  "可OEM定制": {
+    "key": "admin.inventory.batch_edit_field_oemAvailable",
+    "en": "OEM Available",
+    "loc": "OEM Available"
+  },
+  "确定要删除选中的 {count} 个产品吗？该操作不可撤销。": {
+    "key": "admin.inventory.batch_delete_confirm",
+    "en": "Are you sure you want to delete {count} selected products? This action cannot be undone.",
+    "loc": "選択した {count} 件の製品を削除しますか？この操作は元に戻せません。"
+  },
+  "删除 {deleted} 项，{errors} 项错误": {
+    "key": "admin.inventory.batch_delete_result",
+    "en": "{deleted} deleted, {errors} errors",
+    "loc": "削除 {deleted} 件、{errors} 件エラー"
+  },
+  "SKU,产品名称,库存,最低库存,状态,库位,批次,过期日": {
+    "key": "admin.inventory.csv_headers",
+    "en": "SKU,Product Name,Stock,Min Stock,Status,Location,Batch,Expiry Date",
+    "loc": "SKU,製品 名称,Stock,Min Stock,ステータス,Location,Batch,有効期限"
+  },
+  "更新库存": {
+    "key": "admin.inventory.update_stock",
+    "en": "Update Stock",
+    "loc": "更新 Stock"
+  },
+  "新建发货": {
+    "key": "admin.shipments.new_shipment",
+    "en": "New Shipment",
+    "loc": "New Shipment"
+  },
+  "预计到达": {
+    "key": "admin.shipments.col_eta",
+    "en": "ETA",
+    "loc": "ETA"
+  },
+  "物流历史": {
+    "key": "admin.shipments.tracking_history",
+    "en": "Tracking History",
+    "loc": "Tracking History"
+  },
+  "出库发运": {
+    "key": "admin.shipments.dispatch",
+    "en": "Dispatch",
+    "loc": "Dispatch"
+  },
+  "发运成功。": {
+    "key": "admin.shipments.dispatch_success",
+    "en": "Shipment dispatched.",
+    "loc": "Shipment dispatched."
+  },
+  "请从订单详情页创建履约单": {
+    "key": "admin.shipments.create_from_order",
+    "en": "Create fulfillments from the order detail page.",
+    "loc": "作成 fulfillments from the order detail page."
+  },
+  "添加追踪事件": {
+    "key": "admin.shipments.add_event",
+    "en": "Add Event",
+    "loc": "Add Event"
+  },
+  "事件类型": {
+    "key": "admin.shipments.event_type",
+    "en": "Event Type",
+    "loc": "Event タイプ"
+  },
+  "贸易 BOL 追踪": {
+    "key": "admin.trade_shipments.title",
+    "en": "Trade BOL Tracking",
+    "loc": "貿易 BOL 追跡"
+  },
+  "新建 BOL": {
+    "key": "admin.trade_shipments.new_shipment",
+    "en": "New BOL",
+    "loc": "新規 BOL"
+  },
+  "申请日期": {
+    "key": "admin.returns.col_date",
+    "en": "Requested",
+    "loc": "Requested"
+  },
+  "已收货": {
+    "key": "admin.returns.status_received",
+    "en": "Received",
+    "loc": "Received"
+  },
+  "发票": {
+    "key": "admin.invoices.export_filename",
+    "en": "invoices",
+    "loc": "Invoice"
+  },
+  "已付：{currency} {amount}": {
+    "key": "admin.invoices.paid_amount_line",
+    "en": "Paid: {currency} {amount}",
+    "loc": "支払済み: {currency} {amount}"
+  },
+  "打印": {
+    "key": "admin.invoices.print",
+    "en": "Print",
+    "loc": "Print"
+  },
+  "收票方": {
+    "key": "admin.invoices.bill_to",
+    "en": "Bill To",
+    "loc": "Bill 終了"
+  },
+  "形式发票": {
+    "key": "admin.docLabels.proforma_invoice",
+    "en": "Proforma Invoice",
+    "loc": "Proforma Invoice"
+  },
+  "税务发票": {
+    "key": "admin.invoices.tax_heading",
+    "en": "TAX INVOICE",
+    "loc": "TAX INVOICE"
+  },
+  "贷项通知单": {
+    "key": "admin.invoices.credit_note_heading",
+    "en": "CREDIT NOTE",
+    "loc": "CREDIT NOTE"
+  },
+  "导出 DOCX": {
+    "key": "admin.invoices.export_doc",
+    "en": "Export DOCX",
+    "loc": "エクスポート DOCX"
+  },
+  "查看和管理员工信息、角色及活动记录。": {
+    "key": "admin.staff.description",
+    "en": "View and manage staff members, their roles, and activity.",
+    "loc": "表示 and manage staff members, their roles, and activity."
+  },
+  "最后登录": {
+    "key": "admin.staff.col_last_login",
+    "en": "Last Login",
+    "loc": "Last Login"
+  },
+  "从未登录": {
+    "key": "admin.staff.never",
+    "en": "Never",
+    "loc": "Never"
+  },
+  "刚刚": {
+    "key": "admin.auditLog.just_now",
+    "en": "just now",
+    "loc": "just now"
+  },
+  "{count} 分钟前": {
+    "key": "admin.auditLog.minutes_ago",
+    "en": "{count} minutes ago",
+    "loc": "{count} minutes ago"
+  },
+  "{count} 小时前": {
+    "key": "admin.auditLog.hours_ago",
+    "en": "{count} hours ago",
+    "loc": "{count} hours ago"
+  },
+  "{count} 天前": {
+    "key": "admin.auditLog.days_ago",
+    "en": "{count} days ago",
+    "loc": "{count} days ago"
+  },
+  "追踪系统内所有操作和变更记录。": {
+    "key": "admin.auditLog.description",
+    "en": "Track all system activity and changes across the platform.",
+    "loc": "Track all system activity and changes across the platform."
+  },
+  "贸易": {
+    "key": "admin.settings.tab_trade",
+    "en": "Trade",
+    "loc": "Trade"
+  },
+  "状态变更": {
+    "key": "admin.auditLog.action_status_change",
+    "en": "Status Change",
+    "loc": "ステータス Change"
+  },
+  "商业发票": {
+    "key": "admin.docLabels.commercial_invoice",
+    "en": "Commercial Invoice",
+    "loc": "Commercial Invoice"
+  },
+  "提单": {
+    "key": "admin.docLabels.bill_of_lading",
+    "en": "Bill of Lading",
+    "loc": "Bill of Lading"
+  },
+  "销售合同": {
+    "key": "admin.docLabels.sales_contract",
+    "en": "Sales Contract",
+    "loc": "Sales Contract"
+  },
+  "装箱单": {
+    "key": "admin.docLabels.packing_list",
+    "en": "Packing List",
+    "loc": "Packing List"
+  },
+  "原产地证书": {
+    "key": "admin.docLabels.cert_of_origin",
+    "en": "Certificate of Origin",
+    "loc": "Certificate of Origin"
+  },
+  "卫生证书": {
+    "key": "admin.docLabels.health_cert",
+    "en": "Health Certificate",
+    "loc": "Health Certificate"
+  },
+  "合同编号": {
+    "key": "admin.docLabels.contract_no",
+    "en": "Contract No.",
+    "loc": "Contract No."
+  },
+  "证书编号": {
+    "key": "admin.docLabels.cert_no",
+    "en": "Cert No.",
+    "loc": "Cert No."
+  },
+  "PI参考": {
+    "key": "admin.docLabels.pi_reference",
+    "en": "PI Reference",
+    "loc": "PI Reference"
+  },
+  "船名/航次": {
+    "key": "admin.docLabels.vessel_voyage",
+    "en": "Vessel/Voyage",
+    "loc": "Vessel/Voyage"
+  },
+  "体积 (CBM)": {
+    "key": "admin.docLabels.measurement",
+    "en": "Measurement (CBM)",
+    "loc": "容積 (CBM)"
+  },
+  "总件数": {
+    "key": "admin.docLabels.total_packages",
+    "en": "Total Packages",
+    "loc": "合計 Packages"
+  },
+  "总净重 (kg)": {
+    "key": "admin.docLabels.total_net_weight",
+    "en": "Total Net Weight (kg)",
+    "loc": "合計 Net Weight (kg)"
+  },
+  "总体积 (CBM)": {
+    "key": "admin.docLabels.total_volume",
+    "en": "Total Volume (CBM)",
+    "loc": "合計 Volume (CBM)"
+  },
+  "自贸协定类型 (如 RCEP, FORM E)": {
+    "key": "admin.docLabels.fta_type",
+    "en": "FTA Type (e.g. RCEP, FORM E)",
+    "loc": "FTA タイプ (e.g. RCEP, FORM E)"
+  },
+  "例如：errors.my_new_code": {
+    "key": "admin.translations.placeholder_key",
+    "en": "e.g. errors.my_new_code",
+    "loc": "e.g. errors.my_new_code"
+  },
+  "更新翻译失败": {
+    "key": "admin.translations.update_failed",
+    "en": "Failed to update translation",
+    "loc": "失敗 to update translation"
+  },
+  "删除翻译失败": {
+    "key": "admin.translations.delete_failed",
+    "en": "Failed to delete translation",
+    "loc": "失敗 to delete translation"
+  },
+  "AI 功能面板即将上线，敬请期待。": {
+    "key": "admin.ai.coming_soon",
+    "en": "AI features panel coming soon.",
+    "loc": "AI features panel coming soon."
+  },
+  "与AI助手开始对话": {
+    "key": "admin.ai.start_conversation",
+    "en": "Start a conversation with the AI Agent",
+    "loc": "Start a conversation with the AI Agent"
+  },
+  "Agent 模式": {
+    "key": "admin.ai.agent_mode",
+    "en": "Agent Mode",
+    "loc": "Agent モード"
+  },
+  "B2B 协调器": {
+    "key": "admin.ai.mode_b2b",
+    "en": "B2B Coordinator",
+    "loc": "B2B Coordinator"
+  },
+  "计划-执行-重规划": {
+    "key": "admin.ai.mode_plan",
+    "en": "Plan-Execute-Replan",
+    "loc": "Plan-Execute-Replan"
+  },
+  "贸易助手": {
+    "key": "admin.ai.mode_trade",
+    "en": "Trade Assistant",
+    "loc": "Trade Assistant"
+  },
+  "产品推荐": {
+    "key": "admin.ai.mode_recommend",
+    "en": "Product Recommend",
+    "loc": "Product Recommend"
+  },
+  "AI 搜索": {
+    "key": "admin.ai.mode_search",
+    "en": "AI Search",
+    "loc": "AI Search"
+  },
+  "分析询价": {
+    "key": "admin.ai.mode_analyze_inquiry",
+    "en": "Analyze Inquiry",
+    "loc": "Analyze Inquiry"
+  },
+  "生成报价": {
+    "key": "admin.ai.mode_generate_quotation",
+    "en": "Generate Quotation",
+    "loc": "Generate Quotation"
+  },
+  "显示畅销产品": {
+    "key": "admin.ai.suggestion_1",
+    "en": "Show me top selling products",
+    "loc": "Show me top selling products"
+  },
+  "分析本月订单趋势": {
+    "key": "admin.ai.suggestion_2",
+    "en": "Analyze order trends this month",
+    "loc": "Analyze order trends this month"
+  },
+  "推荐糖果产品定价": {
+    "key": "admin.ai.suggestion_3",
+    "en": "Recommend pricing for candy products",
+    "loc": "Recommend pricing for candy products"
+  },
+  "[流已停止]": {
+    "key": "admin.ai.stream_stopped",
+    "en": "[Stream stopped]",
+    "loc": "[Stream stopped]"
+  },
+  "[工具调用完成]": {
+    "key": "admin.ai.tool_completed",
+    "en": "[Tool completed]",
+    "loc": "[終了ol completed]"
+  },
+  "选择订单后，Chatbot 或计划-执行-重规划模式将注入行项目与金额。": {
+    "key": "admin.ai.order_context_hint",
+    "en": "Select an order to inject line items and totals into Chatbot or Plan-Execute-Replan.",
+    "loc": "Select an order to inject line items and totals into Chatbot or Plan-Execute-Replan."
+  },
+  "1. 左侧输入主题或要点（中英文均可）。\n2. 点击「生成中文草稿」，AI 先输出中文正文。\n3. 审阅右侧草稿，可手动修改。\n4. 选中文字后按 Ctrl+K（Mac：⌘K）可局部 AI 修订。\n5. 满意后点击「确认并发布」，系统自动翻译全部语言并发布到前台博客。": {
+    "key": "admin.ai_help.content_import.body",
+    "en": "1. Enter a topic or brief (any language) on the left.\n2. Click Generate Chinese Draft for a zh-first article.\n3. Review and edit the draft on the right.\n4. Select text and press Ctrl+K (Mac: ⌘K) for inline AI edits.\n5. Click Confirm & Publish to translate all locales and publish to the public blog.",
+    "loc": "1. 左側にトピックまたは要点を入力します（任意の言語可）。\n2. 「中国語ドラフトを生成」をクリックして、まず中国語の記事ドラフトを作成します。\n3. 右側のドラフトを確認・編集します。\n4. テキストを選択して Ctrl+K（Mac：⌘K）でインライン AI 編集ができます。\n5. 「確認して公開」をクリックすると、全言語に翻訳して公開ブログへ反映されます。"
+  },
+  "Ctrl+K 局部修订": {
+    "key": "admin.ai_help.content_inline_edit.title",
+    "en": "Ctrl+K inline edit",
+    "loc": "Ctrl+K インライン編集"
+  },
+  "1. 在标题、摘要或正文中选中一段文字。\n2. 按 Ctrl+K（Mac：⌘K）打开浮动修订框。\n3. 描述要如何修改（如：补充法规细节、缩短标题）。\n4. 预览修改前/后 Diff，点击「接受」或「拒绝」。\n5. 可多次修订，直到满意再发布。": {
+    "key": "admin.ai_help.content_inline_edit.body",
+    "en": "1. Select text in title, excerpt, or body.\n2. Press Ctrl+K (Mac: ⌘K) to open the floating editor.\n3. Describe the change (e.g. add compliance details, shorten title).\n4. Preview before/after diff — Accept or Reject.\n5. Repeat until satisfied, then publish.",
+    "loc": "1. タイトル、抜粋、本文のいずれかでテキストを選択します。\n2. Ctrl+K（Mac：⌘K）でフローティング編集パネルを開きます。\n3. 変更内容を指示します（例：コンプライアンス詳細を追加、タイトルを短く）。\n4. 変更前/後の Diff を確認し、「承認」または「拒否」を選びます。\n5. 満足するまで繰り返し、公開します。"
+  },
+  "右侧选择 Agent 模式后输入问题：\n• 聊天机器人：通用问答；可选绑定订单注入上下文。\n• 计划-执行-重规划 / B2B 协调器 / 贸易助手：流式 Agent 对话。\n• 产品推荐 / AI 搜索 / 翻译 / 分析询价 / 生成报价：单次 JSON 结果。\nChatbot 模式下可在侧边栏选择订单以讨论具体订单内容。": {
+    "key": "admin.ai_help.ai_console.body",
+    "en": "Pick an Agent mode on the right, then chat:\n• Chatbot: Q&A; optional order context.\n• Plan-Execute-Replan / B2B Coordinator / Trade Assistant: streaming agents.\n• Recommend / Search / Translate / Analyze inquiry / Generate quotation: one-shot JSON.\nFor Chatbot, select an order in the sidebar to discuss that order.",
+    "loc": "右側で Agent モードを選び、チャットを開始します：\n• チャットボット：Q&A、任意で注文コンテキスト。\n• 計画-実行-再計画 / B2Bコーディネーター / 貿易アシスタント：ストリーミング Agent。\n• おすすめ / AI検索 / 翻訳 / お問い合わせ分析 / 見積生成：単発 JSON 結果。\nチャットボットではサイドバーで注文を選ぶと、その注文について議論できます。"
+  },
+  "XLSX AI 翻译": {
+    "key": "admin.ai_help.xlsx_translate.title",
+    "en": "XLSX AI translate",
+    "loc": "XLSX AI 翻訳"
+  },
+  "上传 Excel 后选择「单语翻译」或「批量翻译」。\nAI 会翻译表头或指定列的文本 key，适合报表、术语表批量本地化。\n翻译完成后下载新文件；建议先小样本试译再批量处理。": {
+    "key": "admin.ai_help.xlsx_translate.body",
+    "en": "Upload Excel, choose single or batch translate mode.\nAI translates headers or selected column keys — useful for reports and term sheets.\nDownload the result; try a small sample before batch jobs.",
+    "loc": "Excel をアップロードし、単一言語または一括翻訳モードを選択します。\nAI がヘッダーまたは指定列のテキスト key を翻訳します。レポートや用語集のローカライズに便利です。\n結果をダウンロードする前に、小さなサンプルで試訳することをおすすめします。"
+  },
+  "在本交易详情页与 AI 对话，可询问单据、合规、物流等问题。\nAI 可调用贸易工具；流式回复显示在聊天区。\n需要生成 PI/CI 等文档时，使用下方「AI 生成文档」按钮。": {
+    "key": "admin.ai_help.trades_assistant.body",
+    "en": "Chat about this trade — documents, compliance, logistics.\nAgent may call trade tools; replies stream in the chat panel.\nUse AI Generate Document below for PI/CI/SC drafts.",
+    "loc": "この取引について AI とチャットできます（書類、コンプライアンス、物流など）。\nAgent が貿易ツールを呼び出す場合があります。返信はチャットパネルにストリーミング表示されます。\nPI/CI などの書類は下の「AI書類生成」をご利用ください。"
+  },
+  "上传库存/产品 Excel 后，系统会用 AI 建议「Excel 列名 → 系统字段」映射。\n蓝色提示区显示 AI 建议，可在下方映射表中调整后再确认导入。": {
+    "key": "admin.ai_help.inventory_import_ai.body",
+    "en": "After uploading an inventory/product Excel file, AI suggests column → field mappings.\nReview the blue banner and adjust mappings below before confirming import.",
+    "loc": "在庫/製品 Excel をアップロード後、AI が「Excel列名 → システムフィールド」のマッピングを提案します。\n青色バナーで AI 提案を確認し、下のマッピング表で調整してから取り込みを確定してください。"
+  },
+  "OEM 管理": {
+    "key": "admin.oem.title",
+    "en": "OEM Management",
+    "loc": "OEM 管理"
+  },
+  "暂无 OEM 项目。": {
+    "key": "admin.oem.no_projects",
+    "en": "No OEM projects yet.",
+    "loc": "No OEM projects yet."
+  },
+  "步骤": {
+    "key": "admin.oem.col_steps",
+    "en": "Steps",
+    "loc": "Steps"
+  },
+  "缩略图URL": {
+    "key": "admin.oem.label_thumbnail",
+    "en": "Thumbnail URL",
+    "loc": "サムネイル URL"
+  },
+  "快速ODM": {
+    "key": "admin.oem.type_quick_odm",
+    "en": "Quick ODM",
+    "loc": "Quick ODM"
+  },
+  "深度OEM": {
+    "key": "admin.oem.type_full_oem",
+    "en": "Full OEM",
+    "loc": "Full OEM"
+  },
+  "确定删除此流程？": {
+    "key": "admin.oem.confirm_delete_flow",
+    "en": "Delete this flow?",
+    "loc": "削除 this flow?"
+  },
+  "确定删除此方案？": {
+    "key": "admin.oem.confirm_delete_solution",
+    "en": "Delete this solution?",
+    "loc": "削除 this solution?"
+  },
+  "添加 Webhook": {
+    "key": "admin.webhooks.create",
+    "en": "Add Webhook",
+    "loc": "Webhook を追加"
+  },
+  "暂无 Webhook。": {
+    "key": "admin.webhooks.no_data",
+    "en": "No webhooks configured.",
+    "loc": "Webhook が設定されていません。"
+  },
+  "结果": {
+    "key": "admin.webhooks.col_result",
+    "en": "Result",
+    "loc": "Result"
+  },
+  "配置 (JSON)": {
+    "key": "admin.hooks.config_json",
+    "en": "Config (JSON)",
+    "loc": "設定 (JSON)"
+  },
+  "JSON 配置无效。": {
+    "key": "admin.hooks.invalid_json",
+    "en": "Invalid JSON config.",
+    "loc": "JSON 設定が無効です。"
+  },
+  "Hook ID": {
+    "key": "admin.hooks.hook_id",
+    "en": "Hook ID",
+    "loc": "Hook ID"
+  },
+  "载荷": {
+    "key": "admin.hooks.col_payload",
+    "en": "Payload",
+    "loc": "Payload"
+  },
+  "条款": {
+    "key": "admin.organizations.col_terms",
+    "en": "Terms",
+    "loc": "Terms"
+  },
+  "天数": {
+    "key": "admin.shippingRates.col_days",
+    "en": "Days",
+    "loc": "Days"
+  },
+  "国家 (ISO)": {
+    "key": "admin.taxRates.country",
+    "en": "Country (ISO)",
+    "loc": "国 (ISO)"
+  },
+  "地区": {
+    "key": "admin.taxRates.col_region",
+    "en": "Region",
+    "loc": "Region"
+  },
+  "共 {total} 条": {
+    "key": "admin.coupons.showing",
+    "en": "{total} total",
+    "loc": "合計 {total} 件"
+  },
+  "导出业务报表，并使用 AI 翻译 Excel 文本内容。": {
+    "key": "admin.xlsx.description",
+    "en": "Export business reports and AI-translate spreadsheet content.",
+    "loc": "エクスポート business reports and AI-translate spreadsheet content."
+  },
+  "下载 Excel 报表；金额列按所选币种换算。": {
+    "key": "admin.xlsx.export_hint",
+    "en": "Download Excel reports. Monetary columns use the selected currency.",
+    "loc": "Download Excel reports. 購入金額 columns use the selected currency."
+  },
+  "上传 .xlsx 文件；文本单元格经 Trade Agent（translate_content）批量翻译。": {
+    "key": "admin.xlsx.translate_hint",
+    "en": "Upload an .xlsx file; text cells are translated via Trade Agent (translate_content pipeline).",
+    "loc": "Upload an .xlsx file; text cells are translated via Trade Agent (translate_content pipeline)."
+  },
+  "选择 .xlsx 文件": {
+    "key": "admin.xlsx.select_file",
+    "en": "Choose .xlsx file",
+    "loc": ".xlsx ファイルを選択"
+  },
+  "已选：{name}": {
+    "key": "admin.xlsx.file_selected",
+    "en": "Selected: {name}",
+    "loc": "選択：{name}"
+  },
+  "请选择 .xlsx 文件": {
+    "key": "admin.xlsx.invalid_file",
+    "en": "Please select a .xlsx file",
+    "loc": ".xlsx ファイルを選択してください"
+  },
+  "产品导入（含 AI 列映射）请前往：库存管理 → 导入 XLSX。": {
+    "key": "admin.xlsx.inventory_link",
+    "en": "For product import with AI column mapping, use Inventory → Import XLSX.",
+    "loc": "For product import with AI column mapping, use Inventory → XLSX 取り込み."
+  }
+}

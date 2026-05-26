@@ -80,6 +80,7 @@ func (h *Handler) AdminUpdateUserStatus(c *gin.Context) {
 		response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
+	oldStatus := user.Status
 
 	user.Status = req.Status
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {
@@ -87,6 +88,7 @@ func (h *Handler) AdminUpdateUserStatus(c *gin.Context) {
 		return
 	}
 
+	h.logActivityAudit(c, "status_change", "user", id, oldStatus, req.Status)
 	c.JSON(http.StatusOK, user)
 }
 
@@ -120,6 +122,7 @@ func (h *Handler) AdminUpdateUser(c *gin.Context) {
 		response.ErrorResp(c, http.StatusNotFound, "user_not_found")
 		return
 	}
+	oldRoleID := user.RoleID
 
 	if req.FirstName != "" {
 		user.FirstName = req.FirstName
@@ -134,12 +137,21 @@ func (h *Handler) AdminUpdateUser(c *gin.Context) {
 		user.Phone = req.Phone
 	}
 	if req.RoleID != "" {
-		user.RoleID = req.RoleID
+		resolvedRoleID, roleErr := h.services.Auth.ResolveRoleID(c.Request.Context(), req.RoleID, "")
+		if roleErr != nil {
+			response.ErrorResp(c, http.StatusBadRequest, "invalid_role")
+			return
+		}
+		user.RoleID = resolvedRoleID
 	}
 
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "user_update_failed")
 		return
+	}
+
+	if req.RoleID != "" && req.RoleID != oldRoleID {
+		h.logActivityAudit(c, "update", "user", id, oldRoleID, req.RoleID)
 	}
 
 	c.JSON(http.StatusOK, user)

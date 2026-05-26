@@ -86,6 +86,11 @@ func (s *TradeService) HasTransactionForOrder(ctx context.Context, orderID strin
 	return n > 0, nil
 }
 
+// GetFirstTransactionByOrderID 返回订单关联的第一条贸易主单。
+func (s *TradeService) GetFirstTransactionByOrderID(ctx context.Context, orderID string) (*modelsTrade.TradeTransaction, error) {
+	return s.repo.GetFirstTransactionByOrderID(ctx, orderID)
+}
+
 // SyncTradeTotalFromOrder 将贸易主单总金额/币种与订单对齐（订单财务变更后调用）
 func (s *TradeService) SyncTradeTotalFromOrder(ctx context.Context, order *modelsOrder.Order) error {
 	if order == nil || strings.TrimSpace(order.ID) == "" {
@@ -107,7 +112,9 @@ func (s *TradeService) SyncTradeTotalFromOrder(ctx context.Context, order *model
 
 // AddDocument attaches a new document (PI, CI, etc) to a transaction
 func (s *TradeService) AddDocument(ctx context.Context, doc *modelsTrade.TradeDocument) error {
-	doc.Status = string(modelsTrade.TradeStatusDraft)
+	if strings.TrimSpace(doc.Status) == "" {
+		doc.Status = string(modelsTrade.TradeStatusDraft)
+	}
 	return s.repo.CreateDocument(ctx, doc)
 }
 
@@ -118,6 +125,15 @@ func (s *TradeService) GetDocument(ctx context.Context, id uint) (*modelsTrade.T
 
 // UpdateDocument updates an existing document
 func (s *TradeService) UpdateDocument(ctx context.Context, doc *modelsTrade.TradeDocument) error {
+	// M-12: validate status transition before persisting. The previous repo
+	// passthrough had no guard, so DRAFT→VOIDED→CONFIRMED or arbitrary strings
+	// could land in the DB.
+	current, err := s.repo.GetDocumentByID(ctx, doc.ID)
+	if err == nil && current != nil {
+		if err := modelsTrade.ValidateTradeDocumentStatusTransition(current.Status, doc.Status); err != nil {
+			return err
+		}
+	}
 	return s.repo.UpdateDocument(ctx, doc)
 }
 

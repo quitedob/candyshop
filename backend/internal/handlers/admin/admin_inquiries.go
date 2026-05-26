@@ -58,12 +58,16 @@ func (h *Handler) AdminUpdateInquiryStatus(c *gin.Context) {
 		response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
 		return
 	}
+	previousStatus := inquiry.Status
 
 	if err := h.services.Inquiry.UpdateInquiryStatus(c.Request.Context(), id, req.Status); err != nil {
 		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
+	if previousStatus != req.Status {
+		h.logInquiryAudit(c, id, c.GetString("userID"), previousStatus, req.Status)
+	}
 	inquiry.Status = req.Status
 	c.JSON(http.StatusOK, inquiry)
 }

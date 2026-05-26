@@ -12,5 +12,13 @@
   "po_number": "PO Number",
   "status": "Status",
   "expected_date": "Expected Date",
-  "total": "Total"
+  "total": "Total",
+  "company_name": "Company Name",
+  "contact_email": "Contact Email",
+  "portal_title": "CandyPro Supplier",
+  "actions": "Actions",
+  "accept_po": "Accept",
+  "mark_shipped": "Mark Shipped",
+  "mark_received": "Mark Received",
+  "profile_saved": "Profile saved"
 }

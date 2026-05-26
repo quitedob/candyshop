@@ -42,7 +42,7 @@
             <td class="py-4 pl-4 pr-3 text-sm sm:pl-6">
               <div class="font-medium text-gray-900">{{ project.projectNumber || project.id.substring(0, 8) }}</div>
             </td>
-            <td class="px-3 py-4 text-sm text-gray-500">{{ project.productName || '-' }}</td>
+            <td class="px-3 py-4 text-sm text-gray-500">{{ tField(project, 'productName') || '-' }}</td>
             <td class="px-3 py-4 text-sm">
               <div class="flex items-center gap-1">
                 <template v-for="(step, idx) in steps.slice(0, getStepIndex(project.status) + 1)" :key="idx">
@@ -78,11 +78,13 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useTranslation } from '~/composables/useTranslation'
 
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
+const { tField } = useTranslation()
 const { enumLabel, formatDate } = useDisplay()
 const localePath = useLocalePath()
 

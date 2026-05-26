@@ -26,6 +26,9 @@
     <!-- Footer -->
     <Footer v-if="showMarketingChrome" />
 
+    <!-- Cookie Consent Banner -->
+    <CookieConsent v-if="showMarketingChrome" />
+
     <!-- Floating Inquiry Button -->
     <InquiryFloating v-if="showMarketingChrome" />
 
@@ -47,7 +50,7 @@
 import { computed } from 'vue'
 
 const route = useRoute()
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const titleTemplate = computed(() => t('seo.title_template'))
 const toast = useToast()
 const authLegacyRoutes = ['/login', '/register', '/forgot-password', '/reset-password']
@@ -60,13 +63,9 @@ const showMarketingChrome = computed(() => {
   return !(isAppRoute || isLegacyAuth)
 })
 
-// Set page title template + RTL direction
+// 页面标题模板（lang/dir/hreflang 由 i18n experimental.strictSeo 管理）
 useHead({
   titleTemplate,
-  htmlAttrs: {
-    dir: computed(() => locale.value === 'ar' ? 'rtl' : 'ltr'),
-    lang: computed(() => locale.value)
-  }
 })
 
 // Render Organization + LocalBusiness JSON-LD globally (server-side)

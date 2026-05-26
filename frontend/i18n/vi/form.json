@@ -1,17 +1,17 @@
 {
   "form": {
     "title": "Send Us an Inquiry",
-    "subtitle": "Get a quote within 24 hours",
+    "subtitle": "Nhận báo giá trong vòng 24 giờ",
     "company_name": "Company Name",
     "contact_person": "Contact Person",
     "email": "Email Address",
     "whatsapp": "WhatsApp / Phone",
     "target_country": "Target Country",
     "estimated_quantity": "Estimated Quantity",
-    "interested_products": "Interested Product(s)",
+    "interested_products": "(Các) sản phẩm quan tâm",
     "packaging_requirements": "Packaging Requirements",
     "flavor_requirements": "Flavor Requirements",
-    "oem_needed": "OEM/Private Label Needed?",
+    "oem_needed": "Cần OEM/Nhãn riêng?",
     "yes": "Yes",
     "no": "No",
     "expected_delivery": "Expected Delivery Date",
@@ -20,16 +20,16 @@
     "remove_file": "Remove file",
     "submit": "Send Inquiry",
     "submitting": "Submitting...",
-    "success": "Thank you! Your inquiry has been received. We will contact you within 24 hours.",
-    "error": "Sorry, there was an error submitting your inquiry. Please try again or contact us via WhatsApp.",
-    "files_max": "Maximum {max} files allowed",
-    "file_too_large": "File {name} is too large. Maximum size is {max} MB.",
-    "file_type_unsupported": "File {name} is not a supported type. Use JPG, PNG, WebP, or PDF.",
-    "privacy_note": "Your information is secure and will not be shared.",
-    "message_placeholder": "Tell us more about your requirements...",
+    "success": "Cảm ơn bạn! Yêu cầu của bạn đã được nhận. Chúng tôi sẽ liên hệ với bạn trong vòng 24 giờ.",
+    "error": "Rất tiếc, đã xảy ra lỗi khi gửi yêu cầu của bạn. Vui lòng thử lại hoặc liên hệ với chúng tôi qua WhatsApp.",
+    "files_max": "Cho phép tối đa {max} tệp",
+    "file_too_large": "Tệp {name} quá lớn. Kích thước tối đa là __ph1 __ MB.",
+    "file_type_unsupported": "Tệp {name} không được hỗ trợ. Sử dụng PDF, DOC, DOCX, CSV, XLSX, PNG, JPEG, JPG, MKV hoặc MP4.",
+    "privacy_note": "Thông tin của bạn được bảo mật và sẽ không được chia sẻ.",
+    "message_placeholder": "Hãy cho chúng tôi biết thêm về yêu cầu của bạn...",
     "summary": "Summary",
     "not_specified": "Not specified",
-    "interested_products_hint": "Separate multiple products with commas",
+    "interested_products_hint": "Phân tách nhiều sản phẩm bằng dấu phẩy",
     "options": {
       "countries": {
         "US": "United States",
@@ -40,6 +40,7 @@
         "AU": "Australia",
         "JP": "Japan",
         "KR": "South Korea",
+        "CN": "Trung Quốc",
         "SG": "Singapore",
         "MY": "Malaysia",
         "TH": "Thailand",
@@ -50,53 +51,53 @@
       },
       "quantities": {
         "100-500": "100 - 500 pcs",
-        "500-1000": "500 - 1,000 pcs",
-        "1000-5000": "1,000 - 5,000 pcs",
-        "5000-10000": "5,000 - 10,000 pcs",
-        "10000+": "10,000+ pcs"
+        "500-1000": "500 - 1.000 chiếc",
+        "1000-5000": "1.000 - 5.000 chiếc",
+        "5000-10000": "5.000 - 10.000 chiếc",
+        "10000+": "Hơn 10.000 chiếc"
       }
     }
   },
   "contact": {
     "title": "Contact Us",
-    "subtitle": "Get in touch with our team",
+    "subtitle": "Liên hệ với Nhóm hỗ trợ đa ngôn ngữ của chúng tôi",
     "address": "Address",
     "phone": "Phone",
     "email": "Email",
     "whatsapp": "WhatsApp",
     "hours": "Business Hours",
-    "working_hours": "Monday - Friday: 9:00 AM - 6:00 PM (GMT+8)",
+    "working_hours": "Thứ Hai - Thứ Sáu: 9:00 SA - 6:00 CH (GMT+8)",
     "social_media": "Follow Us",
     "factory_location": "Factory Location",
     "send_inquiry": "Send Inquiry",
     "quick_contact": "Quick Contact",
     "loading_form": "Loading form...",
     "global_presence_title": "Global Presence",
-    "global_presence_subtitle": "Our offices and representatives around the world",
-    "faq_title": "Frequently Asked Questions",
+    "global_presence_subtitle": "Văn phòng và đại diện của chúng tôi trên khắp thế giới",
+    "faq_title": "Các Câu Hỏi Thường Gặp",
     "offices": {
-      "headquarters_country": "China (Headquarters)",
-      "headquarters_address": "123 Industrial Zone, Sweet City",
+      "headquarters_country": "Trung Quốc (Trụ sở chính)",
+      "headquarters_address": "Khu công nghiệp 123, Thành phố Ngọt ngào",
       "us_country": "United States",
-      "us_address": "456 Market Street, San Francisco, CA",
+      "us_address": "456 Market Street, San Francisco, California",
       "uk_country": "United Kingdom",
       "uk_address": "789 High Street, London",
       "uae_country": "UAE",
       "uae_address": "321 Business Bay, Dubai"
     },
-    "whatsapp_desc": "Get instant response to your inquiries",
+    "whatsapp_desc": "Nhận phản hồi ngay lập tức cho các câu hỏi của bạn",
     "faq": {
-      "response_time_q": "How quickly will I receive a response?",
-      "response_time_a": "We typically respond to all inquiries within 24 hours during business days. For urgent matters, we recommend contacting us via WhatsApp for immediate assistance.",
-      "visit_factory_q": "Can I visit your factory?",
-      "visit_factory_a": "Yes, we welcome clients to visit our facility. Please contact us in advance to schedule a visit, and we can arrange factory tours and face-to-face meetings."
+      "response_time_q": "Tôi sẽ nhận được phản hồi nhanh như thế nào?",
+      "response_time_a": "Chúng tôi thường trả lời tất cả các câu hỏi trong vòng 24 giờ trong ngày làm việc. Đối với các vấn đề khẩn cấp, chúng tôi khuyên bạn nên liên hệ với chúng tôi qua WhatsApp để được hỗ trợ ngay lập tức.",
+      "visit_factory_q": "Tôi có thể đến thăm nhà máy của bạn không?",
+      "visit_factory_a": "Có, chúng tôi chào đón khách hàng đến thăm cơ sở của chúng tôi. Vui lòng liên hệ trước với chúng tôi để lên lịch thăm nhà máy và chúng tôi có thể sắp xếp các chuyến tham quan nhà máy và gặp mặt trực tiếp."
     }
   },
   "faq": {
-    "title": "Frequently Asked Questions",
-    "subtitle": "Find answers to common questions about our services",
-    "still_questions": "Still Have Questions?",
-    "contact_description": "Our team is here to help. Contact us for personalized assistance.",
+    "title": "Các Câu Hỏi Thường Gặp",
+    "subtitle": "Tìm câu trả lời cho các câu hỏi thường gặp về dịch vụ của chúng tôi",
+    "still_questions": "Nếu bạn vẫn có thắc mắc?",
+    "contact_description": "Đội ngũ của chúng tôi luôn sẵn sàng trợ giúp. Liên hệ với chúng tôi để được hỗ trợ cá nhân.",
     "categories": {
       "general": "General",
       "ordering": "Ordering",
@@ -105,72 +106,72 @@
     },
     "items": [
       {
-        "question": "What is your minimum order quantity (MOQ)?",
-        "answer": "Our MOQ varies by product type. For standard products, MOQ starts from 1,000 pieces. For custom OEM orders, the minimum is typically 3,000 pieces depending on the complexity of customization required."
+        "question": "Số lượng đặt hàng tối thiểu (MOQ) của bạn là bao nhiêu?",
+        "answer": "Moq của chúng tôi khác nhau tùy theo loại sản phẩm. Đối với các sản phẩm tiêu chuẩn, MOQ bắt đầu từ 1.000 chiếc. Đối với các đơn đặt hàng OEM tùy chỉnh, mức tối thiểu thường là 3.000 chiếc tùy thuộc vào mức độ phức tạp của yêu cầu tùy chỉnh."
       },
       {
-        "question": "What certifications do you have?",
-        "answer": "We hold multiple international certifications including HACCP, ISO22000, BRC Grade A, Halal, and FDA registration. All our products meet strict international food safety standards."
+        "question": "Bạn có những chứng nhận nào?",
+        "answer": "Chúng tôi có nhiều chứng nhận quốc tế bao gồm HACCP, ISO22000, BRC Hạng A, Halal và đăng ký FDA. Tất cả các sản phẩm của chúng tôi đều đáp ứng các tiêu chuẩn an toàn thực phẩm quốc tế nghiêm ngặt."
       },
       {
-        "question": "Can I get samples before placing an order?",
-        "answer": "Yes, we provide samples for quality evaluation. Standard samples are free (you pay shipping), and custom samples require a mold fee which is refundable upon placing a bulk order."
+        "question": "Tôi có thể lấy mẫu trước khi đặt hàng không?",
+        "answer": "Có, chúng tôi cung cấp mẫu để đánh giá chất lượng. Các mẫu tiêu chuẩn được miễn phí (bạn thanh toán phí vận chuyển) và các mẫu tùy chỉnh yêu cầu phí khuôn được hoàn lại khi đặt hàng số lượng lớn."
       },
       {
-        "question": "What payment methods do you accept?",
-        "answer": "We accept T/T (bank transfer), L/C (Letter of Credit), PayPal for sample orders, and Western Union. Payment terms are typically 30% deposit and 70% before shipment."
+        "question": "Bạn chấp nhận phương thức thanh toán nào?",
+        "answer": "Chúng tôi chấp nhận T/T (chuyển khoản ngân hàng), L/C (Thư tín dụng), PayPal cho các đơn đặt hàng mẫu và Western Union. Điều khoản thanh toán thường là đặt cọc 30% và 70% trước khi giao hàng."
       },
       {
-        "question": "How do I place an order?",
-        "answer": "You can submit an inquiry through our website, email us directly, or contact us via WhatsApp. Our sales team will respond within 24 hours with a quote and order confirmation process."
+        "question": "TÔI CÓ THỂ ĐẶT HÀNG BẰNG CÁCH NÀO?",
+        "answer": "Bạn có thể gửi yêu cầu thông qua trang web của chúng tôi, gửi email trực tiếp cho chúng tôi hoặc liên hệ với chúng tôi qua WhatsApp. Đội ngũ bán hàng của chúng tôi sẽ trả lời trong vòng 24 giờ với báo giá và quy trình xác nhận đơn hàng."
       },
       {
-        "question": "What is your lead time?",
-        "answer": "Standard orders: 2-3 weeks after deposit confirmation. Custom OEM orders: 4-6 weeks depending on complexity. Rush orders may be available for an additional fee."
+        "question": "Thời gian thực hiện của bạn là bao lâu?",
+        "answer": "Lịch sản xuất và giao hàng do đội bán hàng cung cấp khi xác nhận đơn. Đơn gấp có thể phí bổ sung. Trang web không công bố ước tính cố định theo tuần/tháng."
       },
       {
-        "question": "Can I modify my order after it's placed?",
-        "answer": "Modifications are possible within 48 hours of order confirmation, provided production hasn't started. Once production begins, changes may incur additional costs."
+        "question": "Tôi có thể sửa đổi đơn hàng của mình sau khi đặt không?",
+        "answer": "Có thể sửa đổi trong vòng 48 giờ kể từ khi xác nhận đơn hàng, với điều kiện việc sản xuất chưa bắt đầu. Khi bắt đầu sản xuất, các thay đổi có thể phát sinh thêm chi phí."
       },
       {
-        "question": "What OEM services do you offer?",
-        "answer": "We offer full OEM/ODM services including custom formula development, private label packaging, custom shapes and flavors, branded packaging design, and turnkey solutions from concept to delivery."
+        "question": "Bạn cung cấp những dịch vụ OEM nào?",
+        "answer": "Chúng tôi cung cấp đầy đủ các dịch vụ OEM/ODM bao gồm phát triển công thức tùy chỉnh, đóng gói nhãn riêng, hình dạng và hương vị tùy chỉnh, thiết kế bao bì có thương hiệu và các giải pháp chìa khóa trao tay từ ý tưởng đến giao hàng."
       },
       {
-        "question": "What is the MOQ for custom OEM orders?",
-        "answer": "Custom OEM orders start at 3,000 pieces per SKU. For complex custom molds or unique formulations, higher MOQs may apply. We can discuss specific requirements for your project."
+        "question": "MOQ cho các đơn đặt hàng OEM tùy chỉnh là gì?",
+        "answer": "Đơn đặt hàng OEM tùy chỉnh bắt đầu từ 3.000 chiếc mỗi SKU. Đối với các khuôn tùy chỉnh phức tạp hoặc các công thức độc đáo, có thể áp dụng moq cao hơn. Chúng tôi có thể thảo luận về các yêu cầu cụ thể cho dự án của bạn."
       },
       {
-        "question": "How long does custom product development take?",
-        "answer": "Custom formulation: 2-4 weeks. Mold creation: 3-5 weeks. Packaging design: 1-2 weeks. Full production: 4-6 weeks after sample approval. Total timeline is typically 8-12 weeks for new OEM products."
+        "question": "Quá trình phát triển sản phẩm tùy chỉnh mất bao lâu?",
+        "answer": "Lịch phát triển tùy chỉnh được đánh giá sau khi rà soát yêu cầu và chỉ cung cấp trong báo giá hoặc xác nhận đơn."
       },
       {
-        "question": "Do you provide design services for packaging?",
-        "answer": "Yes, we have an in-house design team that can create packaging designs, logos, and branding elements. Design services are included for orders meeting minimum quantity requirements."
+        "question": "Bạn có cung cấp dịch vụ thiết kế bao bì không?",
+        "answer": "Có, chúng tôi có một đội ngũ thiết kế nội bộ có thể tạo ra các thiết kế bao bì, logo và các yếu tố xây dựng thương hiệu. Dịch vụ thiết kế được bao gồm cho các đơn hàng đáp ứng yêu cầu số lượng tối thiểu."
       },
       {
-        "question": "What shipping methods do you offer?",
-        "answer": "We offer sea freight (FCL/LCL), air freight, and express courier (DHL, FedEx, UPS). Sea freight is most economical for large orders, while air and express are faster for smaller quantities."
+        "question": "Bạn cung cấp những phương thức vận chuyển nào?",
+        "answer": "Chúng tôi cung cấp dịch vụ vận tải đường biển (FCL/LCL), vận tải hàng không và chuyển phát nhanh (DHL, FedEx, UPS). Vận tải đường biển tiết kiệm nhất đối với các đơn đặt hàng lớn, trong khi đường hàng không và đường cao tốc nhanh hơn đối với số lượng nhỏ hơn."
       },
       {
-        "question": "Do you ship worldwide?",
-        "answer": "Yes, we ship to over 50 countries worldwide. We have experience with various import regulations and can provide necessary documentation for customs clearance."
+        "question": "Bạn có giao hàng trên toàn thế giới không?",
+        "answer": "Có, chúng tôi vận chuyển đến hơn 50 quốc gia trên toàn thế giới. Chúng tôi có kinh nghiệm với các quy định nhập khẩu khác nhau và có thể cung cấp các tài liệu cần thiết để làm thủ tục hải quan."
       },
       {
-        "question": "What are the shipping costs?",
-        "answer": "Shipping costs depend on order volume, destination, and shipping method. We provide detailed quotes including shipping costs. For large orders, we can offer competitive freight rates through our logistics partners."
+        "question": "Chi phí vận chuyển là bao nhiêu?",
+        "answer": "Chi phí vận chuyển phụ thuộc vào khối lượng đặt hàng, điểm đến và phương thức vận chuyển. Chúng tôi cung cấp báo giá chi tiết bao gồm chi phí vận chuyển. Đối với các đơn đặt hàng lớn, chúng tôi có thể cung cấp mức giá vận chuyển hàng hóa cạnh tranh thông qua các đối tác hậu cần của chúng tôi"
       },
       {
-        "question": "Can you handle customs clearance?",
-        "answer": "We provide all necessary export documentation (commercial invoice, packing list, certificates of origin, health certificates). For import clearance, we work with experienced freight forwarders who can assist at destination ports."
+        "question": "Bạn có thể xử lý thủ tục hải quan không?",
+        "answer": "Chúng tôi cung cấp tất cả các tài liệu xuất khẩu cần thiết (hóa đơn thương mại, danh sách đóng gói, giấy chứng nhận xuất xứ, giấy chứng nhận sức khỏe). Đối với thủ tục nhập khẩu, chúng tôi làm việc với các nhà giao nhận vận tải hàng hóa có kinh nghiệm có thể hỗ trợ tại các cảng đến."
       }
     ]
   },
   "input_file": {
-    "upload": "Click to upload or drag and drop",
+    "upload": "Nhấp để tải lên hoặc kéo và thả",
     "max_size": "Max {size} MB per file",
-    "error_too_large": "File \"{name}\" exceeds {max} MB limit",
-    "error_type": "File \"{name}\" is not a supported type",
-    "error_max_files": "Maximum {count} files allowed"
+    "error_too_large": "Tệp \"{name}\" vượt quá giới hạn {max} MB",
+    "error_type": "Tệp \"{name}\" không phải là loại được hỗ trợ",
+    "error_max_files": "Cho phép tối đa {count} tệp"
   }
 }

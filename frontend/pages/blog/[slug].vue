@@ -12,18 +12,18 @@
           <!-- Header -->
           <header class="article__header">
             <span class="article__category">{{ getCategoryName(post.category) }}</span>
-            <h1 class="article__title">{{ post.title }}</h1>
-            <p class="article__excerpt">{{ post.excerpt }}</p>
+            <h1 class="article__title">{{ tField(post, 'title') }}</h1>
+            <p class="article__excerpt">{{ tField(post, 'excerpt') }}</p>
 
             <div class="article__meta">
               <div class="article__author">
                 <div class="article__author-avatar">
-                  <img v-if="post.author.avatar" :src="post.author.avatar" :alt="post.author.name" />
+                  <img v-if="translatedAuthor.avatar" :src="translatedAuthor.avatar" :alt="translatedAuthor.name" />
                   <Icon v-else name="lucide:user" size="24" />
                 </div>
                 <div>
-                  <span class="article__author-name">{{ post.author.name }}</span>
-                  <span v-if="post.author.title" class="article__author-title">{{ post.author.title }}</span>
+                  <span class="article__author-name">{{ translatedAuthor.name }}</span>
+                  <span v-if="translatedAuthor.title" class="article__author-title">{{ translatedAuthor.title }}</span>
                 </div>
               </div>
               <div class="article__dates">
@@ -41,7 +41,7 @@
 
           <!-- Cover Image -->
           <div v-if="post.thumbnail" class="article__cover">
-            <img :src="post.thumbnail" :alt="post.title" />
+            <img :src="post.thumbnail" :alt="tField(post, 'title')" />
           </div>
 
           <!-- Content -->
@@ -66,21 +66,21 @@
           <h3>{{ t('blog.share') }}</h3>
           <div class="share__buttons">
             <button
-              @click="shareOnSocial('twitter', post.title, fullUrl)"
+              @click="shareOnSocial('twitter', tField(post, 'title'), fullUrl)"
               class="share__button share__button--twitter"
             >
               <Icon name="lucide:twitter" size="20" />
               {{ t('blog_extra.share_twitter') }}
             </button>
             <button
-              @click="shareOnSocial('linkedin', post.title, fullUrl)"
+              @click="shareOnSocial('linkedin', tField(post, 'title'), fullUrl)"
               class="share__button share__button--linkedin"
             >
               <Icon name="lucide:linkedin" size="20" />
               {{ t('blog_extra.share_linkedin') }}
             </button>
             <button
-              @click="shareOnSocial('facebook', post.title, fullUrl)"
+              @click="shareOnSocial('facebook', tField(post, 'title'), fullUrl)"
               class="share__button share__button--facebook"
             >
               <Icon name="lucide:facebook" size="20" />
@@ -99,17 +99,17 @@
     </section>
 
     <!-- Author Bio -->
-    <section v-if="post.author.bio" class="author-bio section bg-alt">
+    <section v-if="translatedAuthor.bio" class="author-bio section bg-alt">
       <div class="container container-narrow">
         <div class="author-bio__inner">
           <div class="author-bio__avatar">
-            <img v-if="post.author.avatar" :src="post.author.avatar" :alt="post.author.name" />
+            <img v-if="translatedAuthor.avatar" :src="translatedAuthor.avatar" :alt="translatedAuthor.name" />
             <Icon v-else name="lucide:user" size="48" />
           </div>
           <div class="author-bio__content">
-            <h4>{{ post.author.name }}</h4>
-            <p class="author-bio__title">{{ post.author.title }}</p>
-            <p class="author-bio__bio">{{ post.author.bio }}</p>
+            <h4>{{ translatedAuthor.name }}</h4>
+            <p class="author-bio__title">{{ translatedAuthor.title }}</p>
+            <p class="author-bio__bio">{{ translatedAuthor.bio }}</p>
           </div>
         </div>
       </div>
@@ -129,10 +129,10 @@
             :to="localePath(`/blog/${related.slug}`)"
             class="related-post"
           >
-            <img :src="related.thumbnail || '/images/blog-placeholder.jpg'" :alt="related.title" />
+            <img :src="related.thumbnail || '/images/blog-placeholder.jpg'" :alt="tField(related, 'title')" />
             <div class="related-post__content">
               <span class="related-post__category">{{ getCategoryName(related.category) }}</span>
-              <h4>{{ related.title }}</h4>
+              <h4>{{ tField(related, 'title') }}</h4>
             </div>
           </NuxtLink>
         </div>
@@ -163,9 +163,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n, useLocalePath } from '#i18n'
+import { useTranslation } from '~/composables/useTranslation'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const localePath = useLocalePath()
+const { tField } = useTranslation()
 const route = useRoute()
 const config = useRuntimeConfig()
 const { getPost, getRelatedPosts } = useApi()
@@ -174,11 +176,15 @@ const { sanitize } = useSanitizer()
 const copied = ref(false)
 const slug = computed(() => route.params.slug as string)
 
-const { data: postData } = await useAsyncData(
+const { data: postData, error: postError } = await useAsyncData(
   () => `blog-post-${slug.value}`,
   async () => await getPost(slug.value),
   { watch: [slug] }
 )
+
+if (postError.value) {
+  throw createError({ statusCode: 404, statusMessage: 'Post Not Found' })
+}
 
 const { data: relatedData } = await useAsyncData(
   () => `blog-related-${slug.value}`,
@@ -187,24 +193,39 @@ const { data: relatedData } = await useAsyncData(
 )
 
 const renderedContent = computed(() => {
-  const raw = post.value?.content || ''
+  const raw = tField(post.value, 'content') || ''
   if (!raw) return ''
   return sanitize(raw)
 })
 
 const post = computed(() => {
-  return postData.value || {
-    id: '',
-    slug: slug.value,
-    title: 'Post Not Found',
-    excerpt: '',
-    category: '',
-    author: { name: 'CandyPro' },
-    publishedAt: new Date().toISOString(),
-    readTime: 0,
-    thumbnail: '',
-    tags: [],
-    content: ''
+  if (!postData.value) {
+    return {
+      id: '',
+      slug: slug.value,
+      title: '',
+      excerpt: '',
+      category: '',
+      author: { name: 'CandyPro' },
+      publishedAt: new Date().toISOString(),
+      readTime: 0,
+      thumbnail: '',
+      tags: [],
+      content: ''
+    }
+  }
+  return postData.value
+})
+
+const translatedAuthor = computed(() => {
+  const p = post.value as any
+  const author = p?.author || {}
+  const tr = p?.translations?.[locale.value] || {}
+  return {
+    name: tr.authorName || author.name || 'CandyPro',
+    title: tr.authorTitle || author.title || '',
+    bio: tr.authorBio || author.bio || '',
+    avatar: author.avatar || ''
   }
 })
 
@@ -218,9 +239,9 @@ const categories = computed(() => {
 })
 
 const breadcrumbItems = computed(() => [
-  { label: t('nav.blog'), to: '/blog' },
+  { label: t('blog.title'), to: '/blog' },
   { label: getCategoryName(post.value.category), to: `/blog?category=${post.value.category}` },
-  { label: post.value.title }
+  { label: tField(post.value, 'title') }
 ])
 
 const getCategoryName = (categoryId: string) => {
@@ -261,24 +282,25 @@ const copyLink = () => {
 
 const whatsappUrl = computed(() => {
   const number = config.public.whatsappNumber
-  const message = encodeURIComponent(`Hi, I have a question about your blog post: "${post.value.title}"`)
+  const message = encodeURIComponent(`Hi, I have a question about your blog post: "${tField(post.value, 'title')}"`)
   return `https://wa.me/${number}?text=${message}`
 })
 
-useSeo({
-  title: post.value.title,
-  description: post.value.excerpt,
-  ogImage: post.value.thumbnail,
+usePageOgImage({
+  title: tField(post.value, 'title'),
+  description: tField(post.value, 'excerpt'),
+  ogImage: post.value.ogImage,
+  thumbnail: post.value.thumbnail,
   ogType: 'article',
   schema: {
     '@context': 'https://schema.org',
     '@type': 'Article',
-    headline: post.value.title,
-    description: post.value.excerpt,
+    headline: tField(post.value, 'title'),
+    description: tField(post.value, 'excerpt'),
     image: post.value.thumbnail,
     author: {
       '@type': 'Person',
-      name: post.value.author.name
+      name: translatedAuthor.value.name
     },
     publisher: {
       '@type': 'Organization',

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	tradeModels "candypro/api/internal/models/trade"
+	modelsOrder "candypro/api/internal/models/order"
 	"candypro/api/internal/pkg/response"
 	tradeSvc "candypro/api/internal/services/trade"
 
@@ -55,7 +56,9 @@ func (h *Handler) AdminAIGenerateTradeDocument(c *gin.Context) {
 		return
 	}
 
-	prompt := tradeSvc.BuildTradeDocGenerationPrompt(docType, trade, req.Prompt, req.Context)
+	order := h.loadOrderForTrade(c.Request.Context(), trade)
+	orderCtx := tradeSvc.BuildOrderContextJSON(order)
+	prompt := tradeSvc.BuildTradeDocGenerationPrompt(docType, trade, req.Prompt, req.Context, orderCtx)
 	reply, genErr := h.aiService.Generate(c.Request.Context(), prompt)
 	if genErr != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "ai_generation_failed")
@@ -108,10 +111,22 @@ func (h *Handler) AdminAITradeChat(c *gin.Context) {
 		return
 	}
 	const maxQueryLen = 4000
-	if len(query) > maxQueryLen {
-		query = query[:maxQueryLen]
+	runes := []rune(query)
+	if len(runes) > maxQueryLen {
+		query = string(runes[:maxQueryLen])
 	}
-	query = fmt.Sprintf("[Trade ID: %d] %s", tradeID, query)
+
+	trade, fetchErr := h.services.Trade.GetTransaction(c.Request.Context(), tradeID)
+	if fetchErr != nil {
+		response.ErrorResp(c, http.StatusNotFound, "trade_not_found")
+		return
+	}
+	order := h.loadOrderForTrade(c.Request.Context(), trade)
+	if block := tradeSvc.BuildTradeOrderContextBlock(trade, order); block != "" {
+		query = block + "\n\nUser question:\n" + query
+	} else {
+		query = fmt.Sprintf("[Trade ID: %d] %s", tradeID, query)
+	}
 
 	agent := h.tradeAgent
 	if agent == nil {
@@ -132,15 +147,18 @@ func (h *Handler) AdminAITradeChat(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Minute)
 	defer cancel()
 
-	runner := adk.NewRunner(ctx, adk.RunnerConfig{
+	runnerCfg := adk.RunnerConfig{
 		EnableStreaming: true,
 		Agent:           agent,
-	})
+	}
+	if h.checkPointStore != nil {
+		runnerCfg.CheckPointStore = h.checkPointStore
+	}
+	runner := adk.NewRunner(ctx, runnerCfg)
 
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")
 	c.Writer.Header().Set("Connection", "keep-alive")
-	c.Writer.Header().Set("Transfer-Encoding", "chunked")
 	c.Writer.Flush()
 
 	iter := runner.Query(ctx, query)
@@ -190,22 +208,7 @@ func processAdminAgentEvent(w gin.ResponseWriter, event *adk.AgentEvent) error {
 			}
 			if len(msg.ToolCalls) > 0 {
 				sseEvent.ToolCalls = msg.ToolCalls
-				if len(msg.ToolCalls) > 0 {
-					switch msg.ToolCalls[0].Function.Name {
-					case "generate_proforma_invoice":
-						sseEvent.DocumentType = "PROFORMA_INVOICE"
-					case "generate_commercial_invoice":
-						sseEvent.DocumentType = "COMMERCIAL_INVOICE"
-					case "generate_packing_list":
-						sseEvent.DocumentType = "PACKING_LIST"
-					case "generate_certificate_of_origin":
-						sseEvent.DocumentType = "ORIGIN_CERTIFICATE"
-					case "generate_sales_contract":
-						sseEvent.DocumentType = "SALES_CONTRACT"
-					case "generate_health_certificate_request":
-						sseEvent.DocumentType = "HEALTH_CERTIFICATE"
-					}
-				}
+				sseEvent.DocumentType = mapAdminToolToDocType(msg.ToolCalls[0].Function.Name)
 			}
 			sendAdminSSEEvent(w, sseEvent)
 		}
@@ -231,15 +234,69 @@ func processAdminAgentEvent(w gin.ResponseWriter, event *adk.AgentEvent) error {
 		}
 	}
 
-	if event.Action != nil && event.Action.Exit {
-		sendAdminSSEEvent(w, adminSSEEvent{Type: "action", ActionType: "exit", Content: "Done"})
+	if event.Action != nil {
+		if event.Action.Interrupted != nil {
+			for _, ic := range event.Action.Interrupted.InterruptContexts {
+				sendAdminSSEEvent(w, adminSSEEvent{
+					Type:       "action",
+					ActionType: "interrupted",
+					Content:    fmt.Sprintf("%v", ic.Info),
+				})
+			}
+		}
+		if event.Action.Exit {
+			sendAdminSSEEvent(w, adminSSEEvent{Type: "action", ActionType: "exit", Content: "Done"})
+		}
 	}
 
 	return nil
+}
+
+func mapAdminToolToDocType(toolName string) string {
+	switch toolName {
+	case "generate_proforma_invoice", "generate_trade_documents":
+		return tradeModels.DocTypeProformaInvoice
+	case "generate_commercial_invoice":
+		return tradeModels.DocTypeCommercialInvoice
+	case "generate_packing_list":
+		return tradeModels.DocTypePackingList
+	case "generate_certificate_of_origin":
+		return tradeModels.DocTypeOriginCertificate
+	case "generate_sales_contract":
+		return tradeModels.DocTypeSalesContract
+	case "generate_health_certificate_request":
+		return tradeModels.DocTypeHealthCertificate
+	case "generate_bill_of_lading":
+		return tradeModels.DocTypeBillOfLading
+	case "generate_ingredients_declaration":
+		return "INGREDIENTS_DECLARATION"
+	case "generate_shipper_letter_of_instruction":
+		return "SHIPPER_LETTER_OF_INSTRUCTION"
+	case "generate_insurance_certificate_request":
+		return "INSURANCE_CERTIFICATE"
+	default:
+		return ""
+	}
 }
 
 func sendAdminSSEEvent(w gin.ResponseWriter, event adminSSEEvent) {
 	data, _ := json.Marshal(event)
 	fmt.Fprintf(w, "data: %s\n\n", data)
 	w.Flush()
+}
+
+// loadOrderForTrade 按贸易关联 orderId 加载订单行项目等业务数据。
+func (h *Handler) loadOrderForTrade(ctx context.Context, trade *tradeModels.TradeTransaction) *modelsOrder.Order {
+	if trade == nil || trade.OrderID == nil || h.services == nil || h.services.Order == nil {
+		return nil
+	}
+	orderID := strings.TrimSpace(*trade.OrderID)
+	if orderID == "" {
+		return nil
+	}
+	order, err := h.services.Order.GetOrder(ctx, orderID)
+	if err != nil {
+		return nil
+	}
+	return order
 }

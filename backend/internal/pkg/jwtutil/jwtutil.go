@@ -46,3 +46,21 @@ func ValidateJWT(tokenString string, secret string) (jwt.MapClaims, error) {
 
 	return claims, nil
 }
+
+// ParseClaimsAllowExpired 解析 JWT 签名（忽略 exp），用于吊销旧 access 会话
+func ParseClaimsAllowExpired(tokenString string, secret string) (jwt.MapClaims, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(secret), nil
+	}, jwt.WithoutClaimsValidation())
+	if err != nil {
+		return nil, fmt.Errorf("invalid token: %w", err)
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, fmt.Errorf("invalid token claims")
+	}
+	return claims, nil
+}

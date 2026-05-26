@@ -3,9 +3,11 @@ package trade
 import (
 	modelsOrder "candypro/api/internal/models/order"
 	modelsTrade "candypro/api/internal/models/trade"
+	"candypro/api/internal/pkg/shipmenttrack"
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -14,6 +16,7 @@ import (
 type logisticsShipmentRepo interface {
 	FindByID(ctx context.Context, id uint) (*modelsTrade.ShipmentTracking, error)
 	FindByTransactionID(ctx context.Context, transactionID uint) ([]modelsTrade.ShipmentTracking, error)
+	FindTrackable(ctx context.Context, limit int) ([]modelsTrade.ShipmentTracking, error)
 	Update(ctx context.Context, shipment *modelsTrade.ShipmentTracking) error
 }
 
@@ -83,15 +86,16 @@ func (s *LogisticsService) DispatchShipment(ctx context.Context, shipmentID uint
 	}
 
 	now := time.Now()
+	warehouseID := ""
+	if order.WarehouseID != nil {
+		warehouseID = *order.WarehouseID
+	}
 
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Deduct stock for each order item only if not already reserved at order creation
-		if !order.StockReserved {
-			for _, item := range order.Items {
-				_, stockErr := logisticsDeductStockForProductLine(tx, item.ProductID, item.Quantity, modelsOrder.StockReasonDispatched, order.ID, operatorID, now)
-				if stockErr != nil {
-					return fmt.Errorf("stock deduction failed for product %s: %w", item.ProductID, stockErr)
-				}
+		for _, item := range order.Items {
+			_, stockErr := logisticsDeductStockForProductLine(tx, warehouseID, item.ProductID, item.Quantity, order.StockReserved, modelsOrder.StockReasonDispatched, order.ID, operatorID, now)
+			if stockErr != nil {
+				return fmt.Errorf("stock deduction failed for product %s: %w", item.ProductID, stockErr)
 			}
 		}
 
@@ -244,7 +248,11 @@ func (s *LogisticsService) GetTransactionTimeline(ctx context.Context, transacti
 // and advances the linked order status accordingly.
 func (s *LogisticsService) checkAndAdvanceOrderStatus(ctx context.Context, transactionID uint, targetShipmentStatus, targetOrderStatus string, now time.Time) {
 	shipments, err := s.shipmentRepo.FindByTransactionID(ctx, transactionID)
-	if err != nil || len(shipments) == 0 {
+	if err != nil {
+		slog.Warn("advance order status: list shipments failed", "transactionID", transactionID, "error", err)
+		return
+	}
+	if len(shipments) == 0 {
 		return
 	}
 
@@ -264,11 +272,29 @@ func (s *LogisticsService) checkAndAdvanceOrderStatus(ctx context.Context, trans
 	}
 
 	trans, err := s.tradeRepo.GetTransactionByID(ctx, transactionID)
-	if err != nil || trans.OrderID == nil {
+	if err != nil {
+		slog.Warn("advance order status: trade transaction lookup failed", "transactionID", transactionID, "error", err)
+		return
+	}
+	if trans.OrderID == nil {
 		return
 	}
 	order, err := s.orderRepo.FindByID(ctx, *trans.OrderID)
 	if err != nil {
+		slog.Warn("advance order status: order lookup failed", "orderID", *trans.OrderID, "error", err)
+		return
+	}
+	// H-7: enforce the same status-transition matrix as every other order mutation
+	// path. Previously this directly assigned `order.Status = targetOrderStatus`,
+	// allowing logistics events to silently push orders into states the matrix
+	// would normally block (e.g. cancelled→shipped).
+	if err := modelsOrder.ValidateOrderStatusTransition(order.Status, targetOrderStatus); err != nil {
+		slog.Warn("advance order status: invalid transition skipped",
+			"orderID", order.ID,
+			"currentStatus", order.Status,
+			"targetStatus", targetOrderStatus,
+			"error", err,
+		)
 		return
 	}
 	order.Status = targetOrderStatus
@@ -280,6 +306,80 @@ func (s *LogisticsService) checkAndAdvanceOrderStatus(ctx context.Context, trans
 		order.DeliveredAt = &now
 	}
 	if err := s.orderRepo.Update(ctx, order); err != nil {
-		log.Printf("Warning: failed to update order %s status after shipment event: %v", order.ID, err)
+		slog.Warn("advance order status: order update failed", "orderID", order.ID, "targetStatus", targetOrderStatus, "error", err)
 	}
+}
+
+// SyncShipmentStatusFromEvents 根据已有追踪事件推断并更新发货状态（供后台 worker 调用）。
+func (s *LogisticsService) SyncShipmentStatusFromEvents(ctx context.Context, shipmentID uint) (bool, error) {
+	shipment, err := s.shipmentRepo.FindByID(ctx, shipmentID)
+	if err != nil {
+		return false, err
+	}
+	if shipment.Status == "DELIVERED" || shipment.Status == "EXCEPTION" {
+		return false, nil
+	}
+
+	events, err := s.eventRepo.FindByShipmentID(ctx, shipmentID)
+	if err != nil {
+		return false, err
+	}
+
+	lastDesc := ""
+	var lastTime time.Time
+	for _, ev := range events {
+		if ev.EventTime.After(lastTime) {
+			lastTime = ev.EventTime
+			lastDesc = ev.Description
+			if strings.TrimSpace(lastDesc) == "" {
+				lastDesc = ev.EventType
+			}
+		}
+	}
+
+	resolved := shipmenttrack.ResolveTrackingStatus(lastDesc, shipment.ETA)
+	newStatus := shipmenttrack.MapToDBStatus(resolved, shipment.Status)
+	if newStatus == "" {
+		return false, nil
+	}
+
+	now := time.Now()
+	switch newStatus {
+	case "DELIVERED":
+		deliveredAt := lastTime
+		if deliveredAt.IsZero() {
+			deliveredAt = now
+		}
+		if err := s.ConfirmDelivery(ctx, shipmentID, shipment.DeliveryProofURL, shipment.SignedBy, deliveredAt); err != nil {
+			return false, err
+		}
+		return true, nil
+	default:
+		shipment.Status = newStatus
+		shipment.UpdatedAt = now
+		if err := s.shipmentRepo.Update(ctx, shipment); err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+}
+
+// SyncActiveShipmentTracking 批量同步活跃发货的追踪状态。
+func (s *LogisticsService) SyncActiveShipmentTracking(ctx context.Context, batchSize int) (int, error) {
+	shipments, err := s.shipmentRepo.FindTrackable(ctx, batchSize)
+	if err != nil {
+		return 0, err
+	}
+	updated := 0
+	for _, sh := range shipments {
+		ok, syncErr := s.SyncShipmentStatusFromEvents(ctx, sh.ID)
+		if syncErr != nil {
+			slog.Warn("shipment tracking sync failed", "shipmentID", sh.ID, "error", syncErr)
+			continue
+		}
+		if ok {
+			updated++
+		}
+	}
+	return updated, nil
 }

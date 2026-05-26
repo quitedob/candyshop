@@ -79,11 +79,98 @@
         </div>
       </div>
 
+      <!-- Quick doc generation -->
+      <div class="bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-4 border-b border-gray-200 bg-gray-50">
+          <h3 class="text-base font-medium text-gray-900">{{ t('admin.trades.quick_generate') }}</h3>
+          <p class="text-xs text-gray-500 mt-0.5">{{ t('admin.trades.quick_generate_desc') }}</p>
+        </div>
+        <div class="p-4 flex flex-wrap gap-2">
+          <button
+            v-for="btn in quickDocButtons"
+            :key="btn.key"
+            type="button"
+            :disabled="generatingDoc === btn.key"
+            class="px-3 py-1.5 text-xs font-medium rounded-md border border-orange-200 text-orange-700 bg-orange-50 hover:bg-orange-100 disabled:opacity-50"
+            @click="quickGenerateDoc(btn)"
+          >
+            {{ btn.label }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Settlements -->
+      <div class="bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+          <h3 class="text-base font-medium text-gray-900">{{ t('admin.trades.settlements') }}</h3>
+          <button type="button" class="text-xs font-medium text-orange-600 hover:text-orange-800" @click="openSettlementModal()">{{ t('admin.trades.add_settlement') }}</button>
+        </div>
+        <div class="p-4">
+          <div v-if="!settlements.length" class="text-sm text-gray-500">{{ t('admin.trades.no_settlements') }}</div>
+          <table v-else class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">{{ t('admin.trades.settlement_method') }}</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">{{ t('admin.trades.settlement_amount') }}</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">{{ t('admin.trades.settlement_due') }}</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">{{ t('admin.trades.actions') }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr v-for="s in settlements" :key="s.id">
+                <td class="px-3 py-3">{{ s.paymentMethod }}</td>
+                <td class="px-3 py-3">{{ cur(s.currency) }} {{ formatNumber(s.amountDue || 0) }}</td>
+                <td class="px-3 py-3">{{ s.dueDate ? formatDate(s.dueDate) : '-' }}</td>
+                <td class="px-3 py-3">
+                  <button type="button" class="text-red-600 text-xs hover:text-red-800" @click="deleteSettlement(s.id)">{{ t('admin.trades.delete') }}</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Compliance -->
+      <div class="bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-4 border-b border-gray-200 bg-gray-50">
+          <h3 class="text-base font-medium text-gray-900">{{ t('admin.trades.compliance') }}</h3>
+        </div>
+        <div class="p-4">
+          <div v-if="!complianceItems.length" class="text-sm text-gray-500">{{ t('admin.trades.no_compliance') }}</div>
+          <table v-else class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">{{ t('admin.trades.compliance_item') }}</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">{{ t('admin.trades.doc_status') }}</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">{{ t('admin.trades.actions') }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr v-for="c in complianceItems" :key="c.id">
+                <td class="px-3 py-3">{{ c.requirement || c.name || c.id }}</td>
+                <td class="px-3 py-3">
+                  <select :value="c.status" class="rounded border border-gray-300 px-2 py-1 text-xs" @change="updateCompliance(c.id, ($event.target as HTMLSelectElement).value)">
+                    <option value="pending">pending</option>
+                    <option value="in_progress">in_progress</option>
+                    <option value="completed">completed</option>
+                    <option value="waived">waived</option>
+                  </select>
+                </td>
+                <td class="px-3 py-3 text-xs text-gray-500">{{ c.notes || '' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- AI Trade Assistant -->
       <div class="bg-white shadow sm:rounded-lg">
         <div class="px-4 py-4 border-b border-gray-200 flex items-center justify-between">
           <div>
-            <h3 class="text-base font-medium text-gray-900">{{ t('admin.trades.ai_assistant') }}</h3>
+            <h3 class="text-base font-medium text-gray-900 inline-flex items-center">
+              {{ t('admin.trades.ai_assistant') }}
+              <AiHelpHint topic="trades_assistant" size="sm" />
+            </h3>
             <p class="text-xs text-gray-500 mt-0.5">{{ t('admin.trades.ai_assistant_desc') }}</p>
           </div>
           <button @click="aiChatExpanded = !aiChatExpanded"
@@ -128,11 +215,14 @@
       <div class="bg-white shadow sm:rounded-lg">
         <div class="px-4 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
           <h3 class="text-base font-medium text-gray-900">{{ t('admin.trades.documents') }}</h3>
-          <button @click="aiGenerateDocument" :disabled="aiGenerating"
-            class="px-3 py-1.5 bg-orange-600 text-white text-xs font-medium rounded-md hover:bg-orange-700 disabled:opacity-50 flex items-center gap-1">
-            <Icon name="heroicons:sparkles" class="h-3.5 w-3.5" aria-hidden="true" />
-            {{ aiGenerating ? t('admin.trades.ai_generating') : t('admin.trades.ai_generate_doc') }}
-          </button>
+          <div class="inline-flex items-center gap-1">
+            <button @click="aiGenerateDocument" :disabled="aiGenerating"
+              class="px-3 py-1.5 bg-orange-600 text-white text-xs font-medium rounded-md hover:bg-orange-700 disabled:opacity-50 flex items-center gap-1">
+              <Icon name="heroicons:sparkles" class="h-3.5 w-3.5" aria-hidden="true" />
+              {{ aiGenerating ? t('admin.trades.ai_generating') : t('admin.trades.ai_generate_doc') }}
+            </button>
+            <AiHelpHint topic="trades_generate_doc" size="sm" />
+          </div>
         </div>
         <div class="p-4">
           <div v-if="!documents.length" class="text-gray-500 text-sm">{{ t('admin.trades.no_documents') }}</div>
@@ -186,6 +276,31 @@
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Settlement Modal -->
+      <div v-if="showSettlementModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ t('admin.trades.add_settlement') }}</h3>
+          <form class="space-y-3" @submit.prevent="saveSettlement">
+            <div>
+              <label class="block text-xs font-medium text-gray-700">{{ t('admin.trades.settlement_method') }}</label>
+              <input v-model="settlementForm.paymentMethod" required class="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-700">{{ t('admin.trades.settlement_amount') }}</label>
+              <input v-model.number="settlementForm.amountDue" type="number" step="0.01" required class="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-700">{{ t('admin.trades.settlement_due') }}</label>
+              <input v-model="settlementForm.dueDate" type="datetime-local" class="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm" />
+            </div>
+            <div class="flex gap-3 pt-2">
+              <button type="submit" :disabled="savingSettlement" class="px-4 py-2 bg-orange-600 text-white text-sm rounded-md disabled:opacity-50">{{ t('admin.trades.save') }}</button>
+              <button type="button" class="px-4 py-2 bg-gray-100 text-sm rounded-md" @click="showSettlementModal = false">{{ t('admin.trades.cancel') }}</button>
+            </div>
+          </form>
         </div>
       </div>
 
@@ -284,6 +399,12 @@ const scData = ref<any>(null)
 const plData = ref<any>(null)
 const cooData = ref<any>(null)
 const hcData = ref<any>(null)
+const settlements = ref<any[]>([])
+const complianceItems = ref<any[]>([])
+const generatingDoc = ref('')
+const showSettlementModal = ref(false)
+const savingSettlement = ref(false)
+const settlementForm = reactive({ paymentMethod: 'T/T', amountDue: 0, dueDate: '', currency: 'USD' })
 const editingRichDoc = ref<any>(null)
 const richDocForm = reactive<Record<string, any>>({})
 const savingRichDoc = ref(false)
@@ -326,6 +447,93 @@ const richDocKeyToType = (key: string) => {
   return map[key] || ''
 }
 
+/** 快捷单证生成按钮配置 */
+const quickDocButtons = computed(() => [
+  { key: 'pi', label: 'PI', endpoint: 'proforma-invoice', aiType: 'PROFORMA_INVOICE' },
+  { key: 'ci', label: 'CI', endpoint: 'commercial-invoice', aiType: 'COMMERCIAL_INVOICE' },
+  { key: 'sc', label: 'SC', endpoint: 'sales-contract', aiType: 'SALES_CONTRACT' },
+  { key: 'pl', label: 'PL', endpoint: 'packing-list', aiType: 'PACKING_LIST' },
+  { key: 'coo', label: 'COO', endpoint: 'certificate-of-origin', aiType: 'ORIGIN_CERTIFICATE' },
+  { key: 'hc', label: 'HC', endpoint: 'health-certificate', aiType: 'HEALTH_CERTIFICATE' },
+  { key: 'bl', label: 'BL', endpoint: 'bill-of-lading', aiType: 'BILL_OF_LADING' },
+])
+
+const quickGenerateDoc = async (btn: { key: string; endpoint: string; aiType: string }) => {
+  generatingDoc.value = btn.key
+  try {
+    await api.post(`/admin/trades/${route.params.id}/${btn.endpoint}`, { status: 'DRAFT' })
+    await fetchRichDocs()
+  } catch {
+    try {
+      await api.post(`/admin/trades/${route.params.id}/documents/ai-generate`, { docType: btn.aiType })
+      await fetchRichDocs()
+      await fetchDocuments()
+    } catch (err: any) {
+      alert(err?.message || t('errors.api.document_save_failed'))
+    }
+  } finally {
+    generatingDoc.value = ''
+  }
+}
+
+const fetchSettlements = async () => {
+  try {
+    settlements.value = await api.get<any[]>(`/admin/trades/${route.params.id}/settlements`) || []
+  } catch { settlements.value = [] }
+}
+
+const fetchCompliance = async () => {
+  try {
+    complianceItems.value = await api.get<any[]>(`/admin/trades/${route.params.id}/compliance`) || []
+  } catch { complianceItems.value = [] }
+}
+
+const openSettlementModal = () => {
+  settlementForm.paymentMethod = 'T/T'
+  settlementForm.amountDue = trade.value?.totalAmount || 0
+  settlementForm.currency = trade.value?.currency || 'USD'
+  settlementForm.dueDate = ''
+  showSettlementModal.value = true
+}
+
+const saveSettlement = async () => {
+  savingSettlement.value = true
+  try {
+    const payload: Record<string, unknown> = {
+      paymentMethod: settlementForm.paymentMethod,
+      amountDue: settlementForm.amountDue,
+      currency: settlementForm.currency,
+    }
+    if (settlementForm.dueDate) payload.dueDate = new Date(settlementForm.dueDate).toISOString()
+    await api.post(`/admin/trades/${route.params.id}/settlements`, payload)
+    showSettlementModal.value = false
+    await fetchSettlements()
+  } catch (err: any) {
+    alert(err?.message || t('errors.api.save_failed'))
+  } finally {
+    savingSettlement.value = false
+  }
+}
+
+const deleteSettlement = async (id: number) => {
+  if (!confirm(t('admin.confirm_delete'))) return
+  try {
+    await api.delete(`/admin/trades/${route.params.id}/settlements/${id}`)
+    await fetchSettlements()
+  } catch (err: any) {
+    alert(err?.message || t('errors.api.delete_failed'))
+  }
+}
+
+const updateCompliance = async (compId: number, status: string) => {
+  try {
+    await api.put(`/admin/trades/${route.params.id}/compliance/${compId}`, { status })
+    await fetchCompliance()
+  } catch (err: any) {
+    alert(err?.message || t('errors.api.status_failed'))
+  }
+}
+
 const aiScrollToBottom = () => {
   nextTick(() => { if (adminChatContainer.value) adminChatContainer.value.scrollTop = adminChatContainer.value.scrollHeight })
 }
@@ -344,7 +552,7 @@ const aiSendMessage = () => {
 
 const aiStreamFetch = async (url: string) => {
   try {
-    const resp = await fetch(url, { headers: { 'Authorization': `Bearer ${token.value}` } })
+    const resp = await fetch(url, { credentials: 'include' })
     if (!resp.ok) {
       aiMessages.value.push({ role: 'ai', content: `*Connection error*`, sender: 'System' })
       aiStreaming.value = false
@@ -373,7 +581,7 @@ const aiStreamFetch = async (url: string) => {
       }
     }
   } catch(e) {
-    aiMessages.value.push({ role: 'ai', content: `*Stream interrupted*`, sender: 'System' })
+    aiMessages.value.push({ role: 'ai', content: `*${t('admin.trades.ai_stream_interrupted')}*`, sender: 'System' })
   } finally {
     aiStreaming.value = false
     if (aiStreamingText.value) {
@@ -401,7 +609,7 @@ const aiHandleSSE = (data: any) => {
   } else if (data.type === 'stream_chunk') {
     aiStreamingText.value += data.content
   } else if (data.type === 'error') {
-    aiMessages.value.push({ role: 'ai', content: `**Error:** ${data.error}`, sender: 'System' })
+    aiMessages.value.push({ role: 'ai', content: `**${t('admin.trades.ai_error_prefix')}:** ${data.error}`, sender: 'System' })
   }
   aiScrollToBottom()
 }
@@ -433,14 +641,14 @@ const aiSubmitGenerate = async () => {
     const result = await api.post<any>(`/admin/trades/${route.params.id}/documents/ai-generate`, {
       docType: aiGenModal.docType,
       context: aiGenModal.context,
-      prompt: `Generate a ${aiGenModal.docType} for this trade transaction.`,
+      prompt: t('admin.trades.ai_generate_prompt', { type: aiGenModal.docType }),
     })
-    aiGenResult.value = result?.message || 'Document generated successfully'
+    aiGenResult.value = result?.message || t('admin.trades.ai_doc_generated')
     closeAiGenModal()
     await fetchRichDocs()
     await fetchDocuments()
   } catch (err: any) {
-    aiGenError.value = err?.message || 'AI generation failed'
+    aiGenError.value = err?.message || t('admin.trades.ai_generation_failed')
   } finally {
     aiGenerating.value = false
   }
@@ -686,5 +894,7 @@ onMounted(() => {
   fetchTrade()
   fetchDocuments()
   fetchRichDocs()
+  fetchSettlements()
+  fetchCompliance()
 })
 </script>

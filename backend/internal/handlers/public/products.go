@@ -1,14 +1,22 @@
 package public
 
 import (
+	modelsCommon "candypro/api/internal/models/common"
 	modelsProduct "candypro/api/internal/models/product"
 	"candypro/api/internal/pkg/pagination"
 	apiresp "candypro/api/internal/pkg/response"
 	productService "candypro/api/internal/services/product"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+)
+
+var (
+	_ modelsProduct.PaginatedResponse
+	_ modelsProduct.Product
+	_ modelsCommon.ErrorResponse
 )
 
 // ===== Products =====
@@ -29,7 +37,6 @@ func (h *Handler) GetProducts(c *gin.Context) {
 	}
 
 	page, limit := pagination.ParsePagination(c, 12, 100)
-	category := c.Query("category")
 
 	// M7: Parse all filter params the frontend sends
 	halal := c.Query("halal") == "true"
@@ -40,34 +47,38 @@ func (h *Handler) GetProducts(c *gin.Context) {
 
 	var minMOQ, maxMOQ int
 	if v := c.Query("minMoq"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			minMOQ = n
 		}
 	}
 	if v := c.Query("maxMoq"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			maxMOQ = n
 		}
 	}
 
-	locale := c.GetString("locale")
-
-	// Use filtered query when any filter is active
-	if halal || oemOnly || featuredOnly || search != "" || sort != "" || minMOQ > 0 || maxMOQ > 0 {
-		response, err := h.services.Product.GetProductsFiltered(c.Request.Context(), page, limit, halal, oemOnly, featuredOnly, search, sort, minMOQ, maxMOQ)
-		if err != nil {
-			apiresp.ErrorResp(c, http.StatusInternalServerError, "product_fetch_failed")
-			return
+	var categorySlugs []string
+	if cats := c.Query("categories"); cats != "" {
+		for _, part := range strings.Split(cats, ",") {
+			if slug := strings.TrimSpace(part); slug != "" {
+				categorySlugs = append(categorySlugs, slug)
+			}
 		}
-		if products, ok := response.Data.([]modelsProduct.Product); ok {
-			productService.ApplyProductTranslationsBatch(products, locale)
-			response.Data = products
-		}
-		c.JSON(http.StatusOK, response)
-		return
+	} else if cat := strings.TrimSpace(c.Query("category")); cat != "" {
+		categorySlugs = []string{cat}
 	}
 
-	response, err := h.services.Product.GetProducts(c.Request.Context(), page, limit, category)
+	locale := c.GetString("locale")
+
+	var response *modelsProduct.PaginatedResponse
+	var err error
+
+	// Use filtered query when any filter is active
+	if halal || oemOnly || featuredOnly || search != "" || sort != "" || minMOQ > 0 || maxMOQ > 0 || len(categorySlugs) > 0 {
+		response, err = h.services.Product.GetProductsFiltered(c.Request.Context(), page, limit, halal, oemOnly, featuredOnly, search, sort, minMOQ, maxMOQ, categorySlugs...)
+	} else {
+		response, err = h.services.Product.GetProducts(c.Request.Context(), page, limit, "")
+	}
 	if err != nil {
 		apiresp.ErrorResp(c, http.StatusInternalServerError, "product_fetch_failed")
 		return
@@ -76,7 +87,6 @@ func (h *Handler) GetProducts(c *gin.Context) {
 		productService.ApplyProductTranslationsBatch(products, locale)
 		response.Data = products
 	}
-
 	c.JSON(http.StatusOK, response)
 }
 

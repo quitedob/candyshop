@@ -27,8 +27,10 @@ type Services struct {
 	Inquiry          *inquiry.InquiryService
 	Order            *order.OrderService
 	Payment          *order.PaymentService
+	GatewayPayment   *order.GatewayPaymentService
 	Invoice          *order.InvoiceService
 	Product          *product.ProductService
+	Category         *product.CategoryService
 	Price            *product.PriceService
 	Content          *content.ContentService
 	Auth             *auth.AuthService
@@ -66,15 +68,18 @@ func New(repos *repositoryCommon.AdminPortalRepositories, cfg *config.Config, au
 	}
 
 	userSvc := user.NewUserService(repos.User)
+	paymentSvc := order.NewPaymentService(repos.Payment, repos.Order)
 
 	return &Services{
 		User:             userSvc,
 		Company:          user.NewCompanyService(repos.Company, userSvc),
 		Inquiry:          inquiry.NewInquiryService(repos.Inquiry, cfg),
 		Order:            order.NewOrderServiceWithConfig(repos.Order, cfg),
-		Payment:          order.NewPaymentService(repos.Payment, repos.Order),
+		Payment:          paymentSvc,
+		GatewayPayment:   order.NewGatewayPaymentService(cfg, paymentSvc),
 		Invoice:          order.NewInvoiceService(repos.Invoice, repos.Order, repos.DocumentAdjustment),
 		Product:          product.NewProductService(repos.Product),
+		Category:         product.NewCategoryService(repos.Category),
 		Price:            product.NewPriceService(repos.Price),
 		Content:          content.NewContentService(repos.Content),
 		Auth:             authSvc,

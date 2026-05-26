@@ -32,6 +32,9 @@ func (r *InquiryRepository) FindByID(ctx context.Context, id string) (*modelsPro
 }
 
 // FindAll returns all inquiries with pagination
+//
+// Preloads the User snapshot so list/detail views can render contact info
+// without a per-row lookup (H-5).
 func (r *InquiryRepository) FindAll(ctx context.Context, page, limit int) ([]modelsProduct.Inquiry, int64, error) {
 	var inquiries []modelsProduct.Inquiry
 	var total int64
@@ -41,7 +44,9 @@ func (r *InquiryRepository) FindAll(ctx context.Context, page, limit int) ([]mod
 	}
 
 	offset := (page - 1) * limit
-	if err := r.db.WithContext(ctx).Order("created_at DESC").Offset(offset).Limit(limit).Find(&inquiries).Error; err != nil {
+	if err := r.db.WithContext(ctx).
+		Preload("User").
+		Order("created_at DESC").Offset(offset).Limit(limit).Find(&inquiries).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -49,6 +54,8 @@ func (r *InquiryRepository) FindAll(ctx context.Context, page, limit int) ([]mod
 }
 
 // FindByStatus returns inquiries by status
+//
+// Preloads User snapshot — see FindAll (H-5).
 func (r *InquiryRepository) FindByStatus(ctx context.Context, status string, page, limit int) ([]modelsProduct.Inquiry, int64, error) {
 	var inquiries []modelsProduct.Inquiry
 	var total int64
@@ -59,7 +66,9 @@ func (r *InquiryRepository) FindByStatus(ctx context.Context, status string, pag
 	}
 
 	offset := (page - 1) * limit
-	if err := r.db.WithContext(ctx).Where("status = ?", status).Order("created_at DESC").Offset(offset).Limit(limit).Find(&inquiries).Error; err != nil {
+	if err := r.db.WithContext(ctx).
+		Preload("User").
+		Where("status = ?", status).Order("created_at DESC").Offset(offset).Limit(limit).Find(&inquiries).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -120,6 +129,29 @@ func (r *InquiryRepository) CountByStatus(ctx context.Context, status string) (i
 	return total, nil
 }
 
+// CountByStatusGrouped returns the inquiry count for every status in a single
+// GROUP BY query. Replaces the previous N-roundtrip pattern in admin
+// dashboards (M-1) where each status triggered its own COUNT query.
+func (r *InquiryRepository) CountByStatusGrouped(ctx context.Context) (map[string]int64, error) {
+	type row struct {
+		Status string
+		Count  int64
+	}
+	var rows []row
+	if err := r.db.WithContext(ctx).
+		Model(&modelsProduct.Inquiry{}).
+		Select("status, COUNT(*) AS count").
+		Group("status").
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	result := make(map[string]int64, len(rows))
+	for _, r := range rows {
+		result[r.Status] = r.Count
+	}
+	return result, nil
+}
+
 // FindRecent returns latest inquiries.
 func (r *InquiryRepository) FindRecent(ctx context.Context, limit int) ([]modelsProduct.Inquiry, error) {
 	var inquiries []modelsProduct.Inquiry
@@ -143,7 +175,7 @@ func (r *InquiryRepository) ConversionByMonth(ctx context.Context, months int) (
 	if err := r.db.WithContext(ctx).
 		Model(&modelsProduct.Inquiry{}).
 		Select("TO_CHAR(created_at, 'YYYY-MM') AS month, COUNT(*) AS total, COUNT(*) FILTER (WHERE status = 'won') AS won").
-		Where("created_at >= NOW() - INTERVAL '? months'", months).
+		Where("created_at >= NOW() - ? * INTERVAL '1 month'", months).
 		Group("month").
 		Order("month").
 		Scan(&rows).Error; err != nil {

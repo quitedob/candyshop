@@ -7,7 +7,7 @@
     <div class="category-card__image">
       <img
         :src="imgSrc"
-        :alt="category.name"
+        :alt="tField(category, 'name')"
         class="category-card__img"
         loading="lazy"
         @error="handleImageError"
@@ -22,8 +22,8 @@
       </div>
     </div>
     <div class="category-card__content">
-      <h3 class="category-card__title">{{ category.name }}</h3>
-      <p v-if="category.description" class="category-card__description">{{ category.description }}</p>
+      <h3 class="category-card__title">{{ tField(category, 'name') }}</h3>
+      <p v-if="tField(category, 'description')" class="category-card__description">{{ tField(category, 'description') }}</p>
       <span class="category-card__link">{{ $t('product.view_products') }}</span>
     </div>
   </NuxtLink>
@@ -32,6 +32,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useLocalePath } from '#i18n'
+import { useTranslation } from '~/composables/useTranslation'
 
 interface Category {
   slug: string
@@ -50,6 +51,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const localePath = useLocalePath()
+const { tField } = useTranslation()
 
 const FALLBACK = computed(() => `/images/categories/${props.category.slug}.jpg`)
 const imgSrc = ref(props.category.image || FALLBACK.value)

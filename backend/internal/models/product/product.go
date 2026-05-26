@@ -36,6 +36,7 @@ type Product struct {
 	Category       string             `json:"category"`
 	CategorySlug   string             `json:"categorySlug" gorm:"index"`
 	Thumbnail      string             `json:"thumbnail"`
+	OgImage        string             `json:"ogImage" gorm:"column:og_image"`
 	Images         common.StringArray `json:"images" gorm:"type:jsonb"`
 	OEMAvailable   bool               `json:"oemAvailable"`
 	HalalCertified bool               `json:"halalCertified"`
@@ -196,21 +197,40 @@ func (ProductEmbedding) TableName() string {
 
 // Category represents a product category
 type Category struct {
-	Slug         string    `json:"slug" gorm:"primaryKey"`
-	Name         string    `json:"name"`
-	Description  string    `json:"description"`
-	Thumbnail    string    `json:"thumbnail"`
-	Icon         string    `json:"icon"`
-	ProductCount int       `json:"productCount" gorm:"-"`
-	Products     []Product `json:"products,omitempty" gorm:"foreignKey:CategorySlug"`
-	CreatedAt    time.Time `json:"createdAt"`
-	UpdatedAt    time.Time `json:"updatedAt"`
+	Slug         string             `json:"slug" gorm:"primaryKey"`
+	Name         string             `json:"name"`
+	Alias        string             `json:"alias"`
+	Description  string             `json:"description"`
+	Thumbnail    string             `json:"thumbnail"`
+	Icon         string             `json:"icon"`
+	Translations common.JSONMap     `json:"translations" gorm:"type:jsonb"`
+	ProductCount int                `json:"productCount" gorm:"-"`
+	Products     []Product          `json:"products,omitempty" gorm:"foreignKey:CategorySlug"`
+	CreatedAt    time.Time          `json:"createdAt"`
+	UpdatedAt    time.Time          `json:"updatedAt"`
+}
+
+// InquiryUserSnapshot is a lightweight projection of user fields exposed on
+// inquiry list/detail views (H-5). Bound to the same "users" table so a single
+// JOIN-style Preload can populate it without round-trip per row.
+type InquiryUserSnapshot struct {
+	ID        string `json:"id" gorm:"primaryKey"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Email     string `json:"email"`
+	CompanyID *string `json:"companyId,omitempty"`
+}
+
+// TableName keeps the snapshot bound to the users table.
+func (InquiryUserSnapshot) TableName() string {
+	return "users"
 }
 
 // Inquiry represents an inquiry submission
 type Inquiry struct {
 	ID                    string             `json:"id" gorm:"primaryKey"`
 	UserID                *string            `json:"userId" gorm:"index"`
+	User                  *InquiryUserSnapshot `json:"user,omitempty" gorm:"foreignKey:UserID;references:ID"`
 	CompanyName           string             `json:"companyName"`
 	ContactPerson         string             `json:"contactPerson"`
 	Email                 string             `json:"email"`
@@ -218,6 +238,7 @@ type Inquiry struct {
 	TargetCountry         string             `json:"targetCountry"`
 	EstimatedQuantity     string             `json:"estimatedQuantity"`
 	InterestedProducts    common.StringArray `json:"interestedProducts" gorm:"type:jsonb"`
+	ProductIDs            common.StringArray `json:"productIds" gorm:"type:jsonb"`
 	PackagingRequirements string             `json:"packagingRequirements"`
 	FlavorRequirements    string             `json:"flavorRequirements"`
 	OEMNeeded             bool               `json:"oemNeeded"`
@@ -350,6 +371,7 @@ type BlogPost struct {
 	Author       BlogAuthor         `json:"author" gorm:"-"`
 	PublishedAt  time.Time          `json:"publishedAt"`
 	Thumbnail    string             `json:"thumbnail"`
+	OgImage      string             `json:"ogImage" gorm:"column:og_image"`
 	ReadTime     int                `json:"readTime"` // in minutes
 	Tags         common.StringArray `json:"tags" gorm:"type:jsonb"`
 	Translations common.JSONMap     `json:"translations" gorm:"type:jsonb"`
@@ -399,6 +421,7 @@ type CaseStudy struct {
 	Industry  string             `json:"industry" gorm:"index"`
 	Location  string             `json:"location"`
 	Thumbnail string             `json:"thumbnail"`
+	OgImage   string             `json:"ogImage" gorm:"column:og_image"`
 	Images    common.StringArray `json:"images" gorm:"type:jsonb"`
 	Challenge string             `json:"challenge" gorm:"type:text"`
 	Solution  string             `json:"solution" gorm:"type:text"`

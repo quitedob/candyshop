@@ -21,6 +21,7 @@ type Services struct {
 	Inquiry        *inquiry.InquiryService
 	Order          *order.OrderService
 	Payment        *order.PaymentService
+	GatewayPayment *order.GatewayPaymentService
 	Invoice        *order.InvoiceService
 	Cart           *order.CartService
 	Product        *product.ProductService
@@ -39,7 +40,9 @@ type Services struct {
 	Coupon          *orderRepo.CouponRepository
 	RequisitionList *orderRepo.RequisitionListRepository
 	Webhook         *order.WebhookService
+	EventBus        *order.EventBus
 	Approval        *order.ApprovalService
+	Channel         *order.ChannelService
 }
 
 func New(repos *repositoryCommon.UserPortalRepositories, cfg *config.Config, db *gorm.DB) *Services {
@@ -48,13 +51,15 @@ func New(repos *repositoryCommon.UserPortalRepositories, cfg *config.Config, db 
 	}
 
 	userSvc := user.NewUserService(repos.User)
+	paymentSvc := order.NewPaymentService(repos.Payment, repos.Order)
 
 	return &Services{
 		User:           userSvc,
 		Company:        user.NewCompanyService(repos.Company, userSvc),
 		Inquiry:        inquiry.NewInquiryService(repos.Inquiry, cfg),
-		Order:          order.NewOrderService(repos.Order),
-		Payment:        order.NewPaymentService(repos.Payment, repos.Order),
+		Order:          order.NewOrderServiceWithConfig(repos.Order, cfg),
+		Payment:        paymentSvc,
+		GatewayPayment: order.NewGatewayPaymentService(cfg, paymentSvc),
 		Invoice:        order.NewInvoiceService(repos.Invoice, repos.Order, nil),
 		Cart:           order.NewCartService(repos.Cart),
 		Product:        product.NewProductService(repos.Product),
@@ -72,7 +77,9 @@ func New(repos *repositoryCommon.UserPortalRepositories, cfg *config.Config, db 
 		Return:          repos.Return,
 		Coupon:          repos.Coupon,
 		RequisitionList: repos.RequisitionList,
-		Webhook:         order.NewWebhookService(repos.Webhook),
+		Webhook:  order.NewWebhookService(repos.Webhook),
+		EventBus: order.NewEventBus(repos.Event, repos.HookConfig, repos.HookExecution, order.NewWebhookService(repos.Webhook)),
 		Approval: order.NewApprovalService(repos.BuyerOrg, repos.OrgMember, repos.ApprovalAction, repos.Order),
+		Channel:  order.NewChannelService(repos.Channel),
 	}
 }

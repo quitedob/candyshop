@@ -11,10 +11,13 @@ import (
 	"candypro/api/internal/pkg/kyb"
 	"candypro/api/internal/pkg/money"
 	"candypro/api/internal/pkg/response"
+	orderRepo "candypro/api/internal/repository/order"
+	orderSvc "candypro/api/internal/services/order"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"math"
 	"net/http"
 	"strings"
@@ -32,16 +35,24 @@ type customerCreateOrderItemRequest struct {
 }
 
 type customerCreateOrderRequest struct {
-	OrderNumber     string                           `json:"orderNumber"`
-	InquiryID       *string                          `json:"inquiryId"`
-	Items           []customerCreateOrderItemRequest `json:"items" binding:"required,min=1"`
-	TaxAmount       float64                          `json:"taxAmount"`
-	ShippingAmount  float64                          `json:"shippingAmount"`
-	Currency        string                           `json:"currency"`
-	ShippingAddress modelsOrder.Address              `json:"shippingAddress"`
+	OrderNumber       string                           `json:"orderNumber"`
+	InquiryID         *string                          `json:"inquiryId"`
+	Items             []customerCreateOrderItemRequest `json:"items" binding:"required,min=1"`
+	TaxAmount         float64                          `json:"taxAmount"`
+	ShippingAmount    float64                          `json:"shippingAmount"`
+	Currency          string                           `json:"currency"`
+	Incoterms         string                           `json:"incoterms"`
+	EstimatedWeightKg float64                          `json:"estimatedWeightKg"`
+	ShippingAddress   modelsOrder.Address              `json:"shippingAddress"`
 }
 
 // CustomerCreateOrder creates a new customer order and binds it to the authenticated user.
+// @Summary Create customer order
+// @Tags customer-orders
+// @Accept json
+// @Produce json
+// @Success 201 {object} map[string]interface{}
+// @Router /user/orders [post]
 func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 	if h.services == nil {
 		response.ServiceUnavailableResp(c)
@@ -99,6 +110,35 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 		}
 	}
 
+	// R2 E-5: batch product lookups up front. Previously every requested line
+	// triggered an individual GetProductByID call — N round-trips on the
+	// primary customer checkout path. We still validate per-line below, but
+	// the resolves all come from a single FindByIDs query.
+	uniqueIDs := make([]string, 0, len(req.Items))
+	idSeen := make(map[string]struct{}, len(req.Items))
+	for _, it := range req.Items {
+		pid := strings.TrimSpace(it.ProductID)
+		if pid == "" {
+			continue
+		}
+		if _, ok := idSeen[pid]; ok {
+			continue
+		}
+		idSeen[pid] = struct{}{}
+		uniqueIDs = append(uniqueIDs, pid)
+	}
+	productLookup := make(map[string]modelsProduct.Product, len(uniqueIDs))
+	if len(uniqueIDs) > 0 {
+		batch, batchErr := h.services.Product.GetProductsByIDs(c.Request.Context(), uniqueIDs)
+		if batchErr != nil {
+			response.ErrorResp(c, http.StatusInternalServerError, "product_lookup_failed")
+			return
+		}
+		for i := range batch {
+			productLookup[batch[i].ID] = batch[i]
+		}
+	}
+
 	for _, it := range req.Items {
 		productID := strings.TrimSpace(it.ProductID)
 		if productID == "" {
@@ -109,9 +149,12 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 			response.InvalidResp(c, "quantity_min_1")
 			return
 		}
+		if !h.validateLineMinQuantity(c, productID, it.Quantity, contractPriceListID) {
+			return
+		}
 
-		product, err := h.services.Product.GetProductByID(c.Request.Context(), productID)
-		if err != nil {
+		product, found := productLookup[productID]
+		if !found {
 			response.ErrorResp(c, http.StatusNotFound, "product_not_found")
 			return
 		}
@@ -134,7 +177,8 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 			response.ErrorResp(c, http.StatusUnprocessableEntity, "no_price")
 			return
 		}
-		unitPrice = h.services.Product.ResolveCheckoutUnitPrice(c.Request.Context(), product, unitPrice, req.ShippingAddress.Country)
+		unitPrice = h.services.Product.ResolveCheckoutUnitPrice(c.Request.Context(), &product, unitPrice, req.ShippingAddress.Country)
+		unitPrice = h.applyChannelUnitPrice(c, unitPrice)
 
 		orderItem := modelsOrder.OrderItem{
 			ProductID:      productID,
@@ -143,8 +187,8 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 			Specifications: strings.TrimSpace(it.Specifications),
 		}
 		items = append(items, orderItem)
-		selectedProducts = append(selectedProducts, *product)
-		productByID[productID] = *product
+		selectedProducts = append(selectedProducts, product)
+		productByID[productID] = product
 		subtotal += float64(it.Quantity) * unitPrice
 	}
 
@@ -173,7 +217,7 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 			Message: i18n.T(c, "errors.inventory_violation"),
 			Details: gin.H{
 				"violations": inventory.Violations,
-				"warnings":   inventory.Warnings,
+				"warnings":   formatInventoryWarnings(c, inventory.Warnings, productByID),
 			},
 		})
 		return
@@ -194,34 +238,81 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 		orderNumber = buildCustomerOrderNumber()
 	}
 
-	totalAmount := subtotal + req.TaxAmount + req.ShippingAmount
+	pricing := h.computeCheckoutPricing(c.Request.Context(), checkoutPricingInput{
+		Items:             items,
+		ProductByID:       productByID,
+		ShippingAddress:   req.ShippingAddress,
+		Incoterms:         req.Incoterms,
+		EstimatedWeightKg: req.EstimatedWeightKg,
+		Subtotal:          subtotal,
+		Currency:          currency,
+	})
+	taxAmount := pricing.TaxAmount
+	shippingAmount := pricing.ShippingAmount
+	if pricing.Currency != "" {
+		currency = pricing.Currency
+	}
+
+	var webstoreCh *modelsProduct.Channel
+	if h.services.Channel != nil {
+		webstoreCh, _ = h.services.Channel.ResolveWebstoreChannel(c.Request.Context())
+		if taxAmount <= 0 {
+			taxAmount = h.services.Channel.ComputeTaxAmount(subtotal, webstoreCh, taxAmount)
+		}
+	}
+
+	taxAmount = money.RoundMoney(taxAmount)
+	shippingAmount = money.RoundMoney(shippingAmount)
+
+	totalAmount := money.RoundMoney(subtotal + taxAmount + shippingAmount)
 	if math.IsNaN(totalAmount) || math.IsInf(totalAmount, 0) || totalAmount < 0 {
 		response.InvalidResp(c, "invalid_request")
+		return
+	}
+	if !h.checkCompanyCreditLimit(c, userID, totalAmount) {
 		return
 	}
 	if !h.ensureActiveOrKYBBypassForAmount(c, userID, totalAmount, kyb.LineProductIDs(items)...) {
 		return
 	}
+
 	now := time.Now()
-	orderStatus := "pending"
+	needsApproval := false
 	if h.services.Approval != nil {
-		if needsApproval, _, _ := h.services.Approval.ShouldRequireApproval(c.Request.Context(), userID, totalAmount); needsApproval {
-			orderStatus = "pending_approval"
+		var err error
+		needsApproval, _, err = h.services.Approval.ShouldRequireApproval(c.Request.Context(), userID, totalAmount)
+		if err != nil {
+			needsApproval = false
 		}
 	}
+	orderStatus := modelsOrder.OrderStatusPendingConfirm
+	if h.services.Channel != nil {
+		orderStatus = h.services.Channel.ResolveInitialOrderStatus(webstoreCh, needsApproval)
+	} else if needsApproval {
+		orderStatus = modelsOrder.OrderStatusPendingApproval
+	}
+
+	paymentStatus := "unpaid"
+	if h.services.Channel != nil {
+		paymentStatus = h.services.Channel.ResolvePaymentStatus(webstoreCh)
+	}
+
+	hasOfficialEvidence := len(compliance.Violations) == 0 && len(compliance.Warnings) == 0
 
 	order := &modelsOrder.Order{
 		ID:             crypto.GenerateID(),
 		OrderNumber:    orderNumber,
 		UserID:         userID,
 		InquiryID:      inquiryID,
+		Source:         modelsOrder.OrderSourceCart,
 		Status:         orderStatus,
-		PaymentStatus:  "unpaid",
+		PaymentStatus:  paymentStatus,
 		Items:          items,
 		StockReserved:  false,
+		ComplianceOfficialEvidence: hasOfficialEvidence,
 		Subtotal:       subtotal,
-		TaxAmount:      req.TaxAmount,
-		ShippingAmount: req.ShippingAmount,
+		TaxAmount:      taxAmount,
+		ShippingAmount: shippingAmount,
 		TotalAmount:    totalAmount,
 		Currency:       currency,
 		ShippingAddress: modelsOrder.Address{
@@ -234,9 +325,9 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
+	h.assignOrderWarehouseID(c, &order.WarehouseID)
 
-	order.StockReserved = true
-	if err := h.services.Order.CreateOrderWithStockReservation(c.Request.Context(), order); err != nil {
+	if err := h.services.Order.CreateOrder(c.Request.Context(), order); err != nil {
 		if dberror.IsDuplicateKeyError(err) {
 			response.ErrorResp(c, http.StatusConflict, "conflict")
 			return
@@ -245,30 +336,35 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 		return
 	}
 
-	// Fire outgoing webhook for order.created event
-	if h.services.Webhook != nil {
-		h.services.Webhook.Dispatch(c.Request.Context(), modelsOrder.WebhookEventOrderCreated, order.ID, order)
+	if orderStatus == modelsOrder.OrderStatusPendingApproval {
+		h.notifyOrderApprovers(c, order)
 	}
 
+	// Fire lifecycle event for order.created
+	h.emitLifecycleEvent(c, modelsOrder.WebhookEventOrderCreated, order.ID, order)
+
+	inventoryWarnings := formatInventoryWarnings(c, inventory.Warnings, productByID)
+
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "Order created successfully",
+		"message": i18n.T(c, "messages.order_created_success"),
 		"order":   order,
 		"compliance": gin.H{
 			"country":       compliance.Country,
-			"warnings":      dedupeCustomerWarnings(append(compliance.Warnings, inventory.Warnings...)),
+			"warnings":      dedupeCustomerWarnings(append(compliance.Warnings, inventoryWarnings...)),
 			"paymentPolicy": compliance.Payment,
 		},
-		"inventory": gin.H{"warnings": inventory.Warnings},
+		"inventory": gin.H{"warnings": inventoryWarnings},
 	})
 
 	// Send order confirmation notification
 	if h.services.Notification != nil {
+		vars := map[string]string{"orderNumber": order.OrderNumber}
 		_ = h.services.Notification.Create(c.Request.Context(), &modelsCommon.Notification{
 			UserID:    userID,
 			Type:      "order",
 			Reference: order.ID,
-			Title:     "Order Placed",
-			Message:   "Your order #" + order.OrderNumber + " has been placed and is pending review.",
+			Title:     i18n.TWithVars(c, "notifications.order_placed_title", vars),
+			Message:   i18n.TWithVars(c, "notifications.order_placed_message", vars),
 		})
 	}
 }
@@ -309,17 +405,41 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 		return
 	}
 
-	// Re-validate compliance at confirm time with current market profiles
+	// Re-validate compliance at confirm time with current market profiles.
+	// H-2/H-3: batch product lookups in a single query rather than one per line.
+	productByID := make(map[string]modelsProduct.Product, len(order.Items))
+	if len(order.Items) > 0 {
+		ids := make([]string, 0, len(order.Items))
+		seen := make(map[string]struct{}, len(order.Items))
+		for _, item := range order.Items {
+			pid := strings.TrimSpace(item.ProductID)
+			if pid == "" {
+				continue
+			}
+			if _, ok := seen[pid]; ok {
+				continue
+			}
+			seen[pid] = struct{}{}
+			ids = append(ids, pid)
+		}
+		batch, batchErr := h.services.Product.GetProductsByIDs(c.Request.Context(), ids)
+		if batchErr == nil {
+			for i := range batch {
+				productByID[batch[i].ID] = batch[i]
+			}
+		}
+	}
+
 	if order.ShippingAddress.Country != "" && len(order.Items) > 0 {
-		products := make([]modelsProduct.Product, 0, len(order.Items))
+		products := make([]modelsProduct.Product, 0, len(productByID))
 		allFound := true
 		for _, item := range order.Items {
-			product, err := h.services.Product.GetProductByID(c.Request.Context(), item.ProductID)
-			if err != nil {
+			p, ok := productByID[item.ProductID]
+			if !ok {
 				allFound = false
 				break
 			}
-			products = append(products, *product)
+			products = append(products, p)
 		}
 		if allFound {
 			complianceRecheck := h.services.Product.ValidateComplianceWithMarketProfiles(c.Request.Context(), order.ShippingAddress.Country, products)
@@ -370,7 +490,22 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 		return
 	}
 
-	if !h.ensureActiveOrKYBBypassForAmount(c, userID, order.TotalAmount, kyb.LineProductIDs(order.Items)...) {
+	// 确认时重新计算税/运费（地址或费率可能已变化）
+	// productByID was already populated above with a single batched query.
+	confirmPricing := h.computeCheckoutPricing(c.Request.Context(), checkoutPricingInput{
+		Items:           order.Items,
+		ProductByID:     productByID,
+		ShippingAddress: order.ShippingAddress,
+		Incoterms:       "FOB",
+		Subtotal:        order.Subtotal,
+		Currency:        order.Currency,
+	})
+	if h.services.Channel != nil && confirmPricing.TaxAmount <= 0 {
+		webstoreCh, _ := h.services.Channel.ResolveWebstoreChannel(c.Request.Context())
+		confirmPricing.TaxAmount = h.services.Channel.ComputeTaxAmount(order.Subtotal, webstoreCh, confirmPricing.TaxAmount)
+	}
+	confirmTotal := order.Subtotal + confirmPricing.TaxAmount + confirmPricing.ShippingAmount
+	if !h.ensureActiveOrKYBBypassForAmount(c, userID, confirmTotal, kyb.LineProductIDs(order.Items)...) {
 		return
 	}
 
@@ -378,8 +513,48 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 	itemsToConfirm := order.Items
 	if len(parsedReq.Items) > 0 {
 		itemsToConfirm = parsedReq.Items
+		// M-19: customer-supplied items override the server-authoritative draft.
+		// Emit a structured audit log so reconciliation tooling can detect
+		// post-quote line tampering. We don't reject the request — overrides are
+		// allowed for AI draft confirmation flow — but each diff is recorded.
+		if itemsDifferFromOrder(order.Items, parsedReq.Items) {
+			slog.Warn("customer confirmed order with overridden items",
+				"orderID", orderID,
+				"userID", userID,
+				"originalCount", len(order.Items),
+				"overrideCount", len(parsedReq.Items),
+				"originalItems", summarizeOrderItems(order.Items),
+				"overrideItems", summarizeOrderItems(parsedReq.Items),
+			)
+		}
 	}
-	if err := h.services.Order.ConfirmAndReserveOrder(c.Request.Context(), orderID, itemsToConfirm, now); err != nil {
+	// H-15: compute financials BEFORE the atomic confirm so they land in the
+	// same transaction as the status flip and stock reservation. Previously the
+	// confirm tx and the financial update were separate, leaving stock reserved
+	// with cogs=0 if the second update failed.
+	taxAmount := money.RoundMoney(confirmPricing.TaxAmount)
+	shippingAmount := money.RoundMoney(confirmPricing.ShippingAmount)
+	subtotal := order.Subtotal
+	totalAmount := money.RoundMoney(subtotal + taxAmount + shippingAmount)
+	currency := order.Currency
+	if confirmPricing.Currency != "" {
+		currency = confirmPricing.Currency
+	}
+	cogs := 0.0
+	if h.services.Product != nil {
+		cogs = orderSvc.ComputeOrderCOGS(c.Request.Context(), itemsToConfirm, h.services.Product)
+	}
+	itemsArray := modelsOrder.OrderItemArray(itemsToConfirm)
+	confirmFin := &orderRepo.OrderConfirmFinancials{
+		Items:          &itemsArray,
+		COGS:           &cogs,
+		Subtotal:       &subtotal,
+		TaxAmount:      &taxAmount,
+		ShippingAmount: &shippingAmount,
+		TotalAmount:    &totalAmount,
+		Currency:       &currency,
+	}
+	if err := h.services.Order.ConfirmAndReserveOrderWithFinancials(c.Request.Context(), orderID, itemsToConfirm, now, confirmFin); err != nil {
 		if errors.Is(err, modelsOrder.ErrInsufficientStock) {
 			response.ErrorResp(c, http.StatusUnprocessableEntity, "insufficient_stock")
 			return
@@ -405,25 +580,28 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 		return
 	}
 
-	order.Status = "pending"
-	order.ConfirmedAt = &now
-	order.UpdatedAt = now
+	// Reload the order so the response reflects the just-committed financials.
+	order, err = h.services.Order.GetOrder(c.Request.Context(), orderID)
+	if err != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "order_confirm_failed")
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Order confirmed successfully",
+		"message": i18n.T(c, "messages.order_confirmed_success"),
 		"order":   order,
 	})
 }
 
 func validateCustomerShippingAddress(address modelsOrder.Address) string {
 	if strings.TrimSpace(address.Street) == "" {
-		return "shippingAddress.street is required"
+		return "shipping_street_required"
 	}
 	if strings.TrimSpace(address.City) == "" {
-		return "shippingAddress.city is required"
+		return "shipping_city_required"
 	}
 	if strings.TrimSpace(address.Country) == "" {
-		return "shippingAddress.country is required"
+		return "target_country_required"
 	}
 	return ""
 }
@@ -448,6 +626,49 @@ func dedupeCustomerWarnings(values []string) []string {
 		out = append(out, trimmed)
 	}
 	return out
+}
+
+// itemsDifferFromOrder reports whether the customer-supplied confirm payload
+// describes a different line set than the server-authoritative draft. Used to
+// gate the M-19 audit log so we only record real overrides (not echoed identical
+// payloads).
+func itemsDifferFromOrder(serverItems modelsOrder.OrderItemArray, clientItems []modelsOrder.OrderItem) bool {
+	if len(serverItems) != len(clientItems) {
+		return true
+	}
+	type key struct {
+		id    string
+		qty   int
+		price float64
+	}
+	count := func(items []modelsOrder.OrderItem) map[key]int {
+		out := make(map[key]int, len(items))
+		for _, it := range items {
+			out[key{id: it.ProductID, qty: it.Quantity, price: it.UnitPrice}]++
+		}
+		return out
+	}
+	serverCounts := count(serverItems)
+	clientCounts := count(clientItems)
+	if len(serverCounts) != len(clientCounts) {
+		return true
+	}
+	for k, v := range serverCounts {
+		if clientCounts[k] != v {
+			return true
+		}
+	}
+	return false
+}
+
+// summarizeOrderItems renders an item slice as a compact "<productID>:<qty>@<price>"
+// list suitable for audit log fields without dumping full JSON.
+func summarizeOrderItems(items []modelsOrder.OrderItem) string {
+	parts := make([]string, 0, len(items))
+	for _, it := range items {
+		parts = append(parts, fmt.Sprintf("%s:%d@%.2f", it.ProductID, it.Quantity, it.UnitPrice))
+	}
+	return strings.Join(parts, ",")
 }
 
 // CustomerCancelOrder allows a customer to cancel their own pending order.
@@ -505,19 +726,20 @@ func (h *Handler) CustomerCancelOrder(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Order cancelled successfully",
+		"message": i18n.T(c, "messages.order_cancelled_success"),
 		"orderId": order.ID,
 		"status":  "cancelled",
 	})
 
 	// Notify customer of cancellation
 	if h.services.Notification != nil {
+		vars := map[string]string{"orderNumber": order.OrderNumber}
 		_ = h.services.Notification.Create(c.Request.Context(), &modelsCommon.Notification{
 			UserID:    userID,
 			Type:      "order",
 			Reference: order.ID,
-			Title:     "Order Cancelled",
-			Message:   "Your order #" + order.OrderNumber + " has been cancelled.",
+			Title:     i18n.TWithVars(c, "notifications.order_cancelled_title", vars),
+			Message:   i18n.TWithVars(c, "notifications.order_cancelled_message", vars),
 		})
 	}
 }
@@ -564,12 +786,13 @@ func (h *Handler) CustomerNudgeOrder(c *gin.Context) {
 
 	// Confirm to customer
 	if h.services.Notification != nil {
+		vars := map[string]string{"orderNumber": order.OrderNumber}
 		_ = h.services.Notification.Create(c.Request.Context(), &modelsCommon.Notification{
 			UserID:    userID,
 			Type:      "order",
 			Reference: order.ID,
-			Title:     "Nudge Sent",
-			Message:   "Your reminder for order #" + order.OrderNumber + " has been sent to our team.",
+			Title:     i18n.TWithVars(c, "notifications.customer_nudge_title", vars),
+			Message:   i18n.TWithVars(c, "notifications.customer_nudge_message", vars),
 		})
 	}
 
@@ -577,19 +800,20 @@ func (h *Handler) CustomerNudgeOrder(c *gin.Context) {
 	if h.services.User != nil && h.services.Notification != nil {
 		adminUsers, userErr := h.services.User.FindAdminUsers(c.Request.Context())
 		if userErr == nil {
+			vars := map[string]string{"orderNumber": order.OrderNumber}
 			for _, admin := range adminUsers {
 				_ = h.services.Notification.Create(c.Request.Context(), &modelsCommon.Notification{
 					UserID:    admin.ID,
 					Type:      "order",
 					Reference: order.ID,
-					Title:     "Customer Nudge",
-					Message:   "Customer sent a reminder for order #" + order.OrderNumber + ".",
+					Title:     i18n.TWithVars(c, "notifications.admin_customer_nudge_title", vars),
+					Message:   i18n.TWithVars(c, "notifications.admin_customer_nudge_message", vars),
 				})
 			}
 		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Nudge sent successfully",
+		"message": i18n.T(c, "messages.nudge_sent_success"),
 	})
 }

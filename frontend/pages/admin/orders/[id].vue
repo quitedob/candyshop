@@ -32,6 +32,9 @@
             <span :class="[paymentStatusClass(order.paymentStatus), 'inline-flex rounded-full px-3 py-1 text-sm font-semibold leading-5']">
               {{ t('admin.orders.payment') }}: {{ enumLabel('payment_status', order.paymentStatus, 'unpaid') }}
             </span>
+            <span :class="[order.complianceOfficialEvidence ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800', 'inline-flex rounded-full px-3 py-1 text-sm font-semibold leading-5']">
+              {{ order.complianceOfficialEvidence ? t('admin.orders.compliance_verified') : t('admin.orders.compliance_manual') }}
+            </span>
           </div>
         </div>
 
@@ -66,6 +69,10 @@
             <div>
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.orders.total') }}</dt>
               <dd class="mt-1 text-sm font-medium text-gray-900">{{ formatNumber(order.totalAmount || 0) }}</dd>
+            </div>
+            <div v-if="order.cogs != null && order.cogs !== undefined">
+              <dt class="text-sm font-medium text-gray-500">{{ t('admin.orders.cogs') }}</dt>
+              <dd class="mt-1 text-sm text-gray-900">{{ formatNumber(order.cogs || 0) }}</dd>
             </div>
             <div v-if="order.trackingNumber">
               <dt class="text-sm font-medium text-gray-500">{{ t('admin.orders.tracking_number') }}</dt>
@@ -105,13 +112,19 @@
                 <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">{{ t('admin.orders.no_items') }}</td>
               </tr>
               <tr v-else v-for="(item, idx) in order.items" :key="idx">
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ item.productName || item.productId }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ tField(item, 'productName') || item.productId }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.quantity }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ cur(order.currency) }} {{ formatNumber(item.unitPrice || 0) }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ cur(order.currency) }} {{ formatNumber((item.quantity || 0) * (item.unitPrice || 0)) }}</td>
               </tr>
             </tbody>
           </table>
+        </div>
+        <div v-if="order.inventoryWarnings?.length" class="px-6 py-4 bg-amber-50 border-t border-amber-100">
+          <p class="text-sm font-medium text-amber-900 mb-2">{{ t('admin.orders.inventory_warnings') }}</p>
+          <ul class="list-disc list-inside text-sm text-amber-800 space-y-1">
+            <li v-for="(w, wi) in order.inventoryWarnings" :key="wi">{{ w }}</li>
+          </ul>
         </div>
       </div>
 
@@ -141,16 +154,22 @@
           <h3 class="text-lg leading-6 font-medium text-gray-900">{{ t('admin.orders.update_status') }}</h3>
         </div>
         <div class="px-4 py-5 sm:p-6">
+          <div v-if="showPaymentRequiredBanner" class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-900 flex items-start justify-between gap-2">
+            <span>{{ t('admin.payment_policy.requires_payment_before_execution') }}</span>
+          </div>
           <form @submit.prevent="updateStatus" class="flex flex-wrap items-end gap-4">
             <div>
               <label for="order-status" class="block text-sm font-medium text-gray-700">{{ t('admin.orders.status') }}</label>
               <select id="order-status" name="status" v-model="statusInput" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-                <option value="pending">{{ enumLabel('order_status', 'pending') }}</option>
-                <option value="confirmed">{{ enumLabel('order_status', 'confirmed') }}</option>
-                <option value="production">{{ enumLabel('order_status', 'production') }}</option>
-                <option value="shipped">{{ enumLabel('order_status', 'shipped') }}</option>
-                <option value="delivered">{{ enumLabel('order_status', 'delivered') }}</option>
-                <option value="cancelled">{{ enumLabel('order_status', 'cancelled') }}</option>
+                <option
+                  v-for="opt in statusOptions"
+                  :key="opt.value"
+                  :value="opt.value"
+                  :disabled="opt.disabled"
+                  :title="opt.paymentBlocked ? t('admin.payment_policy.requires_payment_before_execution') : undefined"
+                >
+                  {{ enumLabel('order_status', opt.value) }}{{ opt.paymentBlocked ? ' ⛔' : '' }}
+                </option>
               </select>
             </div>
             <div>
@@ -161,8 +180,9 @@
               {{ updatingStatus ? t('admin.orders.updating') : t('admin.orders.update') }}
             </button>
           </form>
-          <div v-if="statusMessage" class="mt-3 text-sm" :class="statusError ? 'text-red-600' : 'text-green-600'">
-            {{ statusMessage }}
+          <div v-if="statusMessage" class="mt-3 text-sm flex items-start justify-between gap-2" :class="statusError ? 'text-red-600' : 'text-green-600'">
+            <span>{{ statusMessage }}</span>
+            <button v-if="statusError" type="button" class="text-xs underline shrink-0" @click="statusMessage = ''">{{ t('admin.orders.dismiss') }}</button>
           </div>
           <div v-if="paymentPolicyWarning" class="mt-3 p-3 bg-yellow-50 rounded-md text-sm text-yellow-800">
             {{ paymentPolicyWarning }}
@@ -210,7 +230,11 @@
                     <button v-if="payment.status === 'pending'" type="button" class="text-green-600 hover:text-green-900 mr-3" @click="confirmPayment(payment.id)">
                       {{ t('admin.orders.confirm') }}
                     </button>
-                    <button v-if="payment.status === 'confirmed'" type="button" class="text-orange-600 hover:text-orange-900" @click="refundPayment(payment.id)">
+                    <!-- M-16: also allow capture from authorized state (Stripe manual-capture flow) -->
+                    <button v-if="payment.status === 'authorized'" type="button" class="text-emerald-600 hover:text-emerald-900 mr-3" @click="confirmPayment(payment.id)">
+                      {{ t('admin.orders.confirm') }}
+                    </button>
+                    <button v-if="payment.status === 'confirmed' || payment.status === 'partial_refund'" type="button" class="text-orange-600 hover:text-orange-900" @click="refundPayment(payment.id)">
                       {{ t('admin.orders.refund') }}
                     </button>
                   </td>
@@ -218,6 +242,65 @@
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
+
+      <!-- Fulfillments — M-15 -->
+      <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">{{ t('admin.orders.fulfillments_title') }}</h3>
+          <button type="button"
+                  class="text-sm text-orange-600 hover:text-orange-900"
+                  :disabled="fulfillmentSubmitting"
+                  @click="openFulfillmentDialog">
+            {{ t('admin.orders.fulfillments_create') }}
+          </button>
+        </div>
+        <div class="px-4 py-5 sm:p-6">
+          <p v-if="!fulfillments.length" class="text-sm text-gray-500">{{ t('admin.orders.fulfillments_empty') }}</p>
+          <table v-else class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead>
+              <tr>
+                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">{{ t('admin.orders.fulfillment_id') }}</th>
+                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">{{ t('admin.orders.fulfillment_status') }}</th>
+                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">{{ t('admin.orders.fulfillment_warehouse') }}</th>
+                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">{{ t('admin.orders.fulfillment_tracking') }}</th>
+                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">{{ t('admin.orders.fulfillment_actions') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="f in fulfillments" :key="f.id">
+                <td class="px-3 py-2 text-gray-700">{{ String(f.id).substring(0, 8) }}</td>
+                <td class="px-3 py-2">
+                  <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 bg-gray-100 text-gray-800">{{ f.status }}</span>
+                </td>
+                <td class="px-3 py-2 text-gray-500">{{ cell(f.warehouseId) }}</td>
+                <td class="px-3 py-2 text-gray-500">{{ cell(f.trackingNumber) }}</td>
+                <td class="px-3 py-2 text-sm">
+                  <button v-if="f.status === 'pending' || f.status === 'picking'"
+                          type="button"
+                          class="text-orange-600 hover:text-orange-900 mr-2"
+                          @click="openShipDialog(f)">
+                    {{ t('admin.orders.fulfillment_ship') }}
+                  </button>
+                  <button v-if="f.status === 'shipped'"
+                          type="button"
+                          class="text-emerald-600 hover:text-emerald-900 mr-2"
+                          @click="markFulfillmentDelivered(f)">
+                    {{ t('admin.orders.fulfillment_deliver') }}
+                  </button>
+                  <button v-if="f.status === 'pending' || f.status === 'picking'"
+                          type="button"
+                          class="text-red-600 hover:text-red-900"
+                          @click="cancelFulfillment(f)">
+                    {{ t('admin.orders.fulfillment_cancel') }}
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p v-if="fulfillmentMessage" class="mt-3 text-sm text-emerald-600">{{ fulfillmentMessage }}</p>
+          <p v-if="fulfillmentError" class="mt-3 text-sm text-red-600">{{ fulfillmentError }}</p>
         </div>
       </div>
 
@@ -258,15 +341,16 @@
           <h3 class="text-lg leading-6 font-medium text-gray-900">{{ t('admin.orders.activity_log') }}</h3>
         </div>
         <div class="px-4 py-5 sm:p-6">
-          <div v-if="!order.statusHistory || order.statusHistory.length === 0" class="text-center text-gray-500">
+          <div v-if="!activityEntries.length" class="text-center text-gray-500">
             {{ t('admin.orders.no_activity') }}
           </div>
           <ul v-else class="border-l-2 border-gray-200 ml-3 space-y-4">
-            <li v-for="(entry, idx) in order.statusHistory" :key="idx" class="ml-4">
+            <li v-for="(entry, idx) in activityEntries" :key="idx" class="ml-4">
               <div class="flex items-start">
-                <div class="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-gray-400"></div>
+                <div class="flex-shrink-0 w-2 h-2 mt-2 rounded-full" :class="activityDotClass(entry.type)"></div>
                 <div class="ml-3">
-                  <p class="text-sm text-gray-900">{{ enumLabel('order_status', entry.status) }} {{ entry.note ? `- ${entry.note}` : '' }}</p>
+                  <p class="text-sm text-gray-900">{{ activityLabel(entry) }}</p>
+                  <p v-if="entry.detail && entry.type === 'status'" class="text-xs text-gray-600">{{ entry.detail }}</p>
                   <p class="text-xs text-gray-500">{{ formatDate(entry.timestamp) }}</p>
                 </div>
               </div>
@@ -280,14 +364,17 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, computed, nextTick } from 'vue'
+import { useTranslation } from '~/composables/useTranslation'
 
 definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
 const route = useRoute()
 const api = useApi()
 const { t, te } = useI18n()
+const { tField } = useTranslation()
 const localePath = useLocalePath()
 const { currencyOrDefault: cur, cell, enumLabel, formatNumber, formatDate } = useDisplay()
+const { statusSelectOptions, isPaidOrPartial, paymentInsufficientForExecution } = useOrderStatusTransitions()
 
 const order = ref<any>(null)
 const pending = ref(true)
@@ -298,6 +385,10 @@ const updatingStatus = ref(false)
 const statusMessage = ref('')
 const statusError = ref(false)
 const payments = ref<any[]>([])
+const fulfillments = ref<any[]>([])
+const fulfillmentMessage = ref('')
+const fulfillmentError = ref('')
+const fulfillmentSubmitting = ref(false)
 const loadingPayments = ref(false)
 const paymentError = ref('')
 const creatingTrade = ref(false)
@@ -331,13 +422,46 @@ const sendMessage = async () => {
 }
 
 let msgInterval: ReturnType<typeof setInterval> | null = null
-onMounted(() => { fetchOrder(); fetchPayments(); fetchMessages(); msgInterval = setInterval(fetchMessages, 30000) })
+onMounted(() => { fetchOrder(); fetchPayments(); fetchFulfillments(); fetchMessages(); msgInterval = setInterval(fetchMessages, 30000) })
 onUnmounted(() => { if (msgInterval) clearInterval(msgInterval) })
 
 const paymentPolicyWarning = computed(() => {
   const key = `admin.payment_policy.${statusInput.value}`
   return te(key) ? t(key) : ''
 })
+
+const statusOptions = computed(() => {
+  if (!order.value) return []
+  return statusSelectOptions(order.value.status || 'pending', order.value.paymentStatus || 'unpaid')
+})
+
+const showPaymentRequiredBanner = computed(() => {
+  if (!order.value) return false
+  return !isPaidOrPartial(order.value.paymentStatus || 'unpaid')
+})
+
+const activityEntries = computed(() => {
+  const hist = order.value?.activityHistory
+  if (Array.isArray(hist) && hist.length) return hist
+  const legacy = order.value?.statusHistory || []
+  return legacy.map((e: any) => ({ type: 'status', label: e.status, detail: e.note, timestamp: e.timestamp }))
+})
+
+const activityLabel = (entry: any) => {
+  if (entry.type === 'status') return enumLabel('order_status', entry.label || entry.status)
+  const key = `admin.orders.activity_${entry.type}`
+  const base = te(key) ? t(key) : entry.label
+  if (entry.amount != null && entry.amount > 0) {
+    return `${base} — ${cur(order.value?.currency)} ${formatNumber(entry.amount)}`
+  }
+  return base
+}
+
+const activityDotClass = (type: string) => {
+  if (type?.startsWith('payment')) return 'bg-green-500'
+  if (type === 'invoice_auto_created') return 'bg-blue-500'
+  return 'bg-gray-400'
+}
 
 const fetchOrder = async () => {
   pending.value = true; error.value = ''
@@ -359,16 +483,120 @@ const fetchPayments = async () => {
   } finally { loadingPayments.value = false }
 }
 
+// M-15: load and act on fulfillments. The backend exposes
+//   GET    /admin/orders/:id/fulfillments
+//   POST   /admin/orders/:id/fulfillments
+//   PUT    /admin/fulfillments/:id/{ship,deliver,cancel}
+// but had no admin UI surface; this section adds the missing controls.
+const fetchFulfillments = async () => {
+  fulfillmentError.value = ''
+  try {
+    const res = await api.get<any[]>(`/admin/orders/${route.params.id}/fulfillments`)
+    fulfillments.value = Array.isArray(res) ? res : []
+  } catch (err: any) {
+    fulfillmentError.value = err?.message || t('errors.api.load_failed')
+  }
+}
+
+const openFulfillmentDialog = async () => {
+  if (!order.value || !Array.isArray(order.value.items) || order.value.items.length === 0) {
+    fulfillmentError.value = t('admin.orders.fulfillments_no_items')
+    return
+  }
+  // Default to creating a fulfillment that ships every line in full.
+  const items = order.value.items.map((it: any, idx: number) => ({
+    orderItemIdx: idx,
+    productId: String(it.productId),
+    quantity: Math.max(1, Number(it.quantity || 0) - Number(it.fulfilledQuantity || 0)),
+  })).filter((it: any) => it.quantity > 0)
+  if (items.length === 0) {
+    fulfillmentError.value = t('admin.orders.fulfillments_already_fulfilled')
+    return
+  }
+  fulfillmentSubmitting.value = true
+  fulfillmentMessage.value = ''
+  fulfillmentError.value = ''
+  try {
+    await api.post(`/admin/orders/${route.params.id}/fulfillments`, {
+      warehouseId: order.value.warehouseId || '',
+      notes: '',
+      items,
+    })
+    fulfillmentMessage.value = t('admin.orders.fulfillments_created')
+    await fetchFulfillments()
+  } catch (err: any) {
+    fulfillmentError.value = err?.message || t('errors.api.save_failed')
+  } finally {
+    fulfillmentSubmitting.value = false
+  }
+}
+
+const openShipDialog = async (f: any) => {
+  const trackingNumber = window.prompt(t('admin.orders.fulfillment_tracking_prompt'))
+  if (!trackingNumber || !trackingNumber.trim()) return
+  const carrier = window.prompt(t('admin.orders.fulfillment_carrier_prompt')) || ''
+  fulfillmentSubmitting.value = true
+  fulfillmentMessage.value = ''
+  fulfillmentError.value = ''
+  try {
+    await api.put(`/admin/fulfillments/${f.id}/ship`, {
+      trackingNumber: trackingNumber.trim(),
+      carrier: carrier.trim(),
+    })
+    fulfillmentMessage.value = t('admin.orders.fulfillment_ship_success')
+    await fetchFulfillments()
+    await fetchOrder()
+  } catch (err: any) {
+    fulfillmentError.value = err?.message || t('errors.api.save_failed')
+  } finally {
+    fulfillmentSubmitting.value = false
+  }
+}
+
+const markFulfillmentDelivered = async (f: any) => {
+  if (!window.confirm(t('admin.orders.fulfillment_deliver_confirm'))) return
+  fulfillmentSubmitting.value = true
+  try {
+    await api.put(`/admin/fulfillments/${f.id}/deliver`, {})
+    fulfillmentMessage.value = t('admin.orders.fulfillment_deliver_success')
+    await fetchFulfillments()
+    await fetchOrder()
+  } catch (err: any) {
+    fulfillmentError.value = err?.message || t('errors.api.save_failed')
+  } finally {
+    fulfillmentSubmitting.value = false
+  }
+}
+
+const cancelFulfillment = async (f: any) => {
+  if (!window.confirm(t('admin.orders.fulfillment_cancel_confirm'))) return
+  fulfillmentSubmitting.value = true
+  try {
+    await api.put(`/admin/fulfillments/${f.id}/cancel`, {})
+    fulfillmentMessage.value = t('admin.orders.fulfillment_cancel_success')
+    await fetchFulfillments()
+  } catch (err: any) {
+    fulfillmentError.value = err?.message || t('errors.api.save_failed')
+  } finally {
+    fulfillmentSubmitting.value = false
+  }
+}
+
 const updateStatus = async () => {
+  const status = String(statusInput.value || '').toLowerCase().trim()
+  if (paymentInsufficientForExecution(status, order.value?.paymentStatus || 'unpaid')) {
+    statusError.value = true
+    statusMessage.value = t('admin.payment_policy.requires_payment_before_execution')
+    return
+  }
   updatingStatus.value = true; statusMessage.value = ''; statusError.value = false
   try {
-    const payload: Record<string, any> = { status: statusInput.value }
+    const payload: Record<string, any> = { status }
     if (trackingInput.value.trim()) payload.trackingNumber = trackingInput.value.trim()
-    await api.put(`/admin/orders/${route.params.id}`, payload)
-    order.value.status = statusInput.value
-    if (trackingInput.value.trim()) order.value.trackingNumber = trackingInput.value.trim()
+    await api.put(`/admin/orders/${route.params.id}/status`, payload)
+    await fetchOrder()
     statusMessage.value = t('admin.orders.status_updated')
-    setTimeout(() => { statusMessage.value = '' }, 3000)
+    setTimeout(() => { if (!statusError.value) statusMessage.value = '' }, 3000)
   } catch (err: any) {
     statusError.value = true
     statusMessage.value = err?.message || t('errors.api.status_failed')
@@ -379,6 +607,7 @@ const confirmPayment = async (paymentId: string) => {
   try {
     await api.put(`/admin/orders/${route.params.id}/payments/${paymentId}/confirm`, {})
     await fetchPayments()
+    await fetchOrder()
   } catch (err: any) { alert(err?.message || t('errors.api.payment_confirm_failed')) }
 }
 
@@ -406,13 +635,38 @@ const createTrade = async () => {
 }
 
 const statusClass = (status: string) => {
-  if (status === 'pending') return 'bg-yellow-100 text-yellow-800'
-  if (status === 'confirmed') return 'bg-blue-100 text-blue-800'
-  if (status === 'production') return 'bg-orange-100 text-orange-800'
-  if (status === 'shipped') return 'bg-amber-100 text-amber-800'
-  if (status === 'delivered') return 'bg-green-100 text-green-800'
-  if (status === 'cancelled') return 'bg-red-100 text-red-800'
-  return 'bg-gray-100 text-gray-800'
+  // H-9: cover all 13 order statuses defined on the backend (see models/order/order.go).
+  // Previously only 6 statuses had explicit colours and the rest displayed as gray badges.
+  switch (status) {
+    case 'pending_confirmation':
+      return 'bg-orange-100 text-orange-800'
+    case 'pending_approval':
+      return 'bg-purple-100 text-purple-800'
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800'
+    case 'confirmed':
+      return 'bg-blue-100 text-blue-800'
+    case 'production':
+      return 'bg-orange-100 text-orange-800'
+    case 'partially_shipped':
+      return 'bg-amber-100 text-amber-800'
+    case 'shipped':
+      return 'bg-amber-100 text-amber-800'
+    case 'partially_delivered':
+      return 'bg-emerald-100 text-emerald-800'
+    case 'delivered':
+      return 'bg-green-100 text-green-800'
+    case 'partially_returned':
+      return 'bg-rose-100 text-rose-800'
+    case 'returned':
+      return 'bg-rose-200 text-rose-900'
+    case 'cancelled':
+      return 'bg-red-100 text-red-800'
+    case 'expired':
+      return 'bg-gray-200 text-gray-700'
+    default:
+      return 'bg-gray-100 text-gray-800'
+  }
 }
 
 const paymentStatusClass = (status: string) => {

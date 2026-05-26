@@ -1,35 +1,35 @@
 {
   "blog": {
-    "title": "Blog & Resources",
+    "title": "บล็อกและแหล่งข้อมูล",
     "categories": {
-      "compliance": "Compliance",
-      "product_knowledge": "Product Knowledge",
-      "packaging": "Packaging Trends",
-      "market_insights": "Market Insights"
+      "compliance": "การปฏิบัติตามกฎระเบียบ",
+      "product_knowledge": "ความรู้ด้านผลิตภัณฑ์",
+      "packaging": "แนวโน้มบรรจุภัณฑ์",
+      "market_insights": "ข้อมูลเชิงลึกตลาด"
     },
-    "read_more": "Read More",
-    "related_articles": "Related Articles",
-    "share": "Share Article",
-    "table_of_contents": "Table of Contents"
+    "read_more": "อ่านเพิ่มเติม",
+    "related_articles": "บทความที่เกี่ยวข้อง",
+    "share": "แชร์บทความ",
+    "table_of_contents": "สารบัญ"
   },
   "blog_extra": {
-    "featured": "Featured",
-    "stay_updated": "Stay Updated",
-    "subscribe_desc": "Get the latest industry insights and compliance updates delivered to your inbox",
-    "email_placeholder": "Enter your email",
-    "all_posts": "All Posts",
-    "loading_posts": "Loading posts...",
-    "no_posts": "No posts found in this category.",
-    "newsletter_invalid": "Please enter a valid email address.",
-    "newsletter_redirect": "Opening the contact form…",
-    "cta_questions": "Have questions about our candy manufacturing capabilities?",
-    "cta_heading": "Learn More About Our Services",
-    "min_read": "{count} min read",
+    "featured": "แนะนำ",
+    "stay_updated": "ติดตามข่าวสาร",
+    "subscribe_desc": "รับข้อมูลเชิงลึกอุตสาหกรรมและการอัปเดตด้านกฎระเบียบส่งตรงถึงกล่องจดหมายของคุณ",
+    "email_placeholder": "กรอกอีเมลของคุณ",
+    "all_posts": "โพสต์ทั้งหมด",
+    "loading_posts": "กำลังโหลดโพสต์...",
+    "no_posts": "ไม่พบโพสต์ในหมวดหมู่นี้",
+    "newsletter_invalid": "กรุณากรอกที่อยู่อีเมลที่ถูกต้อง",
+    "newsletter_redirect": "กำลังเปิดแบบฟอร์มติดต่อ…",
+    "cta_questions": "มีคำถามเกี่ยวกับความสามารถในการผลิตลูกกวาดของเรา?",
+    "cta_heading": "เรียนรู้เพิ่มเติมเกี่ยวกับบริการของเรา",
+    "min_read": "อ่าน {count} นาที",
     "share_twitter": "Twitter",
     "share_linkedin": "LinkedIn",
     "share_facebook": "Facebook",
-    "share_copy_link": "Copy Link",
-    "share_copied": "Copied!",
-    "seo_description": "Industry insights, compliance knowledge, and product expertise for candy manufacturers."
+    "share_copy_link": "คัดลอกลิงก์",
+    "share_copied": "คัดลอกแล้ว!",
+    "seo_description": "ข้อมูลเชิงลึกอุตสาหกรรม ความรู้ด้านกฎระเบียบ และความเชี่ยวชาญด้านผลิตภัณฑ์สำหรับผู้ผลิตลูกกวาด"
   }
 }

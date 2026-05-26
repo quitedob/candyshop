@@ -13,6 +13,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// validTradeShipmentStatuses 贸易 BOL 追踪合法状态
+var validTradeShipmentStatuses = map[string]bool{
+	"PENDING":     true,
+	"DISPATCHED":  true,
+	"IN_TRANSIT":  true,
+	"DELIVERED":   true,
+	"EXCEPTION":   true,
+}
+
 // AdminGetShipments returns paginated shipment records.
 func (h *Handler) AdminGetShipments(c *gin.Context) {
 	if h.services == nil {
@@ -91,7 +100,6 @@ func (h *Handler) AdminCreateShipment(c *gin.Context) {
 		VesselFlight:    req.VesselFlight,
 		PortOfLoading:   req.PortOfLoading,
 		PortOfDischarge: req.PortOfDischarge,
-		Status:          req.Status,
 	}
 	if req.ETD != nil {
 		if t, err := time.Parse(time.RFC3339, *req.ETD); err == nil {
@@ -102,6 +110,16 @@ func (h *Handler) AdminCreateShipment(c *gin.Context) {
 		if t, err := time.Parse(time.RFC3339, *req.ETA); err == nil {
 			shipment.ETA = &t
 		}
+	}
+	if req.Status != "" {
+		st := strings.ToUpper(strings.TrimSpace(req.Status))
+		if !validTradeShipmentStatuses[st] {
+			response.InvalidResp(c, "invalid_request")
+			return
+		}
+		shipment.Status = st
+	} else {
+		shipment.Status = "PENDING"
 	}
 
 	if err := h.services.Shipment.CreateShipment(c.Request.Context(), shipment); err != nil {
@@ -149,7 +167,12 @@ func (h *Handler) AdminUpdateShipment(c *gin.Context) {
 		shipment.PortOfDischarge = req.PortOfDischarge
 	}
 	if req.Status != "" {
-		shipment.Status = req.Status
+		st := strings.ToUpper(strings.TrimSpace(req.Status))
+		if !validTradeShipmentStatuses[st] {
+			response.InvalidResp(c, "invalid_request")
+			return
+		}
+		shipment.Status = st
 	}
 	if req.ETD != nil {
 		if t, parseErr := time.Parse(time.RFC3339, *req.ETD); parseErr == nil {
@@ -185,7 +208,7 @@ func (h *Handler) AdminDeleteShipment(c *gin.Context) {
 		return
 	}
 	if err := h.services.Shipment.DeleteShipment(c.Request.Context(), id); err != nil {
-		response.ErrorResp(c, http.StatusInternalServerError, "shipment_update_failed")
+		response.ErrorResp(c, http.StatusInternalServerError, "shipment_delete_failed")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Shipment deleted", "id": id})

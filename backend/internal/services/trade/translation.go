@@ -2,33 +2,21 @@ package trade
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 	"sync"
 	"time"
-)
 
-var translationLocaleNames = map[string]string{
-	"en": "English",
-	"zh": "Chinese (Simplified)",
-	"ar": "Arabic",
-	"es": "Spanish",
-	"fr": "French",
-	"de": "German",
-	"ja": "Japanese",
-	"ko": "Korean",
-	"zh-tw": "Traditional Chinese",
-	"th":    "Thai",
-	"vi":    "Vietnamese",
-	"id":    "Indonesian",
-	"ms":    "Malay",
-}
+	eino "candypro/api/internal/pkg/eino"
+	einotool "candypro/api/internal/pkg/eino/tool"
+)
 
 const (
 	maxConcurrentTranslations = 3
-	translationTimeout        = 30 * time.Second
+	translationTimeout        = 600 * time.Second
+	xlsxTranslateBatchSize    = 30
 )
 
 // TranslationResult holds the translation output and any per-locale warnings.
@@ -37,9 +25,8 @@ type TranslationResult struct {
 	Warnings []string
 }
 
-// BatchTranslateFields translates a set of named text fields into each target locale.
-// Runs translations concurrently (up to maxConcurrentTranslations) with per-locale timeout.
-// Failed locales are reported as warnings; partial results are always returned.
+// BatchTranslateFields 批量翻译字段，与 Trade Agent translate_content 工具同源。
+// 外部 API 走 Trade Agent Generate；工具内部走直连 JSON，避免递归。
 func (s *AIService) BatchTranslateFields(ctx context.Context, sourceData map[string]string, targetLocales []string) (*TranslationResult, error) {
 	result := &TranslationResult{
 		Fields: make(map[string]map[string]string),
@@ -50,9 +37,9 @@ func (s *AIService) BatchTranslateFields(ctx context.Context, sourceData map[str
 	}
 
 	var (
-		wg       sync.WaitGroup
-		mu       sync.Mutex
-		sem      = make(chan struct{}, maxConcurrentTranslations)
+		wg        sync.WaitGroup
+		mu        sync.Mutex
+		sem       = make(chan struct{}, maxConcurrentTranslations)
 		parentErr error
 	)
 
@@ -92,58 +79,85 @@ func (s *AIService) BatchTranslateFields(ctx context.Context, sourceData map[str
 }
 
 func (s *AIService) translateOneLocale(ctx context.Context, sourceData map[string]string, locale string) (map[string]string, error) {
-	prompt := buildTranslationPrompt(sourceData, locale)
-	raw, err := s.GenerateJSON(ctx, prompt)
-	if err != nil {
-		return nil, err
+	if einotool.IsDirectTranslate(ctx) || !s.HasAgent() {
+		return s.translateOneLocaleJSON(ctx, sourceData, locale)
 	}
-	var fields map[string]string
-	if err := json.Unmarshal([]byte(raw), &fields); err != nil {
-		raw = extractJSONBlock(raw)
-		if err := json.Unmarshal([]byte(raw), &fields); err != nil {
-			return nil, fmt.Errorf("parse translation JSON for %s: %w", locale, err)
-		}
+	return s.translateOneLocaleViaAgent(ctx, sourceData, locale)
+}
+
+// translateOneLocaleViaAgent 经 Trade Agent 生成 JSON 翻译结果。
+func (s *AIService) translateOneLocaleViaAgent(ctx context.Context, sourceData map[string]string, locale string) (map[string]string, error) {
+	raw, err := s.generateStructuredJSON(ctx, eino.BuildTranslationPrompt(sourceData, locale))
+	if err != nil {
+		return s.translateOneLocaleJSON(ctx, sourceData, locale)
+	}
+	fields, parseErr := eino.ParseTranslationFieldsJSON(raw)
+	if parseErr != nil {
+		return s.translateOneLocaleJSON(ctx, sourceData, locale)
 	}
 	return fields, nil
 }
 
-// TranslationLocaleName returns a human-readable name for a locale code.
-func TranslationLocaleName(locale string) string {
-	if name, ok := translationLocaleNames[locale]; ok {
-		return name
-	}
-	lower := strings.ToLower(locale)
-	if name, ok := translationLocaleNames[lower]; ok {
-		return name
-	}
-	return locale
+// translateOneLocaleJSON 工具内部直连 JSON 模式（translate_content 工具回调路径）。
+func (s *AIService) translateOneLocaleJSON(ctx context.Context, sourceData map[string]string, locale string) (map[string]string, error) {
+	return s.TranslateFieldsJSON(ctx, sourceData, locale)
 }
 
-func buildTranslationPrompt(data map[string]string, targetLocale string) string {
-	var sb strings.Builder
-	sb.WriteString("Translate the following fields to ")
-	sb.WriteString(TranslationLocaleName(targetLocale))
-	sb.WriteString(". Return ONLY a JSON object with the translated values. Do not include explanations or markdown.\n\nFields:\n")
-	for key, value := range data {
-		if strings.TrimSpace(value) == "" {
-			continue
-		}
-		sb.WriteString(key)
-		sb.WriteString(": ")
-		sb.WriteString(value)
-		sb.WriteString("\n")
-	}
-	return sb.String()
-}
-
-// TranslateSingleText translates a single text string to the target language.
+// TranslateSingleText 单条翻译，经 Trade Agent Generate。
 func (s *AIService) TranslateSingleText(ctx context.Context, text, sourceLang, targetLang string) (string, error) {
 	if sourceLang == "" {
 		sourceLang = "auto"
 	}
-	prompt := "Translate the following text from " + sourceLang + " to " + targetLang +
+	prompt := "Translate the following text from " + sourceLang + " to " + eino.TranslationLocaleName(targetLang) +
 		". Return only the translated content without explanations:\n\n" + text
-	return s.Generate(ctx, prompt)
+	if s.HasAgent() {
+		return s.Generate(ctx, prompt)
+	}
+	return s.GenerateDirect(ctx, prompt)
+}
+
+// BatchTranslateTexts XLSX 等场景批量翻译，复用 translate_content 同款 BatchTranslateFields。
+func (s *AIService) BatchTranslateTexts(ctx context.Context, items map[string]string, sourceLang, targetLang string) (map[string]string, []string, error) {
+	result := make(map[string]string, len(items))
+	warnings := make([]string, 0)
+
+	if len(items) == 0 {
+		return result, warnings, nil
+	}
+
+	ctx = einotool.WithDirectTranslate(ctx)
+
+	keys := make([]string, 0, len(items))
+	for k := range items {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for i := 0; i < len(keys); i += xlsxTranslateBatchSize {
+		end := i + xlsxTranslateBatchSize
+		if end > len(keys) {
+			end = len(keys)
+		}
+		chunk := make(map[string]string, end-i)
+		for _, k := range keys[i:end] {
+			chunk[k] = items[k]
+		}
+
+		transResult, err := s.BatchTranslateFields(ctx, chunk, []string{targetLang})
+		if err != nil {
+			warnings = append(warnings, err.Error())
+			continue
+		}
+		if transResult != nil {
+			warnings = append(warnings, transResult.Warnings...)
+			if localeFields, ok := transResult.Fields[targetLang]; ok {
+				for k, v := range localeFields {
+					result[k] = v
+				}
+			}
+		}
+	}
+	return result, warnings, nil
 }
 
 func extractJSONBlock(raw string) string {

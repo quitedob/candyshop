@@ -2,6 +2,7 @@ package product
 
 import (
 	modelsProduct "candypro/api/internal/models/product"
+	"candypro/api/internal/pkg/catalog"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -12,13 +13,16 @@ import (
 
 type productRepository interface {
 	FindAll(ctx context.Context, page, limit int, categorySlug string) ([]modelsProduct.Product, int64, error)
+	FindAllForAdmin(ctx context.Context, page, limit int, categorySlug, status, search string) ([]modelsProduct.Product, int64, error)
 	FindAllFiltered(ctx context.Context, page, limit int, halal, oemOnly, featuredOnly bool, search, sort string, minMOQ, maxMOQ int, categorySlug ...string) ([]modelsProduct.Product, int64, error)
 	FindBySlug(ctx context.Context, slug string) (*modelsProduct.Product, error)
 	FindByID(ctx context.Context, id string) (*modelsProduct.Product, error)
+	FindByIDs(ctx context.Context, ids []string) ([]modelsProduct.Product, error)
 	FindFeatured(ctx context.Context, limit int) ([]modelsProduct.Product, error)
 	FindRelated(ctx context.Context, slug string, limit int) ([]modelsProduct.Product, error)
 	Create(ctx context.Context, product *modelsProduct.Product) error
 	Update(ctx context.Context, product *modelsProduct.Product) error
+	UpdateStockWithLock(ctx context.Context, productID string, newQty int) (int, error)
 	Delete(ctx context.Context, id string) error
 	FindVariantsByProductID(ctx context.Context, productID string) ([]modelsProduct.ProductVariant, error)
 	FindMarketProfilesForProducts(ctx context.Context, productIDs []string, marketCode string) ([]modelsProduct.ProductMarketProfile, error)
@@ -26,14 +30,18 @@ type productRepository interface {
 	FindMarketCostStacksForProduct(ctx context.Context, productID string) ([]modelsProduct.ProductMarketCostStack, error)
 	UpsertProductMarketCostStack(ctx context.Context, row *modelsProduct.ProductMarketCostStack) error
 	ListWarehouses(ctx context.Context) ([]modelsProduct.Warehouse, error)
+	GetDefaultWarehouseID(ctx context.Context) (string, error)
 	SaveWarehouse(ctx context.Context, w *modelsProduct.Warehouse) error
 	UpsertWarehouseStock(ctx context.Context, row *modelsProduct.WarehouseStock) error
 	SaveOEMProjectInventoryHold(ctx context.Context, row *modelsProduct.OEMProjectInventoryHold) error
 	ListOEMInventoryHoldsByProject(ctx context.Context, projectID string) ([]modelsProduct.OEMProjectInventoryHold, error)
 	SumActiveOEMHoldsForProduct(ctx context.Context, productID string) (int64, error)
+	SumActiveOEMHoldsByProductIDs(ctx context.Context, productIDs []string) (map[string]int64, error)
 	ListChannelInventoriesForProduct(ctx context.Context, productID string) ([]modelsProduct.ChannelInventory, error)
 	FindChannelInventory(ctx context.Context, productID, channelCode string) (*modelsProduct.ChannelInventory, error)
+	FindChannelInventoriesByProductIDs(ctx context.Context, productIDs []string, channelCode string) (map[string]*modelsProduct.ChannelInventory, error)
 	UpsertChannelInventory(ctx context.Context, row *modelsProduct.ChannelInventory) error
+	ComputeWeightedAvgCost(ctx context.Context, productID string) float64
 }
 
 // ProductService handles product business logic.
@@ -74,12 +82,12 @@ func (s *ProductService) GetProducts(ctx context.Context, page, limit int, categ
 }
 
 // GetProductsFiltered returns paginated products with full filter support.
-func (s *ProductService) GetProductsFiltered(ctx context.Context, page, limit int, halal, oemOnly, featuredOnly bool, search, sort string, minMOQ, maxMOQ int) (*modelsProduct.PaginatedResponse, error) {
+func (s *ProductService) GetProductsFiltered(ctx context.Context, page, limit int, halal, oemOnly, featuredOnly bool, search, sort string, minMOQ, maxMOQ int, categorySlugs ...string) (*modelsProduct.PaginatedResponse, error) {
 	if limit <= 0 {
 		limit = 12
 	}
 
-	products, total, err := s.repo.FindAllFiltered(ctx, page, limit, halal, oemOnly, featuredOnly, search, sort, minMOQ, maxMOQ)
+	products, total, err := s.repo.FindAllFiltered(ctx, page, limit, halal, oemOnly, featuredOnly, search, sort, minMOQ, maxMOQ, categorySlugs...)
 	if err != nil {
 		return nil, err
 	}
@@ -98,6 +106,35 @@ func (s *ProductService) GetProductsFiltered(ctx context.Context, page, limit in
 			TotalPages: totalPages,
 		},
 	}, nil
+}
+
+// GetProductsForAdmin 管理员产品列表，支持 status 筛选
+func (s *ProductService) GetProductsForAdmin(ctx context.Context, page, limit int, categorySlug, status, search string) (*modelsProduct.PaginatedResponse, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	products, total, err := s.repo.FindAllForAdmin(ctx, page, limit, categorySlug, status, search)
+	if err != nil {
+		return nil, err
+	}
+	totalPages := int(total) / limit
+	if int(total)%limit > 0 {
+		totalPages++
+	}
+	return &modelsProduct.PaginatedResponse{
+		Data: products,
+		Pagination: modelsProduct.Pagination{
+			Total:      int(total),
+			Page:       page,
+			Limit:      limit,
+			TotalPages: totalPages,
+		},
+	}, nil
+}
+
+// UpdateStockWithLock 行锁更新库存
+func (s *ProductService) UpdateStockWithLock(ctx context.Context, productID string, newQty int) (int, error) {
+	return s.repo.UpdateStockWithLock(ctx, productID, newQty)
 }
 
 // GetProduct returns a product by slug or ID (UUID fallback). Only active products are returned for public access.
@@ -124,6 +161,31 @@ func (s *ProductService) GetProduct(ctx context.Context, slugOrID string) (*mode
 // GetProductByID returns a product by ID.
 func (s *ProductService) GetProductByID(ctx context.Context, id string) (*modelsProduct.Product, error) {
 	return s.repo.FindByID(ctx, id)
+}
+
+// GetProductsByIDs returns the products matching the given IDs in a single batch.
+// Order is not guaranteed; callers wanting a map should index the result themselves.
+//
+// Use this in hot paths (checkout, order confirm, COGS) instead of looping
+// GetProductByID per line — that pattern was N+1 (H-1, H-2, H-3).
+func (s *ProductService) GetProductsByIDs(ctx context.Context, ids []string) ([]modelsProduct.Product, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	// Deduplicate to avoid sending duplicate IDs to the DB.
+	seen := make(map[string]struct{}, len(ids))
+	unique := make([]string, 0, len(ids))
+	for _, id := range ids {
+		if id == "" {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		unique = append(unique, id)
+	}
+	return s.repo.FindByIDs(ctx, unique)
 }
 
 // IncrementViewCount increments the view count for a product (best-effort).
@@ -191,6 +253,11 @@ func (s *ProductService) ValidateComplianceWithMarketProfiles(ctx context.Contex
 // ListWarehouses 仓库列表（跨境）
 func (s *ProductService) ListWarehouses(ctx context.Context) ([]modelsProduct.Warehouse, error) {
 	return s.repo.ListWarehouses(ctx)
+}
+
+// GetDefaultWarehouseID 返回默认仓库 ID
+func (s *ProductService) GetDefaultWarehouseID(ctx context.Context) (string, error) {
+	return s.repo.GetDefaultWarehouseID(ctx)
 }
 
 // SaveWarehouse 保存仓库
@@ -316,4 +383,37 @@ func ApplyProductTranslationsBatch(products []modelsProduct.Product, locale stri
 	for i := range products {
 		ApplyProductTranslations(&products[i], locale)
 	}
+}
+
+// ComputeWeightedAvgCost 返回产品加权平均批次成本
+func (s *ProductService) ComputeWeightedAvgCost(ctx context.Context, productID string) float64 {
+	if s == nil || s.repo == nil {
+		return 0
+	}
+	return s.repo.ComputeWeightedAvgCost(ctx, productID)
+}
+
+// GetProductBasePrice 返回产品 BasePrice（目录/合同标价字段）。
+func (s *ProductService) GetProductBasePrice(ctx context.Context, productID string) float64 {
+	if s == nil || s.repo == nil {
+		return 0
+	}
+	p, err := s.repo.FindByID(ctx, productID)
+	if err != nil || p == nil {
+		return 0
+	}
+	return p.BasePrice
+}
+
+// GetCOGSReferencePrice 返回 COGS 比例折算用的目录参考价（不受合同价污染的 base_price 影响）。
+func (s *ProductService) GetCOGSReferencePrice(ctx context.Context, productID string) float64 {
+	if s == nil || s.repo == nil {
+		return 0
+	}
+	p, err := s.repo.FindByID(ctx, productID)
+	if err != nil || p == nil {
+		return 0
+	}
+	weighted := s.repo.ComputeWeightedAvgCost(ctx, p.ID)
+	return catalog.COGSReferencePrice(p.Slug, p.BasePrice, weighted)
 }

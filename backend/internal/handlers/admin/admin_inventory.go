@@ -54,28 +54,24 @@ func (h *Handler) AdminUpdateInventory(c *gin.Context) {
 		return
 	}
 
-	product, err := h.services.Product.GetProductByID(c.Request.Context(), productID)
-	if err != nil {
+	if _, err := h.services.Product.GetProductByID(c.Request.Context(), productID); err != nil {
 		response.ErrorResp(c, http.StatusNotFound, "product_not_found")
 		return
 	}
 
-	oldQty := product.StockQuantity
-	product.StockQuantity = req.StockQuantity
-	product.UpdatedAt = time.Now()
-
-	if err := h.services.Product.UpdateProduct(c.Request.Context(), product); err != nil {
+	oldQty, err := h.services.Product.UpdateStockWithLock(c.Request.Context(), productID, req.StockQuantity)
+	if err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "inventory_update_failed")
 		return
 	}
 
+	change := req.StockQuantity - oldQty
+	reason := strings.TrimSpace(req.Reason)
+	if reason == "" {
+		reason = "manual_adjustment"
+	}
+	operatorID := adminActorID(c)
 	if h.services.StockTransaction != nil {
-		change := req.StockQuantity - oldQty
-		reason := strings.TrimSpace(req.Reason)
-		if reason == "" {
-			reason = "manual_adjustment"
-		}
-		operatorID := adminActorID(c)
 		if err := h.services.StockTransaction.Record(c.Request.Context(), &modelsOrder.StockTransaction{
 			ProductID:   productID,
 			Change:      change,
@@ -85,9 +81,23 @@ func (h *Handler) AdminUpdateInventory(c *gin.Context) {
 			ReferenceID: req.Notes,
 			OperatorID:  operatorID,
 		}); err != nil {
-			log.Printf("Warning: failed to record stock transaction for product %s: %v", productID, err)
+			// 审计失败时回滚库存变更
+			if _, rbErr := h.services.Product.UpdateStockWithLock(c.Request.Context(), productID, oldQty); rbErr != nil {
+				log.Printf("Warning: failed to rollback stock for product %s after audit error: %v", productID, rbErr)
+			}
+			response.ErrorResp(c, http.StatusInternalServerError, "inventory_audit_failed")
+			return
 		}
 	}
+
+	product, err := h.services.Product.GetProductByID(c.Request.Context(), productID)
+	if err != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "inventory_update_failed")
+		return
+	}
+
+	h.logActivityAudit(c, "update", "inventory", productID,
+		strconv.Itoa(oldQty), strconv.Itoa(req.StockQuantity))
 
 	c.JSON(http.StatusOK, product)
 }

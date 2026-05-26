@@ -2,7 +2,10 @@
 // 订单/产品否决仍以硬编码规则与 ProductMarketProfile 为准。
 package trade
 
-import "strings"
+import (
+	"log/slog"
+	"strings"
+)
 
 // ComplianceReference is one compliance evidence snippet from local corpus retrieval.
 type ComplianceReference struct {
@@ -23,6 +26,7 @@ type ComplianceLookupResult struct {
 // LookupCompliance 从本地语料检索合规参考片段（非法律依据，不得单独作为放行条件）。
 func (s *AIService) LookupCompliance(country, query string, topK int) *ComplianceLookupResult {
 	if s == nil || s.ComplianceRetriever() == nil {
+		slog.Debug("compliance lookup skipped: retriever not configured")
 		return nil
 	}
 

@@ -58,7 +58,7 @@
               </template>
               <template v-else>{{ project.userId || '-' }}</template>
             </td>
-            <td class="px-3 py-4 text-sm text-gray-500">{{ project.productName || '-' }}</td>
+            <td class="px-3 py-4 text-sm text-gray-500">{{ tField(project, 'productName') || '-' }}</td>
             <td class="px-3 py-4 text-sm">
               <div class="flex items-center gap-1">
                 <template v-for="(step, idx) in steps.slice(0, getStepIndex(project.status) + 1)" :key="idx">
@@ -95,11 +95,13 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useTranslation } from '~/composables/useTranslation'
 
 definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
 const api = useApi()
 const { t } = useI18n()
+const { tField } = useTranslation()
 const { enumLabel, formatDate } = useDisplay()
 const localePath = useLocalePath()
 const router = useRouter()
