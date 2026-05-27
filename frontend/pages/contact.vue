@@ -100,16 +100,38 @@
 
             <!-- Map -->
             <div class="map-card">
-              <iframe
-                :src="mapSrc"
-                width="100%"
-                height="300"
-                style="border:0;"
-                allowfullscreen
-                loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade"
-                :title="t('contact.factory_location')"
-              ></iframe>
+              <template v-if="config.public.googleMapsApiKey">
+                <iframe
+                  :src="`https://www.google.com/maps/embed/v1/place?key=${config.public.googleMapsApiKey}&q=No.88+Shipin+Road+Jinshan+District+Shanghai+China&zoom=15`"
+                  width="100%"
+                  height="300"
+                  style="border:0;"
+                  allowfullscreen
+                  loading="lazy"
+                  referrerpolicy="no-referrer-when-downgrade"
+                  :title="t('contact.factory_location')"
+                ></iframe>
+              </template>
+              <div v-else class="map-fallback">
+                <div class="map-fallback__icon">
+                  <Icon name="lucide:map-pin" size="28" />
+                </div>
+                <p class="map-fallback__address">No. 88 Shipin Road, Jinshan District<br>Shanghai 201500, China</p>
+                <div class="map-fallback__links">
+                  <a
+                    href="https://www.google.com/maps/search/?api=1&query=No.88+Shipin+Road+Jinshan+District+Shanghai+China"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="btn btn--small btn-ghost"
+                  >Google Maps</a>
+                  <a
+                    href="https://uri.amap.com/marker?position=121.34,30.88&name=CandyPro"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="btn btn--small btn-ghost"
+                  >{{ t('contact.open_in_map') }}</a>
+                </div>
+              </div>
             </div>
 
             <!-- Social Media -->
@@ -299,15 +321,6 @@ const toggleFaq = (index: number) => {
   openFaq.value = openFaq.value === index ? -1 : index
 }
 
-// Map URL (Google Maps with key if available, otherwise OpenStreetMap)
-const mapSrc = computed(() => {
-  const key = config.public.googleMapsApiKey
-  if (key) {
-    return `https://www.google.com/maps/embed/v1/place?key=${key}&q=No.88+Shipin+Road+Jinshan+District+Shanghai+China&zoom=15`
-  }
-  return 'https://www.openstreetmap.org/export/embed.html?bbox=121.22%2C30.68%2C121.46%2C30.92&layer=mapnik&marker=30.88%2C121.34'
-})
-
 // WhatsApp URL
 const whatsappUrl = computed(() => {
   const number = config.public.whatsappNumber
@@ -433,6 +446,36 @@ usePageOgImage({
 .map-card iframe {
   display: block;
   border-radius: var(--radius-lg);
+}
+
+.map-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl);
+  min-height: 200px;
+  background: var(--color-bg-alt);
+  text-align: center;
+}
+
+.map-fallback__icon {
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-md);
+}
+
+.map-fallback__address {
+  font-size: var(--text-sm);
+  color: var(--color-text-light);
+  margin-bottom: var(--spacing-lg);
+  line-height: 1.6;
+}
+
+.map-fallback__links {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 /* Social */

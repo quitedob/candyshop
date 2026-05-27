@@ -1,0 +1,49 @@
+#
+3PL
+AI summary of inquiry compliance/risk flags when configured.
+For sales reference only — not a substitute for legal/compliance review.
+Admin
+Alias
+Bill of Lading
+COGS
+CandyPro Admin
+Distributor
+ETA
+Edit
+Email
+Field
+Filter
+Filter Status
+GMO
+GTIN / Barcode
+HTTP
+Halal
+ID
+Incoterms
+Kosher
+Locale
+MOQ
+Marketplace
+Material
+Model
+Non-GMO
+OEM
+Payload
+Protein (g)
+SKU
+Slug
+Status
+Status...
+Subtotal
+Super Admin
+Superadmin
+Thumbnail
+Total
+Total Volume (CBM)
+Transfer #
+URL
+Vegan
+WhatsApp
+g
+{from} → {to}
+{total} total

@@ -1,0 +1,5698 @@
+[
+  [
+    "Status",
+    43
+  ],
+  [
+    "Cancel",
+    24
+  ],
+  [
+    "Unknown",
+    24
+  ],
+  [
+    "Name",
+    20
+  ],
+  [
+    "Edit",
+    20
+  ],
+  [
+    "Delete",
+    20
+  ],
+  [
+    "Actions",
+    19
+  ],
+  [
+    "Pending",
+    18
+  ],
+  [
+    "Save",
+    16
+  ],
+  [
+    "Previous",
+    15
+  ],
+  [
+    "Next",
+    15
+  ],
+  [
+    "Type",
+    13
+  ],
+  [
+    "Customer",
+    12
+  ],
+  [
+    "Active",
+    12
+  ],
+  [
+    "Currency",
+    12
+  ],
+  [
+    "Showing {from} to {to} of {total}",
+    11
+  ],
+  [
+    "Update",
+    10
+  ],
+  [
+    "Draft",
+    10
+  ],
+  [
+    "Product",
+    9
+  ],
+  [
+    "Saving...",
+    9
+  ],
+  [
+    "Email",
+    8
+  ],
+  [
+    "Order",
+    8
+  ],
+  [
+    "Inactive",
+    8
+  ],
+  [
+    "Create",
+    8
+  ],
+  [
+    "View",
+    8
+  ],
+  [
+    "Cancelled",
+    8
+  ],
+  [
+    "Paid",
+    7
+  ],
+  [
+    "Role",
+    7
+  ],
+  [
+    "Notes",
+    7
+  ],
+  [
+    "Rejected",
+    7
+  ],
+  [
+    "Category",
+    7
+  ],
+  [
+    "MOQ",
+    7
+  ],
+  [
+    "Amount",
+    6
+  ],
+  [
+    "Confirmed",
+    6
+  ],
+  [
+    "Updating...",
+    6
+  ],
+  [
+    "Carrier",
+    6
+  ],
+  [
+    "Loading...",
+    6
+  ],
+  [
+    "Delivered",
+    6
+  ],
+  [
+    "Products",
+    5
+  ],
+  [
+    "Time",
+    5
+  ],
+  [
+    "Revenue",
+    5
+  ],
+  [
+    "Country",
+    5
+  ],
+  [
+    "Created",
+    5
+  ],
+  [
+    "User",
+    5
+  ],
+  [
+    "Payment Terms",
+    5
+  ],
+  [
+    "Reject",
+    5
+  ],
+  [
+    "Description",
+    5
+  ],
+  [
+    "Completed",
+    5
+  ],
+  [
+    "Export",
+    5
+  ],
+  [
+    "Value",
+    5
+  ],
+  [
+    "Code",
+    5
+  ],
+  [
+    "Inquiries",
+    4
+  ],
+  [
+    "Orders",
+    4
+  ],
+  [
+    "Translations",
+    4
+  ],
+  [
+    "Date",
+    4
+  ],
+  [
+    "Stock",
+    4
+  ],
+  [
+    "Quantity",
+    4
+  ],
+  [
+    "Due Date",
+    4
+  ],
+  [
+    "Overdue",
+    4
+  ],
+  [
+    "Company",
+    4
+  ],
+  [
+    "Admin",
+    4
+  ],
+  [
+    "Suspended",
+    4
+  ],
+  [
+    "Company Name",
+    4
+  ],
+  [
+    "Unit Price",
+    4
+  ],
+  [
+    "Update Status",
+    4
+  ],
+  [
+    "Inquiry",
+    4
+  ],
+  [
+    "Send",
+    4
+  ],
+  [
+    "Quotation",
+    4
+  ],
+  [
+    "Valid Until",
+    4
+  ],
+  [
+    "Total Amount",
+    4
+  ],
+  [
+    "Slug",
+    4
+  ],
+  [
+    "Title",
+    4
+  ],
+  [
+    "All Statuses",
+    4
+  ],
+  [
+    "Credit Limit",
+    4
+  ],
+  [
+    "Shipped",
+    4
+  ],
+  [
+    "Sent",
+    4
+  ],
+  [
+    "Super Admin",
+    3
+  ],
+  [
+    "Certifications",
+    3
+  ],
+  [
+    "Inquiry Conversion",
+    3
+  ],
+  [
+    "ID",
+    3
+  ],
+  [
+    "Qty",
+    3
+  ],
+  [
+    "Rate",
+    3
+  ],
+  [
+    "Phone",
+    3
+  ],
+  [
+    "Showing {from} to {to} of {total} results",
+    3
+  ],
+  [
+    "Message",
+    3
+  ],
+  [
+    "Customer Notes",
+    3
+  ],
+  [
+    "Action",
+    3
+  ],
+  [
+    "Summary",
+    3
+  ],
+  [
+    "Submitting...",
+    3
+  ],
+  [
+    "User ID",
+    3
+  ],
+  [
+    "Total",
+    3
+  ],
+  [
+    "Tracking Number",
+    3
+  ],
+  [
+    "Yes",
+    3
+  ],
+  [
+    "Failed",
+    3
+  ],
+  [
+    "Incoterms",
+    3
+  ],
+  [
+    "HS Code",
+    3
+  ],
+  [
+    "English",
+    3
+  ],
+  [
+    "Price List",
+    3
+  ],
+  [
+    "Error",
+    3
+  ],
+  [
+    "Production",
+    3
+  ],
+  [
+    "Requested",
+    3
+  ],
+  [
+    "Destination",
+    3
+  ],
+  [
+    "Standard",
+    3
+  ],
+  [
+    "Approved",
+    3
+  ],
+  [
+    "EN",
+    3
+  ],
+  [
+    "Commercial Invoice",
+    3
+  ],
+  [
+    "Events",
+    3
+  ],
+  [
+    "Close",
+    3
+  ],
+  [
+    "Dashboard",
+    2
+  ],
+  [
+    "Users",
+    2
+  ],
+  [
+    "Returns",
+    2
+  ],
+  [
+    "Categories",
+    2
+  ],
+  [
+    "Companies",
+    2
+  ],
+  [
+    "Trades",
+    2
+  ],
+  [
+    "Pricing",
+    2
+  ],
+  [
+    "OEM Projects",
+    2
+  ],
+  [
+    "Content",
+    2
+  ],
+  [
+    "Inventory",
+    2
+  ],
+  [
+    "XLSX Tools",
+    2
+  ],
+  [
+    "Shipments",
+    2
+  ],
+  [
+    "Invoices",
+    2
+  ],
+  [
+    "Audit Log",
+    2
+  ],
+  [
+    "Organizations",
+    2
+  ],
+  [
+    "Webhooks",
+    2
+  ],
+  [
+    "Coupons",
+    2
+  ],
+  [
+    "Tax Rates",
+    2
+  ],
+  [
+    "Recent Activity",
+    2
+  ],
+  [
+    "Revenue This Month",
+    2
+  ],
+  [
+    "Converted",
+    2
+  ],
+  [
+    "Outstanding Invoices",
+    2
+  ],
+  [
+    "First Name",
+    2
+  ],
+  [
+    "Last Name",
+    2
+  ],
+  [
+    "Creating...",
+    2
+  ],
+  [
+    "Delete this user permanently?",
+    2
+  ],
+  [
+    "Manage inquiry records with complete CRUD and conversion actions.",
+    2
+  ],
+  [
+    "Contact Person",
+    2
+  ],
+  [
+    "WhatsApp",
+    2
+  ],
+  [
+    "Target Country",
+    2
+  ],
+  [
+    "Estimated Quantity",
+    2
+  ],
+  [
+    "Expected Delivery",
+    2
+  ],
+  [
+    "Priority",
+    2
+  ],
+  [
+    "Linked Product IDs",
+    2
+  ],
+  [
+    "OEM Needed",
+    2
+  ],
+  [
+    "Submit Quote",
+    2
+  ],
+  [
+    "Quote submitted successfully.",
+    2
+  ],
+  [
+    "Inquiry ID",
+    2
+  ],
+  [
+    "Subtotal",
+    2
+  ],
+  [
+    "Product ID",
+    2
+  ],
+  [
+    "Street",
+    2
+  ],
+  [
+    "City",
+    2
+  ],
+  [
+    "Generating...",
+    2
+  ],
+  [
+    "Describe the case study for AI to draft...",
+    2
+  ],
+  [
+    "Loading documents...",
+    2
+  ],
+  [
+    "No activity recorded",
+    2
+  ],
+  [
+    "Refund",
+    2
+  ],
+  [
+    "Confirm",
+    2
+  ],
+  [
+    "Activity Log",
+    2
+  ],
+  [
+    "Type your message...",
+    2
+  ],
+  [
+    "Fulfillment",
+    2
+  ],
+  [
+    "Warehouse ID",
+    2
+  ],
+  [
+    "Confirm Delivery",
+    2
+  ],
+  [
+    "Delivery confirmed.",
+    2
+  ],
+  [
+    "Assigned To",
+    2
+  ],
+  [
+    "Passed",
+    2
+  ],
+  [
+    "Warnings",
+    2
+  ],
+  [
+    "AI quotation draft",
+    2
+  ],
+  [
+    "Convert to Order",
+    2
+  ],
+  [
+    "Delivery Date",
+    2
+  ],
+  [
+    "Accept",
+    2
+  ],
+  [
+    "Accepted",
+    2
+  ],
+  [
+    "Translating…",
+    2
+  ],
+  [
+    "Search by product name or SKU...",
+    2
+  ],
+  [
+    "All statuses",
+    2
+  ],
+  [
+    "Alias",
+    2
+  ],
+  [
+    "Category Slug",
+    2
+  ],
+  [
+    "Lead Time",
+    2
+  ],
+  [
+    "Stock Quantity",
+    2
+  ],
+  [
+    "Thumbnail",
+    2
+  ],
+  [
+    "OG Image (Social Share)",
+    2
+  ],
+  [
+    "Shelf Life",
+    2
+  ],
+  [
+    "Storage",
+    2
+  ],
+  [
+    "Weight & Measurement",
+    2
+  ],
+  [
+    "Dietary Labels",
+    2
+  ],
+  [
+    "Nutrition (per 100g)",
+    2
+  ],
+  [
+    "Ingredient Compliance",
+    2
+  ],
+  [
+    "Trade & Packaging",
+    2
+  ],
+  [
+    "Sample Specs",
+    2
+  ],
+  [
+    "All customer-facing text lives here only. Chinese is the source locale; scalar fields sync on save.",
+    2
+  ],
+  [
+    "Translating...",
+    2
+  ],
+  [
+    "Generate with AI",
+    2
+  ],
+  [
+    "Source Language",
+    2
+  ],
+  [
+    "AI Import",
+    2
+  ],
+  [
+    "Updated",
+    2
+  ],
+  [
+    "General",
+    2
+  ],
+  [
+    "Location",
+    2
+  ],
+  [
+    "Timeline",
+    2
+  ],
+  [
+    "Excerpt",
+    2
+  ],
+  [
+    "Result",
+    2
+  ],
+  [
+    "Save failed",
+    2
+  ],
+  [
+    "Revising…",
+    2
+  ],
+  [
+    "Clear",
+    2
+  ],
+  [
+    "Auto detect",
+    2
+  ],
+  [
+    "Thumbnail URL",
+    2
+  ],
+  [
+    "Abbreviation",
+    2
+  ],
+  [
+    "Issuer",
+    2
+  ],
+  [
+    "Verified",
+    2
+  ],
+  [
+    "Tax ID",
+    2
+  ],
+  [
+    "Verified At",
+    2
+  ],
+  [
+    "Transaction",
+    2
+  ],
+  [
+    "Created on",
+    2
+  ],
+  [
+    "Port of Loading",
+    2
+  ],
+  [
+    "Port of Discharge",
+    2
+  ],
+  [
+    "View Detail",
+    2
+  ],
+  [
+    "Sampling",
+    2
+  ],
+  [
+    "Formulation",
+    2
+  ],
+  [
+    "Contract",
+    2
+  ],
+  [
+    "Delivery",
+    2
+  ],
+  [
+    "Project",
+    2
+  ],
+  [
+    "Product Name",
+    2
+  ],
+  [
+    "Deleting...",
+    2
+  ],
+  [
+    "Adjust Stock",
+    2
+  ],
+  [
+    "Low Stock",
+    2
+  ],
+  [
+    "Out of Stock",
+    2
+  ],
+  [
+    "In Stock",
+    2
+  ],
+  [
+    "Total Value",
+    2
+  ],
+  [
+    "Reason",
+    2
+  ],
+  [
+    "In Transit",
+    2
+  ],
+  [
+    "All Status",
+    2
+  ],
+  [
+    "Exception",
+    2
+  ],
+  [
+    "Select Order",
+    2
+  ],
+  [
+    "Filter Status",
+    2
+  ],
+  [
+    "B/L No.",
+    2
+  ],
+  [
+    "Received",
+    2
+  ],
+  [
+    "Refunded",
+    2
+  ],
+  [
+    "Approve",
+    2
+  ],
+  [
+    "Voided",
+    2
+  ],
+  [
+    "Invoice",
+    2
+  ],
+  [
+    "Entity Type",
+    2
+  ],
+  [
+    "just now",
+    2
+  ],
+  [
+    "{count} minutes ago",
+    2
+  ],
+  [
+    "{count} hours ago",
+    2
+  ],
+  [
+    "{count} days ago",
+    2
+  ],
+  [
+    "Trade",
+    2
+  ],
+  [
+    "Proforma Invoice",
+    2
+  ],
+  [
+    "Bill of Lading",
+    2
+  ],
+  [
+    "Sales Contract",
+    2
+  ],
+  [
+    "Packing List",
+    2
+  ],
+  [
+    "Health Certificate",
+    2
+  ],
+  [
+    "Create Translation",
+    2
+  ],
+  [
+    "Key",
+    2
+  ],
+  [
+    "Locale",
+    2
+  ],
+  [
+    "Group",
+    2
+  ],
+  [
+    "URL",
+    2
+  ],
+  [
+    "Success",
+    2
+  ],
+  [
+    "Event",
+    2
+  ],
+  [
+    "Members",
+    2
+  ],
+  [
+    "Remove",
+    2
+  ],
+  [
+    "Base Cost",
+    2
+  ],
+  [
+    "Balance",
+    2
+  ],
+  [
+    "Expired",
+    2
+  ],
+  [
+    "Closed",
+    2
+  ],
+  [
+    "Dispatched",
+    2
+  ],
+  [
+    "In transit",
+    2
+  ],
+  [
+    "Sea Freight",
+    2
+  ],
+  [
+    "Air Freight",
+    2
+  ],
+  [
+    "No",
+    2
+  ],
+  [
+    "0",
+    1
+  ],
+  [
+    "CandyPro Admin",
+    1
+  ],
+  [
+    "Logout",
+    1
+  ],
+  [
+    "Dark mode",
+    1
+  ],
+  [
+    "Light mode",
+    1
+  ],
+  [
+    "Open sidebar menu",
+    1
+  ],
+  [
+    "Close sidebar menu",
+    1
+  ],
+  [
+    "Expand or collapse sidebar",
+    1
+  ],
+  [
+    "Management",
+    1
+  ],
+  [
+    "Analytics",
+    1
+  ],
+  [
+    "Financial",
+    1
+  ],
+  [
+    "Staff",
+    1
+  ],
+  [
+    "Settings",
+    1
+  ],
+  [
+    "AI Apps",
+    1
+  ],
+  [
+    "Channels",
+    1
+  ],
+  [
+    "Hooks & Events",
+    1
+  ],
+  [
+    "Shipping & Tax",
+    1
+  ],
+  [
+    "Platform overview and key metrics at a glance.",
+    1
+  ],
+  [
+    "Loading dashboard statistics...",
+    1
+  ],
+  [
+    "Error loading dashboard",
+    1
+  ],
+  [
+    "Total Users",
+    1
+  ],
+  [
+    "Total Orders",
+    1
+  ],
+  [
+    "Total Inquiries",
+    1
+  ],
+  [
+    "Total Revenue",
+    1
+  ],
+  [
+    "this week",
+    1
+  ],
+  [
+    "{count} new this week",
+    1
+  ],
+  [
+    "pending",
+    1
+  ],
+  [
+    "Activity",
+    1
+  ],
+  [
+    "No recent activity",
+    1
+  ],
+  [
+    "Active Customers",
+    1
+  ],
+  [
+    "Avg Order Value",
+    1
+  ],
+  [
+    "Conversion Rate",
+    1
+  ],
+  [
+    "Revenue (30 Days)",
+    1
+  ],
+  [
+    "Business Reports",
+    1
+  ],
+  [
+    "Sales Velocity",
+    1
+  ],
+  [
+    "RFM Analysis",
+    1
+  ],
+  [
+    "Customer Churn",
+    1
+  ],
+  [
+    "Inventory Health",
+    1
+  ],
+  [
+    "Profit & Loss",
+    1
+  ],
+  [
+    "Replenishment",
+    1
+  ],
+  [
+    "Loading report...",
+    1
+  ],
+  [
+    "Failed to load report",
+    1
+  ],
+  [
+    "No data available",
+    1
+  ],
+  [
+    "Velocity",
+    1
+  ],
+  [
+    "Recency",
+    1
+  ],
+  [
+    "Frequency",
+    1
+  ],
+  [
+    "Monetary",
+    1
+  ],
+  [
+    "Segment",
+    1
+  ],
+  [
+    "Days Inactive",
+    1
+  ],
+  [
+    "Reorder Qty",
+    1
+  ],
+  [
+    "Cost",
+    1
+  ],
+  [
+    "Profit",
+    1
+  ],
+  [
+    "Month",
+    1
+  ],
+  [
+    "Analytics & Reports",
+    1
+  ],
+  [
+    "Business intelligence dashboards with revenue, order, and conversion metrics.",
+    1
+  ],
+  [
+    "Loading analytics...",
+    1
+  ],
+  [
+    "Error loading analytics data",
+    1
+  ],
+  [
+    "No data available for the selected period.",
+    1
+  ],
+  [
+    "Revenue Trends",
+    1
+  ],
+  [
+    "Order Trends",
+    1
+  ],
+  [
+    "Top Products",
+    1
+  ],
+  [
+    "#",
+    1
+  ],
+  [
+    "3M",
+    1
+  ],
+  [
+    "6M",
+    1
+  ],
+  [
+    "12M",
+    1
+  ],
+  [
+    "3 Months",
+    1
+  ],
+  [
+    "6 Months",
+    1
+  ],
+  [
+    "12 Months",
+    1
+  ],
+  [
+    "Financial Overview",
+    1
+  ],
+  [
+    "Accounts receivable, payment tracking, and revenue analytics.",
+    1
+  ],
+  [
+    "Loading financial data...",
+    1
+  ],
+  [
+    "Error loading financial data",
+    1
+  ],
+  [
+    "Accounts Receivable",
+    1
+  ],
+  [
+    "Overdue Amount",
+    1
+  ],
+  [
+    "Payment Breakdown",
+    1
+  ],
+  [
+    "Invoice No",
+    1
+  ],
+  [
+    "No outstanding invoices.",
+    1
+  ],
+  [
+    "Due Soon",
+    1
+  ],
+  [
+    "No financial data available.",
+    1
+  ],
+  [
+    "A list of all users including their name, company, email, role, and status.",
+    1
+  ],
+  [
+    "New User",
+    1
+  ],
+  [
+    "Loading users...",
+    1
+  ],
+  [
+    "No users found.",
+    1
+  ],
+  [
+    "Create User",
+    1
+  ],
+  [
+    "Password",
+    1
+  ],
+  [
+    "Superadmin",
+    1
+  ],
+  [
+    "New Inquiry",
+    1
+  ],
+  [
+    "Loading inquiries...",
+    1
+  ],
+  [
+    "No inquiries found.",
+    1
+  ],
+  [
+    "Company & Contact",
+    1
+  ],
+  [
+    "Edit Inquiry",
+    1
+  ],
+  [
+    "Create Inquiry",
+    1
+  ],
+  [
+    "User ID (optional)",
+    1
+  ],
+  [
+    "Interested Products (comma separated)",
+    1
+  ],
+  [
+    "Product IDs, comma separated",
+    1
+  ],
+  [
+    "Structured product references for compliance checks and quoting",
+    1
+  ],
+  [
+    "Assignment",
+    1
+  ],
+  [
+    "Assignee user ID",
+    1
+  ],
+  [
+    "Assign",
+    1
+  ],
+  [
+    "Assigning...",
+    1
+  ],
+  [
+    "AI Analysis",
+    1
+  ],
+  [
+    "Analyze",
+    1
+  ],
+  [
+    "Analyzing...",
+    1
+  ],
+  [
+    "Risk",
+    1
+  ],
+  [
+    "Quote",
+    1
+  ],
+  [
+    "Quoted amount",
+    1
+  ],
+  [
+    "Products (comma separated)",
+    1
+  ],
+  [
+    "Customer notes",
+    1
+  ],
+  [
+    "Company, contact person and email are required.",
+    1
+  ],
+  [
+    "Assignee user ID is required for assignment.",
+    1
+  ],
+  [
+    "Quoted amount must be greater than 0.",
+    1
+  ],
+  [
+    "Delete this inquiry?",
+    1
+  ],
+  [
+    "Inquiry created successfully.",
+    1
+  ],
+  [
+    "Inquiry updated successfully.",
+    1
+  ],
+  [
+    "Inquiry deleted successfully.",
+    1
+  ],
+  [
+    "Inquiry assigned successfully.",
+    1
+  ],
+  [
+    "Manage order lifecycle with complete CRUD operations.",
+    1
+  ],
+  [
+    "New Order",
+    1
+  ],
+  [
+    "Loading orders...",
+    1
+  ],
+  [
+    "No orders found.",
+    1
+  ],
+  [
+    "Edit Order",
+    1
+  ],
+  [
+    "Create Order",
+    1
+  ],
+  [
+    "Order Number",
+    1
+  ],
+  [
+    "Payment Status",
+    1
+  ],
+  [
+    "Tax",
+    1
+  ],
+  [
+    "Shipping",
+    1
+  ],
+  [
+    "COGS",
+    1
+  ],
+  [
+    "Order Items",
+    1
+  ],
+  [
+    "Add Item",
+    1
+  ],
+  [
+    "Specifications",
+    1
+  ],
+  [
+    "Shipping Address",
+    1
+  ],
+  [
+    "State",
+    1
+  ],
+  [
+    "Zip Code",
+    1
+  ],
+  [
+    "User ID is required.",
+    1
+  ],
+  [
+    "Delete this order?",
+    1
+  ],
+  [
+    "Order created successfully.",
+    1
+  ],
+  [
+    "Order updated successfully.",
+    1
+  ],
+  [
+    "Order deleted successfully.",
+    1
+  ],
+  [
+    "All",
+    1
+  ],
+  [
+    "Filter by user...",
+    1
+  ],
+  [
+    "From",
+    1
+  ],
+  [
+    "To",
+    1
+  ],
+  [
+    "Preview",
+    1
+  ],
+  [
+    "AI Generate",
+    1
+  ],
+  [
+    "Enter a topic for AI to write about...",
+    1
+  ],
+  [
+    "Convert to MD",
+    1
+  ],
+  [
+    "Back to Orders",
+    1
+  ],
+  [
+    "Loading order details...",
+    1
+  ],
+  [
+    "Placed on",
+    1
+  ],
+  [
+    "No items found",
+    1
+  ],
+  [
+    "Order status updated successfully.",
+    1
+  ],
+  [
+    "Dismiss",
+    1
+  ],
+  [
+    "Compliance verified",
+    1
+  ],
+  [
+    "Manual compliance ack",
+    1
+  ],
+  [
+    "Inventory warnings",
+    1
+  ],
+  [
+    "Payment created",
+    1
+  ],
+  [
+    "Payment confirmed",
+    1
+  ],
+  [
+    "Payment refunded",
+    1
+  ],
+  [
+    "Invoice auto-created",
+    1
+  ],
+  [
+    "Trade Transaction",
+    1
+  ],
+  [
+    "Create Trade from Order",
+    1
+  ],
+  [
+    "Trade transaction created successfully.",
+    1
+  ],
+  [
+    "View Trade",
+    1
+  ],
+  [
+    "Payment",
+    1
+  ],
+  [
+    "Payment Management",
+    1
+  ],
+  [
+    "Loading payments...",
+    1
+  ],
+  [
+    "No payments found",
+    1
+  ],
+  [
+    "No documents available",
+    1
+  ],
+  [
+    "Are you sure you want to refund this payment?",
+    1
+  ],
+  [
+    "Method",
+    1
+  ],
+  [
+    "Order Messages",
+    1
+  ],
+  [
+    "No messages yet.",
+    1
+  ],
+  [
+    "You",
+    1
+  ],
+  [
+    "Failed to send message.",
+    1
+  ],
+  [
+    "Order Fulfillment",
+    1
+  ],
+  [
+    "Create Fulfillment",
+    1
+  ],
+  [
+    "Ship",
+    1
+  ],
+  [
+    "No fulfillments yet.",
+    1
+  ],
+  [
+    "Fulfillment created.",
+    1
+  ],
+  [
+    "Marked as shipped.",
+    1
+  ],
+  [
+    "Back to Inquiries",
+    1
+  ],
+  [
+    "Loading inquiry details...",
+    1
+  ],
+  [
+    "Submitted on",
+    1
+  ],
+  [
+    "Interested Products",
+    1
+  ],
+  [
+    "Quoted Amount",
+    1
+  ],
+  [
+    "Packaging Requirements",
+    1
+  ],
+  [
+    "Flavor Requirements",
+    1
+  ],
+  [
+    "AI Compliance Check",
+    1
+  ],
+  [
+    "Compliance Status",
+    1
+  ],
+  [
+    "AI Draft Quotation",
+    1
+  ],
+  [
+    "Convert this inquiry to an order for the customer.",
+    1
+  ],
+  [
+    "Converting...",
+    1
+  ],
+  [
+    "Inquiry converted successfully. ",
+    1
+  ],
+  [
+    "State / Province",
+    1
+  ],
+  [
+    "Zip / Postal Code",
+    1
+  ],
+  [
+    "Admin Confirm Specifications",
+    1
+  ],
+  [
+    "Confirm packaging type, weight, size and quality standards. Once both parties confirm, the inquiry will move to 'confirmed' status.",
+    1
+  ],
+  [
+    "Packaging Type",
+    1
+  ],
+  [
+    "Packaging Weight (g)",
+    1
+  ],
+  [
+    "Packaging Size",
+    1
+  ],
+  [
+    "Quality Standard",
+    1
+  ],
+  [
+    "Customer has confirmed",
+    1
+  ],
+  [
+    "Waiting for customer",
+    1
+  ],
+  [
+    "Both parties confirmed",
+    1
+  ],
+  [
+    "Admin Notes",
+    1
+  ],
+  [
+    "Confirming...",
+    1
+  ],
+  [
+    "Confirm Specifications",
+    1
+  ],
+  [
+    "Specifications confirmed",
+    1
+  ],
+  [
+    "Confirmation failed",
+    1
+  ],
+  [
+    "Current Packaging Specs",
+    1
+  ],
+  [
+    "Not set yet",
+    1
+  ],
+  [
+    "g",
+    1
+  ],
+  [
+    "Customer Files",
+    1
+  ],
+  [
+    "No files",
+    1
+  ],
+  [
+    "Confirmation Notes",
+    1
+  ],
+  [
+    "Negotiation",
+    1
+  ],
+  [
+    "Counter-offers and price negotiation with the buyer.",
+    1
+  ],
+  [
+    "No offers yet.",
+    1
+  ],
+  [
+    "Create Offer",
+    1
+  ],
+  [
+    "Total amount is required",
+    1
+  ],
+  [
+    "Offer created successfully.",
+    1
+  ],
+  [
+    "Offer accepted.",
+    1
+  ],
+  [
+    "Offer rejected.",
+    1
+  ],
+  [
+    "By",
+    1
+  ],
+  [
+    "Offer",
+    1
+  ],
+  [
+    "Manage product catalog with complete CRUD operations.",
+    1
+  ],
+  [
+    "Add Product",
+    1
+  ],
+  [
+    "Translate missing locales",
+    1
+  ],
+  [
+    "Search",
+    1
+  ],
+  [
+    "Published (default)",
+    1
+  ],
+  [
+    "Loading products...",
+    1
+  ],
+  [
+    "No products found.",
+    1
+  ],
+  [
+    "Edit Product",
+    1
+  ],
+  [
+    "Create Product",
+    1
+  ],
+  [
+    "Category Alias",
+    1
+  ],
+  [
+    "Base Price (USD)",
+    1
+  ],
+  [
+    "Enter after sales verification for catalog display. You may state a specific reference (e.g. \"25 business days after order confirmation\") — do not use vague promises like \"approx. X weeks\". Leave blank or use \"confirmed at order time\" until verified.",
+    1
+  ],
+  [
+    "OEM",
+    1
+  ],
+  [
+    "Halal",
+    1
+  ],
+  [
+    "Featured",
+    1
+  ],
+  [
+    "Optional. Overrides thumbnail for Facebook/LinkedIn previews. 1200×630 recommended.",
+    1
+  ],
+  [
+    "Upload Image",
+    1
+  ],
+  [
+    "Upload Images",
+    1
+  ],
+  [
+    "Images (comma separated)",
+    1
+  ],
+  [
+    "Flavors (comma separated)",
+    1
+  ],
+  [
+    "Shapes (comma separated)",
+    1
+  ],
+  [
+    "Certifications (comma separated)",
+    1
+  ],
+  [
+    "Ingredients",
+    1
+  ],
+  [
+    "Allergens",
+    1
+  ],
+  [
+    "Product name is required.",
+    1
+  ],
+  [
+    "Delete this product?",
+    1
+  ],
+  [
+    "Product created successfully.",
+    1
+  ],
+  [
+    "Product updated successfully.",
+    1
+  ],
+  [
+    "Product deleted successfully.",
+    1
+  ],
+  [
+    "Product Dimensions (mm)",
+    1
+  ],
+  [
+    "Net Weight/Piece (g)",
+    1
+  ],
+  [
+    "Net Weight/Pack (g)",
+    1
+  ],
+  [
+    "Gross Weight/Carton (kg)",
+    1
+  ],
+  [
+    "Pieces/Pack",
+    1
+  ],
+  [
+    "Packs/Carton",
+    1
+  ],
+  [
+    "Length (mm)",
+    1
+  ],
+  [
+    "Width (mm)",
+    1
+  ],
+  [
+    "Height (mm)",
+    1
+  ],
+  [
+    "Vegan",
+    1
+  ],
+  [
+    "Gluten-Free",
+    1
+  ],
+  [
+    "Sugar-Free",
+    1
+  ],
+  [
+    "Kosher",
+    1
+  ],
+  [
+    "Organic",
+    1
+  ],
+  [
+    "Energy (kJ)",
+    1
+  ],
+  [
+    "Energy (kcal)",
+    1
+  ],
+  [
+    "Fat (g)",
+    1
+  ],
+  [
+    "Saturated Fat (g)",
+    1
+  ],
+  [
+    "Carbohydrates (g)",
+    1
+  ],
+  [
+    "Sugars (g)",
+    1
+  ],
+  [
+    "Protein (g)",
+    1
+  ],
+  [
+    "Salt (g)",
+    1
+  ],
+  [
+    "Fiber (g)",
+    1
+  ],
+  [
+    "Additives (E-numbers)",
+    1
+  ],
+  [
+    "Sweetener Type",
+    1
+  ],
+  [
+    "Cocoa Solids %",
+    1
+  ],
+  [
+    "Milk Solids %",
+    1
+  ],
+  [
+    "GMO Status",
+    1
+  ],
+  [
+    "May Contain",
+    1
+  ],
+  [
+    "Water Activity (aʷ)",
+    1
+  ],
+  [
+    "GTIN / Barcode",
+    1
+  ],
+  [
+    "Primary Packaging",
+    1
+  ],
+  [
+    "Inner Pack Config",
+    1
+  ],
+  [
+    "Pallet Config",
+    1
+  ],
+  [
+    "Sample MOQ",
+    1
+  ],
+  [
+    "Sample Lead Time",
+    1
+  ],
+  [
+    "Sample lead time reference — confirmed by sales in the sample quote; do not use \"approx. X weeks\".",
+    1
+  ],
+  [
+    "Sample Price",
+    1
+  ],
+  [
+    "flow-wrap, foil, box, bag, jar",
+    1
+  ],
+  [
+    "e.g. 12 units per display box",
+    1
+  ],
+  [
+    "e.g. 48 cases/layer × 5 layers",
+    1
+  ],
+  [
+    "GMO",
+    1
+  ],
+  [
+    "Non-GMO",
+    1
+  ],
+  [
+    "GMO-Free Certified",
+    1
+  ],
+  [
+    "Chinese",
+    1
+  ],
+  [
+    "Arabic",
+    1
+  ],
+  [
+    "Korean",
+    1
+  ],
+  [
+    "Japanese",
+    1
+  ],
+  [
+    "Traditional Chinese",
+    1
+  ],
+  [
+    "Thai",
+    1
+  ],
+  [
+    "Vietnamese",
+    1
+  ],
+  [
+    "Indonesian",
+    1
+  ],
+  [
+    "Malay",
+    1
+  ],
+  [
+    "Leave empty to use default name",
+    1
+  ],
+  [
+    "AI Translate All",
+    1
+  ],
+  [
+    "Translation saved successfully",
+    1
+  ],
+  [
+    "Translation completed on server; loaded latest translations from database",
+    1
+  ],
+  [
+    "Generating product data...",
+    1
+  ],
+  [
+    "Describe your product",
+    1
+  ],
+  [
+    "e.g., 150g milk chocolate bar with almonds, vegan, 12-month shelf life, individually flow-wrapped, 24 pieces per display box, halal certified...",
+    1
+  ],
+  [
+    "Enter a product description on the left and click Generate to see AI-filled fields here.",
+    1
+  ],
+  [
+    "Basic Information",
+    1
+  ],
+  [
+    "Dimensions",
+    1
+  ],
+  [
+    "Save Product",
+    1
+  ],
+  [
+    "AI generation failed. Try a more detailed description.",
+    1
+  ],
+  [
+    "Market Profile",
+    1
+  ],
+  [
+    "Cost Stack",
+    1
+  ],
+  [
+    "Market Code",
+    1
+  ],
+  [
+    "Label Template ID",
+    1
+  ],
+  [
+    "Destination Countries",
+    1
+  ],
+  [
+    "Required Cert Keywords",
+    1
+  ],
+  [
+    "Comma-separated",
+    1
+  ],
+  [
+    "Save Market Profile",
+    1
+  ],
+  [
+    "Reload",
+    1
+  ],
+  [
+    "Save Cost Stack",
+    1
+  ],
+  [
+    "Market profile saved.",
+    1
+  ],
+  [
+    "Cost stack saved.",
+    1
+  ],
+  [
+    "Failed to load market data.",
+    1
+  ],
+  [
+    "Material",
+    1
+  ],
+  [
+    "Labor",
+    1
+  ],
+  [
+    "Logistics",
+    1
+  ],
+  [
+    "Translation is taking longer than usual. Please wait or try again later.",
+    1
+  ],
+  [
+    "Content Management",
+    1
+  ],
+  [
+    "Manage blog posts and customer case studies.",
+    1
+  ],
+  [
+    "Add Content",
+    1
+  ],
+  [
+    "Blog Posts",
+    1
+  ],
+  [
+    "Case Studies",
+    1
+  ],
+  [
+    "Category/Industry",
+    1
+  ],
+  [
+    "No content found",
+    1
+  ],
+  [
+    "Edit Content",
+    1
+  ],
+  [
+    "Create Content",
+    1
+  ],
+  [
+    "Content Type",
+    1
+  ],
+  [
+    "Optional. 1200×630 recommended for social previews.",
+    1
+  ],
+  [
+    "URL or upload",
+    1
+  ],
+  [
+    "Read Time (min)",
+    1
+  ],
+  [
+    "Tags (comma separated)",
+    1
+  ],
+  [
+    "Author Name",
+    1
+  ],
+  [
+    "Author Title",
+    1
+  ],
+  [
+    "Author Avatar URL",
+    1
+  ],
+  [
+    "Author Bio",
+    1
+  ],
+  [
+    "Client Name",
+    1
+  ],
+  [
+    "Industry",
+    1
+  ],
+  [
+    "Images (comma separated URLs)",
+    1
+  ],
+  [
+    "Topic / Description",
+    1
+  ],
+  [
+    "Describe the topic or key points (any language). AI will draft in Chinese first...",
+    1
+  ],
+  [
+    "AI Generating...",
+    1
+  ],
+  [
+    "Start writing...",
+    1
+  ],
+  [
+    "Case Content",
+    1
+  ],
+  [
+    "Services (comma separated)",
+    1
+  ],
+  [
+    "Challenge",
+    1
+  ],
+  [
+    "Solution",
+    1
+  ],
+  [
+    "Title is required",
+    1
+  ],
+  [
+    "Content updated successfully",
+    1
+  ],
+  [
+    "Content created successfully",
+    1
+  ],
+  [
+    "Confirm delete this content?",
+    1
+  ],
+  [
+    "Content deleted successfully",
+    1
+  ],
+  [
+    "Delete failed",
+    1
+  ],
+  [
+    "AI content generation failed",
+    1
+  ],
+  [
+    "AI Generate Content",
+    1
+  ],
+  [
+    "Enter a topic and click Generate Chinese Draft. Review it, then publish with full translations.",
+    1
+  ],
+  [
+    "Write your brief in any language. AI outputs a Chinese draft for review first.",
+    1
+  ],
+  [
+    "Generate Chinese Draft",
+    1
+  ],
+  [
+    "Review and edit the Chinese draft below. On publish, all locales will be translated and synced to the public blog.",
+    1
+  ],
+  [
+    "Select text in title, excerpt, or body, then press Ctrl+K (Mac: ⌘K) for AI edit with diff preview — Accept or Reject.",
+    1
+  ],
+  [
+    "Edit selection",
+    1
+  ],
+  [
+    "Describe how to change the selection…",
+    1
+  ],
+  [
+    "Selection",
+    1
+  ],
+  [
+    "Generate edit",
+    1
+  ],
+  [
+    "Before",
+    1
+  ],
+  [
+    "After",
+    1
+  ],
+  [
+    "AI revision failed — try rephrasing",
+    1
+  ],
+  [
+    "Confirm & Publish",
+    1
+  ],
+  [
+    "Translating & publishing...",
+    1
+  ],
+  [
+    "Regenerate",
+    1
+  ],
+  [
+    "Article translated and published",
+    1
+  ],
+  [
+    "AI targeted revision",
+    1
+  ],
+  [
+    "Select text in the body or pick a scope, then describe the fix (Cursor-style partial edit).",
+    1
+  ],
+  [
+    "e.g. Shorten the title; add EU compliance details in paragraph 2; use a more professional tone…",
+    1
+  ],
+  [
+    "Selected excerpt",
+    1
+  ],
+  [
+    "Revision scope",
+    1
+  ],
+  [
+    "Body",
+    1
+  ],
+  [
+    "Author",
+    1
+  ],
+  [
+    "Category / tags",
+    1
+  ],
+  [
+    "Apply revision",
+    1
+  ],
+  [
+    "AI revision applied",
+    1
+  ],
+  [
+    "AI revision failed — try rephrasing your instruction",
+    1
+  ],
+  [
+    "Failed to load content",
+    1
+  ],
+  [
+    "AI Translate",
+    1
+  ],
+  [
+    "Leave empty to use default title",
+    1
+  ],
+  [
+    "Leave empty to use default excerpt",
+    1
+  ],
+  [
+    "Leave empty to use default content",
+    1
+  ],
+  [
+    "Leave empty to use default author name",
+    1
+  ],
+  [
+    "Leave empty to use default author title",
+    1
+  ],
+  [
+    "Leave empty to use default author bio",
+    1
+  ],
+  [
+    "Manage product categories with multilingual names, aliases, and descriptions.",
+    1
+  ],
+  [
+    "Add Category",
+    1
+  ],
+  [
+    "Edit Category",
+    1
+  ],
+  [
+    "Create Category",
+    1
+  ],
+  [
+    "No categories found",
+    1
+  ],
+  [
+    "Icon",
+    1
+  ],
+  [
+    "Category name, alias, and description are maintained here only. Chinese is the source locale.",
+    1
+  ],
+  [
+    "Chinese category name is required",
+    1
+  ],
+  [
+    "Slug is required",
+    1
+  ],
+  [
+    "Delete this category?",
+    1
+  ],
+  [
+    "Category created",
+    1
+  ],
+  [
+    "Category updated",
+    1
+  ],
+  [
+    "Category deleted",
+    1
+  ],
+  [
+    "Failed to load categories",
+    1
+  ],
+  [
+    "Manage factory certifications (HACCP, ISO22000, BRC, HALAL, etc.)",
+    1
+  ],
+  [
+    "Add Certification",
+    1
+  ],
+  [
+    "Loading certifications...",
+    1
+  ],
+  [
+    "No certifications found.",
+    1
+  ],
+  [
+    "Certification",
+    1
+  ],
+  [
+    "Edit Certification",
+    1
+  ],
+  [
+    "Create Certification",
+    1
+  ],
+  [
+    "Certificate URL",
+    1
+  ],
+  [
+    "Badge URL",
+    1
+  ],
+  [
+    "Certification name is required.",
+    1
+  ],
+  [
+    "Delete this certification?",
+    1
+  ],
+  [
+    "Certification created successfully.",
+    1
+  ],
+  [
+    "Certification updated successfully.",
+    1
+  ],
+  [
+    "Certification deleted successfully.",
+    1
+  ],
+  [
+    "Manage company KYB verification, credit limits, and pricing tiers.",
+    1
+  ],
+  [
+    "Back to Companies",
+    1
+  ],
+  [
+    "Loading company details...",
+    1
+  ],
+  [
+    "Search by name...",
+    1
+  ],
+  [
+    "Loading companies...",
+    1
+  ],
+  [
+    "No companies found.",
+    1
+  ],
+  [
+    "Verify",
+    1
+  ],
+  [
+    "Company Details",
+    1
+  ],
+  [
+    "Registration Number",
+    1
+  ],
+  [
+    "Address",
+    1
+  ],
+  [
+    "Website",
+    1
+  ],
+  [
+    "Business License",
+    1
+  ],
+  [
+    "View Document",
+    1
+  ],
+  [
+    "Reviewed By",
+    1
+  ],
+  [
+    "KYB Notes",
+    1
+  ],
+  [
+    "Credit & Pricing",
+    1
+  ],
+  [
+    "Linked Users",
+    1
+  ],
+  [
+    "No linked users",
+    1
+  ],
+  [
+    "Status Management",
+    1
+  ],
+  [
+    "KYB Status",
+    1
+  ],
+  [
+    "Company status updated successfully.",
+    1
+  ],
+  [
+    "Manage trade transactions, documents, and status.",
+    1
+  ],
+  [
+    "Back to Trades",
+    1
+  ],
+  [
+    "Loading trade details...",
+    1
+  ],
+  [
+    "Search by transaction ID...",
+    1
+  ],
+  [
+    "All Types",
+    1
+  ],
+  [
+    "In Progress",
+    1
+  ],
+  [
+    "Import",
+    1
+  ],
+  [
+    "Loading trades...",
+    1
+  ],
+  [
+    "No trades found.",
+    1
+  ],
+  [
+    "Delivery Terms",
+    1
+  ],
+  [
+    "Documents",
+    1
+  ],
+  [
+    "Document Name",
+    1
+  ],
+  [
+    "Trade status updated successfully.",
+    1
+  ],
+  [
+    "Order ID",
+    1
+  ],
+  [
+    "No documents yet.",
+    1
+  ],
+  [
+    "Not created yet.",
+    1
+  ],
+  [
+    "AI Assistant",
+    1
+  ],
+  [
+    "Use AI to assist with trade documents.",
+    1
+  ],
+  [
+    "Collapse",
+    1
+  ],
+  [
+    "Expand",
+    1
+  ],
+  [
+    "Tools Called",
+    1
+  ],
+  [
+    "AI thinking...",
+    1
+  ],
+  [
+    "Type a message, press Enter to send...",
+    1
+  ],
+  [
+    "AI generating...",
+    1
+  ],
+  [
+    "AI Generate Doc",
+    1
+  ],
+  [
+    "Generate {type}",
+    1
+  ],
+  [
+    "Context",
+    1
+  ],
+  [
+    "Enter context for AI document generation...",
+    1
+  ],
+  [
+    "Generate",
+    1
+  ],
+  [
+    "Stream interrupted",
+    1
+  ],
+  [
+    "AI generation failed",
+    1
+  ],
+  [
+    "Document generated successfully",
+    1
+  ],
+  [
+    "Generate a {type} for this trade transaction.",
+    1
+  ],
+  [
+    "Export XLSX",
+    1
+  ],
+  [
+    "Quick Document Generation",
+    1
+  ],
+  [
+    "Create draft trade documents with one click.",
+    1
+  ],
+  [
+    "Settlements",
+    1
+  ],
+  [
+    "Add Settlement",
+    1
+  ],
+  [
+    "No settlement milestones.",
+    1
+  ],
+  [
+    "Payment Method",
+    1
+  ],
+  [
+    "Amount Due",
+    1
+  ],
+  [
+    "Compliance",
+    1
+  ],
+  [
+    "No compliance requirements.",
+    1
+  ],
+  [
+    "Requirement",
+    1
+  ],
+  [
+    "Manage price lists and product-specific pricing rules.",
+    1
+  ],
+  [
+    "Price Lists",
+    1
+  ],
+  [
+    "Product Pricing",
+    1
+  ],
+  [
+    "Create Price List",
+    1
+  ],
+  [
+    "No price lists found.",
+    1
+  ],
+  [
+    "No pricing rules set",
+    1
+  ],
+  [
+    "Edit Price List",
+    1
+  ],
+  [
+    "Price List Name",
+    1
+  ],
+  [
+    "Delete this price list?",
+    1
+  ],
+  [
+    "Select Product",
+    1
+  ],
+  [
+    "Choose a product...",
+    1
+  ],
+  [
+    "Pricing Rules",
+    1
+  ],
+  [
+    "Add Rule",
+    1
+  ],
+  [
+    "Min Qty",
+    1
+  ],
+  [
+    "Add Pricing Rule",
+    1
+  ],
+  [
+    "Select a price list...",
+    1
+  ],
+  [
+    "Delete this pricing rule?",
+    1
+  ],
+  [
+    "Manage OEM project lifecycle from inquiry to delivery.",
+    1
+  ],
+  [
+    "Back to OEM Projects",
+    1
+  ],
+  [
+    "Loading project details...",
+    1
+  ],
+  [
+    "Search by project ID...",
+    1
+  ],
+  [
+    "Assigned",
+    1
+  ],
+  [
+    "Loading projects...",
+    1
+  ],
+  [
+    "No projects found.",
+    1
+  ],
+  [
+    "Target Market",
+    1
+  ],
+  [
+    "Step Tracker",
+    1
+  ],
+  [
+    "Requirements",
+    1
+  ],
+  [
+    "Flavor",
+    1
+  ],
+  [
+    "Shape",
+    1
+  ],
+  [
+    "Packaging",
+    1
+  ],
+  [
+    "Requirements Notes",
+    1
+  ],
+  [
+    "Samples",
+    1
+  ],
+  [
+    "Sample ID",
+    1
+  ],
+  [
+    "No samples yet",
+    1
+  ],
+  [
+    "Project status updated successfully.",
+    1
+  ],
+  [
+    "Back to Users",
+    1
+  ],
+  [
+    "Loading user data...",
+    1
+  ],
+  [
+    "User Profile",
+    1
+  ],
+  [
+    "Personal details and current status.",
+    1
+  ],
+  [
+    "Full name",
+    1
+  ],
+  [
+    "Email address",
+    1
+  ],
+  [
+    "Admin Actions",
+    1
+  ],
+  [
+    "Account Status",
+    1
+  ],
+  [
+    "User status updated successfully.",
+    1
+  ],
+  [
+    "Edit Customer Profile",
+    1
+  ],
+  [
+    "Save Profile",
+    1
+  ],
+  [
+    "User profile updated successfully.",
+    1
+  ],
+  [
+    "Role Management",
+    1
+  ],
+  [
+    "Update Role",
+    1
+  ],
+  [
+    "User role updated successfully.",
+    1
+  ],
+  [
+    "Danger Zone",
+    1
+  ],
+  [
+    "Delete User",
+    1
+  ],
+  [
+    "Track and manage product stock levels, values, and adjustments.",
+    1
+  ],
+  [
+    "Total Products",
+    1
+  ],
+  [
+    "Filter by stock status",
+    1
+  ],
+  [
+    "Filter by category",
+    1
+  ],
+  [
+    "All Stock",
+    1
+  ],
+  [
+    "All Categories",
+    1
+  ],
+  [
+    "SKU",
+    1
+  ],
+  [
+    "Unit Value",
+    1
+  ],
+  [
+    "Loading inventory...",
+    1
+  ],
+  [
+    "No inventory data found.",
+    1
+  ],
+  [
+    "History",
+    1
+  ],
+  [
+    "Current Stock",
+    1
+  ],
+  [
+    "New Stock",
+    1
+  ],
+  [
+    "Adjustment Type",
+    1
+  ],
+  [
+    "Set To",
+    1
+  ],
+  [
+    "Add",
+    1
+  ],
+  [
+    "Subtract",
+    1
+  ],
+  [
+    "Restock",
+    1
+  ],
+  [
+    "Correction",
+    1
+  ],
+  [
+    "Damage/Loss",
+    1
+  ],
+  [
+    "Customer Return",
+    1
+  ],
+  [
+    "Inventory Audit",
+    1
+  ],
+  [
+    "Other",
+    1
+  ],
+  [
+    "Stock History",
+    1
+  ],
+  [
+    "{from} → {to}",
+    1
+  ],
+  [
+    "No adjustment history found.",
+    1
+  ],
+  [
+    "Select All",
+    1
+  ],
+  [
+    "{count} selected",
+    1
+  ],
+  [
+    "Export Selected",
+    1
+  ],
+  [
+    "Import XLSX",
+    1
+  ],
+  [
+    "Import Products from XLSX",
+    1
+  ],
+  [
+    "Click or drag XLSX file here",
+    1
+  ],
+  [
+    "Preview Import Data",
+    1
+  ],
+  [
+    "Apply Import",
+    1
+  ],
+  [
+    "Importing...",
+    1
+  ],
+  [
+    "Column Mapping",
+    1
+  ],
+  [
+    "AI Suggested Mapping",
+    1
+  ],
+  [
+    "Image URLs detected - will be auto-uploaded on import",
+    1
+  ],
+  [
+    "Errors",
+    1
+  ],
+  [
+    "Please select an XLSX file",
+    1
+  ],
+  [
+    "Download Template",
+    1
+  ],
+  [
+    "Import complete: {created} created, {updated} updated, {errors} errors",
+    1
+  ],
+  [
+    "Select items to export",
+    1
+  ],
+  [
+    "Clear filters",
+    1
+  ],
+  [
+    "Parsing file...",
+    1
+  ],
+  [
+    "Batch Edit",
+    1
+  ],
+  [
+    "Batch Edit Products",
+    1
+  ],
+  [
+    "Editing {count} products",
+    1
+  ],
+  [
+    "Field",
+    1
+  ],
+  [
+    "Apply Changes",
+    1
+  ],
+  [
+    "Applying...",
+    1
+  ],
+  [
+    "Updated {updated}, {errors} errors",
+    1
+  ],
+  [
+    "Select a field...",
+    1
+  ],
+  [
+    "Base Price",
+    1
+  ],
+  [
+    "Halal Certified",
+    1
+  ],
+  [
+    "OEM Available",
+    1
+  ],
+  [
+    "Batch Delete",
+    1
+  ],
+  [
+    "Confirm Batch Delete",
+    1
+  ],
+  [
+    "Are you sure you want to delete {count} selected products? This action cannot be undone.",
+    1
+  ],
+  [
+    "{deleted} deleted, {errors} errors",
+    1
+  ],
+  [
+    "... and {n} more rows",
+    1
+  ],
+  [
+    "inventory",
+    1
+  ],
+  [
+    "SKU,Product Name,Stock,Min Stock,Status,Location,Batch,Expiry Date",
+    1
+  ],
+  [
+    "Warehouses",
+    1
+  ],
+  [
+    "Transfers",
+    1
+  ],
+  [
+    "Add Warehouse",
+    1
+  ],
+  [
+    "No warehouses.",
+    1
+  ],
+  [
+    "No transfers.",
+    1
+  ],
+  [
+    "Update Stock",
+    1
+  ],
+  [
+    "Create Transfer",
+    1
+  ],
+  [
+    "Transfer #",
+    1
+  ],
+  [
+    "From Warehouse",
+    1
+  ],
+  [
+    "To Warehouse",
+    1
+  ],
+  [
+    "Manage order shipments, tracking, and delivery status.",
+    1
+  ],
+  [
+    "New Shipment",
+    1
+  ],
+  [
+    "Search by tracking number or order...",
+    1
+  ],
+  [
+    "Tracking",
+    1
+  ],
+  [
+    "ETA",
+    1
+  ],
+  [
+    "Loading shipments...",
+    1
+  ],
+  [
+    "No shipments found.",
+    1
+  ],
+  [
+    "Create Shipment",
+    1
+  ],
+  [
+    "Edit Shipment",
+    1
+  ],
+  [
+    "Estimated Delivery",
+    1
+  ],
+  [
+    "Actual Delivery",
+    1
+  ],
+  [
+    "Shipment Details",
+    1
+  ],
+  [
+    "Tracking History",
+    1
+  ],
+  [
+    "From Date",
+    1
+  ],
+  [
+    "To Date",
+    1
+  ],
+  [
+    "Tracking #,Order,Carrier,Destination,Status,ETA,Delivered",
+    1
+  ],
+  [
+    "shipments",
+    1
+  ],
+  [
+    "Dispatch",
+    1
+  ],
+  [
+    "Shipment dispatched.",
+    1
+  ],
+  [
+    "Create fulfillments from the order detail page.",
+    1
+  ],
+  [
+    "Add Event",
+    1
+  ],
+  [
+    "Event Type",
+    1
+  ],
+  [
+    "Loading timeline...",
+    1
+  ],
+  [
+    "Trade BOL Tracking",
+    1
+  ],
+  [
+    "Manage trade bill-of-lading and cross-border logistics.",
+    1
+  ],
+  [
+    "New BOL",
+    1
+  ],
+  [
+    "Trade ID",
+    1
+  ],
+  [
+    "Review and process customer return requests.",
+    1
+  ],
+  [
+    "No return requests.",
+    1
+  ],
+  [
+    "Return ID",
+    1
+  ],
+  [
+    "Receive",
+    1
+  ],
+  [
+    "Reject Return",
+    1
+  ],
+  [
+    "Rejection reason",
+    1
+  ],
+  [
+    "Return approved.",
+    1
+  ],
+  [
+    "Return received.",
+    1
+  ],
+  [
+    "Refund processed.",
+    1
+  ],
+  [
+    "Return rejected.",
+    1
+  ],
+  [
+    "Manage invoices, proforma invoices, and payment tracking.",
+    1
+  ],
+  [
+    "Create Invoice",
+    1
+  ],
+  [
+    "Search by invoice number or customer...",
+    1
+  ],
+  [
+    "Date From",
+    1
+  ],
+  [
+    "Date To",
+    1
+  ],
+  [
+    "Loading invoices...",
+    1
+  ],
+  [
+    "No invoices found.",
+    1
+  ],
+  [
+    "Edit Invoice",
+    1
+  ],
+  [
+    "Invoice Number",
+    1
+  ],
+  [
+    "Paid Amount",
+    1
+  ],
+  [
+    "Paid: {currency} {amount}",
+    1
+  ],
+  [
+    "Invoice Date",
+    1
+  ],
+  [
+    "Invoice Preview",
+    1
+  ],
+  [
+    "Print",
+    1
+  ],
+  [
+    "Bill To",
+    1
+  ],
+  [
+    "INVOICE",
+    1
+  ],
+  [
+    "PROFORMA INVOICE",
+    1
+  ],
+  [
+    "TAX INVOICE",
+    1
+  ],
+  [
+    "CREDIT NOTE",
+    1
+  ],
+  [
+    "Invoice #,Order,Customer,Amount,Paid,Status,Date,Due Date",
+    1
+  ],
+  [
+    "invoices",
+    1
+  ],
+  [
+    "From Order",
+    1
+  ],
+  [
+    "Export DOCX",
+    1
+  ],
+  [
+    "Staff Management",
+    1
+  ],
+  [
+    "View and manage staff members, their roles, and activity.",
+    1
+  ],
+  [
+    "Loading staff...",
+    1
+  ],
+  [
+    "Expand user details",
+    1
+  ],
+  [
+    "No staff members found.",
+    1
+  ],
+  [
+    "Last Login",
+    1
+  ],
+  [
+    "Never",
+    1
+  ],
+  [
+    "Loading activity...",
+    1
+  ],
+  [
+    "No recent activity.",
+    1
+  ],
+  [
+    "Details",
+    1
+  ],
+  [
+    "Track all system activity and changes across the platform.",
+    1
+  ],
+  [
+    "Search by user, entity type, or ID...",
+    1
+  ],
+  [
+    "All Entity Types",
+    1
+  ],
+  [
+    "All Actions",
+    1
+  ],
+  [
+    "Filter by entity type",
+    1
+  ],
+  [
+    "Filter by action",
+    1
+  ],
+  [
+    "Status Change",
+    1
+  ],
+  [
+    "Entity ID",
+    1
+  ],
+  [
+    "IP Address",
+    1
+  ],
+  [
+    "Loading audit log...",
+    1
+  ],
+  [
+    "No audit log entries found.",
+    1
+  ],
+  [
+    "System Settings",
+    1
+  ],
+  [
+    "Configure platform settings and preferences.",
+    1
+  ],
+  [
+    "Loading settings...",
+    1
+  ],
+  [
+    "No settings found for this category.",
+    1
+  ],
+  [
+    "Setting saved successfully.",
+    1
+  ],
+  [
+    "Notifications",
+    1
+  ],
+  [
+    "Certificate of Origin",
+    1
+  ],
+  [
+    "PI No.",
+    1
+  ],
+  [
+    "CI No.",
+    1
+  ],
+  [
+    "Contract No.",
+    1
+  ],
+  [
+    "PL No.",
+    1
+  ],
+  [
+    "Cert No.",
+    1
+  ],
+  [
+    "Buyer Name",
+    1
+  ],
+  [
+    "Seller Name",
+    1
+  ],
+  [
+    "Exporter Name",
+    1
+  ],
+  [
+    "Importer Name",
+    1
+  ],
+  [
+    "Bank Details",
+    1
+  ],
+  [
+    "PI Reference",
+    1
+  ],
+  [
+    "Shipper",
+    1
+  ],
+  [
+    "Consignee",
+    1
+  ],
+  [
+    "Notify Party",
+    1
+  ],
+  [
+    "Vessel/Voyage",
+    1
+  ],
+  [
+    "Freight Terms",
+    1
+  ],
+  [
+    "Goods Description",
+    1
+  ],
+  [
+    "Gross Weight (kg)",
+    1
+  ],
+  [
+    "Measurement (CBM)",
+    1
+  ],
+  [
+    "No. of Packages",
+    1
+  ],
+  [
+    "Special Terms",
+    1
+  ],
+  [
+    "Total Packages",
+    1
+  ],
+  [
+    "Total Gross Weight (kg)",
+    1
+  ],
+  [
+    "Total Net Weight (kg)",
+    1
+  ],
+  [
+    "Total Volume (CBM)",
+    1
+  ],
+  [
+    "Shipping Mark",
+    1
+  ],
+  [
+    "Country of Origin",
+    1
+  ],
+  [
+    "Destination Country",
+    1
+  ],
+  [
+    "FTA Type (e.g. RCEP, FORM E)",
+    1
+  ],
+  [
+    "Issuing Authority",
+    1
+  ],
+  [
+    "Batch Number",
+    1
+  ],
+  [
+    "Production Date",
+    1
+  ],
+  [
+    "Expiry Date",
+    1
+  ],
+  [
+    "Inspection Result",
+    1
+  ],
+  [
+    "Order #",
+    1
+  ],
+  [
+    "Payment must be confirmed (paid or partial) before moving to execution stages (confirmed, production, shipped, delivered).",
+    1
+  ],
+  [
+    "Order confirmed. Inform customer and proceed to production.",
+    1
+  ],
+  [
+    "Order is in production. Ensure materials are available.",
+    1
+  ],
+  [
+    "Order shipped. Update tracking information.",
+    1
+  ],
+  [
+    "Order delivered. Request feedback from customer.",
+    1
+  ],
+  [
+    "Order cancelled. Process refund if payment was made.",
+    1
+  ],
+  [
+    "Translation Management",
+    1
+  ],
+  [
+    "Add Translation",
+    1
+  ],
+  [
+    "Search key or value...",
+    1
+  ],
+  [
+    "All Groups",
+    1
+  ],
+  [
+    "All Locales",
+    1
+  ],
+  [
+    "Filter",
+    1
+  ],
+  [
+    "No translations found",
+    1
+  ],
+  [
+    "e.g. errors.my_new_code",
+    1
+  ],
+  [
+    "Failed to load translations",
+    1
+  ],
+  [
+    "Failed to update translation",
+    1
+  ],
+  [
+    "Failed to delete translation",
+    1
+  ],
+  [
+    "Failed to create translation",
+    1
+  ],
+  [
+    "Failed to export translations",
+    1
+  ],
+  [
+    "AI Applications",
+    1
+  ],
+  [
+    "AI-powered product recommendations, compliance checks, and intelligent search.",
+    1
+  ],
+  [
+    "AI features panel coming soon.",
+    1
+  ],
+  [
+    "Clear Chat",
+    1
+  ],
+  [
+    "Start a conversation with the AI Agent",
+    1
+  ],
+  [
+    "Stop",
+    1
+  ],
+  [
+    "Pending Approvals",
+    1
+  ],
+  [
+    "No pending approvals",
+    1
+  ],
+  [
+    "Tool Call History",
+    1
+  ],
+  [
+    "No tool calls yet",
+    1
+  ],
+  [
+    "Configuration",
+    1
+  ],
+  [
+    "Model",
+    1
+  ],
+  [
+    "Temperature",
+    1
+  ],
+  [
+    "Agent Mode",
+    1
+  ],
+  [
+    "B2B Coordinator",
+    1
+  ],
+  [
+    "Plan-Execute-Replan",
+    1
+  ],
+  [
+    "Trade Assistant",
+    1
+  ],
+  [
+    "Chatbot (optional order)",
+    1
+  ],
+  [
+    "Product Recommend",
+    1
+  ],
+  [
+    "AI Search",
+    1
+  ],
+  [
+    "Translate",
+    1
+  ],
+  [
+    "Analyze Inquiry",
+    1
+  ],
+  [
+    "Generate Quotation",
+    1
+  ],
+  [
+    "Show me top selling products",
+    1
+  ],
+  [
+    "Analyze order trends this month",
+    1
+  ],
+  [
+    "Recommend pricing for candy products",
+    1
+  ],
+  [
+    "Check inventory alerts",
+    1
+  ],
+  [
+    "[Stream stopped]",
+    1
+  ],
+  [
+    "[Tool completed]",
+    1
+  ],
+  [
+    "Order context",
+    1
+  ],
+  [
+    "No order (general chat)",
+    1
+  ],
+  [
+    "Select an order to inject line items and totals into Chatbot or Plan-Execute-Replan.",
+    1
+  ],
+  [
+    "How to use AI",
+    1
+  ],
+  [
+    "Got it",
+    1
+  ],
+  [
+    "AI import content",
+    1
+  ],
+  [
+    "1. Enter a topic or brief (any language) on the left.\n2. Click Generate Chinese Draft for a zh-first article.\n3. Review and edit the draft on the right.\n4. Select text and press Ctrl+K (Mac: ⌘K) for inline AI edits.\n5. Click Confirm & Publish to translate all locales and publish to the public blog.",
+    1
+  ],
+  [
+    "Ctrl+K inline edit",
+    1
+  ],
+  [
+    "1. Select text in title, excerpt, or body.\n2. Press Ctrl+K (Mac: ⌘K) to open the floating editor.\n3. Describe the change (e.g. add compliance details, shorten title).\n4. Preview before/after diff — Accept or Reject.\n5. Repeat until satisfied, then publish.",
+    1
+  ],
+  [
+    "Modal AI generate",
+    1
+  ],
+  [
+    "While editing content, enter a topic and click Generate with AI to fill title, body, etc. (Chinese draft, no auto-translate).\nUse AI Translate in the translations section for other locales after saving.",
+    1
+  ],
+  [
+    "AI translate content",
+    1
+  ],
+  [
+    "When editing saved content, click AI Translate under Translations.\nSource fields (usually Chinese) are translated to en/ko/ar/ja/th/vi/id/ms.\nReview each locale tab and save.",
+    1
+  ],
+  [
+    "AI import product",
+    1
+  ],
+  [
+    "1. Describe the product in natural language (specs, ingredients, packaging, certs).\n2. Choose input language and click Generate with AI.\n3. Review auto-filled fields on the right.\n4. Click Save Product.\nUse AI Translate for other locales after saving.",
+    1
+  ],
+  [
+    "Product AI translate",
+    1
+  ],
+  [
+    "When editing a product, click AI Translate under Translations.\nName, summary, description, ingredients, etc. are translated from the primary locale.\nReview locale tabs before saving.",
+    1
+  ],
+  [
+    "AI console",
+    1
+  ],
+  [
+    "Pick an Agent mode on the right, then chat:\n• Chatbot: Q&A; optional order context.\n• Plan-Execute-Replan / B2B Coordinator / Trade Assistant: streaming agents.\n• Recommend / Search / Translate / Analyze inquiry / Generate quotation: one-shot JSON.\nFor Chatbot, select an order in the sidebar to discuss that order.",
+    1
+  ],
+  [
+    "XLSX AI translate",
+    1
+  ],
+  [
+    "Upload Excel, choose single or batch translate mode.\nAI translates headers or selected column keys — useful for reports and term sheets.\nDownload the result; try a small sample before batch jobs.",
+    1
+  ],
+  [
+    "Trade AI assistant",
+    1
+  ],
+  [
+    "Chat about this trade — documents, compliance, logistics.\nAgent may call trade tools; replies stream in the chat panel.\nUse AI Generate Document below for PI/CI/SC drafts.",
+    1
+  ],
+  [
+    "AI generate trade document",
+    1
+  ],
+  [
+    "Pick document type (PI, CI, SC, etc.) and optional context.\nAI drafts from current trade data and saves to the system.\nAlways verify fields in the document list before sending to customers.",
+    1
+  ],
+  [
+    "Generates a quotation draft from inquiry products and requirements.\nDraft is advisory only — enter official amount and validity in the form below before submitting.",
+    1
+  ],
+  [
+    "AI compliance summary",
+    1
+  ],
+  [
+    "AI summary of inquiry compliance/risk flags when configured.\nFor sales reference only — not a substitute for legal/compliance review.",
+    1
+  ],
+  [
+    "Import AI column mapping",
+    1
+  ],
+  [
+    "After uploading an inventory/product Excel file, AI suggests column → field mappings.\nReview the blue banner and adjust mappings below before confirming import.",
+    1
+  ],
+  [
+    "OEM Management",
+    1
+  ],
+  [
+    "Flows",
+    1
+  ],
+  [
+    "Solutions",
+    1
+  ],
+  [
+    "Projects",
+    1
+  ],
+  [
+    "+ New Flow",
+    1
+  ],
+  [
+    "+ New Solution",
+    1
+  ],
+  [
+    "No flows yet.",
+    1
+  ],
+  [
+    "No solutions yet.",
+    1
+  ],
+  [
+    "No OEM projects yet.",
+    1
+  ],
+  [
+    "Steps",
+    1
+  ],
+  [
+    "Edit Flow",
+    1
+  ],
+  [
+    "New Flow",
+    1
+  ],
+  [
+    "Edit Solution",
+    1
+  ],
+  [
+    "New Solution",
+    1
+  ],
+  [
+    "Title *",
+    1
+  ],
+  [
+    "Status...",
+    1
+  ],
+  [
+    "Quick ODM",
+    1
+  ],
+  [
+    "Full OEM",
+    1
+  ],
+  [
+    "Delete this flow?",
+    1
+  ],
+  [
+    "Delete this solution?",
+    1
+  ],
+  [
+    "Sales Channels",
+    1
+  ],
+  [
+    "Manage marketplace and webstore channels.",
+    1
+  ],
+  [
+    "Add Channel",
+    1
+  ],
+  [
+    "No channels yet.",
+    1
+  ],
+  [
+    "Price Multiplier",
+    1
+  ],
+  [
+    "Marketplace",
+    1
+  ],
+  [
+    "Webstore",
+    1
+  ],
+  [
+    "Distributor",
+    1
+  ],
+  [
+    "Self-fulfill",
+    1
+  ],
+  [
+    "3PL",
+    1
+  ],
+  [
+    "Outbound event notifications.",
+    1
+  ],
+  [
+    "Add Webhook",
+    1
+  ],
+  [
+    "No webhooks configured.",
+    1
+  ],
+  [
+    "Configurations",
+    1
+  ],
+  [
+    "Deliveries",
+    1
+  ],
+  [
+    "Select at least one event.",
+    1
+  ],
+  [
+    "Secret (save now)",
+    1
+  ],
+  [
+    "No delivery logs.",
+    1
+  ],
+  [
+    "HTTP",
+    1
+  ],
+  [
+    "Event Hooks",
+    1
+  ],
+  [
+    "Plugin and internal hook configurations.",
+    1
+  ],
+  [
+    "Add Hook",
+    1
+  ],
+  [
+    "Load",
+    1
+  ],
+  [
+    "No hooks configured.",
+    1
+  ],
+  [
+    "Hooks",
+    1
+  ],
+  [
+    "Executions",
+    1
+  ],
+  [
+    "Event Name",
+    1
+  ],
+  [
+    "Config (JSON)",
+    1
+  ],
+  [
+    "Invalid JSON config.",
+    1
+  ],
+  [
+    "Hook ID",
+    1
+  ],
+  [
+    "No events logged.",
+    1
+  ],
+  [
+    "No executions found.",
+    1
+  ],
+  [
+    "Payload",
+    1
+  ],
+  [
+    "Buyer Organizations",
+    1
+  ],
+  [
+    "B2B org credit limits and approval tiers.",
+    1
+  ],
+  [
+    "Add Organization",
+    1
+  ],
+  [
+    "No organizations.",
+    1
+  ],
+  [
+    "No members.",
+    1
+  ],
+  [
+    "Add Member",
+    1
+  ],
+  [
+    "Organization",
+    1
+  ],
+  [
+    "Select organization…",
+    1
+  ],
+  [
+    "Approval Threshold",
+    1
+  ],
+  [
+    "Buyer",
+    1
+  ],
+  [
+    "Approver",
+    1
+  ],
+  [
+    "Terms",
+    1
+  ],
+  [
+    "Shipping Rates",
+    1
+  ],
+  [
+    "Destination-based freight rate tables. Estimated days are reference values for quoting — not guaranteed transit times.",
+    1
+  ],
+  [
+    "Add Rate",
+    1
+  ],
+  [
+    "No shipping rates.",
+    1
+  ],
+  [
+    "Min Weight (kg)",
+    1
+  ],
+  [
+    "Max Weight (kg)",
+    1
+  ],
+  [
+    "Cost per kg",
+    1
+  ],
+  [
+    "Est. Days",
+    1
+  ],
+  [
+    "Reference transit estimate for internal quoting. Subject to change; confirm at order time.",
+    1
+  ],
+  [
+    "Days",
+    1
+  ],
+  [
+    "Destination country/region tax rates applied at cart checkout.",
+    1
+  ],
+  [
+    "Add Tax Rate",
+    1
+  ],
+  [
+    "No tax rates configured.",
+    1
+  ],
+  [
+    "Country (ISO)",
+    1
+  ],
+  [
+    "Region / State",
+    1
+  ],
+  [
+    "Decimal fraction, e.g. 0.08875 = 8.875%",
+    1
+  ],
+  [
+    "Region",
+    1
+  ],
+  [
+    "Coupons & Gift Cards",
+    1
+  ],
+  [
+    "Promotional codes and prepaid credits.",
+    1
+  ],
+  [
+    "Create Coupon",
+    1
+  ],
+  [
+    "Create Gift Card",
+    1
+  ],
+  [
+    "Gift Cards",
+    1
+  ],
+  [
+    "No coupons.",
+    1
+  ],
+  [
+    "No gift cards.",
+    1
+  ],
+  [
+    "Min Order",
+    1
+  ],
+  [
+    "Starts At",
+    1
+  ],
+  [
+    "Expires At",
+    1
+  ],
+  [
+    "Percentage",
+    1
+  ],
+  [
+    "Fixed Amount",
+    1
+  ],
+  [
+    "Used",
+    1
+  ],
+  [
+    "Initial",
+    1
+  ],
+  [
+    "{total} total",
+    1
+  ],
+  [
+    "Export business reports and AI-translate spreadsheet content.",
+    1
+  ],
+  [
+    "Data Export",
+    1
+  ],
+  [
+    "Download Excel reports. Monetary columns use the selected currency.",
+    1
+  ],
+  [
+    "Export currency",
+    1
+  ],
+  [
+    "Months",
+    1
+  ],
+  [
+    "Order status (optional)",
+    1
+  ],
+  [
+    "Trade status (optional)",
+    1
+  ],
+  [
+    "Product catalog",
+    1
+  ],
+  [
+    "Revenue report",
+    1
+  ],
+  [
+    "Trade transactions",
+    1
+  ],
+  [
+    "Customers",
+    1
+  ],
+  [
+    "Exporting…",
+    1
+  ],
+  [
+    "Download started",
+    1
+  ],
+  [
+    "Export failed",
+    1
+  ],
+  [
+    "AI Spreadsheet Translation",
+    1
+  ],
+  [
+    "Upload an .xlsx file; text cells are translated via Trade Agent (translate_content pipeline).",
+    1
+  ],
+  [
+    "Single language",
+    1
+  ],
+  [
+    "Multiple languages",
+    1
+  ],
+  [
+    "Source language (optional)",
+    1
+  ],
+  [
+    "Target language",
+    1
+  ],
+  [
+    "Target languages",
+    1
+  ],
+  [
+    "Choose .xlsx file",
+    1
+  ],
+  [
+    "Selected: {name}",
+    1
+  ],
+  [
+    "Translate & download",
+    1
+  ],
+  [
+    "Translated file downloaded",
+    1
+  ],
+  [
+    "Translation failed",
+    1
+  ],
+  [
+    "Please select a .xlsx file",
+    1
+  ],
+  [
+    "Select at least one target language",
+    1
+  ],
+  [
+    "For product import with AI column mapping, use Inventory → Import XLSX.",
+    1
+  ],
+  [
+    "Confirm delete?",
+    1
+  ],
+  [
+    "Skip to main content",
+    1
+  ],
+  [
+    "This site works best with JavaScript enabled. Use the links below to continue browsing.",
+    1
+  ],
+  [
+    "Loading…",
+    1
+  ],
+  [
+    "WhatsApp Us",
+    1
+  ],
+  [
+    "Hi, I'm interested in your OEM candy services. Can you provide more information?",
+    1
+  ],
+  [
+    "Hi, I'm interested in \"{product}\"{categoryPart}. Can you provide more information?",
+    1
+  ],
+  [
+    " from {name} category",
+    1
+  ],
+  [
+    "Hi, I'd like to inquire about your OEM candy services.\n\n",
+    1
+  ],
+  [
+    "Please provide more information about pricing and lead times.",
+    1
+  ],
+  [
+    "Page {current} of {total}",
+    1
+  ],
+  [
+    "Showing {from} to {to} of {total} products",
+    1
+  ],
+  [
+    "Pagination",
+    1
+  ],
+  [
+    "Access Denied",
+    1
+  ],
+  [
+    "You do not have permission to access this page.",
+    1
+  ],
+  [
+    "Page Not Found",
+    1
+  ],
+  [
+    "Sorry, the page you are looking for doesn't exist.",
+    1
+  ],
+  [
+    "Back to Home",
+    1
+  ],
+  [
+    "Server Error",
+    1
+  ],
+  [
+    "Something went wrong on our end. Please try again later.",
+    1
+  ],
+  [
+    "Refresh Page",
+    1
+  ],
+  [
+    "An error occurred",
+    1
+  ],
+  [
+    "You do not have permission to access this resource.",
+    1
+  ],
+  [
+    "Something went wrong",
+    1
+  ],
+  [
+    "Go to Home",
+    1
+  ],
+  [
+    "Try Again",
+    1
+  ],
+  [
+    "Try again",
+    1
+  ],
+  [
+    "Something went wrong. Please try again.",
+    1
+  ],
+  [
+    "Could not load data. Please try again.",
+    1
+  ],
+  [
+    "Could not save. Please try again.",
+    1
+  ],
+  [
+    "Could not delete. Please try again.",
+    1
+  ],
+  [
+    "Could not upload. Please try again.",
+    1
+  ],
+  [
+    "Could not cancel. Please try again.",
+    1
+  ],
+  [
+    "Could not confirm. Please try again.",
+    1
+  ],
+  [
+    "Could not assign. Please try again.",
+    1
+  ],
+  [
+    "Could not analyze. Please try again.",
+    1
+  ],
+  [
+    "Could not submit quote. Please try again.",
+    1
+  ],
+  [
+    "Could not generate draft order. Please try again.",
+    1
+  ],
+  [
+    "Could not confirm draft. Please try again.",
+    1
+  ],
+  [
+    "Could not create order. Please try again.",
+    1
+  ],
+  [
+    "Request failed. Please try again.",
+    1
+  ],
+  [
+    "Could not load trade details.",
+    1
+  ],
+  [
+    "Could not update status.",
+    1
+  ],
+  [
+    "Could not confirm document.",
+    1
+  ],
+  [
+    "Could not save document.",
+    1
+  ],
+  [
+    "Could not create user.",
+    1
+  ],
+  [
+    "Could not send. Please try again.",
+    1
+  ],
+  [
+    "Could not submit order request. Please try again.",
+    1
+  ],
+  [
+    "Could not load product.",
+    1
+  ],
+  [
+    "Could not create trade.",
+    1
+  ],
+  [
+    "Could not start trade.",
+    1
+  ],
+  [
+    "Could not process refund.",
+    1
+  ],
+  [
+    "Could not adjust stock.",
+    1
+  ],
+  [
+    "Could not verify company.",
+    1
+  ],
+  [
+    "Could not convert inquiry.",
+    1
+  ],
+  [
+    "Could not confirm payment.",
+    1
+  ],
+  [
+    "Online payment failed. Please try again.",
+    1
+  ],
+  [
+    "Could not load payments.",
+    1
+  ],
+  [
+    "Base price must be greater than zero.",
+    1
+  ],
+  [
+    "Invalid status transition. Allowed: draft → active, active ↔ inactive.",
+    1
+  ],
+  [
+    "Cannot activate a product with zero stock. Please add stock first.",
+    1
+  ],
+  [
+    "Minimum order quantity must be at least 1.",
+    1
+  ],
+  [
+    "Shipping street address is required.",
+    1
+  ],
+  [
+    "Shipping city is required.",
+    1
+  ],
+  [
+    "Target country is required.",
+    1
+  ],
+  [
+    "Company Name is required",
+    1
+  ],
+  [
+    "Contact Person is required",
+    1
+  ],
+  [
+    "Email is required",
+    1
+  ],
+  [
+    "{field} is required",
+    1
+  ],
+  [
+    "Invalid email format",
+    1
+  ],
+  [
+    "Invalid phone format",
+    1
+  ],
+  [
+    "Company Name must be at least {min} characters",
+    1
+  ],
+  [
+    "Contact Person must be at least {min} characters",
+    1
+  ],
+  [
+    "Must be at least {min} characters",
+    1
+  ],
+  [
+    "Invalid format",
+    1
+  ],
+  [
+    "Invalid input",
+    1
+  ],
+  [
+    "N/A",
+    1
+  ],
+  [
+    "—",
+    1
+  ],
+  [
+    "TBD",
+    1
+  ],
+  [
+    "USD",
+    1
+  ],
+  [
+    "FOB",
+    1
+  ],
+  [
+    "global",
+    1
+  ],
+  [
+    "Processing",
+    1
+  ],
+  [
+    "Pending confirmation",
+    1
+  ],
+  [
+    "Pending approval",
+    1
+  ],
+  [
+    "Partially shipped",
+    1
+  ],
+  [
+    "Partially delivered",
+    1
+  ],
+  [
+    "Partially returned",
+    1
+  ],
+  [
+    "Returned",
+    1
+  ],
+  [
+    "Unpaid",
+    1
+  ],
+  [
+    "Partial",
+    1
+  ],
+  [
+    "Contacted",
+    1
+  ],
+  [
+    "Quoted",
+    1
+  ],
+  [
+    "Negotiating",
+    1
+  ],
+  [
+    "Won",
+    1
+  ],
+  [
+    "Lost",
+    1
+  ],
+  [
+    "Open",
+    1
+  ],
+  [
+    "Normal",
+    1
+  ],
+  [
+    "High",
+    1
+  ],
+  [
+    "Low",
+    1
+  ],
+  [
+    "Urgent",
+    1
+  ],
+  [
+    "In progress",
+    1
+  ],
+  [
+    "Picked up",
+    1
+  ],
+  [
+    "Arrived at port",
+    1
+  ],
+  [
+    "Customs cleared",
+    1
+  ],
+  [
+    "Out for delivery",
+    1
+  ],
+  [
+    "DHL",
+    1
+  ],
+  [
+    "FedEx",
+    1
+  ],
+  [
+    "UPS",
+    1
+  ],
+  [
+    "USPS",
+    1
+  ],
+  [
+    "EMS",
+    1
+  ],
+  [
+    "Proforma",
+    1
+  ],
+  [
+    "Credit Note",
+    1
+  ],
+  [
+    "Post",
+    1
+  ],
+  [
+    "Case",
+    1
+  ],
+  [
+    "Origin Certificate",
+    1
+  ],
+  [
+    "Deleted",
+    1
+  ],
+  [
+    "Running",
+    1
+  ],
+  [
+    "Write something…",
+    1
+  ],
+  [
+    "Link URL",
+    1
+  ],
+  [
+    "https://example.com",
+    1
+  ],
+  [
+    "Set",
+    1
+  ],
+  [
+    "Uploading image…",
+    1
+  ],
+  [
+    "Text formatting",
+    1
+  ],
+  [
+    "Bold",
+    1
+  ],
+  [
+    "Italic",
+    1
+  ],
+  [
+    "Underline",
+    1
+  ],
+  [
+    "Strikethrough",
+    1
+  ],
+  [
+    "Heading 1",
+    1
+  ],
+  [
+    "Heading 2",
+    1
+  ],
+  [
+    "Heading 3",
+    1
+  ],
+  [
+    "Paragraph",
+    1
+  ],
+  [
+    "Bullet List",
+    1
+  ],
+  [
+    "Ordered List",
+    1
+  ],
+  [
+    "Blockquote",
+    1
+  ],
+  [
+    "Align Left",
+    1
+  ],
+  [
+    "Align Center",
+    1
+  ],
+  [
+    "Align Right",
+    1
+  ],
+  [
+    "Insert Link",
+    1
+  ],
+  [
+    "Insert Image",
+    1
+  ],
+  [
+    "Upload image",
+    1
+  ],
+  [
+    "Undo",
+    1
+  ],
+  [
+    "Redo",
+    1
+  ],
+  [
+    "Breadcrumb",
+    1
+  ],
+  [
+    "Previous image",
+    1
+  ],
+  [
+    "Next image",
+    1
+  ],
+  [
+    "Zoom image",
+    1
+  ],
+  [
+    "Close lightbox",
+    1
+  ],
+  [
+    "Go to homepage",
+    1
+  ],
+  [
+    "Main navigation",
+    1
+  ],
+  [
+    "Language",
+    1
+  ],
+  [
+    "Switch to dark mode",
+    1
+  ],
+  [
+    "Switch to light mode",
+    1
+  ],
+  [
+    "Contact us on WhatsApp",
+    1
+  ],
+  [
+    "Toggle menu",
+    1
+  ],
+  [
+    "Mobile navigation",
+    1
+  ],
+  [
+    "Close menu",
+    1
+  ],
+  [
+    "Scroll to top",
+    1
+  ],
+  [
+    "Facebook",
+    1
+  ],
+  [
+    "LinkedIn",
+    1
+  ],
+  [
+    "Instagram",
+    1
+  ],
+  [
+    "YouTube",
+    1
+  ],
+  [
+    "Twitter",
+    1
+  ],
+  [
+    "Please check your internet connection and try again.",
+    1
+  ],
+  [
+    "中文",
+    1
+  ],
+  [
+    "한국어",
+    1
+  ],
+  [
+    "العربية",
+    1
+  ],
+  [
+    "日本語",
+    1
+  ],
+  [
+    "ไทย",
+    1
+  ],
+  [
+    "Tiếng Việt",
+    1
+  ],
+  [
+    "Bahasa Indonesia",
+    1
+  ],
+  [
+    "Bahasa Melayu",
+    1
+  ],
+  [
+    "中",
+    1
+  ],
+  [
+    "한",
+    1
+  ],
+  [
+    "ع",
+    1
+  ],
+  [
+    "日",
+    1
+  ],
+  [
+    "ท",
+    1
+  ],
+  [
+    "V",
+    1
+  ],
+  [
+    "MS",
+    1
+  ],
+  [
+    "Clear input",
+    1
+  ],
+  [
+    "MOQ: ",
+    1
+  ],
+  [
+    "{alt} - Image {n}",
+    1
+  ],
+  [
+    "View image {n}",
+    1
+  ],
+  [
+    "{alt} - Thumbnail {n}",
+    1
+  ],
+  [
+    "Factory",
+    1
+  ],
+  [
+    "Production line",
+    1
+  ],
+  [
+    "Quality control",
+    1
+  ],
+  [
+    "Packaging area",
+    1
+  ],
+  [
+    "Warehouse",
+    1
+  ],
+  [
+    "Quality Laboratory",
+    1
+  ],
+  [
+    "Valid until {date}",
+    1
+  ],
+  [
+    "Hazard Analysis Critical Control Point - Food Safety Management System",
+    1
+  ],
+  [
+    "Food Safety Management System Standard",
+    1
+  ],
+  [
+    "British Retail Consortium Global Standard for Food Safety - Grade A",
+    1
+  ],
+  [
+    "Halal Certification for Islamic Market Compliance",
+    1
+  ],
+  [
+    "Our Factory",
+    1
+  ],
+  [
+    "Image column",
+    1
+  ],
+  [
+    "CandyPro OEM",
+    1
+  ],
+  [
+    "B2B Candy Manufacturing",
+    1
+  ],
+  [
+    "+86 123 4567 890",
+    1
+  ],
+  [
+    "Cookie Preferences",
+    1
+  ],
+  [
+    "We use cookies to enhance your browsing experience, analyze site traffic, and personalize content. By clicking 'Accept All', you consent to our use of all cookies. You can choose 'Essential Only' to reject non-essential cookies.",
+    1
+  ],
+  [
+    "Accept All",
+    1
+  ],
+  [
+    "Essential Only",
+    1
+  ],
+  [
+    "Learn more about our Cookie Policy",
+    1
+  ]
+]

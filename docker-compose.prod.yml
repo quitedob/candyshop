@@ -1,0 +1,47 @@
+version: '3.8'
+
+# Production overrides — use: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  postgres:
+    ports: []
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: '1.0'
+
+  redis:
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: '0.5'
+
+  api:
+    environment:
+      - ENVIRONMENT=production
+      - ENABLE_SWAGGER=false
+      - CORS_ORIGINS=${CORS_ORIGINS:?CORS_ORIGINS is required in production}
+      - RATE_LIMIT_PER_MINUTE=${RATE_LIMIT_PER_MINUTE:-120}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - ENABLE_MULTI_WAREHOUSE=false
+      - ENABLE_SUPPLIER_PORTAL=false
+    ports:
+      - "8080:8080"
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: '2.0'
+
+  frontend:
+    environment:
+      - NODE_ENV=production
+      - NUXT_PUBLIC_API_BASE=${NUXT_PUBLIC_API_BASE:-/api/v1}
+      - NUXT_PUBLIC_ENABLE_MULTI_WAREHOUSE=false
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: '1.0'

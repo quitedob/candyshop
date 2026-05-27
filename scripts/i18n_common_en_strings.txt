@@ -1,0 +1,281 @@
+ from {name} category
++86 123 4567 890
+0
+Accept All
+Accepted
+Access Denied
+Actions
+Active
+Admin
+Air Freight
+Align Center
+Align Left
+Align Right
+An error occurred
+Approved
+Arrived at port
+B2B Candy Manufacturing
+Back to Home
+Bahasa Indonesia
+Bahasa Melayu
+Base price must be greater than zero.
+Bill of Lading
+Blockquote
+Bold
+Breadcrumb
+British Retail Consortium Global Standard for Food Safety - Grade A
+Bullet List
+Cancel
+Cancelled
+CandyPro OEM
+Cannot activate a product with zero stock. Please add stock first.
+Case
+Clear input
+Close
+Close lightbox
+Close menu
+Closed
+Commercial Invoice
+Company
+Company Name is required
+Company Name must be at least {min} characters
+Completed
+Confirmed
+Contact Person is required
+Contact Person must be at least {min} characters
+Contact us on WhatsApp
+Contacted
+Contract
+Converted
+Cookie Preferences
+Could not adjust stock.
+Could not analyze. Please try again.
+Could not assign. Please try again.
+Could not cancel. Please try again.
+Could not confirm document.
+Could not confirm draft. Please try again.
+Could not confirm payment.
+Could not confirm. Please try again.
+Could not convert inquiry.
+Could not create order. Please try again.
+Could not create trade.
+Could not create user.
+Could not delete. Please try again.
+Could not generate draft order. Please try again.
+Could not load data. Please try again.
+Could not load payments.
+Could not load product.
+Could not load trade details.
+Could not process refund.
+Could not save document.
+Could not save. Please try again.
+Could not send. Please try again.
+Could not start trade.
+Could not submit order request. Please try again.
+Could not submit quote. Please try again.
+Could not update status.
+Could not upload. Please try again.
+Could not verify company.
+Country
+Credit Note
+Customer
+Customs cleared
+DHL
+Delete
+Deleted
+Delivered
+Delivery
+Dispatched
+Draft
+EMS
+EN
+Edit
+Email
+Email is required
+English
+Error
+Essential Only
+Exception
+Expired
+FOB
+Facebook
+Factory
+Failed
+FedEx
+Food Safety Management System Standard
+Formulation
+Go to Home
+Go to homepage
+Halal Certification for Islamic Market Compliance
+Hazard Analysis Critical Control Point - Food Safety Management System
+Heading 1
+Heading 2
+Heading 3
+Health Certificate
+Hi, I'd like to inquire about your OEM candy services.
+
+
+Hi, I'm interested in "{product}"{categoryPart}. Can you provide more information?
+Hi, I'm interested in your OEM candy services. Can you provide more information?
+High
+ID
+Image column
+In progress
+In transit
+Inactive
+Inquiry
+Insert Image
+Insert Link
+Instagram
+Invalid email format
+Invalid format
+Invalid input
+Invalid phone format
+Invalid status transition. Allowed: draft → active, active ↔ inactive.
+Invoice
+Italic
+Language
+Learn more about our Cookie Policy
+Link URL
+LinkedIn
+Loading...
+Loading…
+Lost
+Low
+MOQ: 
+MS
+Main navigation
+Minimum order quantity must be at least 1.
+Mobile navigation
+Must be at least {min} characters
+N/A
+Name
+Negotiating
+Next
+Next image
+No
+Normal
+Online payment failed. Please try again.
+Open
+Ordered List
+Origin Certificate
+Our Factory
+Out for delivery
+Overdue
+Packaging area
+Packing List
+Page Not Found
+Page {current} of {total}
+Pagination
+Paid
+Paragraph
+Partial
+Partially delivered
+Partially returned
+Partially shipped
+Passed
+Pending
+Pending approval
+Pending confirmation
+Picked up
+Please check your internet connection and try again.
+Please provide more information about pricing and lead times.
+Post
+Previous
+Previous image
+Processing
+Product
+Production
+Production line
+Proforma
+Proforma Invoice
+Quality Laboratory
+Quality control
+Quantity
+Quotation
+Quoted
+Received
+Redo
+Refresh Page
+Refunded
+Rejected
+Remove
+Request failed. Please try again.
+Requested
+Returned
+Running
+Sales Contract
+Sampling
+Save
+Scroll to top
+Sea Freight
+Sent
+Server Error
+Set
+Shipped
+Shipping city is required.
+Shipping street address is required.
+Showing {from} to {to} of {total} products
+Skip to main content
+Something went wrong
+Something went wrong on our end. Please try again later.
+Something went wrong. Please try again.
+Sorry, the page you are looking for doesn't exist.
+Standard
+Strikethrough
+Success
+Super Admin
+Suspended
+Switch to dark mode
+Switch to light mode
+TBD
+Target country is required.
+Text formatting
+This site works best with JavaScript enabled. Use the links below to continue browsing.
+Tiếng Việt
+Toggle menu
+Try Again
+Try again
+Twitter
+UPS
+USD
+USPS
+Underline
+Undo
+Unknown
+Unpaid
+Upload image
+Uploading image…
+Urgent
+V
+Valid until {date}
+Verified
+View image {n}
+Voided
+Warehouse
+Warnings
+We use cookies to enhance your browsing experience, analyze site traffic, and personalize content. By clicking 'Accept All', you consent to our use of all cookies. You can choose 'Essential Only' to reject non-essential cookies.
+WhatsApp Us
+Won
+Write something…
+Yes
+You do not have permission to access this page.
+You do not have permission to access this resource.
+YouTube
+Zoom image
+global
+https://example.com
+{alt} - Image {n}
+{alt} - Thumbnail {n}
+{field} is required
+العربية
+ع
+ท
+ไทย
+—
+中
+中文
+日
+日本語
+한
+한국어

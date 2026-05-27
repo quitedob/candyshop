@@ -1,0 +1,5698 @@
+[
+  {
+    "en": " from {name} category",
+    "zh": "（分类：{name}）"
+  },
+  {
+    "en": "#",
+    "zh": "#"
+  },
+  {
+    "en": "+ New Flow",
+    "zh": "+ 新建流程"
+  },
+  {
+    "en": "+ New Solution",
+    "zh": "+ 新建方案"
+  },
+  {
+    "en": "+86 123 4567 890",
+    "zh": "+86 123 4567 890"
+  },
+  {
+    "en": "... and {n} more rows",
+    "zh": "... 还有 {n} 行"
+  },
+  {
+    "en": "0",
+    "zh": "0"
+  },
+  {
+    "en": "1. Describe the product in natural language (specs, ingredients, packaging, certs).\n2. Choose input language and click Generate with AI.\n3. Review auto-filled fields on the right.\n4. Click Save Product.\nUse AI Translate for other locales after saving.",
+    "zh": "1. 用自然语言描述产品（规格、成分、包装、认证等）。\n2. 选择输入语言，点击「AI 生成」。\n3. 右侧预览自动填充的字段，检查并微调。\n4. 点击「保存产品」写入目录。\n生成后可用「AI 一键翻译」补全多语言。"
+  },
+  {
+    "en": "1. Enter a topic or brief (any language) on the left.\n2. Click Generate Chinese Draft for a zh-first article.\n3. Review and edit the draft on the right.\n4. Select text and press Ctrl+K (Mac: ⌘K) for inline AI edits.\n5. Click Confirm & Publish to translate all locales and publish to the public blog.",
+    "zh": "1. 左侧输入主题或要点（中英文均可）。\n2. 点击「生成中文草稿」，AI 先输出中文正文。\n3. 审阅右侧草稿，可手动修改。\n4. 选中文字后按 Ctrl+K（Mac：⌘K）可局部 AI 修订。\n5. 满意后点击「确认并发布」，系统自动翻译全部语言并发布到前台博客。"
+  },
+  {
+    "en": "1. Select text in title, excerpt, or body.\n2. Press Ctrl+K (Mac: ⌘K) to open the floating editor.\n3. Describe the change (e.g. add compliance details, shorten title).\n4. Preview before/after diff — Accept or Reject.\n5. Repeat until satisfied, then publish.",
+    "zh": "1. 在标题、摘要或正文中选中一段文字。\n2. 按 Ctrl+K（Mac：⌘K）打开浮动修订框。\n3. 描述要如何修改（如：补充法规细节、缩短标题）。\n4. 预览修改前/后 Diff，点击「接受」或「拒绝」。\n5. 可多次修订，直到满意再发布。"
+  },
+  {
+    "en": "12 Months",
+    "zh": "近12个月"
+  },
+  {
+    "en": "12M",
+    "zh": "12个月"
+  },
+  {
+    "en": "3 Months",
+    "zh": "近3个月"
+  },
+  {
+    "en": "3M",
+    "zh": "3个月"
+  },
+  {
+    "en": "3PL",
+    "zh": "第三方物流"
+  },
+  {
+    "en": "6 Months",
+    "zh": "近6个月"
+  },
+  {
+    "en": "6M",
+    "zh": "6个月"
+  },
+  {
+    "en": "A list of all users including their name, company, email, role, and status.",
+    "zh": "所有用户列表，包括姓名、公司、邮箱、角色和状态。"
+  },
+  {
+    "en": "AI Analysis",
+    "zh": "AI分析"
+  },
+  {
+    "en": "AI Applications",
+    "zh": "AI 应用"
+  },
+  {
+    "en": "AI Apps",
+    "zh": "AI 应用"
+  },
+  {
+    "en": "AI Assistant",
+    "zh": "AI助手"
+  },
+  {
+    "en": "AI Compliance Check",
+    "zh": "AI合规检查"
+  },
+  {
+    "en": "AI Draft Quotation",
+    "zh": "AI 生成报价草稿"
+  },
+  {
+    "en": "AI Generate",
+    "zh": "AI 生成"
+  },
+  {
+    "en": "AI Generate Content",
+    "zh": "AI 智能生成内容"
+  },
+  {
+    "en": "AI Generate Doc",
+    "zh": "AI生成文档"
+  },
+  {
+    "en": "AI Generating...",
+    "zh": "AI生成中..."
+  },
+  {
+    "en": "AI Import",
+    "zh": "AI 导入"
+  },
+  {
+    "en": "AI Search",
+    "zh": "AI 搜索"
+  },
+  {
+    "en": "AI Spreadsheet Translation",
+    "zh": "AI 表格翻译"
+  },
+  {
+    "en": "AI Suggested Mapping",
+    "zh": "AI 建议映射"
+  },
+  {
+    "en": "AI Translate",
+    "zh": "AI 翻译"
+  },
+  {
+    "en": "AI Translate All",
+    "zh": "AI 一键翻译"
+  },
+  {
+    "en": "AI compliance summary",
+    "zh": "AI 合规分析"
+  },
+  {
+    "en": "AI console",
+    "zh": "AI 应用控制台"
+  },
+  {
+    "en": "AI content generation failed",
+    "zh": "AI内容生成失败"
+  },
+  {
+    "en": "AI features panel coming soon.",
+    "zh": "AI 功能面板即将上线，敬请期待。"
+  },
+  {
+    "en": "AI generate trade document",
+    "zh": "AI 生成贸易文档"
+  },
+  {
+    "en": "AI generating...",
+    "zh": "AI生成中..."
+  },
+  {
+    "en": "AI generation failed",
+    "zh": "AI 生成失败"
+  },
+  {
+    "en": "AI generation failed. Try a more detailed description.",
+    "zh": "AI 生成失败，请尝试更详细的描述。"
+  },
+  {
+    "en": "AI import content",
+    "zh": "AI 导入内容"
+  },
+  {
+    "en": "AI import product",
+    "zh": "AI 导入产品"
+  },
+  {
+    "en": "AI quotation draft",
+    "zh": "AI 生成报价"
+  },
+  {
+    "en": "AI revision applied",
+    "zh": "已应用 AI 修订"
+  },
+  {
+    "en": "AI revision failed — try rephrasing",
+    "zh": "AI 修订失败，请调整描述后重试"
+  },
+  {
+    "en": "AI revision failed — try rephrasing your instruction",
+    "zh": "AI 修订失败，请换个描述重试"
+  },
+  {
+    "en": "AI summary of inquiry compliance/risk flags when configured.\nFor sales reference only — not a substitute for legal/compliance review.",
+    "zh": "系统对询盘内容进行 AI 合规/风险摘要（若已配置）。\n结果供销售参考，不能替代法务或合规团队最终判断。"
+  },
+  {
+    "en": "AI targeted revision",
+    "zh": "AI 局部修订"
+  },
+  {
+    "en": "AI thinking...",
+    "zh": "AI思考中..."
+  },
+  {
+    "en": "AI translate content",
+    "zh": "AI 一键翻译"
+  },
+  {
+    "en": "AI-powered product recommendations, compliance checks, and intelligent search.",
+    "zh": "AI 驱动的产品推荐、合规检查与智能搜索。"
+  },
+  {
+    "en": "Abbreviation",
+    "zh": "缩写"
+  },
+  {
+    "en": "Accept",
+    "zh": "接受"
+  },
+  {
+    "en": "Accept All",
+    "zh": "全部接受"
+  },
+  {
+    "en": "Accepted",
+    "zh": "已接受"
+  },
+  {
+    "en": "Access Denied",
+    "zh": "无权访问"
+  },
+  {
+    "en": "Account Status",
+    "zh": "账户状态"
+  },
+  {
+    "en": "Accounts Receivable",
+    "zh": "应收账款"
+  },
+  {
+    "en": "Accounts receivable, payment tracking, and revenue analytics.",
+    "zh": "应收账款、支付追踪和营收分析。"
+  },
+  {
+    "en": "Action",
+    "zh": "操作"
+  },
+  {
+    "en": "Actions",
+    "zh": "操作"
+  },
+  {
+    "en": "Active",
+    "zh": "正常"
+  },
+  {
+    "en": "Active Customers",
+    "zh": "活跃客户"
+  },
+  {
+    "en": "Activity",
+    "zh": "活动"
+  },
+  {
+    "en": "Activity Log",
+    "zh": "活动日志"
+  },
+  {
+    "en": "Actual Delivery",
+    "zh": "实际交付日期"
+  },
+  {
+    "en": "Add",
+    "zh": "增加"
+  },
+  {
+    "en": "Add Category",
+    "zh": "新增分类"
+  },
+  {
+    "en": "Add Certification",
+    "zh": "添加认证"
+  },
+  {
+    "en": "Add Channel",
+    "zh": "添加渠道"
+  },
+  {
+    "en": "Add Content",
+    "zh": "新增内容"
+  },
+  {
+    "en": "Add Event",
+    "zh": "添加追踪事件"
+  },
+  {
+    "en": "Add Hook",
+    "zh": "添加 Hook"
+  },
+  {
+    "en": "Add Item",
+    "zh": "添加商品"
+  },
+  {
+    "en": "Add Member",
+    "zh": "添加成员"
+  },
+  {
+    "en": "Add Organization",
+    "zh": "添加组织"
+  },
+  {
+    "en": "Add Pricing Rule",
+    "zh": "添加定价规则"
+  },
+  {
+    "en": "Add Product",
+    "zh": "添加产品"
+  },
+  {
+    "en": "Add Rate",
+    "zh": "添加费率"
+  },
+  {
+    "en": "Add Rule",
+    "zh": "添加规则"
+  },
+  {
+    "en": "Add Settlement",
+    "zh": "添加结算"
+  },
+  {
+    "en": "Add Tax Rate",
+    "zh": "添加税率"
+  },
+  {
+    "en": "Add Translation",
+    "zh": "添加翻译"
+  },
+  {
+    "en": "Add Warehouse",
+    "zh": "添加仓库"
+  },
+  {
+    "en": "Add Webhook",
+    "zh": "添加 Webhook"
+  },
+  {
+    "en": "Additives (E-numbers)",
+    "zh": "添加剂 (E编码)"
+  },
+  {
+    "en": "Address",
+    "zh": "地址"
+  },
+  {
+    "en": "Adjust Stock",
+    "zh": "调整库存"
+  },
+  {
+    "en": "Adjustment Type",
+    "zh": "调整类型"
+  },
+  {
+    "en": "Admin",
+    "zh": "管理员"
+  },
+  {
+    "en": "Admin Actions",
+    "zh": "管理操作"
+  },
+  {
+    "en": "Admin Confirm Specifications",
+    "zh": "管理员确认规格"
+  },
+  {
+    "en": "Admin Notes",
+    "zh": "管理员备注"
+  },
+  {
+    "en": "After",
+    "zh": "修改后"
+  },
+  {
+    "en": "After uploading an inventory/product Excel file, AI suggests column → field mappings.\nReview the blue banner and adjust mappings below before confirming import.",
+    "zh": "上传库存/产品 Excel 后，系统会用 AI 建议「Excel 列名 → 系统字段」映射。\n蓝色提示区显示 AI 建议，可在下方映射表中调整后再确认导入。"
+  },
+  {
+    "en": "Agent Mode",
+    "zh": "Agent 模式"
+  },
+  {
+    "en": "Air Freight",
+    "zh": "空运"
+  },
+  {
+    "en": "Alias",
+    "zh": "别名"
+  },
+  {
+    "en": "Align Center",
+    "zh": "居中"
+  },
+  {
+    "en": "Align Left",
+    "zh": "左对齐"
+  },
+  {
+    "en": "Align Right",
+    "zh": "右对齐"
+  },
+  {
+    "en": "All",
+    "zh": "全部"
+  },
+  {
+    "en": "All Actions",
+    "zh": "全部操作"
+  },
+  {
+    "en": "All Categories",
+    "zh": "全部分类"
+  },
+  {
+    "en": "All Entity Types",
+    "zh": "全部实体类型"
+  },
+  {
+    "en": "All Groups",
+    "zh": "全部分组"
+  },
+  {
+    "en": "All Locales",
+    "zh": "全部语言"
+  },
+  {
+    "en": "All Status",
+    "zh": "全部状态"
+  },
+  {
+    "en": "All Statuses",
+    "zh": "全部状态"
+  },
+  {
+    "en": "All Stock",
+    "zh": "全部库存"
+  },
+  {
+    "en": "All Types",
+    "zh": "全部类型"
+  },
+  {
+    "en": "All customer-facing text lives here only. Chinese is the source locale; scalar fields sync on save.",
+    "zh": "所有面向用户的文案仅在此填写；中文为主语言，保存时自动同步到系统字段。"
+  },
+  {
+    "en": "All statuses",
+    "zh": "全部状态"
+  },
+  {
+    "en": "Allergens",
+    "zh": "过敏原"
+  },
+  {
+    "en": "Amount",
+    "zh": "金额"
+  },
+  {
+    "en": "Amount Due",
+    "zh": "应付金额"
+  },
+  {
+    "en": "An error occurred",
+    "zh": "发生错误"
+  },
+  {
+    "en": "Analytics",
+    "zh": "数据分析"
+  },
+  {
+    "en": "Analytics & Reports",
+    "zh": "数据分析"
+  },
+  {
+    "en": "Analyze",
+    "zh": "分析"
+  },
+  {
+    "en": "Analyze Inquiry",
+    "zh": "分析询价"
+  },
+  {
+    "en": "Analyze order trends this month",
+    "zh": "分析本月订单趋势"
+  },
+  {
+    "en": "Analyzing...",
+    "zh": "分析中..."
+  },
+  {
+    "en": "Apply Changes",
+    "zh": "应用更改"
+  },
+  {
+    "en": "Apply Import",
+    "zh": "确认导入"
+  },
+  {
+    "en": "Apply revision",
+    "zh": "应用修订"
+  },
+  {
+    "en": "Applying...",
+    "zh": "正在应用..."
+  },
+  {
+    "en": "Approval Threshold",
+    "zh": "审批阈值"
+  },
+  {
+    "en": "Approve",
+    "zh": "批准"
+  },
+  {
+    "en": "Approved",
+    "zh": "已通过"
+  },
+  {
+    "en": "Approver",
+    "zh": "审批人"
+  },
+  {
+    "en": "Arabic",
+    "zh": "阿拉伯文"
+  },
+  {
+    "en": "Are you sure you want to delete {count} selected products? This action cannot be undone.",
+    "zh": "确定要删除选中的 {count} 个产品吗？该操作不可撤销。"
+  },
+  {
+    "en": "Are you sure you want to refund this payment?",
+    "zh": "确定要退款此付款？"
+  },
+  {
+    "en": "Arrived at port",
+    "zh": "已到港"
+  },
+  {
+    "en": "Article translated and published",
+    "zh": "文章已翻译并发布到前台"
+  },
+  {
+    "en": "Assign",
+    "zh": "分配"
+  },
+  {
+    "en": "Assigned",
+    "zh": "负责人"
+  },
+  {
+    "en": "Assigned To",
+    "zh": "分配给"
+  },
+  {
+    "en": "Assignee user ID",
+    "zh": "分配给用户ID"
+  },
+  {
+    "en": "Assignee user ID is required for assignment.",
+    "zh": "分配操作需要填写用户ID。"
+  },
+  {
+    "en": "Assigning...",
+    "zh": "分配中..."
+  },
+  {
+    "en": "Assignment",
+    "zh": "分配"
+  },
+  {
+    "en": "Audit Log",
+    "zh": "审计日志"
+  },
+  {
+    "en": "Author",
+    "zh": "作者信息"
+  },
+  {
+    "en": "Author Avatar URL",
+    "zh": "作者头像URL"
+  },
+  {
+    "en": "Author Bio",
+    "zh": "作者简介"
+  },
+  {
+    "en": "Author Name",
+    "zh": "作者名称"
+  },
+  {
+    "en": "Author Title",
+    "zh": "作者头衔"
+  },
+  {
+    "en": "Auto detect",
+    "zh": "自动检测"
+  },
+  {
+    "en": "Avg Order Value",
+    "zh": "平均订单额"
+  },
+  {
+    "en": "B/L No.",
+    "zh": "提单号"
+  },
+  {
+    "en": "B2B Candy Manufacturing",
+    "zh": "B2B 糖果制造"
+  },
+  {
+    "en": "B2B Coordinator",
+    "zh": "B2B 协调器"
+  },
+  {
+    "en": "B2B org credit limits and approval tiers.",
+    "zh": "B2B 授信与审批层级。"
+  },
+  {
+    "en": "Back to Companies",
+    "zh": "返回企业列表"
+  },
+  {
+    "en": "Back to Home",
+    "zh": "返回首页"
+  },
+  {
+    "en": "Back to Inquiries",
+    "zh": "返回询价列表"
+  },
+  {
+    "en": "Back to OEM Projects",
+    "zh": "返回OEM项目列表"
+  },
+  {
+    "en": "Back to Orders",
+    "zh": "返回订单列表"
+  },
+  {
+    "en": "Back to Trades",
+    "zh": "返回贸易列表"
+  },
+  {
+    "en": "Back to Users",
+    "zh": "返回用户列表"
+  },
+  {
+    "en": "Badge URL",
+    "zh": "徽章链接"
+  },
+  {
+    "en": "Bahasa Indonesia",
+    "zh": "印尼语"
+  },
+  {
+    "en": "Bahasa Melayu",
+    "zh": "马来语"
+  },
+  {
+    "en": "Balance",
+    "zh": "余额"
+  },
+  {
+    "en": "Bank Details",
+    "zh": "银行信息"
+  },
+  {
+    "en": "Base Cost",
+    "zh": "基础运费"
+  },
+  {
+    "en": "Base Price",
+    "zh": "基础价格"
+  },
+  {
+    "en": "Base Price (USD)",
+    "zh": "基础价格 (美元)"
+  },
+  {
+    "en": "Base price must be greater than zero.",
+    "zh": "产品价格必须大于零。"
+  },
+  {
+    "en": "Basic Information",
+    "zh": "基本信息"
+  },
+  {
+    "en": "Batch Delete",
+    "zh": "批量删除"
+  },
+  {
+    "en": "Batch Edit",
+    "zh": "批量编辑"
+  },
+  {
+    "en": "Batch Edit Products",
+    "zh": "批量编辑产品"
+  },
+  {
+    "en": "Batch Number",
+    "zh": "批号"
+  },
+  {
+    "en": "Before",
+    "zh": "修改前"
+  },
+  {
+    "en": "Bill To",
+    "zh": "收票方"
+  },
+  {
+    "en": "Bill of Lading",
+    "zh": "提单"
+  },
+  {
+    "en": "Blockquote",
+    "zh": "引用"
+  },
+  {
+    "en": "Blog Posts",
+    "zh": "博客文章"
+  },
+  {
+    "en": "Body",
+    "zh": "正文"
+  },
+  {
+    "en": "Bold",
+    "zh": "加粗"
+  },
+  {
+    "en": "Both parties confirmed",
+    "zh": "双方均已确认"
+  },
+  {
+    "en": "Breadcrumb",
+    "zh": "面包屑导航"
+  },
+  {
+    "en": "British Retail Consortium Global Standard for Food Safety - Grade A",
+    "zh": "英国零售商协会全球食品安全标准 - A级"
+  },
+  {
+    "en": "Bullet List",
+    "zh": "无序列表"
+  },
+  {
+    "en": "Business License",
+    "zh": "营业执照"
+  },
+  {
+    "en": "Business Reports",
+    "zh": "业务报表"
+  },
+  {
+    "en": "Business intelligence dashboards with revenue, order, and conversion metrics.",
+    "zh": "营收、订单和转化率等业务智能看板。"
+  },
+  {
+    "en": "Buyer",
+    "zh": "采购员"
+  },
+  {
+    "en": "Buyer Name",
+    "zh": "买方名称"
+  },
+  {
+    "en": "Buyer Organizations",
+    "zh": "采购组织"
+  },
+  {
+    "en": "By",
+    "zh": "发起方"
+  },
+  {
+    "en": "CI No.",
+    "zh": "CI编号"
+  },
+  {
+    "en": "COGS",
+    "zh": "销售成本"
+  },
+  {
+    "en": "CREDIT NOTE",
+    "zh": "贷项通知单"
+  },
+  {
+    "en": "Cancel",
+    "zh": "取消"
+  },
+  {
+    "en": "Cancelled",
+    "zh": "已取消"
+  },
+  {
+    "en": "CandyPro Admin",
+    "zh": "CandyPro 管理后台"
+  },
+  {
+    "en": "CandyPro OEM",
+    "zh": "CandyPro OEM"
+  },
+  {
+    "en": "Cannot activate a product with zero stock. Please add stock first.",
+    "zh": "库存为零的产品无法上架，请先补货。"
+  },
+  {
+    "en": "Carbohydrates (g)",
+    "zh": "碳水化合物 (g)"
+  },
+  {
+    "en": "Carrier",
+    "zh": "承运商"
+  },
+  {
+    "en": "Case",
+    "zh": "案例"
+  },
+  {
+    "en": "Case Content",
+    "zh": "案例正文"
+  },
+  {
+    "en": "Case Studies",
+    "zh": "客户案例"
+  },
+  {
+    "en": "Categories",
+    "zh": "分类管理"
+  },
+  {
+    "en": "Category",
+    "zh": "分类"
+  },
+  {
+    "en": "Category / tags",
+    "zh": "分类/标签等"
+  },
+  {
+    "en": "Category Alias",
+    "zh": "分类别名"
+  },
+  {
+    "en": "Category Slug",
+    "zh": "分类标识"
+  },
+  {
+    "en": "Category created",
+    "zh": "分类创建成功"
+  },
+  {
+    "en": "Category deleted",
+    "zh": "分类已删除"
+  },
+  {
+    "en": "Category name, alias, and description are maintained here only. Chinese is the source locale.",
+    "zh": "分类名称、别名与描述仅在此维护；中文为主语言。"
+  },
+  {
+    "en": "Category updated",
+    "zh": "分类更新成功"
+  },
+  {
+    "en": "Category/Industry",
+    "zh": "分类/行业"
+  },
+  {
+    "en": "Cert No.",
+    "zh": "证书编号"
+  },
+  {
+    "en": "Certificate URL",
+    "zh": "证书链接"
+  },
+  {
+    "en": "Certificate of Origin",
+    "zh": "原产地证书"
+  },
+  {
+    "en": "Certification",
+    "zh": "认证"
+  },
+  {
+    "en": "Certification created successfully.",
+    "zh": "认证创建成功。"
+  },
+  {
+    "en": "Certification deleted successfully.",
+    "zh": "认证删除成功。"
+  },
+  {
+    "en": "Certification name is required.",
+    "zh": "认证名称为必填项。"
+  },
+  {
+    "en": "Certification updated successfully.",
+    "zh": "认证更新成功。"
+  },
+  {
+    "en": "Certifications",
+    "zh": "认证"
+  },
+  {
+    "en": "Certifications (comma separated)",
+    "zh": "认证（逗号分隔）"
+  },
+  {
+    "en": "Challenge",
+    "zh": "挑战"
+  },
+  {
+    "en": "Channels",
+    "zh": "渠道"
+  },
+  {
+    "en": "Chat about this trade — documents, compliance, logistics.\nAgent may call trade tools; replies stream in the chat panel.\nUse AI Generate Document below for PI/CI/SC drafts.",
+    "zh": "在本交易详情页与 AI 对话，可询问单据、合规、物流等问题。\nAI 可调用贸易工具；流式回复显示在聊天区。\n需要生成 PI/CI 等文档时，使用下方「AI 生成文档」按钮。"
+  },
+  {
+    "en": "Chatbot (optional order)",
+    "zh": "聊天机器人（可选订单）"
+  },
+  {
+    "en": "Check inventory alerts",
+    "zh": "检查库存预警"
+  },
+  {
+    "en": "Chinese",
+    "zh": "中文"
+  },
+  {
+    "en": "Chinese category name is required",
+    "zh": "请填写中文分类名称"
+  },
+  {
+    "en": "Choose .xlsx file",
+    "zh": "选择 .xlsx 文件"
+  },
+  {
+    "en": "Choose a product...",
+    "zh": "选择产品..."
+  },
+  {
+    "en": "City",
+    "zh": "城市"
+  },
+  {
+    "en": "Clear",
+    "zh": "清除选择"
+  },
+  {
+    "en": "Clear Chat",
+    "zh": "清空对话"
+  },
+  {
+    "en": "Clear filters",
+    "zh": "清除筛选"
+  },
+  {
+    "en": "Clear input",
+    "zh": "清除输入"
+  },
+  {
+    "en": "Click or drag XLSX file here",
+    "zh": "点击或拖拽 XLSX 文件到此处"
+  },
+  {
+    "en": "Client Name",
+    "zh": "客户名称"
+  },
+  {
+    "en": "Close",
+    "zh": "关闭"
+  },
+  {
+    "en": "Close lightbox",
+    "zh": "关闭灯箱"
+  },
+  {
+    "en": "Close menu",
+    "zh": "关闭菜单"
+  },
+  {
+    "en": "Close sidebar menu",
+    "zh": "关闭侧边导航"
+  },
+  {
+    "en": "Closed",
+    "zh": "已关闭"
+  },
+  {
+    "en": "Cocoa Solids %",
+    "zh": "可可固形物 %"
+  },
+  {
+    "en": "Code",
+    "zh": "代码"
+  },
+  {
+    "en": "Collapse",
+    "zh": "收起"
+  },
+  {
+    "en": "Column Mapping",
+    "zh": "列映射"
+  },
+  {
+    "en": "Comma-separated",
+    "zh": "逗号分隔"
+  },
+  {
+    "en": "Commercial Invoice",
+    "zh": "商业发票"
+  },
+  {
+    "en": "Companies",
+    "zh": "企业管理"
+  },
+  {
+    "en": "Company",
+    "zh": "公司"
+  },
+  {
+    "en": "Company & Contact",
+    "zh": "公司与联系人"
+  },
+  {
+    "en": "Company Details",
+    "zh": "企业详情"
+  },
+  {
+    "en": "Company Name",
+    "zh": "企业名称"
+  },
+  {
+    "en": "Company Name is required",
+    "zh": "公司名称是必填项"
+  },
+  {
+    "en": "Company Name must be at least {min} characters",
+    "zh": "公司名称至少需要 {min} 个字符"
+  },
+  {
+    "en": "Company status updated successfully.",
+    "zh": "企业状态更新成功。"
+  },
+  {
+    "en": "Company, contact person and email are required.",
+    "zh": "公司名称、联系人和邮箱为必填项。"
+  },
+  {
+    "en": "Completed",
+    "zh": "已完成"
+  },
+  {
+    "en": "Compliance",
+    "zh": "合规"
+  },
+  {
+    "en": "Compliance Status",
+    "zh": "合规状态"
+  },
+  {
+    "en": "Compliance verified",
+    "zh": "合规已验证"
+  },
+  {
+    "en": "Config (JSON)",
+    "zh": "配置 (JSON)"
+  },
+  {
+    "en": "Configuration",
+    "zh": "配置"
+  },
+  {
+    "en": "Configurations",
+    "zh": "配置"
+  },
+  {
+    "en": "Configure platform settings and preferences.",
+    "zh": "配置平台参数和偏好设置。"
+  },
+  {
+    "en": "Confirm",
+    "zh": "确认"
+  },
+  {
+    "en": "Confirm & Publish",
+    "zh": "确认并发布"
+  },
+  {
+    "en": "Confirm Batch Delete",
+    "zh": "确认批量删除"
+  },
+  {
+    "en": "Confirm Delivery",
+    "zh": "确认签收"
+  },
+  {
+    "en": "Confirm Specifications",
+    "zh": "确认规格"
+  },
+  {
+    "en": "Confirm delete this content?",
+    "zh": "确认删除该内容？"
+  },
+  {
+    "en": "Confirm delete?",
+    "zh": "确认删除？"
+  },
+  {
+    "en": "Confirm packaging type, weight, size and quality standards. Once both parties confirm, the inquiry will move to 'confirmed' status.",
+    "zh": "确认包装类型、重量、尺寸和质量标准。双方均确认后，询价状态将变为「已确认」。"
+  },
+  {
+    "en": "Confirmation Notes",
+    "zh": "确认备注"
+  },
+  {
+    "en": "Confirmation failed",
+    "zh": "确认失败"
+  },
+  {
+    "en": "Confirmed",
+    "zh": "已确认"
+  },
+  {
+    "en": "Confirming...",
+    "zh": "确认中..."
+  },
+  {
+    "en": "Consignee",
+    "zh": "收货人"
+  },
+  {
+    "en": "Contact Person",
+    "zh": "联系人"
+  },
+  {
+    "en": "Contact Person is required",
+    "zh": "联系人是必填项"
+  },
+  {
+    "en": "Contact Person must be at least {min} characters",
+    "zh": "联系人至少需要 {min} 个字符"
+  },
+  {
+    "en": "Contact us on WhatsApp",
+    "zh": "通过 WhatsApp 联系我们"
+  },
+  {
+    "en": "Contacted",
+    "zh": "已联系"
+  },
+  {
+    "en": "Content",
+    "zh": "文章正文"
+  },
+  {
+    "en": "Content Management",
+    "zh": "内容管理"
+  },
+  {
+    "en": "Content Type",
+    "zh": "内容类型"
+  },
+  {
+    "en": "Content created successfully",
+    "zh": "内容已创建"
+  },
+  {
+    "en": "Content deleted successfully",
+    "zh": "内容已删除"
+  },
+  {
+    "en": "Content updated successfully",
+    "zh": "内容已更新"
+  },
+  {
+    "en": "Context",
+    "zh": "上下文"
+  },
+  {
+    "en": "Contract",
+    "zh": "合同"
+  },
+  {
+    "en": "Contract No.",
+    "zh": "合同编号"
+  },
+  {
+    "en": "Conversion Rate",
+    "zh": "转化率"
+  },
+  {
+    "en": "Convert this inquiry to an order for the customer.",
+    "zh": "将此询价转换为订单。"
+  },
+  {
+    "en": "Convert to MD",
+    "zh": "转为MD"
+  },
+  {
+    "en": "Convert to Order",
+    "zh": "转为订单"
+  },
+  {
+    "en": "Converted",
+    "zh": "已转化"
+  },
+  {
+    "en": "Converting...",
+    "zh": "转换中..."
+  },
+  {
+    "en": "Cookie Preferences",
+    "zh": "Cookie 偏好设置"
+  },
+  {
+    "en": "Correction",
+    "zh": "修正"
+  },
+  {
+    "en": "Cost",
+    "zh": "成本"
+  },
+  {
+    "en": "Cost Stack",
+    "zh": "成本栈"
+  },
+  {
+    "en": "Cost per kg",
+    "zh": "每公斤费用"
+  },
+  {
+    "en": "Cost stack saved.",
+    "zh": "成本栈已保存。"
+  },
+  {
+    "en": "Could not adjust stock.",
+    "zh": "无法调整库存。"
+  },
+  {
+    "en": "Could not analyze. Please try again.",
+    "zh": "无法分析，请稍后重试。"
+  },
+  {
+    "en": "Could not assign. Please try again.",
+    "zh": "无法分配，请稍后重试。"
+  },
+  {
+    "en": "Could not cancel. Please try again.",
+    "zh": "无法取消，请稍后重试。"
+  },
+  {
+    "en": "Could not confirm document.",
+    "zh": "无法确认单据。"
+  },
+  {
+    "en": "Could not confirm draft. Please try again.",
+    "zh": "无法确认草稿，请稍后重试。"
+  },
+  {
+    "en": "Could not confirm payment.",
+    "zh": "无法确认付款。"
+  },
+  {
+    "en": "Could not confirm. Please try again.",
+    "zh": "无法确认，请稍后重试。"
+  },
+  {
+    "en": "Could not convert inquiry.",
+    "zh": "无法转换询价。"
+  },
+  {
+    "en": "Could not create order. Please try again.",
+    "zh": "无法创建订单，请稍后重试。"
+  },
+  {
+    "en": "Could not create trade.",
+    "zh": "无法创建贸易单。"
+  },
+  {
+    "en": "Could not create user.",
+    "zh": "无法创建用户。"
+  },
+  {
+    "en": "Could not delete. Please try again.",
+    "zh": "无法删除，请稍后重试。"
+  },
+  {
+    "en": "Could not generate draft order. Please try again.",
+    "zh": "无法生成草稿订单，请稍后重试。"
+  },
+  {
+    "en": "Could not load data. Please try again.",
+    "zh": "无法加载数据，请稍后重试。"
+  },
+  {
+    "en": "Could not load payments.",
+    "zh": "无法加载付款记录。"
+  },
+  {
+    "en": "Could not load product.",
+    "zh": "无法加载产品信息。"
+  },
+  {
+    "en": "Could not load trade details.",
+    "zh": "无法加载贸易详情。"
+  },
+  {
+    "en": "Could not process refund.",
+    "zh": "无法处理退款。"
+  },
+  {
+    "en": "Could not save document.",
+    "zh": "无法保存单据。"
+  },
+  {
+    "en": "Could not save. Please try again.",
+    "zh": "无法保存，请稍后重试。"
+  },
+  {
+    "en": "Could not send. Please try again.",
+    "zh": "无法发送，请稍后重试。"
+  },
+  {
+    "en": "Could not start trade.",
+    "zh": "无法发起贸易。"
+  },
+  {
+    "en": "Could not submit order request. Please try again.",
+    "zh": "无法提交订单请求，请稍后重试。"
+  },
+  {
+    "en": "Could not submit quote. Please try again.",
+    "zh": "无法提交报价，请稍后重试。"
+  },
+  {
+    "en": "Could not update status.",
+    "zh": "无法更新状态。"
+  },
+  {
+    "en": "Could not upload. Please try again.",
+    "zh": "无法上传，请稍后重试。"
+  },
+  {
+    "en": "Could not verify company.",
+    "zh": "无法验证企业。"
+  },
+  {
+    "en": "Counter-offers and price negotiation with the buyer.",
+    "zh": "与买家的价格谈判和还盘管理。"
+  },
+  {
+    "en": "Country",
+    "zh": "国家/地区"
+  },
+  {
+    "en": "Country (ISO)",
+    "zh": "国家 (ISO)"
+  },
+  {
+    "en": "Country of Origin",
+    "zh": "原产国"
+  },
+  {
+    "en": "Coupons",
+    "zh": "优惠券"
+  },
+  {
+    "en": "Coupons & Gift Cards",
+    "zh": "优惠券与礼品卡"
+  },
+  {
+    "en": "Create",
+    "zh": "创建"
+  },
+  {
+    "en": "Create Category",
+    "zh": "创建分类"
+  },
+  {
+    "en": "Create Certification",
+    "zh": "创建认证"
+  },
+  {
+    "en": "Create Content",
+    "zh": "创建内容"
+  },
+  {
+    "en": "Create Coupon",
+    "zh": "创建优惠券"
+  },
+  {
+    "en": "Create Fulfillment",
+    "zh": "创建履约单"
+  },
+  {
+    "en": "Create Gift Card",
+    "zh": "创建礼品卡"
+  },
+  {
+    "en": "Create Inquiry",
+    "zh": "创建询价"
+  },
+  {
+    "en": "Create Invoice",
+    "zh": "创建发票"
+  },
+  {
+    "en": "Create Offer",
+    "zh": "创建还盘"
+  },
+  {
+    "en": "Create Order",
+    "zh": "创建订单"
+  },
+  {
+    "en": "Create Price List",
+    "zh": "创建价格列表"
+  },
+  {
+    "en": "Create Product",
+    "zh": "创建产品"
+  },
+  {
+    "en": "Create Shipment",
+    "zh": "创建发货"
+  },
+  {
+    "en": "Create Trade from Order",
+    "zh": "从订单创建贸易"
+  },
+  {
+    "en": "Create Transfer",
+    "zh": "创建调拨"
+  },
+  {
+    "en": "Create Translation",
+    "zh": "新建翻译"
+  },
+  {
+    "en": "Create User",
+    "zh": "创建用户"
+  },
+  {
+    "en": "Create draft trade documents with one click.",
+    "zh": "一键创建贸易单证草稿。"
+  },
+  {
+    "en": "Create fulfillments from the order detail page.",
+    "zh": "请从订单详情页创建履约单"
+  },
+  {
+    "en": "Created",
+    "zh": "创建时间"
+  },
+  {
+    "en": "Created on",
+    "zh": "创建于"
+  },
+  {
+    "en": "Creating...",
+    "zh": "创建中..."
+  },
+  {
+    "en": "Credit & Pricing",
+    "zh": "信用与定价"
+  },
+  {
+    "en": "Credit Limit",
+    "zh": "授信额度"
+  },
+  {
+    "en": "Credit Note",
+    "zh": "贷项通知单"
+  },
+  {
+    "en": "Ctrl+K inline edit",
+    "zh": "Ctrl+K 局部修订"
+  },
+  {
+    "en": "Currency",
+    "zh": "货币"
+  },
+  {
+    "en": "Current Packaging Specs",
+    "zh": "当前包装规格"
+  },
+  {
+    "en": "Current Stock",
+    "zh": "当前库存"
+  },
+  {
+    "en": "Customer",
+    "zh": "客户"
+  },
+  {
+    "en": "Customer Churn",
+    "zh": "客户流失"
+  },
+  {
+    "en": "Customer Files",
+    "zh": "客户附件"
+  },
+  {
+    "en": "Customer Notes",
+    "zh": "客户备注"
+  },
+  {
+    "en": "Customer Return",
+    "zh": "客户退货"
+  },
+  {
+    "en": "Customer has confirmed",
+    "zh": "客户已确认规格"
+  },
+  {
+    "en": "Customer notes",
+    "zh": "客户备注"
+  },
+  {
+    "en": "Customers",
+    "zh": "客户列表"
+  },
+  {
+    "en": "Customs cleared",
+    "zh": "清关完成"
+  },
+  {
+    "en": "DHL",
+    "zh": "DHL"
+  },
+  {
+    "en": "Damage/Loss",
+    "zh": "损耗/损坏"
+  },
+  {
+    "en": "Danger Zone",
+    "zh": "危险操作"
+  },
+  {
+    "en": "Dark mode",
+    "zh": "暗色模式"
+  },
+  {
+    "en": "Dashboard",
+    "zh": "仪表盘"
+  },
+  {
+    "en": "Data Export",
+    "zh": "数据导出"
+  },
+  {
+    "en": "Date",
+    "zh": "日期"
+  },
+  {
+    "en": "Date From",
+    "zh": "开始日期"
+  },
+  {
+    "en": "Date To",
+    "zh": "结束日期"
+  },
+  {
+    "en": "Days",
+    "zh": "天数"
+  },
+  {
+    "en": "Days Inactive",
+    "zh": "未活跃天数"
+  },
+  {
+    "en": "Decimal fraction, e.g. 0.08875 = 8.875%",
+    "zh": "小数值，如 0.08875 = 8.875%"
+  },
+  {
+    "en": "Delete",
+    "zh": "删除"
+  },
+  {
+    "en": "Delete User",
+    "zh": "删除用户"
+  },
+  {
+    "en": "Delete failed",
+    "zh": "删除失败"
+  },
+  {
+    "en": "Delete this category?",
+    "zh": "确定删除此分类？"
+  },
+  {
+    "en": "Delete this certification?",
+    "zh": "确定删除此认证？"
+  },
+  {
+    "en": "Delete this flow?",
+    "zh": "确定删除此流程？"
+  },
+  {
+    "en": "Delete this inquiry?",
+    "zh": "确定删除此询价？"
+  },
+  {
+    "en": "Delete this order?",
+    "zh": "确定删除此订单？"
+  },
+  {
+    "en": "Delete this price list?",
+    "zh": "确定删除此价格列表？"
+  },
+  {
+    "en": "Delete this pricing rule?",
+    "zh": "确定删除此定价规则？"
+  },
+  {
+    "en": "Delete this product?",
+    "zh": "确定删除此产品？"
+  },
+  {
+    "en": "Delete this solution?",
+    "zh": "确定删除此方案？"
+  },
+  {
+    "en": "Delete this user permanently?",
+    "zh": "确定永久删除此用户？"
+  },
+  {
+    "en": "Deleted",
+    "zh": "已删除"
+  },
+  {
+    "en": "Deleting...",
+    "zh": "正在删除..."
+  },
+  {
+    "en": "Delivered",
+    "zh": "已送达"
+  },
+  {
+    "en": "Deliveries",
+    "zh": "投递日志"
+  },
+  {
+    "en": "Delivery",
+    "zh": "交付"
+  },
+  {
+    "en": "Delivery Date",
+    "zh": "交货日期"
+  },
+  {
+    "en": "Delivery Terms",
+    "zh": "交货条款"
+  },
+  {
+    "en": "Delivery confirmed.",
+    "zh": "签收确认成功。"
+  },
+  {
+    "en": "Describe how to change the selection…",
+    "zh": "描述要如何修改选中内容…"
+  },
+  {
+    "en": "Describe the case study for AI to draft...",
+    "zh": "描述案例，让AI为您生成内容..."
+  },
+  {
+    "en": "Describe the topic or key points (any language). AI will draft in Chinese first...",
+    "zh": "描述文章主题或要点（中英文均可），AI 将先输出中文草稿..."
+  },
+  {
+    "en": "Describe your product",
+    "zh": "用自然语言描述您的产品"
+  },
+  {
+    "en": "Description",
+    "zh": "描述"
+  },
+  {
+    "en": "Destination",
+    "zh": "目的地"
+  },
+  {
+    "en": "Destination Countries",
+    "zh": "目的国"
+  },
+  {
+    "en": "Destination Country",
+    "zh": "目的国"
+  },
+  {
+    "en": "Destination country/region tax rates applied at cart checkout.",
+    "zh": "按目的国/地区配置的税率，用于购物车结账估算。"
+  },
+  {
+    "en": "Destination-based freight rate tables. Estimated days are reference values for quoting — not guaranteed transit times.",
+    "zh": "按目的地的运费表。预计天数仅供报价参考，非承诺运输时效。"
+  },
+  {
+    "en": "Details",
+    "zh": "详情"
+  },
+  {
+    "en": "Dietary Labels",
+    "zh": "膳食标签"
+  },
+  {
+    "en": "Dimensions",
+    "zh": "尺寸"
+  },
+  {
+    "en": "Dismiss",
+    "zh": "关闭"
+  },
+  {
+    "en": "Dispatch",
+    "zh": "出库发运"
+  },
+  {
+    "en": "Dispatched",
+    "zh": "已发货"
+  },
+  {
+    "en": "Distributor",
+    "zh": "分销商"
+  },
+  {
+    "en": "Document Name",
+    "zh": "文档名称"
+  },
+  {
+    "en": "Document generated successfully",
+    "zh": "文档生成成功"
+  },
+  {
+    "en": "Documents",
+    "zh": "文档"
+  },
+  {
+    "en": "Download Excel reports. Monetary columns use the selected currency.",
+    "zh": "下载 Excel 报表；金额列按所选币种换算。"
+  },
+  {
+    "en": "Download Template",
+    "zh": "下载模板"
+  },
+  {
+    "en": "Download started",
+    "zh": "已开始下载"
+  },
+  {
+    "en": "Draft",
+    "zh": "草稿"
+  },
+  {
+    "en": "Due Date",
+    "zh": "到期日"
+  },
+  {
+    "en": "Due Soon",
+    "zh": "即将到期"
+  },
+  {
+    "en": "EMS",
+    "zh": "EMS"
+  },
+  {
+    "en": "EN",
+    "zh": "EN"
+  },
+  {
+    "en": "ETA",
+    "zh": "预计到达"
+  },
+  {
+    "en": "Edit",
+    "zh": "编辑"
+  },
+  {
+    "en": "Edit Category",
+    "zh": "编辑分类"
+  },
+  {
+    "en": "Edit Certification",
+    "zh": "编辑认证"
+  },
+  {
+    "en": "Edit Content",
+    "zh": "编辑内容"
+  },
+  {
+    "en": "Edit Customer Profile",
+    "zh": "编辑客户资料"
+  },
+  {
+    "en": "Edit Flow",
+    "zh": "编辑流程"
+  },
+  {
+    "en": "Edit Inquiry",
+    "zh": "编辑询价"
+  },
+  {
+    "en": "Edit Invoice",
+    "zh": "编辑发票"
+  },
+  {
+    "en": "Edit Order",
+    "zh": "编辑订单"
+  },
+  {
+    "en": "Edit Price List",
+    "zh": "编辑价格列表"
+  },
+  {
+    "en": "Edit Product",
+    "zh": "编辑产品"
+  },
+  {
+    "en": "Edit Shipment",
+    "zh": "编辑发货"
+  },
+  {
+    "en": "Edit Solution",
+    "zh": "编辑方案"
+  },
+  {
+    "en": "Edit selection",
+    "zh": "AI 修订选区"
+  },
+  {
+    "en": "Editing {count} products",
+    "zh": "正在编辑 {count} 个产品"
+  },
+  {
+    "en": "Email",
+    "zh": "邮箱"
+  },
+  {
+    "en": "Email address",
+    "zh": "邮箱地址"
+  },
+  {
+    "en": "Email is required",
+    "zh": "电子邮箱是必填项"
+  },
+  {
+    "en": "Energy (kJ)",
+    "zh": "能量 (kJ)"
+  },
+  {
+    "en": "Energy (kcal)",
+    "zh": "能量 (kcal)"
+  },
+  {
+    "en": "English",
+    "zh": "English"
+  },
+  {
+    "en": "Enter a product description on the left and click Generate to see AI-filled fields here.",
+    "zh": "在左侧输入产品描述，点击 AI 生成即可在此看到自动填充的字段。"
+  },
+  {
+    "en": "Enter a topic and click Generate Chinese Draft. Review it, then publish with full translations.",
+    "zh": "在左侧输入主题并点击「生成中文草稿」，审阅后可一键翻译发布。"
+  },
+  {
+    "en": "Enter a topic for AI to write about...",
+    "zh": "输入主题，让AI为您撰写文章..."
+  },
+  {
+    "en": "Enter after sales verification for catalog display. You may state a specific reference (e.g. \"25 business days after order confirmation\") — do not use vague promises like \"approx. X weeks\". Leave blank or use \"confirmed at order time\" until verified.",
+    "zh": "销售核实后填写，用于目录展示。可写订单级参考（如「订单确认后 25 个工作日」），勿使用「约 X 周」等模糊承诺；尚未核实时写「下单时确认」。"
+  },
+  {
+    "en": "Enter context for AI document generation...",
+    "zh": "输入AI生成文档所需的上下文信息..."
+  },
+  {
+    "en": "Entity ID",
+    "zh": "实体ID"
+  },
+  {
+    "en": "Entity Type",
+    "zh": "实体类型"
+  },
+  {
+    "en": "Error",
+    "zh": "失败"
+  },
+  {
+    "en": "Error loading analytics data",
+    "zh": "加载分析数据失败"
+  },
+  {
+    "en": "Error loading dashboard",
+    "zh": "加载仪表盘失败"
+  },
+  {
+    "en": "Error loading financial data",
+    "zh": "加载财务数据失败"
+  },
+  {
+    "en": "Errors",
+    "zh": "错误"
+  },
+  {
+    "en": "Essential Only",
+    "zh": "仅必要"
+  },
+  {
+    "en": "Est. Days",
+    "zh": "预计天数"
+  },
+  {
+    "en": "Estimated Delivery",
+    "zh": "预计交付日期"
+  },
+  {
+    "en": "Estimated Quantity",
+    "zh": "预估数量"
+  },
+  {
+    "en": "Event",
+    "zh": "事件"
+  },
+  {
+    "en": "Event Hooks",
+    "zh": "事件 Hooks"
+  },
+  {
+    "en": "Event Name",
+    "zh": "事件名"
+  },
+  {
+    "en": "Event Type",
+    "zh": "事件类型"
+  },
+  {
+    "en": "Events",
+    "zh": "事件"
+  },
+  {
+    "en": "Exception",
+    "zh": "异常"
+  },
+  {
+    "en": "Excerpt",
+    "zh": "摘要"
+  },
+  {
+    "en": "Executions",
+    "zh": "执行记录"
+  },
+  {
+    "en": "Expand",
+    "zh": "展开"
+  },
+  {
+    "en": "Expand or collapse sidebar",
+    "zh": "展开或收起侧边栏"
+  },
+  {
+    "en": "Expand user details",
+    "zh": "展开用户详情"
+  },
+  {
+    "en": "Expected Delivery",
+    "zh": "期望交货期"
+  },
+  {
+    "en": "Expired",
+    "zh": "已过期"
+  },
+  {
+    "en": "Expires At",
+    "zh": "过期时间"
+  },
+  {
+    "en": "Expiry Date",
+    "zh": "有效期至"
+  },
+  {
+    "en": "Export",
+    "zh": "导出"
+  },
+  {
+    "en": "Export DOCX",
+    "zh": "导出 DOCX"
+  },
+  {
+    "en": "Export Selected",
+    "zh": "导出选中"
+  },
+  {
+    "en": "Export XLSX",
+    "zh": "导出 XLSX"
+  },
+  {
+    "en": "Export business reports and AI-translate spreadsheet content.",
+    "zh": "导出业务报表，并使用 AI 翻译 Excel 文本内容。"
+  },
+  {
+    "en": "Export currency",
+    "zh": "导出币种"
+  },
+  {
+    "en": "Export failed",
+    "zh": "导出失败"
+  },
+  {
+    "en": "Exporter Name",
+    "zh": "出口商名称"
+  },
+  {
+    "en": "Exporting…",
+    "zh": "导出中…"
+  },
+  {
+    "en": "FOB",
+    "zh": "FOB"
+  },
+  {
+    "en": "FTA Type (e.g. RCEP, FORM E)",
+    "zh": "自贸协定类型 (如 RCEP, FORM E)"
+  },
+  {
+    "en": "Facebook",
+    "zh": "Facebook"
+  },
+  {
+    "en": "Factory",
+    "zh": "工厂"
+  },
+  {
+    "en": "Failed",
+    "zh": "未通过"
+  },
+  {
+    "en": "Failed to create translation",
+    "zh": "创建翻译失败"
+  },
+  {
+    "en": "Failed to delete translation",
+    "zh": "删除翻译失败"
+  },
+  {
+    "en": "Failed to export translations",
+    "zh": "导出翻译失败"
+  },
+  {
+    "en": "Failed to load categories",
+    "zh": "加载分类失败"
+  },
+  {
+    "en": "Failed to load content",
+    "zh": "加载内容失败"
+  },
+  {
+    "en": "Failed to load market data.",
+    "zh": "加载市场数据失败。"
+  },
+  {
+    "en": "Failed to load report",
+    "zh": "加载报表失败"
+  },
+  {
+    "en": "Failed to load translations",
+    "zh": "加载翻译数据失败"
+  },
+  {
+    "en": "Failed to send message.",
+    "zh": "消息发送失败。"
+  },
+  {
+    "en": "Failed to update translation",
+    "zh": "更新翻译失败"
+  },
+  {
+    "en": "Fat (g)",
+    "zh": "脂肪 (g)"
+  },
+  {
+    "en": "Featured",
+    "zh": "推荐"
+  },
+  {
+    "en": "FedEx",
+    "zh": "FedEx"
+  },
+  {
+    "en": "Fiber (g)",
+    "zh": "膳食纤维 (g)"
+  },
+  {
+    "en": "Field",
+    "zh": "字段"
+  },
+  {
+    "en": "Filter",
+    "zh": "筛选"
+  },
+  {
+    "en": "Filter Status",
+    "zh": "状态筛选"
+  },
+  {
+    "en": "Filter by action",
+    "zh": "按操作筛选"
+  },
+  {
+    "en": "Filter by category",
+    "zh": "按分类筛选"
+  },
+  {
+    "en": "Filter by entity type",
+    "zh": "按实体类型筛选"
+  },
+  {
+    "en": "Filter by stock status",
+    "zh": "按库存状态筛选"
+  },
+  {
+    "en": "Filter by user...",
+    "zh": "按用户筛选..."
+  },
+  {
+    "en": "Financial",
+    "zh": "财务管理"
+  },
+  {
+    "en": "Financial Overview",
+    "zh": "财务概览"
+  },
+  {
+    "en": "First Name",
+    "zh": "名字"
+  },
+  {
+    "en": "Fixed Amount",
+    "zh": "固定金额"
+  },
+  {
+    "en": "Flavor",
+    "zh": "口味"
+  },
+  {
+    "en": "Flavor Requirements",
+    "zh": "口味要求"
+  },
+  {
+    "en": "Flavors (comma separated)",
+    "zh": "口味（逗号分隔）"
+  },
+  {
+    "en": "Flows",
+    "zh": "流程模板"
+  },
+  {
+    "en": "Food Safety Management System Standard",
+    "zh": "食品安全管理体系标准"
+  },
+  {
+    "en": "For product import with AI column mapping, use Inventory → Import XLSX.",
+    "zh": "产品导入（含 AI 列映射）请前往：库存管理 → 导入 XLSX。"
+  },
+  {
+    "en": "Formulation",
+    "zh": "配方"
+  },
+  {
+    "en": "Freight Terms",
+    "zh": "运费条款"
+  },
+  {
+    "en": "Frequency",
+    "zh": "购买频次"
+  },
+  {
+    "en": "From",
+    "zh": "从"
+  },
+  {
+    "en": "From Date",
+    "zh": "开始日期"
+  },
+  {
+    "en": "From Order",
+    "zh": "从订单创建"
+  },
+  {
+    "en": "From Warehouse",
+    "zh": "源仓库"
+  },
+  {
+    "en": "Fulfillment",
+    "zh": "履约方式"
+  },
+  {
+    "en": "Fulfillment created.",
+    "zh": "履约单创建成功。"
+  },
+  {
+    "en": "Full OEM",
+    "zh": "深度OEM"
+  },
+  {
+    "en": "Full name",
+    "zh": "姓名"
+  },
+  {
+    "en": "GMO",
+    "zh": "含转基因"
+  },
+  {
+    "en": "GMO Status",
+    "zh": "转基因状态"
+  },
+  {
+    "en": "GMO-Free Certified",
+    "zh": "无转基因认证"
+  },
+  {
+    "en": "GTIN / Barcode",
+    "zh": "GTIN / 条形码"
+  },
+  {
+    "en": "General",
+    "zh": "通用"
+  },
+  {
+    "en": "Generate",
+    "zh": "生成"
+  },
+  {
+    "en": "Generate Chinese Draft",
+    "zh": "生成中文草稿"
+  },
+  {
+    "en": "Generate Quotation",
+    "zh": "生成报价"
+  },
+  {
+    "en": "Generate a {type} for this trade transaction.",
+    "zh": "为此贸易交易生成 {type}。"
+  },
+  {
+    "en": "Generate edit",
+    "zh": "生成修订"
+  },
+  {
+    "en": "Generate with AI",
+    "zh": "AI生成"
+  },
+  {
+    "en": "Generate {type}",
+    "zh": "生成 {type}"
+  },
+  {
+    "en": "Generates a quotation draft from inquiry products and requirements.\nDraft is advisory only — enter official amount and validity in the form below before submitting.",
+    "zh": "根据询盘产品与需求，AI 生成报价草稿（金额说明、条款建议等）。\n草稿仅供参考，请核对后在下方表单填写正式报价金额与有效期并提交。"
+  },
+  {
+    "en": "Generating product data...",
+    "zh": "正在生成产品数据..."
+  },
+  {
+    "en": "Generating...",
+    "zh": "生成中..."
+  },
+  {
+    "en": "Gift Cards",
+    "zh": "礼品卡"
+  },
+  {
+    "en": "Gluten-Free",
+    "zh": "无麸质"
+  },
+  {
+    "en": "Go to Home",
+    "zh": "返回首页"
+  },
+  {
+    "en": "Go to homepage",
+    "zh": "返回首页"
+  },
+  {
+    "en": "Goods Description",
+    "zh": "货物品名"
+  },
+  {
+    "en": "Got it",
+    "zh": "知道了"
+  },
+  {
+    "en": "Gross Weight (kg)",
+    "zh": "毛重 (kg)"
+  },
+  {
+    "en": "Gross Weight/Carton (kg)",
+    "zh": "每箱毛重 (kg)"
+  },
+  {
+    "en": "Group",
+    "zh": "分组"
+  },
+  {
+    "en": "HS Code",
+    "zh": "HS编码"
+  },
+  {
+    "en": "HTTP",
+    "zh": "HTTP"
+  },
+  {
+    "en": "Halal",
+    "zh": "清真"
+  },
+  {
+    "en": "Halal Certification for Islamic Market Compliance",
+    "zh": "清真认证 - 伊斯兰市场合规"
+  },
+  {
+    "en": "Halal Certified",
+    "zh": "清真认证"
+  },
+  {
+    "en": "Hazard Analysis Critical Control Point - Food Safety Management System",
+    "zh": "危害分析关键控制点 - 食品安全管理体系"
+  },
+  {
+    "en": "Heading 1",
+    "zh": "标题 1"
+  },
+  {
+    "en": "Heading 2",
+    "zh": "标题 2"
+  },
+  {
+    "en": "Heading 3",
+    "zh": "标题 3"
+  },
+  {
+    "en": "Health Certificate",
+    "zh": "卫生证书"
+  },
+  {
+    "en": "Height (mm)",
+    "zh": "高度 (mm)"
+  },
+  {
+    "en": "Hi, I'd like to inquire about your OEM candy services.\n\n",
+    "zh": "您好，我想咨询贵司的 OEM 糖果服务。\n\n"
+  },
+  {
+    "en": "Hi, I'm interested in \"{product}\"{categoryPart}. Can you provide more information?",
+    "zh": "您好，我对「{product}」感兴趣{categoryPart}。能否提供更多信息？"
+  },
+  {
+    "en": "Hi, I'm interested in your OEM candy services. Can you provide more information?",
+    "zh": "您好，我对您的OEM糖果服务很感兴趣。能提供更多信息吗？"
+  },
+  {
+    "en": "High",
+    "zh": "高"
+  },
+  {
+    "en": "History",
+    "zh": "历史记录"
+  },
+  {
+    "en": "Hook ID",
+    "zh": "Hook ID"
+  },
+  {
+    "en": "Hooks",
+    "zh": "Hooks"
+  },
+  {
+    "en": "Hooks & Events",
+    "zh": "钩子与事件"
+  },
+  {
+    "en": "How to use AI",
+    "zh": "查看 AI 使用说明"
+  },
+  {
+    "en": "ID",
+    "zh": "印"
+  },
+  {
+    "en": "INVOICE",
+    "zh": "发票"
+  },
+  {
+    "en": "IP Address",
+    "zh": "IP地址"
+  },
+  {
+    "en": "Icon",
+    "zh": "图标"
+  },
+  {
+    "en": "Image URLs detected - will be auto-uploaded on import",
+    "zh": "检测到图片URL - 导入时将自动上传"
+  },
+  {
+    "en": "Image column",
+    "zh": "图片列"
+  },
+  {
+    "en": "Images (comma separated URLs)",
+    "zh": "图片(逗号分隔URL)"
+  },
+  {
+    "en": "Images (comma separated)",
+    "zh": "图片（逗号分隔）"
+  },
+  {
+    "en": "Import",
+    "zh": "进口"
+  },
+  {
+    "en": "Import AI column mapping",
+    "zh": "导入 AI 列映射"
+  },
+  {
+    "en": "Import Products from XLSX",
+    "zh": "从 XLSX 导入产品"
+  },
+  {
+    "en": "Import XLSX",
+    "zh": "导入 XLSX"
+  },
+  {
+    "en": "Import complete: {created} created, {updated} updated, {errors} errors",
+    "zh": "导入完成：新建 {created} 项，更新 {updated} 项，错误 {errors} 项"
+  },
+  {
+    "en": "Importer Name",
+    "zh": "进口商名称"
+  },
+  {
+    "en": "Importing...",
+    "zh": "正在导入..."
+  },
+  {
+    "en": "In Progress",
+    "zh": "进行中"
+  },
+  {
+    "en": "In Stock",
+    "zh": "有库存"
+  },
+  {
+    "en": "In Transit",
+    "zh": "运输中"
+  },
+  {
+    "en": "In progress",
+    "zh": "进行中"
+  },
+  {
+    "en": "In transit",
+    "zh": "运输中"
+  },
+  {
+    "en": "Inactive",
+    "zh": "未激活"
+  },
+  {
+    "en": "Incoterms",
+    "zh": "贸易术语"
+  },
+  {
+    "en": "Indonesian",
+    "zh": "印尼文"
+  },
+  {
+    "en": "Industry",
+    "zh": "行业"
+  },
+  {
+    "en": "Ingredient Compliance",
+    "zh": "成分合规"
+  },
+  {
+    "en": "Ingredients",
+    "zh": "配料"
+  },
+  {
+    "en": "Initial",
+    "zh": "初始"
+  },
+  {
+    "en": "Inner Pack Config",
+    "zh": "内包装配置"
+  },
+  {
+    "en": "Inquiries",
+    "zh": "询价管理"
+  },
+  {
+    "en": "Inquiry",
+    "zh": "询价"
+  },
+  {
+    "en": "Inquiry Conversion",
+    "zh": "询价转化"
+  },
+  {
+    "en": "Inquiry ID",
+    "zh": "询价ID"
+  },
+  {
+    "en": "Inquiry assigned successfully.",
+    "zh": "询价分配成功。"
+  },
+  {
+    "en": "Inquiry converted successfully. ",
+    "zh": "询价转换成功。"
+  },
+  {
+    "en": "Inquiry created successfully.",
+    "zh": "询价创建成功。"
+  },
+  {
+    "en": "Inquiry deleted successfully.",
+    "zh": "询价删除成功。"
+  },
+  {
+    "en": "Inquiry updated successfully.",
+    "zh": "询价更新成功。"
+  },
+  {
+    "en": "Insert Image",
+    "zh": "插入图片"
+  },
+  {
+    "en": "Insert Link",
+    "zh": "插入链接"
+  },
+  {
+    "en": "Inspection Result",
+    "zh": "检验结果"
+  },
+  {
+    "en": "Instagram",
+    "zh": "Instagram"
+  },
+  {
+    "en": "Interested Products",
+    "zh": "感兴趣的产品"
+  },
+  {
+    "en": "Interested Products (comma separated)",
+    "zh": "感兴趣的产品（逗号分隔）"
+  },
+  {
+    "en": "Invalid JSON config.",
+    "zh": "JSON 配置无效。"
+  },
+  {
+    "en": "Invalid email format",
+    "zh": "邮箱格式不正确"
+  },
+  {
+    "en": "Invalid format",
+    "zh": "格式不正确"
+  },
+  {
+    "en": "Invalid input",
+    "zh": "输入无效"
+  },
+  {
+    "en": "Invalid phone format",
+    "zh": "电话号码格式不正确"
+  },
+  {
+    "en": "Invalid status transition. Allowed: draft → active, active ↔ inactive.",
+    "zh": "状态变更无效。允许：草稿 → 上架，上架 ↔ 下架。"
+  },
+  {
+    "en": "Inventory",
+    "zh": "库存管理"
+  },
+  {
+    "en": "Inventory Audit",
+    "zh": "库存盘点"
+  },
+  {
+    "en": "Inventory Health",
+    "zh": "库存健康"
+  },
+  {
+    "en": "Inventory warnings",
+    "zh": "库存警告"
+  },
+  {
+    "en": "Invoice",
+    "zh": "发票"
+  },
+  {
+    "en": "Invoice #,Order,Customer,Amount,Paid,Status,Date,Due Date",
+    "zh": "发票号,订单,客户,金额,已付,状态,日期,到期日"
+  },
+  {
+    "en": "Invoice Date",
+    "zh": "发票日期"
+  },
+  {
+    "en": "Invoice No",
+    "zh": "发票号"
+  },
+  {
+    "en": "Invoice Number",
+    "zh": "发票号"
+  },
+  {
+    "en": "Invoice Preview",
+    "zh": "发票预览"
+  },
+  {
+    "en": "Invoice auto-created",
+    "zh": "自动创建发票"
+  },
+  {
+    "en": "Invoices",
+    "zh": "发票管理"
+  },
+  {
+    "en": "Issuer",
+    "zh": "颁发机构"
+  },
+  {
+    "en": "Issuing Authority",
+    "zh": "签发机构"
+  },
+  {
+    "en": "Italic",
+    "zh": "斜体"
+  },
+  {
+    "en": "Japanese",
+    "zh": "日文"
+  },
+  {
+    "en": "KYB Notes",
+    "zh": "KYB备注"
+  },
+  {
+    "en": "KYB Status",
+    "zh": "KYB状态"
+  },
+  {
+    "en": "Key",
+    "zh": "键名"
+  },
+  {
+    "en": "Korean",
+    "zh": "韩文"
+  },
+  {
+    "en": "Kosher",
+    "zh": "犹太洁食"
+  },
+  {
+    "en": "Label Template ID",
+    "zh": "标签模板 ID"
+  },
+  {
+    "en": "Labor",
+    "zh": "人工"
+  },
+  {
+    "en": "Language",
+    "zh": "语言"
+  },
+  {
+    "en": "Last Login",
+    "zh": "最后登录"
+  },
+  {
+    "en": "Last Name",
+    "zh": "姓氏"
+  },
+  {
+    "en": "Lead Time",
+    "zh": "交货期"
+  },
+  {
+    "en": "Learn more about our Cookie Policy",
+    "zh": "了解我们的 Cookie 政策"
+  },
+  {
+    "en": "Leave empty to use default author bio",
+    "zh": "留空则使用默认作者简介"
+  },
+  {
+    "en": "Leave empty to use default author name",
+    "zh": "留空则使用默认作者名称"
+  },
+  {
+    "en": "Leave empty to use default author title",
+    "zh": "留空则使用默认作者职称"
+  },
+  {
+    "en": "Leave empty to use default content",
+    "zh": "留空则使用默认内容"
+  },
+  {
+    "en": "Leave empty to use default excerpt",
+    "zh": "留空则使用默认摘要"
+  },
+  {
+    "en": "Leave empty to use default name",
+    "zh": "留空则使用主名称"
+  },
+  {
+    "en": "Leave empty to use default title",
+    "zh": "留空则使用默认标题"
+  },
+  {
+    "en": "Length (mm)",
+    "zh": "长度 (mm)"
+  },
+  {
+    "en": "Light mode",
+    "zh": "浅色模式"
+  },
+  {
+    "en": "Link URL",
+    "zh": "链接地址"
+  },
+  {
+    "en": "Linked Product IDs",
+    "zh": "关联产品 ID"
+  },
+  {
+    "en": "Linked Users",
+    "zh": "关联用户"
+  },
+  {
+    "en": "LinkedIn",
+    "zh": "LinkedIn"
+  },
+  {
+    "en": "Load",
+    "zh": "加载"
+  },
+  {
+    "en": "Loading activity...",
+    "zh": "正在加载活动记录..."
+  },
+  {
+    "en": "Loading analytics...",
+    "zh": "正在加载分析数据..."
+  },
+  {
+    "en": "Loading audit log...",
+    "zh": "正在加载审计日志..."
+  },
+  {
+    "en": "Loading certifications...",
+    "zh": "正在加载认证..."
+  },
+  {
+    "en": "Loading companies...",
+    "zh": "正在加载企业..."
+  },
+  {
+    "en": "Loading company details...",
+    "zh": "正在加载企业详情..."
+  },
+  {
+    "en": "Loading dashboard statistics...",
+    "zh": "正在加载仪表盘数据..."
+  },
+  {
+    "en": "Loading documents...",
+    "zh": "加载文档中..."
+  },
+  {
+    "en": "Loading financial data...",
+    "zh": "正在加载财务数据..."
+  },
+  {
+    "en": "Loading inquiries...",
+    "zh": "正在加载询价..."
+  },
+  {
+    "en": "Loading inquiry details...",
+    "zh": "正在加载询价详情..."
+  },
+  {
+    "en": "Loading inventory...",
+    "zh": "正在加载库存..."
+  },
+  {
+    "en": "Loading invoices...",
+    "zh": "正在加载发票..."
+  },
+  {
+    "en": "Loading order details...",
+    "zh": "正在加载订单详情..."
+  },
+  {
+    "en": "Loading orders...",
+    "zh": "正在加载订单..."
+  },
+  {
+    "en": "Loading payments...",
+    "zh": "正在加载付款记录..."
+  },
+  {
+    "en": "Loading products...",
+    "zh": "正在加载产品..."
+  },
+  {
+    "en": "Loading project details...",
+    "zh": "正在加载项目详情..."
+  },
+  {
+    "en": "Loading projects...",
+    "zh": "正在加载项目..."
+  },
+  {
+    "en": "Loading report...",
+    "zh": "加载报表中..."
+  },
+  {
+    "en": "Loading settings...",
+    "zh": "正在加载设置..."
+  },
+  {
+    "en": "Loading shipments...",
+    "zh": "正在加载发货数据..."
+  },
+  {
+    "en": "Loading staff...",
+    "zh": "正在加载员工列表..."
+  },
+  {
+    "en": "Loading timeline...",
+    "zh": "加载物流时间线..."
+  },
+  {
+    "en": "Loading trade details...",
+    "zh": "正在加载贸易详情..."
+  },
+  {
+    "en": "Loading trades...",
+    "zh": "正在加载贸易..."
+  },
+  {
+    "en": "Loading user data...",
+    "zh": "正在加载用户数据..."
+  },
+  {
+    "en": "Loading users...",
+    "zh": "正在加载用户..."
+  },
+  {
+    "en": "Loading...",
+    "zh": "加载中..."
+  },
+  {
+    "en": "Loading…",
+    "zh": "加载中…"
+  },
+  {
+    "en": "Locale",
+    "zh": "语言"
+  },
+  {
+    "en": "Location",
+    "zh": "地点"
+  },
+  {
+    "en": "Logistics",
+    "zh": "物流"
+  },
+  {
+    "en": "Logout",
+    "zh": "退出登录"
+  },
+  {
+    "en": "Lost",
+    "zh": "已丢失"
+  },
+  {
+    "en": "Low",
+    "zh": "低"
+  },
+  {
+    "en": "Low Stock",
+    "zh": "低库存"
+  },
+  {
+    "en": "MOQ",
+    "zh": "起订量"
+  },
+  {
+    "en": "MOQ: ",
+    "zh": "起订量: "
+  },
+  {
+    "en": "MS",
+    "zh": "马"
+  },
+  {
+    "en": "Main navigation",
+    "zh": "主导航"
+  },
+  {
+    "en": "Malay",
+    "zh": "马来文"
+  },
+  {
+    "en": "Manage OEM project lifecycle from inquiry to delivery.",
+    "zh": "管理从询价到交货的OEM项目生命周期。"
+  },
+  {
+    "en": "Manage blog posts and customer case studies.",
+    "zh": "管理博客文章与客户案例的内容。"
+  },
+  {
+    "en": "Manage company KYB verification, credit limits, and pricing tiers.",
+    "zh": "管理企业KYB认证、信用额度及价格体系。"
+  },
+  {
+    "en": "Manage factory certifications (HACCP, ISO22000, BRC, HALAL, etc.)",
+    "zh": "管理工厂认证（HACCP、ISO22000、BRC、HALAL等）"
+  },
+  {
+    "en": "Manage inquiry records with complete CRUD and conversion actions.",
+    "zh": "管理询价记录，支持完整的增删改查和转化操作。"
+  },
+  {
+    "en": "Manage invoices, proforma invoices, and payment tracking.",
+    "zh": "管理发票、形式发票和付款追踪。"
+  },
+  {
+    "en": "Manage marketplace and webstore channels.",
+    "zh": "管理市场与网店渠道。"
+  },
+  {
+    "en": "Manage order lifecycle with complete CRUD operations.",
+    "zh": "管理订单生命周期，支持完整的增删改查操作。"
+  },
+  {
+    "en": "Manage order shipments, tracking, and delivery status.",
+    "zh": "管理订单履约发货与物流追踪。"
+  },
+  {
+    "en": "Manage price lists and product-specific pricing rules.",
+    "zh": "管理价格列表和产品规格定价规则。"
+  },
+  {
+    "en": "Manage product catalog with complete CRUD operations.",
+    "zh": "管理产品目录，支持完整的增删改查操作。"
+  },
+  {
+    "en": "Manage product categories with multilingual names, aliases, and descriptions.",
+    "zh": "管理产品分类及多语言名称、别名与描述。"
+  },
+  {
+    "en": "Manage trade bill-of-lading and cross-border logistics.",
+    "zh": "管理贸易提单（BOL）与跨境物流状态。"
+  },
+  {
+    "en": "Manage trade transactions, documents, and status.",
+    "zh": "管理贸易交易、文档及状态。"
+  },
+  {
+    "en": "Management",
+    "zh": "运营管理"
+  },
+  {
+    "en": "Manual compliance ack",
+    "zh": "需手动合规确认"
+  },
+  {
+    "en": "Marked as shipped.",
+    "zh": "已标记发货。"
+  },
+  {
+    "en": "Market Code",
+    "zh": "市场代码"
+  },
+  {
+    "en": "Market Profile",
+    "zh": "市场画像"
+  },
+  {
+    "en": "Market profile saved.",
+    "zh": "市场画像已保存。"
+  },
+  {
+    "en": "Marketplace",
+    "zh": "市场"
+  },
+  {
+    "en": "Material",
+    "zh": "材料"
+  },
+  {
+    "en": "Max Weight (kg)",
+    "zh": "最大重量 (kg)"
+  },
+  {
+    "en": "May Contain",
+    "zh": "可能含有"
+  },
+  {
+    "en": "Measurement (CBM)",
+    "zh": "体积 (CBM)"
+  },
+  {
+    "en": "Members",
+    "zh": "成员"
+  },
+  {
+    "en": "Message",
+    "zh": "备注"
+  },
+  {
+    "en": "Method",
+    "zh": "方式"
+  },
+  {
+    "en": "Milk Solids %",
+    "zh": "乳固形物 %"
+  },
+  {
+    "en": "Min Order",
+    "zh": "最低订单"
+  },
+  {
+    "en": "Min Qty",
+    "zh": "最小数量"
+  },
+  {
+    "en": "Min Weight (kg)",
+    "zh": "最小重量 (kg)"
+  },
+  {
+    "en": "Minimum order quantity must be at least 1.",
+    "zh": "最小起订量必须大于等于 1。"
+  },
+  {
+    "en": "Mobile navigation",
+    "zh": "移动端导航"
+  },
+  {
+    "en": "Modal AI generate",
+    "zh": "编辑弹窗 AI 生成"
+  },
+  {
+    "en": "Model",
+    "zh": "模型"
+  },
+  {
+    "en": "Monetary",
+    "zh": "消费金额"
+  },
+  {
+    "en": "Month",
+    "zh": "月份"
+  },
+  {
+    "en": "Months",
+    "zh": "月份数"
+  },
+  {
+    "en": "Multiple languages",
+    "zh": "多语言"
+  },
+  {
+    "en": "Must be at least {min} characters",
+    "zh": "至少需要 {min} 个字符"
+  },
+  {
+    "en": "N/A",
+    "zh": "暂无"
+  },
+  {
+    "en": "Name",
+    "zh": "姓名"
+  },
+  {
+    "en": "Negotiating",
+    "zh": "协商中"
+  },
+  {
+    "en": "Negotiation",
+    "zh": "议价协商"
+  },
+  {
+    "en": "Net Weight/Pack (g)",
+    "zh": "每包净重 (g)"
+  },
+  {
+    "en": "Net Weight/Piece (g)",
+    "zh": "单颗净重 (g)"
+  },
+  {
+    "en": "Never",
+    "zh": "从未登录"
+  },
+  {
+    "en": "New BOL",
+    "zh": "新建 BOL"
+  },
+  {
+    "en": "New Flow",
+    "zh": "新建流程"
+  },
+  {
+    "en": "New Inquiry",
+    "zh": "新建询价"
+  },
+  {
+    "en": "New Order",
+    "zh": "新建订单"
+  },
+  {
+    "en": "New Shipment",
+    "zh": "新建发货"
+  },
+  {
+    "en": "New Solution",
+    "zh": "新建方案"
+  },
+  {
+    "en": "New Stock",
+    "zh": "新库存"
+  },
+  {
+    "en": "New User",
+    "zh": "新建用户"
+  },
+  {
+    "en": "Next",
+    "zh": "下一页"
+  },
+  {
+    "en": "Next image",
+    "zh": "下一张图片"
+  },
+  {
+    "en": "No",
+    "zh": "否"
+  },
+  {
+    "en": "No OEM projects yet.",
+    "zh": "暂无 OEM 项目。"
+  },
+  {
+    "en": "No activity recorded",
+    "zh": "暂无活动记录"
+  },
+  {
+    "en": "No adjustment history found.",
+    "zh": "暂无调整记录。"
+  },
+  {
+    "en": "No audit log entries found.",
+    "zh": "暂无审计日志记录。"
+  },
+  {
+    "en": "No categories found",
+    "zh": "暂无分类"
+  },
+  {
+    "en": "No certifications found.",
+    "zh": "暂无认证。"
+  },
+  {
+    "en": "No channels yet.",
+    "zh": "暂无渠道。"
+  },
+  {
+    "en": "No companies found.",
+    "zh": "暂无企业记录。"
+  },
+  {
+    "en": "No compliance requirements.",
+    "zh": "暂无合规项。"
+  },
+  {
+    "en": "No content found",
+    "zh": "暂无内容数据"
+  },
+  {
+    "en": "No coupons.",
+    "zh": "暂无优惠券。"
+  },
+  {
+    "en": "No data available",
+    "zh": "暂无数据"
+  },
+  {
+    "en": "No data available for the selected period.",
+    "zh": "所选时间段暂无数据。"
+  },
+  {
+    "en": "No delivery logs.",
+    "zh": "暂无投递记录。"
+  },
+  {
+    "en": "No documents available",
+    "zh": "暂无文档"
+  },
+  {
+    "en": "No documents yet.",
+    "zh": "暂无文档。"
+  },
+  {
+    "en": "No events logged.",
+    "zh": "暂无事件。"
+  },
+  {
+    "en": "No executions found.",
+    "zh": "暂无执行记录。"
+  },
+  {
+    "en": "No files",
+    "zh": "无附件"
+  },
+  {
+    "en": "No financial data available.",
+    "zh": "暂无财务数据。"
+  },
+  {
+    "en": "No flows yet.",
+    "zh": "暂无流程模板。"
+  },
+  {
+    "en": "No fulfillments yet.",
+    "zh": "暂无履约记录。"
+  },
+  {
+    "en": "No gift cards.",
+    "zh": "暂无礼品卡。"
+  },
+  {
+    "en": "No hooks configured.",
+    "zh": "暂无 Hook。"
+  },
+  {
+    "en": "No inquiries found.",
+    "zh": "暂无询价记录。"
+  },
+  {
+    "en": "No inventory data found.",
+    "zh": "暂无库存数据。"
+  },
+  {
+    "en": "No invoices found.",
+    "zh": "暂无发票记录。"
+  },
+  {
+    "en": "No items found",
+    "zh": "暂无商品"
+  },
+  {
+    "en": "No linked users",
+    "zh": "暂无关联用户"
+  },
+  {
+    "en": "No members.",
+    "zh": "暂无成员。"
+  },
+  {
+    "en": "No messages yet.",
+    "zh": "暂无消息。"
+  },
+  {
+    "en": "No offers yet.",
+    "zh": "暂无议价记录"
+  },
+  {
+    "en": "No order (general chat)",
+    "zh": "不绑定订单（通用对话）"
+  },
+  {
+    "en": "No orders found.",
+    "zh": "暂无订单。"
+  },
+  {
+    "en": "No organizations.",
+    "zh": "暂无组织。"
+  },
+  {
+    "en": "No outstanding invoices.",
+    "zh": "暂无未结发票。"
+  },
+  {
+    "en": "No payments found",
+    "zh": "暂无付款记录"
+  },
+  {
+    "en": "No pending approvals",
+    "zh": "暂无待审批项"
+  },
+  {
+    "en": "No price lists found.",
+    "zh": "暂无价格列表。"
+  },
+  {
+    "en": "No pricing rules set",
+    "zh": "暂无定价规则"
+  },
+  {
+    "en": "No products found.",
+    "zh": "暂无产品。"
+  },
+  {
+    "en": "No projects found.",
+    "zh": "暂无项目记录。"
+  },
+  {
+    "en": "No recent activity",
+    "zh": "暂无最近活动"
+  },
+  {
+    "en": "No recent activity.",
+    "zh": "暂无活动记录。"
+  },
+  {
+    "en": "No return requests.",
+    "zh": "暂无退货申请。"
+  },
+  {
+    "en": "No samples yet",
+    "zh": "暂无样品"
+  },
+  {
+    "en": "No settings found for this category.",
+    "zh": "该分类下暂无设置项。"
+  },
+  {
+    "en": "No settlement milestones.",
+    "zh": "暂无结算记录。"
+  },
+  {
+    "en": "No shipments found.",
+    "zh": "暂无发货记录。"
+  },
+  {
+    "en": "No shipping rates.",
+    "zh": "暂无运费费率。"
+  },
+  {
+    "en": "No solutions yet.",
+    "zh": "暂无解决方案。"
+  },
+  {
+    "en": "No staff members found.",
+    "zh": "暂无员工记录。"
+  },
+  {
+    "en": "No tax rates configured.",
+    "zh": "暂无税率配置。"
+  },
+  {
+    "en": "No tool calls yet",
+    "zh": "暂无工具调用"
+  },
+  {
+    "en": "No trades found.",
+    "zh": "暂无贸易记录。"
+  },
+  {
+    "en": "No transfers.",
+    "zh": "暂无调拨记录。"
+  },
+  {
+    "en": "No translations found",
+    "zh": "暂无翻译数据"
+  },
+  {
+    "en": "No users found.",
+    "zh": "暂无用户记录。"
+  },
+  {
+    "en": "No warehouses.",
+    "zh": "暂无仓库。"
+  },
+  {
+    "en": "No webhooks configured.",
+    "zh": "暂无 Webhook。"
+  },
+  {
+    "en": "No. of Packages",
+    "zh": "件数"
+  },
+  {
+    "en": "Non-GMO",
+    "zh": "非转基因"
+  },
+  {
+    "en": "Normal",
+    "zh": "普通"
+  },
+  {
+    "en": "Not created yet.",
+    "zh": "尚未创建。"
+  },
+  {
+    "en": "Not set yet",
+    "zh": "尚未设置"
+  },
+  {
+    "en": "Notes",
+    "zh": "备注"
+  },
+  {
+    "en": "Notifications",
+    "zh": "通知"
+  },
+  {
+    "en": "Notify Party",
+    "zh": "通知方"
+  },
+  {
+    "en": "Nutrition (per 100g)",
+    "zh": "营养成分（每100g）"
+  },
+  {
+    "en": "OEM",
+    "zh": "OEM"
+  },
+  {
+    "en": "OEM Available",
+    "zh": "可OEM定制"
+  },
+  {
+    "en": "OEM Management",
+    "zh": "OEM 管理"
+  },
+  {
+    "en": "OEM Needed",
+    "zh": "需要OEM"
+  },
+  {
+    "en": "OEM Projects",
+    "zh": "OEM项目"
+  },
+  {
+    "en": "OG Image (Social Share)",
+    "zh": "OG 分享图"
+  },
+  {
+    "en": "Offer",
+    "zh": "还盘"
+  },
+  {
+    "en": "Offer accepted.",
+    "zh": "已接受"
+  },
+  {
+    "en": "Offer created successfully.",
+    "zh": "还盘已创建"
+  },
+  {
+    "en": "Offer rejected.",
+    "zh": "已拒绝"
+  },
+  {
+    "en": "Online payment failed. Please try again.",
+    "zh": "在线支付失败，请重试。"
+  },
+  {
+    "en": "Open",
+    "zh": "进行中"
+  },
+  {
+    "en": "Open sidebar menu",
+    "zh": "打开侧边导航"
+  },
+  {
+    "en": "Optional. 1200×630 recommended for social previews.",
+    "zh": "可选。建议 1200×630，用于社交媒体链接预览。"
+  },
+  {
+    "en": "Optional. Overrides thumbnail for Facebook/LinkedIn previews. 1200×630 recommended.",
+    "zh": "可选。覆盖缩略图用于 Facebook/LinkedIn 预览，建议 1200×630。"
+  },
+  {
+    "en": "Order",
+    "zh": "订单"
+  },
+  {
+    "en": "Order #",
+    "zh": "订单 #"
+  },
+  {
+    "en": "Order Fulfillment",
+    "zh": "订单履约"
+  },
+  {
+    "en": "Order ID",
+    "zh": "订单ID"
+  },
+  {
+    "en": "Order Items",
+    "zh": "订单商品"
+  },
+  {
+    "en": "Order Messages",
+    "zh": "订单消息"
+  },
+  {
+    "en": "Order Number",
+    "zh": "订单号"
+  },
+  {
+    "en": "Order Trends",
+    "zh": "订单趋势"
+  },
+  {
+    "en": "Order cancelled. Process refund if payment was made.",
+    "zh": "订单已取消。如已付款请处理退款。"
+  },
+  {
+    "en": "Order confirmed. Inform customer and proceed to production.",
+    "zh": "订单已确认。通知客户并安排生产。"
+  },
+  {
+    "en": "Order context",
+    "zh": "订单上下文"
+  },
+  {
+    "en": "Order created successfully.",
+    "zh": "订单创建成功。"
+  },
+  {
+    "en": "Order deleted successfully.",
+    "zh": "订单删除成功。"
+  },
+  {
+    "en": "Order delivered. Request feedback from customer.",
+    "zh": "订单已送达。请跟进客户反馈。"
+  },
+  {
+    "en": "Order is in production. Ensure materials are available.",
+    "zh": "订单生产中。请确保物料到位。"
+  },
+  {
+    "en": "Order shipped. Update tracking information.",
+    "zh": "订单已发货。更新物流跟踪信息。"
+  },
+  {
+    "en": "Order status (optional)",
+    "zh": "订单状态（可选）"
+  },
+  {
+    "en": "Order status updated successfully.",
+    "zh": "订单状态更新成功。"
+  },
+  {
+    "en": "Order updated successfully.",
+    "zh": "订单更新成功。"
+  },
+  {
+    "en": "Ordered List",
+    "zh": "有序列表"
+  },
+  {
+    "en": "Orders",
+    "zh": "订单"
+  },
+  {
+    "en": "Organic",
+    "zh": "有机"
+  },
+  {
+    "en": "Organization",
+    "zh": "组织"
+  },
+  {
+    "en": "Organizations",
+    "zh": "组织"
+  },
+  {
+    "en": "Origin Certificate",
+    "zh": "原产地证书"
+  },
+  {
+    "en": "Other",
+    "zh": "其他"
+  },
+  {
+    "en": "Our Factory",
+    "zh": "我们的工厂"
+  },
+  {
+    "en": "Out for delivery",
+    "zh": "派送中"
+  },
+  {
+    "en": "Out of Stock",
+    "zh": "缺货"
+  },
+  {
+    "en": "Outbound event notifications.",
+    "zh": "出站事件通知配置。"
+  },
+  {
+    "en": "Outstanding Invoices",
+    "zh": "未结发票列表"
+  },
+  {
+    "en": "Overdue",
+    "zh": "已逾期"
+  },
+  {
+    "en": "Overdue Amount",
+    "zh": "逾期金额"
+  },
+  {
+    "en": "PI No.",
+    "zh": "PI编号"
+  },
+  {
+    "en": "PI Reference",
+    "zh": "PI参考"
+  },
+  {
+    "en": "PL No.",
+    "zh": "装箱单编号"
+  },
+  {
+    "en": "PROFORMA INVOICE",
+    "zh": "形式发票"
+  },
+  {
+    "en": "Packaging",
+    "zh": "包装"
+  },
+  {
+    "en": "Packaging Requirements",
+    "zh": "包装要求"
+  },
+  {
+    "en": "Packaging Size",
+    "zh": "包装尺寸"
+  },
+  {
+    "en": "Packaging Type",
+    "zh": "包装类型"
+  },
+  {
+    "en": "Packaging Weight (g)",
+    "zh": "包装重量 (g)"
+  },
+  {
+    "en": "Packaging area",
+    "zh": "包装区"
+  },
+  {
+    "en": "Packing List",
+    "zh": "装箱单"
+  },
+  {
+    "en": "Packs/Carton",
+    "zh": "每箱包数"
+  },
+  {
+    "en": "Page Not Found",
+    "zh": "页面未找到"
+  },
+  {
+    "en": "Page {current} of {total}",
+    "zh": "第 {current} 页 / 共 {total} 页"
+  },
+  {
+    "en": "Pagination",
+    "zh": "分页导航"
+  },
+  {
+    "en": "Paid",
+    "zh": "已付款"
+  },
+  {
+    "en": "Paid Amount",
+    "zh": "已付金额"
+  },
+  {
+    "en": "Paid: {currency} {amount}",
+    "zh": "已付：{currency} {amount}"
+  },
+  {
+    "en": "Pallet Config",
+    "zh": "托盘配置"
+  },
+  {
+    "en": "Paragraph",
+    "zh": "段落"
+  },
+  {
+    "en": "Parsing file...",
+    "zh": "正在解析文件..."
+  },
+  {
+    "en": "Partial",
+    "zh": "部分付款"
+  },
+  {
+    "en": "Partially delivered",
+    "zh": "部分送达"
+  },
+  {
+    "en": "Partially returned",
+    "zh": "部分退货"
+  },
+  {
+    "en": "Partially shipped",
+    "zh": "部分发货"
+  },
+  {
+    "en": "Passed",
+    "zh": "通过"
+  },
+  {
+    "en": "Password",
+    "zh": "密码"
+  },
+  {
+    "en": "Payload",
+    "zh": "载荷"
+  },
+  {
+    "en": "Payment",
+    "zh": "付款"
+  },
+  {
+    "en": "Payment Breakdown",
+    "zh": "支付分布"
+  },
+  {
+    "en": "Payment Management",
+    "zh": "付款管理"
+  },
+  {
+    "en": "Payment Method",
+    "zh": "付款方式"
+  },
+  {
+    "en": "Payment Status",
+    "zh": "付款状态"
+  },
+  {
+    "en": "Payment Terms",
+    "zh": "付款条款"
+  },
+  {
+    "en": "Payment confirmed",
+    "zh": "确认付款"
+  },
+  {
+    "en": "Payment created",
+    "zh": "创建付款"
+  },
+  {
+    "en": "Payment must be confirmed (paid or partial) before moving to execution stages (confirmed, production, shipped, delivered).",
+    "zh": "进入执行阶段（已确认、生产中、已发货、已送达）前须确认付款（已付或部分付款）。"
+  },
+  {
+    "en": "Payment refunded",
+    "zh": "付款退款"
+  },
+  {
+    "en": "Pending",
+    "zh": "待检查"
+  },
+  {
+    "en": "Pending Approvals",
+    "zh": "待审批"
+  },
+  {
+    "en": "Pending approval",
+    "zh": "待审批"
+  },
+  {
+    "en": "Pending confirmation",
+    "zh": "待确认"
+  },
+  {
+    "en": "Percentage",
+    "zh": "百分比"
+  },
+  {
+    "en": "Personal details and current status.",
+    "zh": "个人信息和当前状态。"
+  },
+  {
+    "en": "Phone",
+    "zh": "电话"
+  },
+  {
+    "en": "Pick an Agent mode on the right, then chat:\n• Chatbot: Q&A; optional order context.\n• Plan-Execute-Replan / B2B Coordinator / Trade Assistant: streaming agents.\n• Recommend / Search / Translate / Analyze inquiry / Generate quotation: one-shot JSON.\nFor Chatbot, select an order in the sidebar to discuss that order.",
+    "zh": "右侧选择 Agent 模式后输入问题：\n• 聊天机器人：通用问答；可选绑定订单注入上下文。\n• 计划-执行-重规划 / B2B 协调器 / 贸易助手：流式 Agent 对话。\n• 产品推荐 / AI 搜索 / 翻译 / 分析询价 / 生成报价：单次 JSON 结果。\nChatbot 模式下可在侧边栏选择订单以讨论具体订单内容。"
+  },
+  {
+    "en": "Pick document type (PI, CI, SC, etc.) and optional context.\nAI drafts from current trade data and saves to the system.\nAlways verify fields in the document list before sending to customers.",
+    "zh": "选择文档类型（PI、CI、SC 等），可补充上下文说明。\nAI 基于当前交易数据生成文档草稿并写入系统。\n生成后请在文档列表中核对字段，必要时人工修正。"
+  },
+  {
+    "en": "Picked up",
+    "zh": "已揽收"
+  },
+  {
+    "en": "Pieces/Pack",
+    "zh": "每包颗数"
+  },
+  {
+    "en": "Placed on",
+    "zh": "下单时间"
+  },
+  {
+    "en": "Plan-Execute-Replan",
+    "zh": "计划-执行-重规划"
+  },
+  {
+    "en": "Platform overview and key metrics at a glance.",
+    "zh": "平台概览与关键指标一览。"
+  },
+  {
+    "en": "Please check your internet connection and try again.",
+    "zh": "请检查您的网络连接并重试。"
+  },
+  {
+    "en": "Please provide more information about pricing and lead times.",
+    "zh": "请补充报价与交期方面的说明。"
+  },
+  {
+    "en": "Please select a .xlsx file",
+    "zh": "请选择 .xlsx 文件"
+  },
+  {
+    "en": "Please select an XLSX file",
+    "zh": "请选择 XLSX 文件"
+  },
+  {
+    "en": "Plugin and internal hook configurations.",
+    "zh": "插件与内部 Hook 配置。"
+  },
+  {
+    "en": "Port of Discharge",
+    "zh": "卸货港"
+  },
+  {
+    "en": "Port of Loading",
+    "zh": "装运港"
+  },
+  {
+    "en": "Post",
+    "zh": "文章"
+  },
+  {
+    "en": "Preview",
+    "zh": "预览"
+  },
+  {
+    "en": "Preview Import Data",
+    "zh": "导入数据预览"
+  },
+  {
+    "en": "Previous",
+    "zh": "上一页"
+  },
+  {
+    "en": "Previous image",
+    "zh": "上一张图片"
+  },
+  {
+    "en": "Price List",
+    "zh": "价格列表"
+  },
+  {
+    "en": "Price List Name",
+    "zh": "价格列表名称"
+  },
+  {
+    "en": "Price Lists",
+    "zh": "价格列表"
+  },
+  {
+    "en": "Price Multiplier",
+    "zh": "价格系数"
+  },
+  {
+    "en": "Pricing",
+    "zh": "价格管理"
+  },
+  {
+    "en": "Pricing Rules",
+    "zh": "定价规则"
+  },
+  {
+    "en": "Primary Packaging",
+    "zh": "初级包装"
+  },
+  {
+    "en": "Print",
+    "zh": "打印"
+  },
+  {
+    "en": "Priority",
+    "zh": "优先级"
+  },
+  {
+    "en": "Processing",
+    "zh": "处理中"
+  },
+  {
+    "en": "Product",
+    "zh": "产品"
+  },
+  {
+    "en": "Product AI translate",
+    "zh": "产品 AI 翻译"
+  },
+  {
+    "en": "Product Dimensions (mm)",
+    "zh": "产品尺寸 (mm)"
+  },
+  {
+    "en": "Product ID",
+    "zh": "产品 ID"
+  },
+  {
+    "en": "Product IDs, comma separated",
+    "zh": "产品 ID，逗号分隔"
+  },
+  {
+    "en": "Product Name",
+    "zh": "产品名称"
+  },
+  {
+    "en": "Product Pricing",
+    "zh": "产品规格定价"
+  },
+  {
+    "en": "Product Recommend",
+    "zh": "产品推荐"
+  },
+  {
+    "en": "Product catalog",
+    "zh": "产品目录"
+  },
+  {
+    "en": "Product created successfully.",
+    "zh": "产品创建成功。"
+  },
+  {
+    "en": "Product deleted successfully.",
+    "zh": "产品删除成功。"
+  },
+  {
+    "en": "Product name is required.",
+    "zh": "产品名称为必填项。"
+  },
+  {
+    "en": "Product updated successfully.",
+    "zh": "产品更新成功。"
+  },
+  {
+    "en": "Production",
+    "zh": "生产"
+  },
+  {
+    "en": "Production Date",
+    "zh": "生产日期"
+  },
+  {
+    "en": "Production line",
+    "zh": "生产线"
+  },
+  {
+    "en": "Products",
+    "zh": "产品数"
+  },
+  {
+    "en": "Products (comma separated)",
+    "zh": "产品（逗号分隔）"
+  },
+  {
+    "en": "Profit",
+    "zh": "利润"
+  },
+  {
+    "en": "Profit & Loss",
+    "zh": "损益报表"
+  },
+  {
+    "en": "Proforma",
+    "zh": "形式发票"
+  },
+  {
+    "en": "Proforma Invoice",
+    "zh": "形式发票"
+  },
+  {
+    "en": "Project",
+    "zh": "项目"
+  },
+  {
+    "en": "Project status updated successfully.",
+    "zh": "项目状态更新成功。"
+  },
+  {
+    "en": "Projects",
+    "zh": "项目"
+  },
+  {
+    "en": "Promotional codes and prepaid credits.",
+    "zh": "促销码与预付余额。"
+  },
+  {
+    "en": "Protein (g)",
+    "zh": "蛋白质 (g)"
+  },
+  {
+    "en": "Published (default)",
+    "zh": "已发布（默认）"
+  },
+  {
+    "en": "Qty",
+    "zh": "数量"
+  },
+  {
+    "en": "Quality Laboratory",
+    "zh": "质量实验室"
+  },
+  {
+    "en": "Quality Standard",
+    "zh": "质量标准"
+  },
+  {
+    "en": "Quality control",
+    "zh": "质量控制"
+  },
+  {
+    "en": "Quantity",
+    "zh": "数量"
+  },
+  {
+    "en": "Quick Document Generation",
+    "zh": "快捷单证生成"
+  },
+  {
+    "en": "Quick ODM",
+    "zh": "快速ODM"
+  },
+  {
+    "en": "Quotation",
+    "zh": "报价单"
+  },
+  {
+    "en": "Quote",
+    "zh": "报价"
+  },
+  {
+    "en": "Quote submitted successfully.",
+    "zh": "报价提交成功。"
+  },
+  {
+    "en": "Quoted",
+    "zh": "已报价"
+  },
+  {
+    "en": "Quoted Amount",
+    "zh": "报价金额"
+  },
+  {
+    "en": "Quoted amount",
+    "zh": "报价金额"
+  },
+  {
+    "en": "Quoted amount must be greater than 0.",
+    "zh": "报价金额必须大于0。"
+  },
+  {
+    "en": "RFM Analysis",
+    "zh": "RFM 分析"
+  },
+  {
+    "en": "Rate",
+    "zh": "税率"
+  },
+  {
+    "en": "Read Time (min)",
+    "zh": "阅读时间(分钟)"
+  },
+  {
+    "en": "Reason",
+    "zh": "原因"
+  },
+  {
+    "en": "Receive",
+    "zh": "确认收货"
+  },
+  {
+    "en": "Received",
+    "zh": "已收到"
+  },
+  {
+    "en": "Recency",
+    "zh": "最近购买"
+  },
+  {
+    "en": "Recent Activity",
+    "zh": "近期活动"
+  },
+  {
+    "en": "Recommend pricing for candy products",
+    "zh": "推荐糖果产品定价"
+  },
+  {
+    "en": "Redo",
+    "zh": "重做"
+  },
+  {
+    "en": "Reference transit estimate for internal quoting. Subject to change; confirm at order time.",
+    "zh": "内部报价用的参考运输天数，可能变动，下单时确认。"
+  },
+  {
+    "en": "Refresh Page",
+    "zh": "刷新页面"
+  },
+  {
+    "en": "Refund",
+    "zh": "退款"
+  },
+  {
+    "en": "Refund processed.",
+    "zh": "退款已完成。"
+  },
+  {
+    "en": "Refunded",
+    "zh": "已退款"
+  },
+  {
+    "en": "Regenerate",
+    "zh": "重新生成"
+  },
+  {
+    "en": "Region",
+    "zh": "地区"
+  },
+  {
+    "en": "Region / State",
+    "zh": "地区/州"
+  },
+  {
+    "en": "Registration Number",
+    "zh": "注册号"
+  },
+  {
+    "en": "Reject",
+    "zh": "拒绝"
+  },
+  {
+    "en": "Reject Return",
+    "zh": "拒绝退货"
+  },
+  {
+    "en": "Rejected",
+    "zh": "已拒绝"
+  },
+  {
+    "en": "Rejection reason",
+    "zh": "拒绝原因"
+  },
+  {
+    "en": "Reload",
+    "zh": "重新加载"
+  },
+  {
+    "en": "Remove",
+    "zh": "移除"
+  },
+  {
+    "en": "Reorder Qty",
+    "zh": "建议补货"
+  },
+  {
+    "en": "Replenishment",
+    "zh": "补货建议"
+  },
+  {
+    "en": "Request failed. Please try again.",
+    "zh": "请求失败，请稍后重试。"
+  },
+  {
+    "en": "Requested",
+    "zh": "已申请"
+  },
+  {
+    "en": "Required Cert Keywords",
+    "zh": "必需认证关键词"
+  },
+  {
+    "en": "Requirement",
+    "zh": "合规要求"
+  },
+  {
+    "en": "Requirements",
+    "zh": "需求"
+  },
+  {
+    "en": "Requirements Notes",
+    "zh": "需求备注"
+  },
+  {
+    "en": "Restock",
+    "zh": "补货"
+  },
+  {
+    "en": "Result",
+    "zh": "结果"
+  },
+  {
+    "en": "Return ID",
+    "zh": "退货单号"
+  },
+  {
+    "en": "Return approved.",
+    "zh": "退货已批准。"
+  },
+  {
+    "en": "Return received.",
+    "zh": "退货已确认收货。"
+  },
+  {
+    "en": "Return rejected.",
+    "zh": "退货已拒绝。"
+  },
+  {
+    "en": "Returned",
+    "zh": "已退货"
+  },
+  {
+    "en": "Returns",
+    "zh": "退货管理"
+  },
+  {
+    "en": "Revenue",
+    "zh": "营收"
+  },
+  {
+    "en": "Revenue (30 Days)",
+    "zh": "营收趋势（近30天）"
+  },
+  {
+    "en": "Revenue This Month",
+    "zh": "本月营收"
+  },
+  {
+    "en": "Revenue Trends",
+    "zh": "营收趋势"
+  },
+  {
+    "en": "Revenue report",
+    "zh": "营收报表"
+  },
+  {
+    "en": "Review and edit the Chinese draft below. On publish, all locales will be translated and synced to the public blog.",
+    "zh": "请审阅并修改下方中文正文。确认后将自动翻译为全部语言并发布到前台博客。"
+  },
+  {
+    "en": "Review and process customer return requests.",
+    "zh": "审核和处理客户退货申请。"
+  },
+  {
+    "en": "Reviewed By",
+    "zh": "审核人"
+  },
+  {
+    "en": "Revising…",
+    "zh": "修订中…"
+  },
+  {
+    "en": "Revision scope",
+    "zh": "修订范围"
+  },
+  {
+    "en": "Risk",
+    "zh": "风险"
+  },
+  {
+    "en": "Role",
+    "zh": "角色"
+  },
+  {
+    "en": "Role Management",
+    "zh": "角色管理"
+  },
+  {
+    "en": "Running",
+    "zh": "运行中"
+  },
+  {
+    "en": "SKU",
+    "zh": "SKU"
+  },
+  {
+    "en": "SKU,Product Name,Stock,Min Stock,Status,Location,Batch,Expiry Date",
+    "zh": "SKU,产品名称,库存,最低库存,状态,库位,批次,过期日"
+  },
+  {
+    "en": "Sales Channels",
+    "zh": "销售渠道"
+  },
+  {
+    "en": "Sales Contract",
+    "zh": "销售合同"
+  },
+  {
+    "en": "Sales Velocity",
+    "zh": "销售速度"
+  },
+  {
+    "en": "Salt (g)",
+    "zh": "盐 (g)"
+  },
+  {
+    "en": "Sample ID",
+    "zh": "样品ID"
+  },
+  {
+    "en": "Sample Lead Time",
+    "zh": "样品交期"
+  },
+  {
+    "en": "Sample MOQ",
+    "zh": "样品起订量"
+  },
+  {
+    "en": "Sample Price",
+    "zh": "样品价格"
+  },
+  {
+    "en": "Sample Specs",
+    "zh": "样品规格"
+  },
+  {
+    "en": "Sample lead time reference — confirmed by sales in the sample quote; do not use \"approx. X weeks\".",
+    "zh": "样品参考交期，由销售在报价/样品订单中确认；勿写「约 X 周」。"
+  },
+  {
+    "en": "Samples",
+    "zh": "样品"
+  },
+  {
+    "en": "Sampling",
+    "zh": "样品"
+  },
+  {
+    "en": "Saturated Fat (g)",
+    "zh": "饱和脂肪 (g)"
+  },
+  {
+    "en": "Save",
+    "zh": "保存"
+  },
+  {
+    "en": "Save Cost Stack",
+    "zh": "保存成本栈"
+  },
+  {
+    "en": "Save Market Profile",
+    "zh": "保存市场画像"
+  },
+  {
+    "en": "Save Product",
+    "zh": "保存产品"
+  },
+  {
+    "en": "Save Profile",
+    "zh": "保存资料"
+  },
+  {
+    "en": "Save failed",
+    "zh": "保存失败"
+  },
+  {
+    "en": "Saving...",
+    "zh": "正在保存..."
+  },
+  {
+    "en": "Scroll to top",
+    "zh": "回到顶部"
+  },
+  {
+    "en": "Sea Freight",
+    "zh": "海运"
+  },
+  {
+    "en": "Search",
+    "zh": "搜索"
+  },
+  {
+    "en": "Search by invoice number or customer...",
+    "zh": "按发票号或客户搜索..."
+  },
+  {
+    "en": "Search by name...",
+    "zh": "按名称搜索..."
+  },
+  {
+    "en": "Search by product name or SKU...",
+    "zh": "按产品名称或SKU搜索..."
+  },
+  {
+    "en": "Search by project ID...",
+    "zh": "按项目ID搜索..."
+  },
+  {
+    "en": "Search by tracking number or order...",
+    "zh": "按运单号或订单搜索..."
+  },
+  {
+    "en": "Search by transaction ID...",
+    "zh": "按交易ID搜索..."
+  },
+  {
+    "en": "Search by user, entity type, or ID...",
+    "zh": "按用户、实体类型或ID搜索..."
+  },
+  {
+    "en": "Search key or value...",
+    "zh": "搜索键名或内容..."
+  },
+  {
+    "en": "Secret (save now)",
+    "zh": "密钥（请立即保存）"
+  },
+  {
+    "en": "Segment",
+    "zh": "分群"
+  },
+  {
+    "en": "Select All",
+    "zh": "全选"
+  },
+  {
+    "en": "Select Order",
+    "zh": "选择订单"
+  },
+  {
+    "en": "Select Product",
+    "zh": "选择产品"
+  },
+  {
+    "en": "Select a field...",
+    "zh": "选择字段..."
+  },
+  {
+    "en": "Select a price list...",
+    "zh": "选择价格列表..."
+  },
+  {
+    "en": "Select an order to inject line items and totals into Chatbot or Plan-Execute-Replan.",
+    "zh": "选择订单后，Chatbot 或计划-执行-重规划模式将注入行项目与金额。"
+  },
+  {
+    "en": "Select at least one event.",
+    "zh": "请至少选择一个事件。"
+  },
+  {
+    "en": "Select at least one target language",
+    "zh": "请至少选择一种目标语言"
+  },
+  {
+    "en": "Select items to export",
+    "zh": "请选择要导出的产品"
+  },
+  {
+    "en": "Select organization…",
+    "zh": "选择组织…"
+  },
+  {
+    "en": "Select text in the body or pick a scope, then describe the fix (Cursor-style partial edit).",
+    "zh": "在正文中选中一段文字，或选择修订范围，描述要如何修改（类似 Cursor 局部编辑）。"
+  },
+  {
+    "en": "Select text in title, excerpt, or body, then press Ctrl+K (Mac: ⌘K) for AI edit with diff preview — Accept or Reject.",
+    "zh": "选中标题、摘要或正文中的文字，按 Ctrl+K（Mac：⌘K）打开 AI 修订，预览 Diff 后接受或拒绝。"
+  },
+  {
+    "en": "Selected excerpt",
+    "zh": "已选中片段"
+  },
+  {
+    "en": "Selected: {name}",
+    "zh": "已选：{name}"
+  },
+  {
+    "en": "Selection",
+    "zh": "选区"
+  },
+  {
+    "en": "Self-fulfill",
+    "zh": "自营"
+  },
+  {
+    "en": "Seller Name",
+    "zh": "卖方名称"
+  },
+  {
+    "en": "Send",
+    "zh": "发送"
+  },
+  {
+    "en": "Sent",
+    "zh": "已发送"
+  },
+  {
+    "en": "Server Error",
+    "zh": "服务器错误"
+  },
+  {
+    "en": "Services (comma separated)",
+    "zh": "服务项目(逗号分隔)"
+  },
+  {
+    "en": "Set",
+    "zh": "设置"
+  },
+  {
+    "en": "Set To",
+    "zh": "设置为"
+  },
+  {
+    "en": "Setting saved successfully.",
+    "zh": "设置已成功保存。"
+  },
+  {
+    "en": "Settings",
+    "zh": "系统设置"
+  },
+  {
+    "en": "Settlements",
+    "zh": "结算里程碑"
+  },
+  {
+    "en": "Shape",
+    "zh": "形状"
+  },
+  {
+    "en": "Shapes (comma separated)",
+    "zh": "形状（逗号分隔）"
+  },
+  {
+    "en": "Shelf Life",
+    "zh": "保质期"
+  },
+  {
+    "en": "Ship",
+    "zh": "发货"
+  },
+  {
+    "en": "Shipment Details",
+    "zh": "发货详情"
+  },
+  {
+    "en": "Shipment dispatched.",
+    "zh": "发运成功。"
+  },
+  {
+    "en": "Shipments",
+    "zh": "发货管理"
+  },
+  {
+    "en": "Shipped",
+    "zh": "已寄出"
+  },
+  {
+    "en": "Shipper",
+    "zh": "发货人"
+  },
+  {
+    "en": "Shipping",
+    "zh": "运费"
+  },
+  {
+    "en": "Shipping & Tax",
+    "zh": "运费与税率"
+  },
+  {
+    "en": "Shipping Address",
+    "zh": "收货地址"
+  },
+  {
+    "en": "Shipping Mark",
+    "zh": "唛头"
+  },
+  {
+    "en": "Shipping Rates",
+    "zh": "运费费率"
+  },
+  {
+    "en": "Shipping city is required.",
+    "zh": "收货城市为必填项。"
+  },
+  {
+    "en": "Shipping street address is required.",
+    "zh": "收货街道地址为必填项。"
+  },
+  {
+    "en": "Show me top selling products",
+    "zh": "显示畅销产品"
+  },
+  {
+    "en": "Showing {from} to {to} of {total}",
+    "zh": "显示第 {from} 至 {to} 条，共 {total} 条"
+  },
+  {
+    "en": "Showing {from} to {to} of {total} products",
+    "zh": "显示第 {from} 到 {to} 项 / 共 {total} 项产品"
+  },
+  {
+    "en": "Showing {from} to {to} of {total} results",
+    "zh": "显示第 {from} 至 {to} 条，共 {total} 条"
+  },
+  {
+    "en": "Single language",
+    "zh": "单语言"
+  },
+  {
+    "en": "Skip to main content",
+    "zh": "跳转到主要内容"
+  },
+  {
+    "en": "Slug",
+    "zh": "Slug"
+  },
+  {
+    "en": "Slug is required",
+    "zh": "请填写 Slug"
+  },
+  {
+    "en": "Solution",
+    "zh": "解决方案"
+  },
+  {
+    "en": "Solutions",
+    "zh": "解决方案"
+  },
+  {
+    "en": "Something went wrong",
+    "zh": "出了点问题"
+  },
+  {
+    "en": "Something went wrong on our end. Please try again later.",
+    "zh": "抱歉，服务器出现问题。请稍后再试。"
+  },
+  {
+    "en": "Something went wrong. Please try again.",
+    "zh": "操作失败，请稍后重试。"
+  },
+  {
+    "en": "Sorry, the page you are looking for doesn't exist.",
+    "zh": "抱歉，您访问的页面不存在。"
+  },
+  {
+    "en": "Source Language",
+    "zh": "原文语言"
+  },
+  {
+    "en": "Source language (optional)",
+    "zh": "源语言（可选）"
+  },
+  {
+    "en": "Special Terms",
+    "zh": "特殊条款"
+  },
+  {
+    "en": "Specifications",
+    "zh": "规格"
+  },
+  {
+    "en": "Specifications confirmed",
+    "zh": "规格已确认"
+  },
+  {
+    "en": "Staff",
+    "zh": "员工管理"
+  },
+  {
+    "en": "Staff Management",
+    "zh": "员工管理"
+  },
+  {
+    "en": "Standard",
+    "zh": "标准"
+  },
+  {
+    "en": "Start a conversation with the AI Agent",
+    "zh": "与AI助手开始对话"
+  },
+  {
+    "en": "Start writing...",
+    "zh": "开始编写内容..."
+  },
+  {
+    "en": "Starts At",
+    "zh": "开始时间"
+  },
+  {
+    "en": "State",
+    "zh": "省/州"
+  },
+  {
+    "en": "State / Province",
+    "zh": "州 / 省"
+  },
+  {
+    "en": "Status",
+    "zh": "状态"
+  },
+  {
+    "en": "Status Change",
+    "zh": "状态变更"
+  },
+  {
+    "en": "Status Management",
+    "zh": "状态管理"
+  },
+  {
+    "en": "Status...",
+    "zh": "状态..."
+  },
+  {
+    "en": "Step Tracker",
+    "zh": "进度跟踪"
+  },
+  {
+    "en": "Steps",
+    "zh": "步骤"
+  },
+  {
+    "en": "Stock",
+    "zh": "库存"
+  },
+  {
+    "en": "Stock History",
+    "zh": "库存历史"
+  },
+  {
+    "en": "Stock Quantity",
+    "zh": "库存数量"
+  },
+  {
+    "en": "Stop",
+    "zh": "停止"
+  },
+  {
+    "en": "Storage",
+    "zh": "存储条件"
+  },
+  {
+    "en": "Stream interrupted",
+    "zh": "流式传输中断"
+  },
+  {
+    "en": "Street",
+    "zh": "街道"
+  },
+  {
+    "en": "Strikethrough",
+    "zh": "删除线"
+  },
+  {
+    "en": "Structured product references for compliance checks and quoting",
+    "zh": "结构化产品引用，用于合规检查与报价关联"
+  },
+  {
+    "en": "Submit Quote",
+    "zh": "提交报价"
+  },
+  {
+    "en": "Submitted on",
+    "zh": "提交于"
+  },
+  {
+    "en": "Submitting...",
+    "zh": "提交中..."
+  },
+  {
+    "en": "Subtotal",
+    "zh": "小计"
+  },
+  {
+    "en": "Subtract",
+    "zh": "减少"
+  },
+  {
+    "en": "Success",
+    "zh": "成功"
+  },
+  {
+    "en": "Sugar-Free",
+    "zh": "无糖"
+  },
+  {
+    "en": "Sugars (g)",
+    "zh": "糖 (g)"
+  },
+  {
+    "en": "Summary",
+    "zh": "摘要"
+  },
+  {
+    "en": "Super Admin",
+    "zh": "超级管理员"
+  },
+  {
+    "en": "Superadmin",
+    "zh": "超级管理员"
+  },
+  {
+    "en": "Suspended",
+    "zh": "已停用"
+  },
+  {
+    "en": "Sweetener Type",
+    "zh": "甜味剂类型"
+  },
+  {
+    "en": "Switch to dark mode",
+    "zh": "切换到暗色模式"
+  },
+  {
+    "en": "Switch to light mode",
+    "zh": "切换到亮色模式"
+  },
+  {
+    "en": "System Settings",
+    "zh": "系统设置"
+  },
+  {
+    "en": "TAX INVOICE",
+    "zh": "税务发票"
+  },
+  {
+    "en": "TBD",
+    "zh": "待定"
+  },
+  {
+    "en": "Tags (comma separated)",
+    "zh": "标签(逗号分隔)"
+  },
+  {
+    "en": "Target Country",
+    "zh": "目标国家"
+  },
+  {
+    "en": "Target Market",
+    "zh": "目标市场"
+  },
+  {
+    "en": "Target country is required.",
+    "zh": "目标国家为必填项。"
+  },
+  {
+    "en": "Target language",
+    "zh": "目标语言"
+  },
+  {
+    "en": "Target languages",
+    "zh": "目标语言"
+  },
+  {
+    "en": "Tax",
+    "zh": "税费"
+  },
+  {
+    "en": "Tax ID",
+    "zh": "税号"
+  },
+  {
+    "en": "Tax Rates",
+    "zh": "税率管理"
+  },
+  {
+    "en": "Temperature",
+    "zh": "温度"
+  },
+  {
+    "en": "Terms",
+    "zh": "条款"
+  },
+  {
+    "en": "Text formatting",
+    "zh": "文本格式"
+  },
+  {
+    "en": "Thai",
+    "zh": "泰文"
+  },
+  {
+    "en": "This site works best with JavaScript enabled. Use the links below to continue browsing.",
+    "zh": "本网站需要 JavaScript 以获得最佳体验。您可使用以下链接继续浏览。"
+  },
+  {
+    "en": "Thumbnail",
+    "zh": "缩略图"
+  },
+  {
+    "en": "Thumbnail URL",
+    "zh": "缩略图URL"
+  },
+  {
+    "en": "Time",
+    "zh": "时间"
+  },
+  {
+    "en": "Timeline",
+    "zh": "时间线"
+  },
+  {
+    "en": "Title",
+    "zh": "标题"
+  },
+  {
+    "en": "Title *",
+    "zh": "标题 *"
+  },
+  {
+    "en": "Title is required",
+    "zh": "请输入标题"
+  },
+  {
+    "en": "Tiếng Việt",
+    "zh": "越南语"
+  },
+  {
+    "en": "To",
+    "zh": "至"
+  },
+  {
+    "en": "To Date",
+    "zh": "结束日期"
+  },
+  {
+    "en": "To Warehouse",
+    "zh": "目标仓库"
+  },
+  {
+    "en": "Toggle menu",
+    "zh": "切换菜单"
+  },
+  {
+    "en": "Tool Call History",
+    "zh": "工具调用历史"
+  },
+  {
+    "en": "Tools Called",
+    "zh": "调用的工具"
+  },
+  {
+    "en": "Top Products",
+    "zh": "热门产品"
+  },
+  {
+    "en": "Topic / Description",
+    "zh": "主题 / 描述"
+  },
+  {
+    "en": "Total",
+    "zh": "总计"
+  },
+  {
+    "en": "Total Amount",
+    "zh": "总金额"
+  },
+  {
+    "en": "Total Gross Weight (kg)",
+    "zh": "总毛重 (kg)"
+  },
+  {
+    "en": "Total Inquiries",
+    "zh": "询价总数"
+  },
+  {
+    "en": "Total Net Weight (kg)",
+    "zh": "总净重 (kg)"
+  },
+  {
+    "en": "Total Orders",
+    "zh": "订单总数"
+  },
+  {
+    "en": "Total Packages",
+    "zh": "总件数"
+  },
+  {
+    "en": "Total Products",
+    "zh": "产品总数"
+  },
+  {
+    "en": "Total Revenue",
+    "zh": "总收入"
+  },
+  {
+    "en": "Total Users",
+    "zh": "用户总数"
+  },
+  {
+    "en": "Total Value",
+    "zh": "总价值"
+  },
+  {
+    "en": "Total Volume (CBM)",
+    "zh": "总体积 (CBM)"
+  },
+  {
+    "en": "Total amount is required",
+    "zh": "请输入总金额"
+  },
+  {
+    "en": "Track all system activity and changes across the platform.",
+    "zh": "追踪系统内所有操作和变更记录。"
+  },
+  {
+    "en": "Track and manage product stock levels, values, and adjustments.",
+    "zh": "追踪和管理产品库存水平、价值和调整记录。"
+  },
+  {
+    "en": "Tracking",
+    "zh": "运单号"
+  },
+  {
+    "en": "Tracking #,Order,Carrier,Destination,Status,ETA,Delivered",
+    "zh": "运单号,订单,承运商,目的地,状态,预计到货,实际签收"
+  },
+  {
+    "en": "Tracking History",
+    "zh": "物流历史"
+  },
+  {
+    "en": "Tracking Number",
+    "zh": "运单号"
+  },
+  {
+    "en": "Trade",
+    "zh": "贸易"
+  },
+  {
+    "en": "Trade & Packaging",
+    "zh": "贸易与包装"
+  },
+  {
+    "en": "Trade AI assistant",
+    "zh": "贸易 AI 助手"
+  },
+  {
+    "en": "Trade Assistant",
+    "zh": "贸易助手"
+  },
+  {
+    "en": "Trade BOL Tracking",
+    "zh": "贸易 BOL 追踪"
+  },
+  {
+    "en": "Trade ID",
+    "zh": "贸易 ID"
+  },
+  {
+    "en": "Trade Transaction",
+    "zh": "贸易交易"
+  },
+  {
+    "en": "Trade status (optional)",
+    "zh": "贸易状态（可选）"
+  },
+  {
+    "en": "Trade status updated successfully.",
+    "zh": "贸易状态更新成功。"
+  },
+  {
+    "en": "Trade transaction created successfully.",
+    "zh": "贸易交易创建成功。"
+  },
+  {
+    "en": "Trade transactions",
+    "zh": "贸易交易"
+  },
+  {
+    "en": "Trades",
+    "zh": "贸易管理"
+  },
+  {
+    "en": "Traditional Chinese",
+    "zh": "繁体中文"
+  },
+  {
+    "en": "Transaction",
+    "zh": "交易"
+  },
+  {
+    "en": "Transfer #",
+    "zh": "调拨单号"
+  },
+  {
+    "en": "Transfers",
+    "zh": "调拨"
+  },
+  {
+    "en": "Translate",
+    "zh": "翻译"
+  },
+  {
+    "en": "Translate & download",
+    "zh": "翻译并下载"
+  },
+  {
+    "en": "Translate missing locales",
+    "zh": "批量翻译缺失语言"
+  },
+  {
+    "en": "Translated file downloaded",
+    "zh": "已下载翻译文件"
+  },
+  {
+    "en": "Translating & publishing...",
+    "zh": "正在翻译并发布..."
+  },
+  {
+    "en": "Translating...",
+    "zh": "翻译中..."
+  },
+  {
+    "en": "Translating…",
+    "zh": "翻译中…"
+  },
+  {
+    "en": "Translation Management",
+    "zh": "翻译管理"
+  },
+  {
+    "en": "Translation completed on server; loaded latest translations from database",
+    "zh": "翻译已在服务端完成，已从数据库加载最新译文"
+  },
+  {
+    "en": "Translation failed",
+    "zh": "翻译失败"
+  },
+  {
+    "en": "Translation is taking longer than usual. Please wait or try again later.",
+    "zh": "翻译耗时较长，请稍候或稍后重试。"
+  },
+  {
+    "en": "Translation saved successfully",
+    "zh": "翻译已完成并已保存"
+  },
+  {
+    "en": "Translations",
+    "zh": "多语言翻译"
+  },
+  {
+    "en": "Try Again",
+    "zh": "重试"
+  },
+  {
+    "en": "Try again",
+    "zh": "重试"
+  },
+  {
+    "en": "Twitter",
+    "zh": "Twitter"
+  },
+  {
+    "en": "Type",
+    "zh": "类型"
+  },
+  {
+    "en": "Type a message, press Enter to send...",
+    "zh": "输入消息，按Enter发送..."
+  },
+  {
+    "en": "Type your message...",
+    "zh": "输入您的消息..."
+  },
+  {
+    "en": "UPS",
+    "zh": "UPS"
+  },
+  {
+    "en": "URL",
+    "zh": "URL"
+  },
+  {
+    "en": "URL or upload",
+    "zh": "URL或上传"
+  },
+  {
+    "en": "USD",
+    "zh": "USD"
+  },
+  {
+    "en": "USPS",
+    "zh": "USPS"
+  },
+  {
+    "en": "Underline",
+    "zh": "下划线"
+  },
+  {
+    "en": "Undo",
+    "zh": "撤销"
+  },
+  {
+    "en": "Unit Price",
+    "zh": "单价"
+  },
+  {
+    "en": "Unit Value",
+    "zh": "单价"
+  },
+  {
+    "en": "Unknown",
+    "zh": "未知"
+  },
+  {
+    "en": "Unpaid",
+    "zh": "未付款"
+  },
+  {
+    "en": "Update",
+    "zh": "更新"
+  },
+  {
+    "en": "Update Role",
+    "zh": "更新角色"
+  },
+  {
+    "en": "Update Status",
+    "zh": "更新状态"
+  },
+  {
+    "en": "Update Stock",
+    "zh": "更新库存"
+  },
+  {
+    "en": "Updated",
+    "zh": "更新"
+  },
+  {
+    "en": "Updated {updated}, {errors} errors",
+    "zh": "更新 {updated} 项，{errors} 项错误"
+  },
+  {
+    "en": "Updating...",
+    "zh": "更新中..."
+  },
+  {
+    "en": "Upload Excel, choose single or batch translate mode.\nAI translates headers or selected column keys — useful for reports and term sheets.\nDownload the result; try a small sample before batch jobs.",
+    "zh": "上传 Excel 后选择「单语翻译」或「批量翻译」。\nAI 会翻译表头或指定列的文本 key，适合报表、术语表批量本地化。\n翻译完成后下载新文件；建议先小样本试译再批量处理。"
+  },
+  {
+    "en": "Upload Image",
+    "zh": "上传图片"
+  },
+  {
+    "en": "Upload Images",
+    "zh": "上传图片"
+  },
+  {
+    "en": "Upload an .xlsx file; text cells are translated via Trade Agent (translate_content pipeline).",
+    "zh": "上传 .xlsx 文件；文本单元格经 Trade Agent（translate_content）批量翻译。"
+  },
+  {
+    "en": "Upload image",
+    "zh": "上传图片"
+  },
+  {
+    "en": "Uploading image…",
+    "zh": "正在上传图片…"
+  },
+  {
+    "en": "Urgent",
+    "zh": "紧急"
+  },
+  {
+    "en": "Use AI to assist with trade documents.",
+    "zh": "使用AI协助处理贸易文档。"
+  },
+  {
+    "en": "Used",
+    "zh": "已用"
+  },
+  {
+    "en": "User",
+    "zh": "用户"
+  },
+  {
+    "en": "User ID",
+    "zh": "用户 ID"
+  },
+  {
+    "en": "User ID (optional)",
+    "zh": "用户ID（可选）"
+  },
+  {
+    "en": "User ID is required.",
+    "zh": "用户ID为必填项。"
+  },
+  {
+    "en": "User Profile",
+    "zh": "用户资料"
+  },
+  {
+    "en": "User profile updated successfully.",
+    "zh": "用户资料更新成功。"
+  },
+  {
+    "en": "User role updated successfully.",
+    "zh": "用户角色更新成功。"
+  },
+  {
+    "en": "User status updated successfully.",
+    "zh": "用户状态更新成功。"
+  },
+  {
+    "en": "Users",
+    "zh": "用户管理"
+  },
+  {
+    "en": "V",
+    "zh": "越"
+  },
+  {
+    "en": "Valid Until",
+    "zh": "有效期至"
+  },
+  {
+    "en": "Valid until {date}",
+    "zh": "有效期至 {date}"
+  },
+  {
+    "en": "Value",
+    "zh": "面值"
+  },
+  {
+    "en": "Vegan",
+    "zh": "纯素"
+  },
+  {
+    "en": "Velocity",
+    "zh": "销售速度"
+  },
+  {
+    "en": "Verified",
+    "zh": "已认证"
+  },
+  {
+    "en": "Verified At",
+    "zh": "认证时间"
+  },
+  {
+    "en": "Verify",
+    "zh": "认证"
+  },
+  {
+    "en": "Vessel/Voyage",
+    "zh": "船名/航次"
+  },
+  {
+    "en": "Vietnamese",
+    "zh": "越南文"
+  },
+  {
+    "en": "View",
+    "zh": "查看"
+  },
+  {
+    "en": "View Detail",
+    "zh": "查看详情"
+  },
+  {
+    "en": "View Document",
+    "zh": "查看文档"
+  },
+  {
+    "en": "View Trade",
+    "zh": "查看贸易"
+  },
+  {
+    "en": "View and manage staff members, their roles, and activity.",
+    "zh": "查看和管理员工信息、角色及活动记录。"
+  },
+  {
+    "en": "View image {n}",
+    "zh": "查看图片 {n}"
+  },
+  {
+    "en": "Voided",
+    "zh": "已作废"
+  },
+  {
+    "en": "Waiting for customer",
+    "zh": "等待客户确认"
+  },
+  {
+    "en": "Warehouse",
+    "zh": "仓库"
+  },
+  {
+    "en": "Warehouse ID",
+    "zh": "仓库 ID"
+  },
+  {
+    "en": "Warehouses",
+    "zh": "仓库"
+  },
+  {
+    "en": "Warnings",
+    "zh": "警告"
+  },
+  {
+    "en": "Water Activity (aʷ)",
+    "zh": "水分活度 (aʷ)"
+  },
+  {
+    "en": "We use cookies to enhance your browsing experience, analyze site traffic, and personalize content. By clicking 'Accept All', you consent to our use of all cookies. You can choose 'Essential Only' to reject non-essential cookies.",
+    "zh": "我们使用 Cookie 来提升您的浏览体验、分析网站流量和个性化内容。点击「全部接受」即表示您同意我们使用所有 Cookie。您可以选择「仅必要」以拒绝非必要 Cookie。"
+  },
+  {
+    "en": "Webhooks",
+    "zh": "Webhooks"
+  },
+  {
+    "en": "Website",
+    "zh": "网站"
+  },
+  {
+    "en": "Webstore",
+    "zh": "网店"
+  },
+  {
+    "en": "Weight & Measurement",
+    "zh": "重量与规格"
+  },
+  {
+    "en": "WhatsApp",
+    "zh": "WhatsApp"
+  },
+  {
+    "en": "WhatsApp Us",
+    "zh": "WhatsApp咨询"
+  },
+  {
+    "en": "When editing a product, click AI Translate under Translations.\nName, summary, description, ingredients, etc. are translated from the primary locale.\nReview locale tabs before saving.",
+    "zh": "编辑产品时，在「多语言翻译」区域点击「AI 翻译」。\n将以主语言字段为源，批量翻译名称、摘要、描述、成分等文本到其它语言。\n请保存前核对各语言 Tab。"
+  },
+  {
+    "en": "When editing saved content, click AI Translate under Translations.\nSource fields (usually Chinese) are translated to en/ko/ar/ja/th/vi/id/ms.\nReview each locale tab and save.",
+    "zh": "编辑已保存的内容时，在「多语言翻译」区域点击「AI 翻译」。\n系统会以主字段（中文）为源，自动翻译到 en/ko/ar/ja/th/vi/id/ms 等语言。\n翻译完成后请检查各语言 Tab 并保存。"
+  },
+  {
+    "en": "While editing content, enter a topic and click Generate with AI to fill title, body, etc. (Chinese draft, no auto-translate).\nUse AI Translate in the translations section for other locales after saving.",
+    "zh": "在编辑/新建内容时，输入主题后点击「AI 生成」，将根据主题填充标题、正文等字段（默认中文草稿，不自动翻译）。\n保存前可在表单中修改；已有文章可用「AI 翻译」补全多语言。"
+  },
+  {
+    "en": "Width (mm)",
+    "zh": "宽度 (mm)"
+  },
+  {
+    "en": "Won",
+    "zh": "已成交"
+  },
+  {
+    "en": "Write something…",
+    "zh": "在此撰写内容…"
+  },
+  {
+    "en": "Write your brief in any language. AI outputs a Chinese draft for review first.",
+    "zh": "支持中英文描述，AI 会先根据您的描述生成中文正文供审阅。"
+  },
+  {
+    "en": "XLSX AI translate",
+    "zh": "XLSX AI 翻译"
+  },
+  {
+    "en": "XLSX Tools",
+    "zh": "XLSX 工具"
+  },
+  {
+    "en": "Yes",
+    "zh": "是"
+  },
+  {
+    "en": "You",
+    "zh": "管理员（我）"
+  },
+  {
+    "en": "You do not have permission to access this page.",
+    "zh": "您没有权限查看此页面。"
+  },
+  {
+    "en": "You do not have permission to access this resource.",
+    "zh": "您没有权限访问此资源。"
+  },
+  {
+    "en": "YouTube",
+    "zh": "YouTube"
+  },
+  {
+    "en": "Zip / Postal Code",
+    "zh": "邮政编码"
+  },
+  {
+    "en": "Zip Code",
+    "zh": "邮编"
+  },
+  {
+    "en": "Zoom image",
+    "zh": "放大图片"
+  },
+  {
+    "en": "[Stream stopped]",
+    "zh": "[流已停止]"
+  },
+  {
+    "en": "[Tool completed]",
+    "zh": "[工具调用完成]"
+  },
+  {
+    "en": "e.g. 12 units per display box",
+    "zh": "例：每展示盒 12 个单位"
+  },
+  {
+    "en": "e.g. 48 cases/layer × 5 layers",
+    "zh": "例：48 箱/层 × 5 层"
+  },
+  {
+    "en": "e.g. Shorten the title; add EU compliance details in paragraph 2; use a more professional tone…",
+    "zh": "例如：标题缩短一些；第二段补充欧盟法规细节；语气更专业…"
+  },
+  {
+    "en": "e.g. errors.my_new_code",
+    "zh": "例如：errors.my_new_code"
+  },
+  {
+    "en": "e.g., 150g milk chocolate bar with almonds, vegan, 12-month shelf life, individually flow-wrapped, 24 pieces per display box, halal certified...",
+    "zh": "例如：150g牛奶巧克力棒，含杏仁，纯素，12个月保质期，独立流包装，每展示盒24片，清真认证..."
+  },
+  {
+    "en": "flow-wrap, foil, box, bag, jar",
+    "zh": "流包装、铝箔、盒装、袋装、罐装"
+  },
+  {
+    "en": "g",
+    "zh": "g"
+  },
+  {
+    "en": "global",
+    "zh": "global"
+  },
+  {
+    "en": "https://example.com",
+    "zh": "https://example.com"
+  },
+  {
+    "en": "inventory",
+    "zh": "库存"
+  },
+  {
+    "en": "invoices",
+    "zh": "发票"
+  },
+  {
+    "en": "just now",
+    "zh": "刚刚"
+  },
+  {
+    "en": "pending",
+    "zh": "待处理"
+  },
+  {
+    "en": "shipments",
+    "zh": "发货"
+  },
+  {
+    "en": "this week",
+    "zh": "本周"
+  },
+  {
+    "en": "{alt} - Image {n}",
+    "zh": "{alt} - 图片 {n}"
+  },
+  {
+    "en": "{alt} - Thumbnail {n}",
+    "zh": "{alt} - 缩略图 {n}"
+  },
+  {
+    "en": "{count} days ago",
+    "zh": "{count} 天前"
+  },
+  {
+    "en": "{count} hours ago",
+    "zh": "{count} 小时前"
+  },
+  {
+    "en": "{count} minutes ago",
+    "zh": "{count} 分钟前"
+  },
+  {
+    "en": "{count} new this week",
+    "zh": "本周新增 {count}"
+  },
+  {
+    "en": "{count} selected",
+    "zh": "已选 {count} 项"
+  },
+  {
+    "en": "{deleted} deleted, {errors} errors",
+    "zh": "删除 {deleted} 项，{errors} 项错误"
+  },
+  {
+    "en": "{field} is required",
+    "zh": "{field} 为必填项"
+  },
+  {
+    "en": "{from} → {to}",
+    "zh": "{from} → {to}"
+  },
+  {
+    "en": "{total} total",
+    "zh": "共 {total} 条"
+  },
+  {
+    "en": "العربية",
+    "zh": "阿拉伯语"
+  },
+  {
+    "en": "ع",
+    "zh": "阿"
+  },
+  {
+    "en": "ท",
+    "zh": "泰"
+  },
+  {
+    "en": "ไทย",
+    "zh": "泰语"
+  },
+  {
+    "en": "—",
+    "zh": "—"
+  },
+  {
+    "en": "中",
+    "zh": "中"
+  },
+  {
+    "en": "中文",
+    "zh": "中文"
+  },
+  {
+    "en": "日",
+    "zh": "日"
+  },
+  {
+    "en": "日本語",
+    "zh": "日语"
+  },
+  {
+    "en": "한",
+    "zh": "韩"
+  },
+  {
+    "en": "한국어",
+    "zh": "韩语"
+  }
+]
