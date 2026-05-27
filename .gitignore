@@ -15,7 +15,11 @@ CLAUDE.md
 # Output of the go coverage tool
 *.out
 coverage.html
-
+output/
+.claude.json
+.mcp.json
+.vscode/
+minimax-output/
 # Dependency directories
 vendor/
 
