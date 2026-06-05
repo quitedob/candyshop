@@ -548,7 +548,7 @@ const handleAddToCart = async () => {
     })
     toast.success(t('product.added_to_cart'))
   } catch (err: any) {
-    alert(err?.message || t('errors.api.cart_submit_failed'))
+    notifyError(err, t('errors.api.cart_submit_failed'))
   } finally {
     addingToCart.value = false
   }

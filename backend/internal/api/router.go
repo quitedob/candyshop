@@ -14,10 +14,10 @@ import (
 	userportalroutes "candypro/api/internal/api/routes/userportal"
 	"candypro/api/internal/config"
 	"candypro/api/internal/handlers"
-	productRepo "candypro/api/internal/repository/product"
-	commonRepo "candypro/api/internal/repository/common"
 	"candypro/api/internal/middleware"
 	"candypro/api/internal/pkg/response"
+	commonRepo "candypro/api/internal/repository/common"
+	productRepo "candypro/api/internal/repository/product"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -139,6 +139,7 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 
 		// System routes (preferred explicit namespace)
 		system := api.Group("/system")
+		registerUploadScanHook(system, h.Storage, cfg)
 		systemroutes.Register(system, h, cfg, publicAIMiddlewares...)
 
 		// Supplier portal routes（默认关闭，设 ENABLE_SUPPLIER_PORTAL=true 启用）
@@ -197,9 +198,9 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 		if h.System != nil && !h.System.IsAgentReady() {
 			// AI 为可选依赖，不影响核心 B2B 流量就绪
 			status := gin.H{
-				"status":  "ready",
-				"service": "candypro-api",
-				"version": "1.0.0",
+				"status":   "ready",
+				"service":  "candypro-api",
+				"version":  "1.0.0",
 				"warnings": []string{"ai_agent_not_ready"},
 			}
 			c.JSON(http.StatusOK, status)
@@ -221,8 +222,8 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 		})
 	})
 
-		// Prometheus metrics endpoint
-		router.GET("/metrics", middleware.MetricsAuth(), gin.WrapH(promhttp.Handler()))
+	// Prometheus metrics endpoint
+	router.GET("/metrics", middleware.MetricsAuth(), gin.WrapH(promhttp.Handler()))
 
 	// 404 handler
 	router.NoRoute(func(c *gin.Context) {

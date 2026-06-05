@@ -45,7 +45,6 @@ help:
 	@echo "Utilities:"
 	@echo "  clean         Clean build artifacts"
 	@echo "  swagger       Generate Swagger documentation"
-	@echo "  api-gen       Regenerate Swagger + frontend OpenAPI client (orval)"
 	@echo "  install       Install dependencies"
 
 # Development targets
@@ -67,7 +66,7 @@ build:
 	cd backend && go build -o bin/api cmd/api/main.go
 
 build-frontend:
-	cd frontend && npm run api:generate && npm run build
+	cd frontend && npm run build
 
 build-all: build build-frontend
 
@@ -145,9 +144,6 @@ clean:
 
 swagger:
 	cd backend && swag init -g cmd/api/main.go -o docs --parseDependency --parseInternal
-
-api-gen: swagger
-	cd frontend && npm run api:generate
 
 install:
 	cd backend && go mod download

@@ -708,6 +708,19 @@ export const useApi = () => {
   const adminGetOemProject = (id: string) => GET<any>(`/admin/oem-projects/${id}`)
   const adminUpdateOemProject = (id: string, data: any) => PUT<any>(`/admin/oem-projects/${id}`, data)
   const adminUpdateOemStatus = (id: string, data: any) => PUT<any>(`/admin/oem-projects/${id}/status`, data)
+  // OEM sample lifecycle (P0.2 / G-OEM-1)
+  const adminAddOemSample = (id: string, data: { name: string }) => POST<any>(`/admin/oem-projects/${id}/samples`, data)
+  const adminUpdateOemSample = (id: string, sampleId: string, data: { status: string; feedback?: string }) =>
+    PUT<any>(`/admin/oem-projects/${id}/samples/${sampleId}`, data)
+  // OEM project → order conversion (P0.2 / G-OEM-2)
+  const adminConvertOemProjectToOrder = (id: string, data: { productId?: string; quantity?: number; unitPrice?: number; currency?: string; incoterms?: string; shippingAddress?: any }) =>
+    POST<any>(`/admin/oem-projects/${id}/convert-to-order`, data)
+  // OEM inventory holds (P0.2 / G-OEM-3)
+  const adminCreateOemInventoryHold = (id: string, data: { productId: string; quantity: number; notes?: string }) =>
+    POST<any>(`/admin/oem-projects/${id}/inventory-holds`, data)
+  const adminListOemInventoryHolds = (id: string) => GET<any>(`/admin/oem-projects/${id}/inventory-holds`)
+  const adminReleaseOemInventoryHold = (id: string, holdId: string | number) =>
+    DELETE<any>(`/admin/oem-projects/${id}/inventory-holds/${holdId}`)
 
   // Admin - OEM Flows
   const adminGetOemFlows = () => GET<any[]>('/admin/oem-flows')
@@ -1049,6 +1062,12 @@ export const useApi = () => {
     adminGetOemProject,
     adminUpdateOemProject,
     adminUpdateOemStatus,
+    adminAddOemSample,
+    adminUpdateOemSample,
+    adminConvertOemProjectToOrder,
+    adminCreateOemInventoryHold,
+    adminListOemInventoryHolds,
+    adminReleaseOemInventoryHold,
 
     // Admin - OEM Flows
     adminGetOemFlows,

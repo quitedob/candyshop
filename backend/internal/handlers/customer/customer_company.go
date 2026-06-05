@@ -189,7 +189,7 @@ func (h *Handler) CustomerDownloadKYBDocumentFile(c *gin.Context) {
 		response.ErrorResp(c, http.StatusNotFound, "no_kyb_document")
 		return
 	}
-	if h.cfg.Upload.StorageDriver == "s3" {
+	if h.cfg.Upload.StorageDriver == "s3" || h.cfg.Upload.StorageDriver == "oss" {
 		presigned, err := h.storage.GetPresignedURL(c.Request.Context(), company.BusinessLicense, 15*time.Minute)
 		if err != nil {
 			response.ErrorResp(c, http.StatusInternalServerError, "internal_error")

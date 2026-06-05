@@ -385,7 +385,7 @@ const submitOrderRequest = async () => {
     })
     showSuccess.value = true
   } catch (err: any) {
-    alert(err?.message || t('errors.api.order_submit_failed'))
+    notifyError(err, t('errors.api.order_submit_failed'))
   } finally {
     submitting.value = false
   }
@@ -402,7 +402,7 @@ const addToCart = async () => {
     })
     toast.success(t('customer.products.added_to_cart'))
   } catch (err: any) {
-    alert(err?.message || t('errors.api.cart_submit_failed'))
+    notifyError(err, t('errors.api.cart_submit_failed'))
   } finally {
     addingToCart.value = false
   }

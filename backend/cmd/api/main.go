@@ -117,7 +117,10 @@ func main() {
 	}
 
 	// Create handlers
-	h := handlers.New(cfg, svcs)
+	h, err := handlers.New(cfg, svcs, db)
+	if err != nil {
+		log.Fatalf("Failed to initialize handlers: %v", err)
+	}
 	if initErr := h.System.InitAgent(); initErr != nil {
 		log.Printf("Warning: trade AI agent initialization failed: %v", initErr)
 	} else if h.System.IsAgentReady() {
@@ -219,6 +222,9 @@ func main() {
 	stopShipmentTrackingSync()
 	stopNotificationRelay()
 	stopBackground()
+	if err := h.Realtime.Close(); err != nil {
+		log.Printf("Warning: realtime shutdown failed: %v", err)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -463,7 +469,6 @@ func startShipmentTrackingSync(ctx context.Context, svcs *servicesCommon.Service
 	log.Printf("Shipment tracking sync worker started (interval=%dmin batch=%d)", intervalMin, batchSize)
 	return cancel
 }
-
 
 const (
 	defaultNotificationRelayIntervalSeconds = 15

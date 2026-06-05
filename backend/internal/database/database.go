@@ -160,6 +160,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&modelsCommon.Translation{},
 		&modelsCommon.IdempotencyKey{},
 		&modelsCommon.NotificationOutbox{},
+		&modelsCommon.UploadedFile{},
 		&modelsTrade.ComplianceRequirement{},
 		&modelsOrder.StockTransaction{},
 		&modelsOrder.EventOutbox{},
@@ -186,11 +187,11 @@ func AutoMigrate(db *gorm.DB) error {
 		&modelsProduct.PurchaseOrderItem{},
 		&modelsTrade.ShipmentEvent{},
 		&modelsOrder.WebhookConfig{},
-			&modelsOrder.WebhookDelivery{},
-			&modelsOrder.Event{},
-			&modelsOrder.HookConfig{},
-			&modelsOrder.HookExecution{},
-			&modelsProduct.Channel{},
+		&modelsOrder.WebhookDelivery{},
+		&modelsOrder.Event{},
+		&modelsOrder.HookConfig{},
+		&modelsOrder.HookExecution{},
+		&modelsProduct.Channel{},
 	}
 	for _, model := range phase1 {
 		if err := db.AutoMigrate(model); err != nil {

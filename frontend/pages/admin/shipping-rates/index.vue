@@ -274,7 +274,7 @@ const removeRate = async (id: string) => {
     await api.delete(`/admin/shipping-rates/${id}`)
     await fetchRates()
   } catch (err: any) {
-    alert(err?.message || t('errors.api.delete_failed'))
+    notifyError(err, t('errors.api.delete_failed'))
   }
 }
 

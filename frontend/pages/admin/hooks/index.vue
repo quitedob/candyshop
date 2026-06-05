@@ -251,7 +251,7 @@ const removeHook = async (id: number) => {
     await api.delete(`/admin/hooks/${id}`)
     await fetchHooks()
   } catch (err: any) {
-    alert(err?.message || t('errors.api.delete_failed'))
+    notifyError(err, t('errors.api.delete_failed'))
   }
 }
 

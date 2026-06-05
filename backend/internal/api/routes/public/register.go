@@ -60,9 +60,9 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 	// matching the policy applied to /auth/register. Without this, the supplier
 	// register endpoint relied solely on the 60/min/IP global throttle, which
 	// is too lax for a credential-creating endpoint.
-	supplierRegister := group.Group("")
-	if cfg != nil {
+	if cfg != nil && cfg.Security.EnableSupplierPortal {
+		supplierRegister := group.Group("")
 		supplierRegister.Use(middleware.AuthEndpointRateLimit(3, time.Minute, cfg.Security.RedisURL))
+		supplierRegister.POST("/supplier/register", h.AdminPortal.SupplierRegisterSelf)
 	}
-	supplierRegister.POST("/supplier/register", h.AdminPortal.SupplierRegisterSelf)
 }

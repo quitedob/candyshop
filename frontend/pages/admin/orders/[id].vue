@@ -321,6 +321,13 @@
                 </div>
                 <p class="text-sm whitespace-pre-wrap">{{ msg.message }}</p>
                 <p class="text-xs mt-1 opacity-70">{{ formatDate(msg.createdAt) }}</p>
+                <span
+                  v-if="msg.senderType === 'admin'"
+                  class="block text-right text-xs opacity-70"
+                  :class="{ 'text-emerald-200': msg.readAt }"
+                  :title="msg.readAt ? formatDate(msg.readAt) : ''"
+                  aria-hidden="true"
+                >{{ msg.readAt ? '✓✓' : '✓' }}</span>
               </div>
             </div>
           </div>
@@ -405,25 +412,61 @@ const fetchMessages = async () => {
   try {
     const res = await api.get<any>(`/admin/orders/${route.params.id}/messages`)
     messages.value = res.data || []
-  } catch (_) {}
+  } catch (err: any) {
+    error.value = err?.message || t('errors.api.load_failed')
+  }
 }
+
+const markMessagesRead = async () => {
+  if (!route.params.id) return
+  try {
+    await api.post(`/admin/orders/${route.params.id}/messages/read`, {})
+  } catch {
+    // A reconnect REST fetch also marks messages read.
+  }
+}
+
+const appendMessage = (msg: any) => {
+  if (!msg?.id || messages.value.some((existing) => existing.id === msg.id)) return
+  messages.value.push(msg)
+  nextTick(() => { if (msgListRef.value) msgListRef.value.scrollTop = msgListRef.value.scrollHeight })
+}
+
+const applyReadReceipt = (payload: any) => {
+  if (!payload?.readerType || !payload?.readAt) return
+  for (const msg of messages.value) {
+    if (msg.senderType !== payload.readerType && !msg.readAt) msg.readAt = payload.readAt
+  }
+}
+
+const messageStream = useOrderMessageStream(
+  `/admin/orders/${route.params.id}/messages/ws`,
+  (event) => {
+    if (event.type === 'order_message') {
+      appendMessage(event.payload)
+      if (event.payload?.senderType === 'customer') void markMessagesRead()
+    } else if (event.type === 'order_messages_read') {
+      applyReadReceipt(event.payload)
+    }
+  },
+  fetchMessages,
+)
 
 const sendMessage = async () => {
   if (!route.params.id || !newMessage.value.trim()) return
   sending.value = true
   try {
     const msg = await api.post<any>(`/admin/orders/${route.params.id}/messages`, { message: newMessage.value.trim() })
-    messages.value.push(msg)
+    appendMessage(msg)
     newMessage.value = ''
     nextTick(() => { if (msgListRef.value) msgListRef.value.scrollTop = msgListRef.value.scrollHeight })
   } catch (err: any) {
-    alert(err?.message || t('admin.orders.message_send_error'))
+    notifyError(err, t('admin.orders.message_send_error'))
   } finally { sending.value = false }
 }
 
-let msgInterval: ReturnType<typeof setInterval> | null = null
-onMounted(() => { fetchOrder(); fetchPayments(); fetchFulfillments(); fetchMessages(); msgInterval = setInterval(fetchMessages, 30000) })
-onUnmounted(() => { if (msgInterval) clearInterval(msgInterval) })
+onMounted(() => { fetchOrder(); fetchPayments(); fetchFulfillments(); fetchMessages(); messageStream.connect() })
+onUnmounted(messageStream.stop)
 
 const paymentPolicyWarning = computed(() => {
   const key = `admin.payment_policy.${statusInput.value}`
@@ -608,7 +651,7 @@ const confirmPayment = async (paymentId: string) => {
     await api.put(`/admin/orders/${route.params.id}/payments/${paymentId}/confirm`, {})
     await fetchPayments()
     await fetchOrder()
-  } catch (err: any) { alert(err?.message || t('errors.api.payment_confirm_failed')) }
+  } catch (err: any) { notifyError(err, t('errors.api.payment_confirm_failed')) }
 }
 
 const refundPayment = async (paymentId: string) => {
@@ -616,7 +659,7 @@ const refundPayment = async (paymentId: string) => {
   try {
     await api.put(`/admin/orders/${route.params.id}/payments/${paymentId}/refund`, {})
     await fetchPayments()
-  } catch (err: any) { alert(err?.message || t('errors.api.refund_failed')) }
+  } catch (err: any) { notifyError(err, t('errors.api.refund_failed')) }
 }
 
 const createTrade = async () => {

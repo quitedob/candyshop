@@ -222,16 +222,20 @@ func TestCustomerAcceptNegotiationOffer(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	userID := "u-nego-5"
+	inquiryID := "inq-nego-5"
 	offerID := "offer-accept-1"
 	now := time.Now()
 	negoRepo := &fakeNegotiationRepo{
 		offers: []modelsOrder.NegotiationOffer{
-			{ID: offerID, InquiryID: "inq-nego-5", UserID: userID, SenderType: "admin", Status: "pending", TotalAmount: 200, Currency: "USD", CreatedAt: now, UpdatedAt: now},
+			{ID: offerID, InquiryID: inquiryID, UserID: userID, SenderType: "admin", Status: "pending", TotalAmount: 200, Currency: "USD", CreatedAt: now, UpdatedAt: now},
 		},
 	}
-	handler := buildTestNegotiationHandler(negoRepo, &fakeNegotiationInquiryRepo{})
+	inquiryRepo := &fakeNegotiationInquiryRepo{
+		inquiry: &modelsProduct.Inquiry{ID: inquiryID, UserID: &userID},
+	}
+	handler := buildTestNegotiationHandler(negoRepo, inquiryRepo)
 
-	rec := performCustomerAcceptNegotiation(handler, userID, offerID)
+	rec := performCustomerAcceptNegotiation(handler, userID, inquiryID, offerID)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d, body=%s", rec.Code, rec.Body.String())
 	}
@@ -247,16 +251,20 @@ func TestCustomerAcceptNegotiationOffer_NotPending(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	userID := "u-nego-6"
+	inquiryID := "inq-nego-6"
 	offerID := "offer-re-accept"
 	now := time.Now()
 	negoRepo := &fakeNegotiationRepo{
 		offers: []modelsOrder.NegotiationOffer{
-			{ID: offerID, InquiryID: "inq-nego-6", UserID: userID, SenderType: "admin", Status: "accepted", TotalAmount: 200, Currency: "USD", CreatedAt: now, UpdatedAt: now},
+			{ID: offerID, InquiryID: inquiryID, UserID: userID, SenderType: "admin", Status: "accepted", TotalAmount: 200, Currency: "USD", CreatedAt: now, UpdatedAt: now},
 		},
 	}
-	handler := buildTestNegotiationHandler(negoRepo, &fakeNegotiationInquiryRepo{})
+	inquiryRepo := &fakeNegotiationInquiryRepo{
+		inquiry: &modelsProduct.Inquiry{ID: inquiryID, UserID: &userID},
+	}
+	handler := buildTestNegotiationHandler(negoRepo, inquiryRepo)
 
-	rec := performCustomerAcceptNegotiation(handler, userID, offerID)
+	rec := performCustomerAcceptNegotiation(handler, userID, inquiryID, offerID)
 	// 409 Conflict reflects "offer is not in pending state" (state-machine conflict),
 	// the previous 400 was returned by the generic err.Error() handler before C-10
 	// mapped the sentinel error to a stable code.
@@ -296,7 +304,7 @@ func buildTestNegotiationHandler(negoRepo *fakeNegotiationRepo, inquiryRepo *fak
 		Negotiation: orderService.NewNegotiationService(negoRepo),
 		Inquiry:     inquiryService.NewInquiryService(inquiryRepo, cfg),
 	}
-	return NewHandler(cfg, svcs, nil)
+	return NewHandler(cfg, svcs, nil, nil)
 }
 
 func performCustomerCreateNegotiation(handler *Handler, userID, inquiryID string, body map[string]interface{}) *httptest.ResponseRecorder {
@@ -323,12 +331,12 @@ func performCustomerGetNegotiation(handler *Handler, userID, inquiryID string) *
 	return rec
 }
 
-func performCustomerAcceptNegotiation(handler *Handler, userID, offerID string) *httptest.ResponseRecorder {
-	req := httptest.NewRequest(http.MethodPost, "/user/inquiries/inq-x/negotiations/"+offerID+"/accept", nil)
+func performCustomerAcceptNegotiation(handler *Handler, userID, inquiryID, offerID string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(http.MethodPost, "/user/inquiries/"+inquiryID+"/negotiations/"+offerID+"/accept", nil)
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
 	c.Request = req
-	c.Params = gin.Params{{Key: "offerId", Value: offerID}}
+	c.Params = gin.Params{{Key: "id", Value: inquiryID}, {Key: "offerId", Value: offerID}}
 	c.Set("userID", userID)
 	handler.CustomerAcceptNegotiationOffer(c)
 	return rec

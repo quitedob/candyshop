@@ -130,7 +130,7 @@ const verifyCompany = async (id: string, status: string) => {
     await adminVerifyCompany(id, status)
     await fetchCompanies()
   } catch (err: any) {
-    alert(err?.data?.message || err.message || t('errors.api.company_verify_failed'))
+    notifyError(err, t('errors.api.company_verify_failed'))
   }
 }
 

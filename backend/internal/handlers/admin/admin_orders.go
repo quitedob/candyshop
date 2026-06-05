@@ -100,6 +100,11 @@ func (h *Handler) AdminUpdateOrderStatus(c *gin.Context) {
 		Status              string `json:"status"`
 		TrackingNumber      string `json:"trackingNumber"`
 		TrackingNumberSnake string `json:"tracking_number"`
+		// Refund, when true, authorises the handler to refund any confirmed
+		// payments before cancelling. Without it, cancelling an order that has
+		// captured money is blocked so funds are never silently stranded
+		// (P0.3 / G-ORD-3).
+		Refund bool `json:"refund"`
 	}
 	if !response.BindJSONOrInvalid(c, &req) {
 		return
@@ -139,13 +144,37 @@ func (h *Handler) AdminUpdateOrderStatus(c *gin.Context) {
 		}
 	}
 
-	// H-22: warn (audit) when cancelling an order with confirmed payments that
-	// have not been refunded. We don't auto-refund — that requires gateway-aware
-	// flows — but flag it loudly so finance reconciliation can act on it.
+	// P0.3 / G-ORD-3: cancelling an order with confirmed (captured) payments must
+	// not silently strand money behind an audit log. Either refund every
+	// confirmed payment (when the admin explicitly requests it) or block the
+	// cancellation so finance makes a deliberate decision.
 	if previousStatus != "cancelled" && targetStatus == "cancelled" && h.services.Payment != nil {
 		count, total, perr := h.services.Payment.CountConfirmedPaymentsForOrder(c.Request.Context(), order.ID)
-		if perr == nil && count > 0 {
-			h.logOrderAudit(c, "order_cancel_with_unrefunded_payments",
+		if perr != nil {
+			response.ErrorResp(c, http.StatusInternalServerError, "payment_fetch_failed")
+			return
+		}
+		if count > 0 {
+			if !req.Refund {
+				// Block: surface the captured amount so the admin can re-submit
+				// with refund=true once they've confirmed the refund is intended.
+				response.ErrorRespDetail(c, http.StatusUnprocessableEntity, "order_cancel_requires_refund", gin.H{
+					"confirmedPaymentCount": count,
+					"confirmedTotal":        total,
+					"currency":              order.Currency,
+				})
+				return
+			}
+			if refunded, rerr := h.refundConfirmedPayments(c, order.ID); rerr != nil {
+				h.logOrderAudit(c, "order_cancel_refund_failed",
+					order.ID, c.GetString("userID"),
+					fmt.Sprintf("refunded=%d/%d", refunded, count),
+					rerr.Error(),
+				)
+				response.ErrorResp(c, http.StatusBadGateway, "refund_failed")
+				return
+			}
+			h.logOrderAudit(c, "order_cancel_with_refund",
 				order.ID, c.GetString("userID"),
 				fmt.Sprintf("count=%d", count),
 				fmt.Sprintf("total=%.2f %s", total, order.Currency),
@@ -248,6 +277,36 @@ func (h *Handler) AdminUpdateOrderStatus(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, order)
+}
+
+// refundConfirmedPayments refunds every confirmed payment on the order via the
+// gateway service, which routes gateway-backed payments through Stripe/PayPal
+// and falls back to a local status flip for manual (bank transfer) payments.
+// Returns the number of successfully refunded payments and the first error.
+func (h *Handler) refundConfirmedPayments(c *gin.Context, orderID string) (int, error) {
+	if h.services == nil || h.services.Payment == nil {
+		return 0, fmt.Errorf("payment service unavailable")
+	}
+	payments, err := h.services.Payment.GetPaymentsByOrder(c.Request.Context(), orderID)
+	if err != nil {
+		return 0, err
+	}
+	refunded := 0
+	for i := range payments {
+		p := payments[i]
+		if p.Status != modelsOrder.PaymentRecordStatusConfirmed {
+			continue
+		}
+		if h.services.GatewayPayment != nil {
+			if rerr := h.services.GatewayPayment.RefundGateway(c.Request.Context(), &p); rerr != nil {
+				return refunded, rerr
+			}
+		} else if rerr := h.services.Payment.RefundPayment(c.Request.Context(), p.ID); rerr != nil {
+			return refunded, rerr
+		}
+		refunded++
+	}
+	return refunded, nil
 }
 
 // resolveUserCompany looks up the company associated with a user.

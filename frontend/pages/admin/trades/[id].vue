@@ -469,7 +469,7 @@ const quickGenerateDoc = async (btn: { key: string; endpoint: string; aiType: st
       await fetchRichDocs()
       await fetchDocuments()
     } catch (err: any) {
-      alert(err?.message || t('errors.api.document_save_failed'))
+      notifyError(err, t('errors.api.document_save_failed'))
     }
   } finally {
     generatingDoc.value = ''
@@ -509,7 +509,7 @@ const saveSettlement = async () => {
     showSettlementModal.value = false
     await fetchSettlements()
   } catch (err: any) {
-    alert(err?.message || t('errors.api.save_failed'))
+    notifyError(err, t('errors.api.save_failed'))
   } finally {
     savingSettlement.value = false
   }
@@ -521,7 +521,7 @@ const deleteSettlement = async (id: number) => {
     await api.delete(`/admin/trades/${route.params.id}/settlements/${id}`)
     await fetchSettlements()
   } catch (err: any) {
-    alert(err?.message || t('errors.api.delete_failed'))
+    notifyError(err, t('errors.api.delete_failed'))
   }
 }
 
@@ -530,7 +530,7 @@ const updateCompliance = async (compId: number, status: string) => {
     await api.put(`/admin/trades/${route.params.id}/compliance/${compId}`, { status })
     await fetchCompliance()
   } catch (err: any) {
-    alert(err?.message || t('errors.api.status_failed'))
+    notifyError(err, t('errors.api.status_failed'))
   }
 }
 
@@ -833,7 +833,7 @@ const confirmDoc = async (docId: string) => {
     await api.put(`/admin/trades/${route.params.id}/documents/${docId}`, { status: 'CONFIRMED' })
     await fetchDocuments()
   } catch (err: any) {
-    alert(err?.message || t('errors.api.document_confirm_failed'))
+    notifyError(err, t('errors.api.document_confirm_failed'))
   }
 }
 

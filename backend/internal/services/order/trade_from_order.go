@@ -64,3 +64,26 @@ func BuildTradeTransactionFromInquiry(order *modelsOrder.Order, inq *modelsProdu
 	}
 	return BuildTradeTransactionFromOrderWithHints(order, terms, CommercialNotesFromInquiry(inq))
 }
+
+// CommercialNotesFromOEMProject 将 OEM 项目的工艺/包装需求拼成贸易备注。
+func CommercialNotesFromOEMProject(project *modelsProduct.OEMProject) string {
+	if project == nil {
+		return ""
+	}
+	var parts []string
+	if s := strings.TrimSpace(project.ProductName); s != "" {
+		parts = append(parts, "OEM product: "+s)
+	}
+	if s := strings.TrimSpace(project.Requirements.Packaging); s != "" {
+		parts = append(parts, "Packaging: "+s)
+	}
+	if s := strings.TrimSpace(project.Requirements.Flavor); s != "" {
+		parts = append(parts, "Flavor: "+s)
+	}
+	return strings.Join(parts, "; ")
+}
+
+// BuildTradeTransactionFromOEMProject 从 OEM 项目派生的订单构建 Trade（Incoterms 可空，默认 FOB）。
+func BuildTradeTransactionFromOEMProject(order *modelsOrder.Order, project *modelsProduct.OEMProject, incoterms string) *modelsTrade.TradeTransaction {
+	return BuildTradeTransactionFromOrderWithHints(order, incoterms, CommercialNotesFromOEMProject(project))
+}

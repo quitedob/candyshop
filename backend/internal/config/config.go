@@ -96,13 +96,15 @@ type UploadConfig struct {
 	UploadPath   string
 	UploadURL    string
 	// S3 / cloud storage
-	StorageDriver string // "local", "s3", or "oss" (Alibaba Cloud OSS, S3-compatible)
-	S3Bucket      string
-	S3Region      string
-	S3AccessKey   string
-	S3SecretKey   string
-	S3Endpoint    string // optional: MinIO / compatible endpoint
-	S3CDNDomain   string // optional: CloudFront CDN domain for public URLs
+	StorageDriver          string // "local", "s3", or "oss" (Alibaba Cloud OSS, S3-compatible)
+	S3Bucket               string
+	S3Region               string
+	S3AccessKey            string
+	S3SecretKey            string
+	S3Endpoint             string // optional: MinIO / compatible endpoint
+	S3CDNDomain            string // optional: CloudFront CDN domain for public URLs
+	VirusScanWebhookURL    string
+	VirusScanWebhookSecret string
 }
 
 // SecurityConfig holds security-related configuration
@@ -116,6 +118,9 @@ type SecurityConfig struct {
 	EnableMultiWarehouse            bool
 	RedisURL                        string
 	FrontendURL                     string
+	// WSAllowedOrigins gates the Origin header on WebSocket upgrades. Defaults
+	// to CORSAllowedOrigins when WS_ALLOWED_ORIGINS is unset.
+	WSAllowedOrigins []string
 }
 
 // JWTConfig holds JWT configuration
@@ -156,17 +161,19 @@ func Load() (*Config, error) {
 			FromName:     getEnv("FROM_NAME", "CandyPro OEM"),
 		},
 		Upload: UploadConfig{
-			MaxFileSize:   int64(getEnvInt("MAX_FILE_SIZE", 64*1024*1024)), // 64MB（询价视频附件）
-			AllowedTypes:  []string{"image/jpeg", "image/png", "image/webp", "application/pdf"},
-			UploadPath:    getEnv("UPLOAD_PATH", "./uploads"),
-			UploadURL:     getEnv("UPLOAD_URL", "/uploads"),
-			StorageDriver: getEnv("STORAGE_DRIVER", "local"),
-			S3Bucket:      getEnv("S3_BUCKET", ""),
-			S3Region:      getEnv("S3_REGION", "us-east-1"),
-			S3AccessKey:   getEnv("S3_ACCESS_KEY", ""),
-			S3SecretKey:   getEnv("S3_SECRET_KEY", ""),
-			S3Endpoint:    getEnv("S3_ENDPOINT", ""),
-			S3CDNDomain:   getEnv("S3_CDN_DOMAIN", ""),
+			MaxFileSize:            int64(getEnvInt("MAX_FILE_SIZE", 64*1024*1024)), // 64MB（询价视频附件）
+			AllowedTypes:           []string{"image/jpeg", "image/png", "image/webp", "application/pdf"},
+			UploadPath:             getEnv("UPLOAD_PATH", "./uploads"),
+			UploadURL:              getEnv("UPLOAD_URL", "/uploads"),
+			StorageDriver:          getEnv("STORAGE_DRIVER", "local"),
+			S3Bucket:               getEnv("S3_BUCKET", ""),
+			S3Region:               getEnv("S3_REGION", "us-east-1"),
+			S3AccessKey:            getEnv("S3_ACCESS_KEY", ""),
+			S3SecretKey:            getEnv("S3_SECRET_KEY", ""),
+			S3Endpoint:             getEnv("S3_ENDPOINT", ""),
+			S3CDNDomain:            getEnv("S3_CDN_DOMAIN", ""),
+			VirusScanWebhookURL:    getEnv("VIRUS_SCAN_WEBHOOK_URL", ""),
+			VirusScanWebhookSecret: getEnv("VIRUS_SCAN_WEBHOOK_SECRET", ""),
 		},
 		Security: SecurityConfig{
 			CORSAllowedOrigins:              parseCORSOrigins(),
@@ -178,13 +185,14 @@ func Load() (*Config, error) {
 			EnableMultiWarehouse:            getEnv("ENABLE_MULTI_WAREHOUSE", "false") == "true",
 			RedisURL:                        getEnv("REDIS_URL", ""),
 			FrontendURL:                     getEnv("FRONTEND_URL", "http://localhost:3000"),
+			WSAllowedOrigins:                parseWSOrigins(),
 		},
 		JWT: JWTConfig{
 			Secret:               getEnv("JWT_SECRET", ""),
 			AccessTokenDuration:  getEnvInt("JWT_ACCESS_MINUTES", 15),
 			RefreshTokenDuration: getEnvInt("JWT_REFRESH_DAYS", 7),
 		},
-		AI:            LoadAIConfig(),
+		AI: LoadAIConfig(),
 		Stripe: StripeConfig{
 			SecretKey:      getEnv("STRIPE_SECRET_KEY", ""),
 			WebhookSecret:  getEnv("STRIPE_WEBHOOK_SECRET", ""),
@@ -219,6 +227,9 @@ func Load() (*Config, error) {
 	}
 	if len(cfg.JWT.Secret) < 32 {
 		return nil, fmt.Errorf("JWT_SECRET is too short (%d chars); must be at least 32 characters", len(cfg.JWT.Secret))
+	}
+	if cfg.Upload.VirusScanWebhookURL != "" && cfg.Upload.VirusScanWebhookSecret == "" {
+		return nil, fmt.Errorf("VIRUS_SCAN_WEBHOOK_SECRET is required when VIRUS_SCAN_WEBHOOK_URL is set")
 	}
 
 	// Issue 10: Validate CORS — credentials mode is incompatible with wildcard origins
@@ -277,6 +288,26 @@ func parseCORSOrigins() []string {
 		"http://localhost:3001",
 		"http://localhost:3002",
 	}
+}
+
+// parseWSOrigins returns the allow-list for WebSocket Origin checks. When
+// WS_ALLOWED_ORIGINS is unset it falls back to the CORS allow-list so a single
+// origin configuration covers both REST and WebSocket.
+func parseWSOrigins() []string {
+	raw := os.Getenv("WS_ALLOWED_ORIGINS")
+	if raw != "" {
+		parts := strings.Split(raw, ",")
+		origins := make([]string, 0, len(parts))
+		for _, p := range parts {
+			if trimmed := strings.TrimSpace(p); trimmed != "" {
+				origins = append(origins, trimmed)
+			}
+		}
+		if len(origins) > 0 {
+			return origins
+		}
+	}
+	return parseCORSOrigins()
 }
 
 func getEnv(key, defaultValue string) string {

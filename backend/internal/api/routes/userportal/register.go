@@ -47,19 +47,23 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 	group.POST("/orders/:id/approve", h.UserPortal.CustomerApproveOrder)
 	group.POST("/orders/:id/reject", h.UserPortal.CustomerRejectOrder)
 	group.POST("/orders/:id/nudge", h.UserPortal.CustomerNudgeOrder)
+	group.GET("/orders/messages/unread-count", h.UserPortal.CustomerGetOrderMessageUnreadTotal)
 	group.GET("/orders/:id/messages", h.UserPortal.CustomerGetOrderMessages)
+	group.GET("/orders/:id/messages/unread-count", h.UserPortal.CustomerGetOrderMessageUnreadCount)
+	group.POST("/orders/:id/messages/read", h.UserPortal.CustomerMarkOrderMessagesRead)
 	group.POST("/orders/:id/messages", h.UserPortal.CustomerSendOrderMessage)
-		// Returns
-		group.POST("/orders/:id/returns", h.UserPortal.CustomerCreateReturn)
-		group.GET("/returns", h.UserPortal.CustomerListReturns)
-		group.GET("/returns/:id", h.UserPortal.CustomerGetReturn)
+	group.GET("/orders/:id/messages/ws", h.UserPortal.CustomerStreamOrderMessages)
+	// Returns
+	group.POST("/orders/:id/returns", h.UserPortal.CustomerCreateReturn)
+	group.GET("/returns", h.UserPortal.CustomerListReturns)
+	group.GET("/returns/:id", h.UserPortal.CustomerGetReturn)
 	group.GET("/orders/:id/payments/:paymentId/file", h.UserPortal.CustomerDownloadPaymentProofFile)
-			// Coupons
-		group.POST("/cart/coupon/validate", h.UserPortal.CustomerValidateCartCoupon)
-		group.POST("/cart/coupon", h.UserPortal.CustomerApplyCoupon)
-		group.DELETE("/cart/coupon", h.UserPortal.CustomerRemoveCoupon)
+	// Coupons
+	group.POST("/cart/coupon/validate", h.UserPortal.CustomerValidateCartCoupon)
+	group.POST("/cart/coupon", h.UserPortal.CustomerApplyCoupon)
+	group.DELETE("/cart/coupon", h.UserPortal.CustomerRemoveCoupon)
 
-		group.POST("/cart/items", h.UserPortal.CustomerAddToCart)
+	group.POST("/cart/items", h.UserPortal.CustomerAddToCart)
 	group.PUT("/cart/items/:itemId", h.UserPortal.CustomerUpdateCartItem)
 	group.DELETE("/cart/items/:itemId", h.UserPortal.CustomerRemoveCartItem)
 	group.DELETE("/cart", h.UserPortal.CustomerClearCart)
@@ -73,6 +77,8 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 	group.GET("/company", h.UserPortal.CustomerGetCompany)
 	group.PUT("/company", h.UserPortal.CustomerUpdateCompany)
 	group.GET("/company/kyb-document-file", h.UserPortal.CustomerDownloadKYBDocumentFile)
+	group.POST("/company/kyb-document", h.UserPortal.CustomerUploadKYBDocument)
+	group.GET("/uploads/:fileId", h.UserPortal.CustomerGetUploadedFile)
 
 	// Pricing
 	group.GET("/price-list", h.UserPortal.CustomerGetMyPriceList)
@@ -128,8 +134,7 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 		activeGuard.PUT("/requisition-lists/:id", h.UserPortal.CustomerUpdateRequisitionList)
 		activeGuard.DELETE("/requisition-lists/:id", h.UserPortal.CustomerDeleteRequisitionList)
 		activeGuard.POST("/requisition-lists/:id/convert", h.UserPortal.CustomerConvertRequisitionToOrder)
-
-		// KYB document upload
-		activeGuard.POST("/company/kyb-document", h.UserPortal.CustomerUploadKYBDocument)
+		activeGuard.POST("/uploads/presign", h.UserPortal.CustomerPresignUpload)
+		activeGuard.POST("/uploads/:fileId/complete", h.UserPortal.CustomerCompletePresignedUpload)
 	}
 }

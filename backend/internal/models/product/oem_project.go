@@ -49,21 +49,32 @@ func ValidateOEMStatusTransition(from, to string) error {
 }
 
 type OEMProject struct {
-	ID           string          `json:"id" gorm:"primaryKey"`
-	UserID       string          `json:"userId" gorm:"index;not null"`
-	User         *modelsUser.User `json:"user,omitempty" gorm:"foreignKey:UserID;references:ID"`
-	InquiryID    *string         `json:"inquiryId" gorm:"index"`
-	ProductName  string          `json:"productName"`
-	Status       string          `json:"status" gorm:"default:'inquiry'"` // inquiry, sampling, formulation, quotation, contract, production, delivery, completed
-	CurrentStep  int             `json:"currentStep" gorm:"default:0"`
-	Requirements OEMRequirements `json:"requirements" gorm:"type:jsonb"`
-	Samples      OEMSampleArray  `json:"samples" gorm:"type:jsonb"`
-	Attachments  modelsCommon.StringArray `json:"attachments" gorm:"type:jsonb"`
-	AssignedTo   *string         `json:"assignedTo" gorm:"index"`
-	Notes        string          `json:"notes" gorm:"type:text"`           // customer requirement notes (set at creation)
-	AdminNotes   string          `json:"adminNotes" gorm:"type:text"`      // internal admin/team remarks
-	CreatedAt    time.Time       `json:"createdAt"`
-	UpdatedAt    time.Time       `json:"updatedAt"`
+	ID        string           `json:"id" gorm:"primaryKey"`
+	UserID    string           `json:"userId" gorm:"index;not null"`
+	User      *modelsUser.User `json:"user,omitempty" gorm:"foreignKey:UserID;references:ID"`
+	InquiryID *string          `json:"inquiryId" gorm:"index"`
+	// OrderID links the OEM project to the draft order created when the project
+	// is converted (P0.2 / G-OEM-2). Nil until conversion; used for idempotency
+	// so a project cannot be converted into multiple orders.
+	OrderID     *string `json:"orderId" gorm:"index"`
+	ProductName string  `json:"productName"`
+	// QuotedUnitPrice / QuotedQuantity capture the agreed commercial terms an
+	// admin sets at the quotation stage. They seed the order created at
+	// conversion when no explicit override is supplied.
+	QuotedUnitPrice float64                  `json:"quotedUnitPrice" gorm:"default:0"`
+	QuotedQuantity  int                      `json:"quotedQuantity" gorm:"default:0"`
+	ProductID       *string                  `json:"productId" gorm:"index"`          // optional catalog product the OEM maps to
+	Status          string                   `json:"status" gorm:"default:'inquiry'"` // inquiry, sampling, formulation, quotation, contract, production, delivery, completed
+	CurrentStep     int                      `json:"currentStep" gorm:"default:0"`
+	Requirements    OEMRequirements          `json:"requirements" gorm:"type:jsonb"`
+	Samples         OEMSampleArray           `json:"samples" gorm:"type:jsonb"`
+	Attachments     modelsCommon.StringArray `json:"attachments" gorm:"type:jsonb"`
+	AssignedTo      *string                  `json:"assignedTo" gorm:"index"`
+	Notes           string                   `json:"notes" gorm:"type:text"`      // customer requirement notes (set at creation)
+	AdminNotes      string                   `json:"adminNotes" gorm:"type:text"` // internal admin/team remarks
+	Version         uint                     `json:"version" gorm:"not null;default:1"`
+	CreatedAt       time.Time                `json:"createdAt"`
+	UpdatedAt       time.Time                `json:"updatedAt"`
 }
 
 type OEMRequirements struct {
@@ -100,6 +111,29 @@ type OEMSample struct {
 }
 
 type OEMSampleArray []OEMSample
+
+// OEM sample status constants.
+const (
+	OEMSampleStatusRequested = "requested"
+	OEMSampleStatusShipped   = "shipped"
+	OEMSampleStatusReceived  = "received"
+	OEMSampleStatusApproved  = "approved"
+	OEMSampleStatusRejected  = "rejected"
+)
+
+// ValidOEMSampleStatuses lists the recognised sample lifecycle states.
+var ValidOEMSampleStatuses = map[string]bool{
+	OEMSampleStatusRequested: true,
+	OEMSampleStatusShipped:   true,
+	OEMSampleStatusReceived:  true,
+	OEMSampleStatusApproved:  true,
+	OEMSampleStatusRejected:  true,
+}
+
+// IsValidOEMSampleStatus reports whether s is a recognised sample status.
+func IsValidOEMSampleStatus(s string) bool {
+	return ValidOEMSampleStatuses[s]
+}
 
 func (s OEMSampleArray) Value() (driver.Value, error) {
 	if s == nil {

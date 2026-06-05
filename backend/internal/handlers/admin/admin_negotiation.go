@@ -2,10 +2,13 @@ package admin
 
 import (
 	"errors"
+	"log"
 	"net/http"
 
-	orderSvc "candypro/api/internal/services/order"
+	modelsOrder "candypro/api/internal/models/order"
 	"candypro/api/internal/pkg/response"
+	orderSvc "candypro/api/internal/services/order"
+	"candypro/api/internal/services/orderintake"
 
 	"github.com/gin-gonic/gin"
 )
@@ -64,13 +67,15 @@ func (h *Handler) AdminCreateNegotiationOffer(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"success": true, "offer": offer})
 }
 
-// AdminAcceptNegotiationOffer accepts a buyer's pending offer.
+// AdminAcceptNegotiationOffer accepts a buyer's pending offer and converts the
+// agreed terms into a draft order (P0.1 / G-ORD-1).
 func (h *Handler) AdminAcceptNegotiationOffer(c *gin.Context) {
 	if h.services == nil {
 		response.ServiceUnavailableResp(c)
 		return
 	}
 	userID := c.GetString("userID")
+	inquiryID := c.Param("id")
 	offerID := c.Param("offerId")
 	offer, err := h.services.Negotiation.AcceptOffer(c.Request.Context(), offerID, userID)
 	if err != nil {
@@ -78,7 +83,43 @@ func (h *Handler) AdminAcceptNegotiationOffer(c *gin.Context) {
 		response.ErrorResp(c, status, code)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "offer": offer})
+
+	order := h.createOrderFromAcceptedOffer(c, inquiryID, offer)
+	resp := gin.H{"success": true, "offer": offer}
+	if order != nil {
+		resp["order"] = order
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+// createOrderFromAcceptedOffer builds a draft order from the accepted offer.
+// Failures are logged but never fail the accept — the offer is already accepted
+// and the order can be created manually via inquiry-convert as a fallback.
+func (h *Handler) createOrderFromAcceptedOffer(c *gin.Context, inquiryID string, offer *modelsOrder.NegotiationOffer) *modelsOrder.Order {
+	if h.services.OrderIntake == nil || h.services.Inquiry == nil {
+		return nil
+	}
+	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID)
+	if err != nil {
+		log.Printf("negotiation accept: inquiry %s lookup failed: %v", inquiryID, err)
+		return nil
+	}
+	opts := orderintake.Options{}
+	if h.cfg != nil {
+		opts.EnableMultiWarehouse = h.cfg.Security.EnableMultiWarehouse
+	}
+	res, ierr := h.services.OrderIntake.CreateOrderFromAcceptedOffer(c.Request.Context(), inquiry, offer, opts)
+	if ierr != nil {
+		log.Printf("negotiation accept: order creation from offer %s failed: %v", offer.ID, ierr)
+		return nil
+	}
+	if res == nil || res.Order == nil {
+		return nil
+	}
+	if mErr := h.services.OrderIntake.MarkInquiryWon(c.Request.Context(), inquiryID); mErr != nil {
+		log.Printf("negotiation accept: failed to mark inquiry %s won: %v", inquiryID, mErr)
+	}
+	return res.Order
 }
 
 // AdminRejectNegotiationOffer rejects a buyer's pending offer.

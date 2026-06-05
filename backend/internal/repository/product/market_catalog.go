@@ -4,6 +4,7 @@ import (
 	modelsProduct "candypro/api/internal/models/product"
 	"context"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -91,6 +92,18 @@ func (r *ProductRepository) ListOEMInventoryHoldsByProject(ctx context.Context, 
 	var rows []modelsProduct.OEMProjectInventoryHold
 	err := r.db.WithContext(ctx).Where("project_id = ?", projectID).Order("id ASC").Find(&rows).Error
 	return rows, err
+}
+
+// UpdateOEMHoldStatusIfMatches 条件更新 OEM 预留状态（仅当当前状态匹配时），
+// 返回受影响行数。0 表示并发竞争或预留不存在/已是目标状态（P0.2 / G-OEM-3）。
+func (r *ProductRepository) UpdateOEMHoldStatusIfMatches(ctx context.Context, id uint, expected, target string) (int64, error) {
+	res := r.db.WithContext(ctx).Model(&modelsProduct.OEMProjectInventoryHold{}).
+		Where("id = ? AND status = ?", id, expected).
+		Updates(map[string]interface{}{
+			"status":     target,
+			"updated_at": time.Now(),
+		})
+	return res.RowsAffected, res.Error
 }
 
 // SumActiveOEMHoldsForProduct 活跃 OEM 预留数量合计

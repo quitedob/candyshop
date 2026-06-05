@@ -38,25 +38,25 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.PUT("/orders/:id", h.AdminPortal.AdminUpdateOrder)
 	group.DELETE("/orders/:id", h.AdminPortal.AdminDeleteOrder)
 	group.PUT("/orders/:id/status", h.AdminPortal.AdminUpdateOrderStatus)
-		// Order Approval
-		group.POST("/orders/:id/approve", h.AdminPortal.AdminApproveOrder)
-		group.POST("/orders/:id/reject", h.AdminPortal.AdminRejectOrder)
-		group.GET("/orders/:id/approval-history", h.AdminPortal.AdminGetApprovalHistory)
+	// Order Approval
+	group.POST("/orders/:id/approve", h.AdminPortal.AdminApproveOrder)
+	group.POST("/orders/:id/reject", h.AdminPortal.AdminRejectOrder)
+	group.GET("/orders/:id/approval-history", h.AdminPortal.AdminGetApprovalHistory)
 
 	group.POST("/orders/:id/create-trade", h.AdminPortal.AdminCreateTradeFromOrder)
-		group.POST("/orders/:id/fulfillments", h.AdminPortal.AdminCreateFulfillment)
-		group.GET("/orders/:id/fulfillments", h.AdminPortal.AdminListFulfillments)
-		group.PUT("/fulfillments/:id/ship", h.AdminPortal.AdminShipFulfillment)
-		group.PUT("/fulfillments/:id/deliver", h.AdminPortal.AdminDeliverFulfillment)
-		group.PUT("/fulfillments/:id/cancel", h.AdminPortal.AdminCancelFulfillment)
-		group.GET("/fulfillments", h.AdminPortal.AdminGetFulfillments)
-		// Returns — @frontend: admin/returns (admin)
-		group.GET("/returns", h.AdminPortal.AdminListReturns)
-		group.GET("/returns/:id", h.AdminPortal.AdminGetReturn)
-		group.PUT("/returns/:id/approve", h.AdminPortal.AdminApproveReturn)
-		group.PUT("/returns/:id/receive", h.AdminPortal.AdminReceiveReturn)
-		group.PUT("/returns/:id/refund", h.AdminPortal.AdminRefundReturn)
-		group.PUT("/returns/:id/reject", h.AdminPortal.AdminRejectReturn)
+	group.POST("/orders/:id/fulfillments", h.AdminPortal.AdminCreateFulfillment)
+	group.GET("/orders/:id/fulfillments", h.AdminPortal.AdminListFulfillments)
+	group.PUT("/fulfillments/:id/ship", h.AdminPortal.AdminShipFulfillment)
+	group.PUT("/fulfillments/:id/deliver", h.AdminPortal.AdminDeliverFulfillment)
+	group.PUT("/fulfillments/:id/cancel", h.AdminPortal.AdminCancelFulfillment)
+	group.GET("/fulfillments", h.AdminPortal.AdminGetFulfillments)
+	// Returns — @frontend: admin/returns (admin)
+	group.GET("/returns", h.AdminPortal.AdminListReturns)
+	group.GET("/returns/:id", h.AdminPortal.AdminGetReturn)
+	group.PUT("/returns/:id/approve", h.AdminPortal.AdminApproveReturn)
+	group.PUT("/returns/:id/receive", h.AdminPortal.AdminReceiveReturn)
+	group.PUT("/returns/:id/refund", h.AdminPortal.AdminRefundReturn)
+	group.PUT("/returns/:id/reject", h.AdminPortal.AdminRejectReturn)
 
 	// Order Payments (admin)
 	group.GET("/orders/:id/payments", h.AdminPortal.AdminGetOrderPayments)
@@ -64,8 +64,12 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.GET("/orders/:id/payments/:paymentId/file", h.AdminPortal.AdminDownloadPaymentProofFile)
 	group.PUT("/orders/:id/payments/:paymentId/confirm", h.AdminPortal.AdminConfirmPayment)
 	group.PUT("/orders/:id/payments/:paymentId/refund", h.AdminPortal.AdminRefundPayment)
+	group.GET("/orders/messages/unread-count", h.AdminPortal.AdminGetOrderMessageUnreadTotal)
 	group.GET("/orders/:id/messages", h.AdminPortal.AdminGetOrderMessages)
+	group.GET("/orders/:id/messages/unread-count", h.AdminPortal.AdminGetOrderMessageUnreadCount)
+	group.POST("/orders/:id/messages/read", h.AdminPortal.AdminMarkOrderMessagesRead)
 	group.POST("/orders/:id/messages", h.AdminPortal.AdminSendOrderMessage)
+	group.GET("/orders/:id/messages/ws", h.AdminPortal.AdminStreamOrderMessages)
 
 	// Inquiries
 	group.GET("/inquiries", h.AdminPortal.AdminGetInquiries)
@@ -127,6 +131,9 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.POST("/upload/image", h.AdminPortal.AdminUploadImage)
 	group.POST("/upload/document", h.AdminPortal.AdminUploadDocument)
 	group.POST("/upload/multiple", h.AdminPortal.AdminUploadMultiple)
+	group.POST("/upload/presign", h.AdminPortal.AdminPresignUpload)
+	group.POST("/upload/:fileId/complete", h.AdminPortal.AdminCompletePresignedUpload)
+	group.GET("/upload/:fileId", h.AdminPortal.AdminGetUploadedFile)
 	group.DELETE("/upload/:filename", h.AdminPortal.AdminDeleteFile)
 
 	// Companies
@@ -134,15 +141,14 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.GET("/companies/:id", h.AdminPortal.AdminGetCompany)
 	group.PUT("/companies/:id", h.AdminPortal.AdminUpdateCompany)
 	group.PUT("/companies/:id/verify", h.AdminPortal.AdminVerifyCompany)
-		// Buyer Organizations (B2B Approval)
-		// @frontend: admin/organizations
-		group.GET("/organizations", h.AdminPortal.AdminGetOrganizations)
-		group.POST("/organizations", h.AdminPortal.AdminCreateOrganization)
-		group.PUT("/organizations/:id", h.AdminPortal.AdminUpdateOrganization)
-		group.GET("/organizations/members", h.AdminPortal.AdminGetOrgMembers)
-		group.POST("/organizations/members", h.AdminPortal.AdminAddOrgMember)
-		group.DELETE("/organizations/members/:id", h.AdminPortal.AdminRemoveOrgMember)
-
+	// Buyer Organizations (B2B Approval)
+	// @frontend: admin/organizations
+	group.GET("/organizations", h.AdminPortal.AdminGetOrganizations)
+	group.POST("/organizations", h.AdminPortal.AdminCreateOrganization)
+	group.PUT("/organizations/:id", h.AdminPortal.AdminUpdateOrganization)
+	group.GET("/organizations/members", h.AdminPortal.AdminGetOrgMembers)
+	group.POST("/organizations/members", h.AdminPortal.AdminAddOrgMember)
+	group.DELETE("/organizations/members/:id", h.AdminPortal.AdminRemoveOrgMember)
 
 	// Trade
 	// @frontend: admin/trades
@@ -255,28 +261,29 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.PUT("/products/:id/channel-inventory", h.AdminPortal.AdminPutProductChannelInventory)
 	group.POST("/oem-projects/:id/inventory-holds", h.AdminPortal.AdminCreateOEMInventoryHold)
 	group.GET("/oem-projects/:id/inventory-holds", h.AdminPortal.AdminListOEMInventoryHolds)
+	group.DELETE("/oem-projects/:id/inventory-holds/:holdId", h.AdminPortal.AdminReleaseOEMInventoryHold)
 	group.POST("/products/:id/compliance-suggest", h.AdminPortal.AdminProductComplianceSuggest)
 
-			// Coupons & Gift Cards
-		// @frontend: admin/coupons
-		group.POST("/coupons", h.AdminPortal.AdminCreateCoupon)
-		group.GET("/coupons", h.AdminPortal.AdminListCoupons)
-		group.DELETE("/coupons/:id", h.AdminPortal.AdminDeleteCoupon)
-		group.POST("/gift-cards", h.AdminPortal.AdminCreateGiftCard)
-		group.GET("/gift-cards", h.AdminPortal.AdminListGiftCards)
+	// Coupons & Gift Cards
+	// @frontend: admin/coupons
+	group.POST("/coupons", h.AdminPortal.AdminCreateCoupon)
+	group.GET("/coupons", h.AdminPortal.AdminListCoupons)
+	group.DELETE("/coupons/:id", h.AdminPortal.AdminDeleteCoupon)
+	group.POST("/gift-cards", h.AdminPortal.AdminCreateGiftCard)
+	group.GET("/gift-cards", h.AdminPortal.AdminListGiftCards)
 
-		// Suppliers & Purchase Orders（需 ENABLE_SUPPLIER_PORTAL=true）
-		if cfg.Security.EnableSupplierPortal {
-			group.GET("/suppliers", h.AdminPortal.AdminListSuppliers)
-			group.POST("/suppliers", h.AdminPortal.AdminCreateSupplier)
-			group.GET("/suppliers/:id", h.AdminPortal.AdminGetSupplier)
-			group.PUT("/suppliers/:id", h.AdminPortal.AdminUpdateSupplier)
-			group.DELETE("/suppliers/:id", h.AdminPortal.AdminDeleteSupplier)
-			group.GET("/purchase-orders", h.AdminPortal.AdminListPOs)
-			group.POST("/purchase-orders", h.AdminPortal.AdminCreatePO)
-			group.GET("/purchase-orders/:id", h.AdminPortal.AdminGetPO)
-			group.PUT("/purchase-orders/:id/receive", h.AdminPortal.AdminReceivePO)
-		}
+	// Suppliers & Purchase Orders（需 ENABLE_SUPPLIER_PORTAL=true）
+	if cfg.Security.EnableSupplierPortal {
+		group.GET("/suppliers", h.AdminPortal.AdminListSuppliers)
+		group.POST("/suppliers", h.AdminPortal.AdminCreateSupplier)
+		group.GET("/suppliers/:id", h.AdminPortal.AdminGetSupplier)
+		group.PUT("/suppliers/:id", h.AdminPortal.AdminUpdateSupplier)
+		group.DELETE("/suppliers/:id", h.AdminPortal.AdminDeleteSupplier)
+		group.GET("/purchase-orders", h.AdminPortal.AdminListPOs)
+		group.POST("/purchase-orders", h.AdminPortal.AdminCreatePO)
+		group.GET("/purchase-orders/:id", h.AdminPortal.AdminGetPO)
+		group.PUT("/purchase-orders/:id/receive", h.AdminPortal.AdminReceivePO)
+	}
 
 	// Pricing
 	group.GET("/price-lists", h.AdminPortal.AdminGetPriceLists)
@@ -292,32 +299,37 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.GET("/oem-projects/:id", h.AdminPortal.AdminGetOEMProject)
 	group.PUT("/oem-projects/:id", h.AdminPortal.AdminUpdateOEMProject)
 	group.PUT("/oem-projects/:id/status", h.AdminPortal.AdminUpdateOEMStatus)
+	// OEM sample lifecycle (P0.2 / G-OEM-1)
+	group.POST("/oem-projects/:id/samples", h.AdminPortal.AdminAddOEMSample)
+	group.PUT("/oem-projects/:id/samples/:sampleId", h.AdminPortal.AdminUpdateOEMSample)
+	// OEM project → order conversion (P0.2 / G-OEM-2)
+	group.POST("/oem-projects/:id/convert-to-order", h.AdminPortal.AdminConvertOEMProjectToOrder)
 
-		// OEM Flows
-		group.GET("/oem-flows", h.AdminPortal.AdminGetOEMFlows)
-		group.GET("/oem-flows/:id", h.AdminPortal.AdminGetOEMFlow)
-		group.POST("/oem-flows", h.AdminPortal.AdminCreateOEMFlow)
-		group.PUT("/oem-flows/:id", h.AdminPortal.AdminUpdateOEMFlow)
-		group.DELETE("/oem-flows/:id", h.AdminPortal.AdminDeleteOEMFlow)
+	// OEM Flows
+	group.GET("/oem-flows", h.AdminPortal.AdminGetOEMFlows)
+	group.GET("/oem-flows/:id", h.AdminPortal.AdminGetOEMFlow)
+	group.POST("/oem-flows", h.AdminPortal.AdminCreateOEMFlow)
+	group.PUT("/oem-flows/:id", h.AdminPortal.AdminUpdateOEMFlow)
+	group.DELETE("/oem-flows/:id", h.AdminPortal.AdminDeleteOEMFlow)
 
-		// OEM Solutions
-		group.GET("/oem-solutions", h.AdminPortal.AdminGetOEMSolutions)
-		group.GET("/oem-solutions/:id", h.AdminPortal.AdminGetOEMSolution)
-		group.POST("/oem-solutions", h.AdminPortal.AdminCreateOEMSolution)
-		group.PUT("/oem-solutions/:id", h.AdminPortal.AdminUpdateOEMSolution)
-		group.DELETE("/oem-solutions/:id", h.AdminPortal.AdminDeleteOEMSolution)
+	// OEM Solutions
+	group.GET("/oem-solutions", h.AdminPortal.AdminGetOEMSolutions)
+	group.GET("/oem-solutions/:id", h.AdminPortal.AdminGetOEMSolution)
+	group.POST("/oem-solutions", h.AdminPortal.AdminCreateOEMSolution)
+	group.PUT("/oem-solutions/:id", h.AdminPortal.AdminUpdateOEMSolution)
+	group.DELETE("/oem-solutions/:id", h.AdminPortal.AdminDeleteOEMSolution)
 
 	// Reports
 	group.GET("/reports/revenue-trends", h.AdminPortal.GetRevenueTrends)
 	group.GET("/reports/order-trends", h.AdminPortal.GetOrderTrends)
 	group.GET("/reports/top-products", h.AdminPortal.GetTopProducts)
 	group.GET("/reports/conversion-trends", h.AdminPortal.GetConversionTrends)
-		group.GET("/reports/sales-velocity", h.AdminPortal.GetSalesVelocity)
-		group.GET("/reports/rfm", h.AdminPortal.GetRFMAnalysis)
-		group.GET("/reports/churn", h.AdminPortal.GetCustomerChurn)
-		group.GET("/reports/inventory-health", h.AdminPortal.GetInventoryHealth)
-		group.GET("/reports/profit-loss", h.AdminPortal.GetProfitLoss)
-		group.GET("/reports/replenishment", h.AdminPortal.GetReplenishmentSuggestions)
+	group.GET("/reports/sales-velocity", h.AdminPortal.GetSalesVelocity)
+	group.GET("/reports/rfm", h.AdminPortal.GetRFMAnalysis)
+	group.GET("/reports/churn", h.AdminPortal.GetCustomerChurn)
+	group.GET("/reports/inventory-health", h.AdminPortal.GetInventoryHealth)
+	group.GET("/reports/profit-loss", h.AdminPortal.GetProfitLoss)
+	group.GET("/reports/replenishment", h.AdminPortal.GetReplenishmentSuggestions)
 
 	// Financial
 	group.GET("/financial/overview", h.AdminPortal.GetFinancialOverview)
@@ -338,31 +350,31 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.POST("/xlsx/translate", h.AdminPortal.AdminTranslateXLSX)
 	group.POST("/xlsx/translate-batch", h.AdminPortal.AdminBatchTranslateXLSX)
 
-		// Hooks (Plugin/Event System)
-		// @frontend: admin/hooks
-		group.GET("/hooks", h.AdminPortal.AdminListHooks)
-		group.GET("/hooks/:id", h.AdminPortal.AdminGetHook)
-		group.POST("/hooks", h.AdminPortal.AdminCreateHook)
-		group.PUT("/hooks/:id", h.AdminPortal.AdminUpdateHook)
-		group.DELETE("/hooks/:id", h.AdminPortal.AdminDeleteHook)
-		group.GET("/hooks/executions", h.AdminPortal.AdminListHookExecutions)
-		group.GET("/events", h.AdminPortal.AdminListEvents)
+	// Hooks (Plugin/Event System)
+	// @frontend: admin/hooks
+	group.GET("/hooks", h.AdminPortal.AdminListHooks)
+	group.GET("/hooks/:id", h.AdminPortal.AdminGetHook)
+	group.POST("/hooks", h.AdminPortal.AdminCreateHook)
+	group.PUT("/hooks/:id", h.AdminPortal.AdminUpdateHook)
+	group.DELETE("/hooks/:id", h.AdminPortal.AdminDeleteHook)
+	group.GET("/hooks/executions", h.AdminPortal.AdminListHookExecutions)
+	group.GET("/events", h.AdminPortal.AdminListEvents)
 
-		// Sales Channels
-		// @frontend: admin/channels
-		group.GET("/channels", h.AdminPortal.AdminListChannels)
-		group.POST("/channels", h.AdminPortal.AdminCreateChannel)
-		group.GET("/channels/:id", h.AdminPortal.AdminGetChannel)
-		group.PUT("/channels/:id", h.AdminPortal.AdminUpdateChannel)
-		group.DELETE("/channels/:id", h.AdminPortal.AdminDeleteChannel)
+	// Sales Channels
+	// @frontend: admin/channels
+	group.GET("/channels", h.AdminPortal.AdminListChannels)
+	group.POST("/channels", h.AdminPortal.AdminCreateChannel)
+	group.GET("/channels/:id", h.AdminPortal.AdminGetChannel)
+	group.PUT("/channels/:id", h.AdminPortal.AdminUpdateChannel)
+	group.DELETE("/channels/:id", h.AdminPortal.AdminDeleteChannel)
 
-		// Webhooks
-		// @frontend: admin/webhooks
-		group.GET("/webhooks", h.AdminPortal.AdminListWebhooks)
-		group.POST("/webhooks", h.AdminPortal.AdminCreateWebhook)
-		group.PUT("/webhooks/:id", h.AdminPortal.AdminUpdateWebhook)
-		group.DELETE("/webhooks/:id", h.AdminPortal.AdminDeleteWebhook)
-		group.GET("/webhook-deliveries", h.AdminPortal.AdminListWebhookDeliveries)
+	// Webhooks
+	// @frontend: admin/webhooks
+	group.GET("/webhooks", h.AdminPortal.AdminListWebhooks)
+	group.POST("/webhooks", h.AdminPortal.AdminCreateWebhook)
+	group.PUT("/webhooks/:id", h.AdminPortal.AdminUpdateWebhook)
+	group.DELETE("/webhooks/:id", h.AdminPortal.AdminDeleteWebhook)
+	group.GET("/webhook-deliveries", h.AdminPortal.AdminListWebhookDeliveries)
 
 	// Settings
 	group.GET("/settings", h.AdminPortal.GetSettings)

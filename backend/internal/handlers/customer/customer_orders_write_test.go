@@ -182,6 +182,10 @@ func (f *fakeProductRepo) ListOEMInventoryHoldsByProject(ctx context.Context, pr
 	return nil, nil
 }
 
+func (f *fakeProductRepo) UpdateOEMHoldStatusIfMatches(ctx context.Context, id uint, expected, target string) (int64, error) {
+	return 0, nil
+}
+
 func (f *fakeProductRepo) SumActiveOEMHoldsForProduct(ctx context.Context, productID string) (int64, error) {
 	return 0, nil
 }
@@ -695,7 +699,7 @@ func buildTestCustomerOrderHandler(products map[string]modelsProduct.Product) (*
 		Order:   orderService.NewOrderService(orderRepo),
 	}
 
-	return NewHandler(cfg, svcs, nil), orderRepo
+	return NewHandler(cfg, svcs, nil, nil), orderRepo
 }
 
 func performCustomerCreateOrder(handler *Handler, userID string, body map[string]interface{}) *httptest.ResponseRecorder {

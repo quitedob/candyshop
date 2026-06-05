@@ -50,8 +50,8 @@ export const useAuth = () => {
   const isAdmin = computed(() =>
     isAuthenticated.value && (user.value?.role === 'admin' || user.value?.role === 'superadmin')
   )
-  const isSupplier = computed(() =>
-    isAuthenticated.value && user.value?.role === 'supplier'
+  const isActive = computed(() =>
+    isAuthenticated.value && user.value?.status === 'active'
   )
   const isPending = computed(() =>
     isAuthenticated.value && user.value?.status === 'pending'
@@ -205,7 +205,7 @@ export const useAuth = () => {
     token,
     isAuthenticated,
     isAdmin,
-    isSupplier,
+    isActive,
     isPending,
     login,
     register,

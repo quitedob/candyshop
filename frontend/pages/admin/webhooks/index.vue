@@ -208,7 +208,7 @@ const removeWebhook = async (id: number) => {
     await api.delete(`/admin/webhooks/${id}`)
     await fetchWebhooks()
   } catch (err: any) {
-    alert(err?.message || t('errors.api.delete_failed'))
+    notifyError(err, t('errors.api.delete_failed'))
   }
 }
 

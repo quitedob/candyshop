@@ -18,7 +18,7 @@ func registerUploadRoutes(router *gin.Engine, cfg *config.Config) {
 func serveUploadFile(cfg *config.Config) gin.HandlerFunc {
 	base := filepath.Clean(cfg.Upload.UploadPath)
 	return func(c *gin.Context) {
-		if cfg.Upload.StorageDriver == "s3" {
+		if cfg.Upload.StorageDriver == "s3" || cfg.Upload.StorageDriver == "oss" {
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}

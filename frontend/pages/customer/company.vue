@@ -1,5 +1,8 @@
 <template>
   <div class="max-w-2xl space-y-6">
+    <div v-if="route.query.kyb === 'required'" class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+      {{ t('customer.pending.banner') }}
+    </div>
     <div v-if="pending" class="flex justify-center py-12">
       <div class="animate-spin rounded-full h-10 w-10 border-4 border-orange-200 border-t-orange-600"></div>
     </div>
@@ -96,6 +99,7 @@
 definePageMeta({ layout: 'customer', middleware: ['auth'] })
 
 const { t } = useI18n()
+const route = useRoute()
 const api = useApi()
 const company = ref<any>(null)
 const pending = ref(true)

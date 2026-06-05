@@ -13,6 +13,7 @@ type OrderMessage struct {
 	SenderType  string                    `json:"senderType" gorm:"not null;default:'customer'"` // "customer" or "admin"
 	Message     string                    `json:"message" gorm:"type:text;not null"`
 	Attachments modelsCommon.StringArray  `json:"attachments" gorm:"type:jsonb"`
+	ReadAt      *time.Time                `json:"readAt,omitempty" gorm:"index"`
 	CreatedAt   time.Time                 `json:"createdAt"`
 	UpdatedAt   time.Time                 `json:"updatedAt"`
 }

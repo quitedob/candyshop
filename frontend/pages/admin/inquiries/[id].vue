@@ -658,7 +658,7 @@ const acceptOffer = async (offerId: string) => {
     await adminAcceptNegotiation(String(route.params.id), offerId)
     await fetchNegotiationOffers()
   } catch (err: any) {
-    alert(err?.data?.message || err.message || t('errors.api.save_failed'))
+    notifyError(err, t('errors.api.save_failed'))
   }
 }
 
@@ -667,7 +667,7 @@ const rejectOffer = async (offerId: string) => {
     await adminRejectNegotiation(String(route.params.id), offerId)
     await fetchNegotiationOffers()
   } catch (err: any) {
-    alert(err?.data?.message || err.message || t('errors.api.save_failed'))
+    notifyError(err, t('errors.api.save_failed'))
   }
 }
 const adminConfirmSpecs = async () => {

@@ -140,8 +140,7 @@ export default defineNuxtConfig({
           'en/customer.json',
           'en/legal.json',
           'en/seo.json',
-          'en/about.json',
-          'en/supplier.json'
+          'en/about.json'
         ],
         name: 'English'
       },
@@ -163,8 +162,7 @@ export default defineNuxtConfig({
           'zh/customer.json',
           'zh/legal.json',
           'zh/seo.json',
-          'zh/about.json',
-          'zh/supplier.json'
+          'zh/about.json'
         ],
         name: '中文'
       },
@@ -175,7 +173,7 @@ export default defineNuxtConfig({
           'ko/common.json', 'ko/nav.json', 'ko/home.json', 'ko/products.json',
           'ko/factory.json', 'ko/oem.json', 'ko/cases.json', 'ko/blog.json',
           'ko/form.json', 'ko/auth.json', 'ko/admin.json', 'ko/customer.json',
-          'ko/legal.json', 'ko/seo.json', 'ko/about.json', 'ko/supplier.json'
+          'ko/legal.json', 'ko/seo.json', 'ko/about.json'
         ],
         name: '한국어'
       },
@@ -187,7 +185,7 @@ export default defineNuxtConfig({
           'ar/common.json', 'ar/nav.json', 'ar/home.json', 'ar/products.json',
           'ar/factory.json', 'ar/oem.json', 'ar/cases.json', 'ar/blog.json',
           'ar/form.json', 'ar/auth.json', 'ar/admin.json', 'ar/customer.json',
-          'ar/legal.json', 'ar/seo.json', 'ar/about.json', 'ar/supplier.json'
+          'ar/legal.json', 'ar/seo.json', 'ar/about.json'
         ],
         name: 'العربية'
       },
@@ -198,7 +196,7 @@ export default defineNuxtConfig({
           'ja/common.json', 'ja/nav.json', 'ja/home.json', 'ja/products.json',
           'ja/factory.json', 'ja/oem.json', 'ja/cases.json', 'ja/blog.json',
           'ja/form.json', 'ja/auth.json', 'ja/admin.json', 'ja/customer.json',
-          'ja/legal.json', 'ja/seo.json', 'ja/about.json', 'ja/supplier.json'
+          'ja/legal.json', 'ja/seo.json', 'ja/about.json'
         ],
         name: '日本語'
       },
@@ -209,7 +207,7 @@ export default defineNuxtConfig({
           'th/common.json', 'th/nav.json', 'th/home.json', 'th/products.json',
           'th/factory.json', 'th/oem.json', 'th/cases.json', 'th/blog.json',
           'th/form.json', 'th/auth.json', 'th/admin.json', 'th/customer.json',
-          'th/legal.json', 'th/seo.json', 'th/about.json', 'th/supplier.json'
+          'th/legal.json', 'th/seo.json', 'th/about.json'
         ],
         name: 'ไทย'
       },
@@ -220,7 +218,7 @@ export default defineNuxtConfig({
           'vi/common.json', 'vi/nav.json', 'vi/home.json', 'vi/products.json',
           'vi/factory.json', 'vi/oem.json', 'vi/cases.json', 'vi/blog.json',
           'vi/form.json', 'vi/auth.json', 'vi/admin.json', 'vi/customer.json',
-          'vi/legal.json', 'vi/seo.json', 'vi/about.json', 'vi/supplier.json'
+          'vi/legal.json', 'vi/seo.json', 'vi/about.json'
         ],
         name: 'Tiếng Việt'
       },
@@ -231,7 +229,7 @@ export default defineNuxtConfig({
           'id/common.json', 'id/nav.json', 'id/home.json', 'id/products.json',
           'id/factory.json', 'id/oem.json', 'id/cases.json', 'id/blog.json',
           'id/form.json', 'id/auth.json', 'id/admin.json', 'id/customer.json',
-          'id/legal.json', 'id/seo.json', 'id/about.json', 'id/supplier.json'
+          'id/legal.json', 'id/seo.json', 'id/about.json'
         ],
         name: 'Bahasa Indonesia'
       },
@@ -242,7 +240,7 @@ export default defineNuxtConfig({
           'ms/common.json', 'ms/nav.json', 'ms/home.json', 'ms/products.json',
           'ms/factory.json', 'ms/oem.json', 'ms/cases.json', 'ms/blog.json',
           'ms/form.json', 'ms/auth.json', 'ms/admin.json', 'ms/customer.json',
-          'ms/legal.json', 'ms/seo.json', 'ms/about.json', 'ms/supplier.json'
+          'ms/legal.json', 'ms/seo.json', 'ms/about.json'
         ],
         name: 'Bahasa Melayu'
       }

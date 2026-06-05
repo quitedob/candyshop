@@ -266,7 +266,7 @@ const removeMember = async (id: number) => {
     await api.delete(`/admin/organizations/members/${id}`)
     await fetchMembers()
   } catch (err: any) {
-    alert(err?.message || t('errors.api.delete_failed'))
+    notifyError(err, t('errors.api.delete_failed'))
   }
 }
 

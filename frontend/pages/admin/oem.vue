@@ -128,6 +128,20 @@
                 <option value="completed">{{ enumLabel('oem_status', 'completed') }}</option>
                 <option value="cancelled">{{ enumLabel('oem_status', 'cancelled') }}</option>
               </select>
+              <button
+                v-if="canConvert(p)"
+                @click="openConvertModal(p)"
+                class="text-xs px-2 py-0.5 rounded bg-emerald-600 text-white hover:bg-emerald-700"
+              >{{ t('admin.oem.convert_to_order') || 'Convert to order' }}</button>
+              <NuxtLink
+                v-else-if="p.orderId"
+                :to="localePath(`/admin/orders/${p.orderId}`)"
+                class="text-xs px-2 py-0.5 rounded border text-emerald-700 hover:bg-emerald-50"
+              >{{ t('admin.oem.view_order') || 'View order' }}</NuxtLink>
+              <button
+                @click="addSample(p.id)"
+                class="text-xs px-2 py-0.5 rounded border text-gray-700 hover:bg-gray-50"
+              >{{ t('admin.oem.add_sample') || 'Add sample' }}</button>
             </td>
           </tr>
         </tbody>
@@ -208,6 +222,51 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- Convert OEM project → order modal (P0.2 / G-OEM-2) -->
+    <Teleport to="body">
+      <div v-if="showConvertModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+          <div class="px-6 py-4 border-b">
+            <h3 class="text-lg font-semibold">{{ t('admin.oem.convert_to_order') || 'Convert to order' }}</h3>
+          </div>
+          <div class="px-6 py-4 space-y-3">
+            <div>
+              <label class="block text-sm font-medium mb-1">{{ t('admin.oem.convert_product_id') || 'Product ID' }}</label>
+              <input v-model="convertForm.productId" class="w-full border rounded-md px-3 py-2 text-sm" :placeholder="t('admin.oem.convert_product_id_ph') || 'Catalog product to fulfil'" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-medium mb-1">{{ t('admin.oem.convert_quantity') || 'Quantity' }}</label>
+                <input v-model.number="convertForm.quantity" type="number" min="1" class="w-full border rounded-md px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">{{ t('admin.oem.convert_unit_price') || 'Unit price' }}</label>
+                <input v-model.number="convertForm.unitPrice" type="number" min="0" step="0.01" class="w-full border rounded-md px-3 py-2 text-sm" />
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-medium mb-1">{{ t('admin.oem.convert_currency') || 'Currency' }}</label>
+                <input v-model="convertForm.currency" class="w-full border rounded-md px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">{{ t('admin.oem.convert_incoterms') || 'Incoterms' }}</label>
+                <input v-model="convertForm.incoterms" class="w-full border rounded-md px-3 py-2 text-sm" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">{{ t('admin.oem.convert_country') || 'Destination country' }}</label>
+              <input v-model="convertForm.country" class="w-full border rounded-md px-3 py-2 text-sm" />
+            </div>
+          </div>
+          <div class="flex justify-end gap-3 px-6 py-4 border-t">
+            <button @click="showConvertModal = false" class="px-4 py-2 text-sm border rounded-md">{{ t('admin.oem.cancel') }}</button>
+            <button @click="submitConvert" :disabled="convertSubmitting" class="px-4 py-2 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50">{{ t('admin.oem.convert_submit') || 'Create order' }}</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -220,6 +279,8 @@ const api = useApi()
 const { t } = useI18n()
 const { tField } = useTranslation()
 const { enumLabel } = useDisplay()
+const toast = useToast()
+const localePath = useLocalePath()
 
 const activeTab = ref('flows')
 const tabs = computed(() => [
@@ -242,18 +303,18 @@ const projects = ref<any[]>([])
 const projectsLoading = ref(true)
 
 const loadFlows = async () => {
-  try { flows.value = await api.adminGetOemFlows() } catch {}
+  try { flows.value = await api.adminGetOemFlows() } catch (e: any) { toast.error(e?.message || t('errors.api.load_failed')) }
   flowsLoading.value = false
 }
 const loadSolutions = async () => {
-  try { solutions.value = await api.adminGetOemSolutions() } catch {}
+  try { solutions.value = await api.adminGetOemSolutions() } catch (e: any) { toast.error(e?.message || t('errors.api.load_failed')) }
   solutionsLoading.value = false
 }
 const loadProjects = async () => {
   try {
     const res = await api.adminGetOemProjects()
     projects.value = res?.data || []
-  } catch {}
+  } catch (e: any) { toast.error(e?.message || t('errors.api.load_failed')) }
   projectsLoading.value = false
 }
 
@@ -350,7 +411,81 @@ const updateProjectStatus = async (id: string, status: string) => {
   try {
     await api.adminUpdateOemStatus(id, { status })
     await loadProjects()
-  } catch {}
+    toast.success(t('admin.oem.status_updated') || 'Status updated')
+  } catch (e: any) {
+    toast.error(e?.data?.message || e?.message || t('errors.api.save_failed'))
+  }
+}
+
+// ===== OEM project → order conversion (P0.2 / G-OEM-2) =====
+const showConvertModal = ref(false)
+const convertSubmitting = ref(false)
+const convertForm = reactive<any>({ projectId: '', productId: '', quantity: 0, unitPrice: 0, currency: 'USD', incoterms: 'FOB', country: '' })
+
+const convertibleStatuses = new Set(['quotation', 'contract', 'production'])
+const canConvert = (p: any) => convertibleStatuses.has(p?.status) && !p?.orderId
+
+const openConvertModal = (p: any) => {
+  convertForm.projectId = p.id
+  convertForm.productId = p.productId || ''
+  convertForm.quantity = p.quotedQuantity || p.requirements?.moq || 0
+  convertForm.unitPrice = p.quotedUnitPrice || 0
+  convertForm.currency = 'USD'
+  convertForm.incoterms = 'FOB'
+  convertForm.country = p.requirements?.targetMarket || ''
+  showConvertModal.value = true
+}
+
+const submitConvert = async () => {
+  convertSubmitting.value = true
+  try {
+    const payload: any = {
+      productId: convertForm.productId.trim() || undefined,
+      quantity: Number(convertForm.quantity) || undefined,
+      unitPrice: Number(convertForm.unitPrice) || undefined,
+      currency: convertForm.currency || undefined,
+      incoterms: convertForm.incoterms || undefined,
+    }
+    if (convertForm.country.trim()) {
+      payload.shippingAddress = { country: convertForm.country.trim() }
+    }
+    const res = await api.adminConvertOemProjectToOrder(convertForm.projectId, payload)
+    showConvertModal.value = false
+    await loadProjects()
+    const orderId = res?.order?.id
+    toast.success(t('admin.oem.convert_success') || 'Order created from OEM project')
+    if (orderId) {
+      await navigateTo(localePath(`/admin/orders/${orderId}`))
+    }
+  } catch (e: any) {
+    toast.error(e?.data?.message || e?.message || t('errors.api.save_failed'))
+  } finally {
+    convertSubmitting.value = false
+  }
+}
+
+// ===== OEM sample lifecycle (P0.2 / G-OEM-1) =====
+const addSample = async (projectId: string) => {
+  const name = prompt(t('admin.oem.sample_name_prompt') || 'Sample name')
+  if (!name || !name.trim()) return
+  try {
+    await api.adminAddOemSample(projectId, { name: name.trim() })
+    await loadProjects()
+    toast.success(t('admin.oem.sample_added') || 'Sample added')
+  } catch (e: any) {
+    toast.error(e?.data?.message || e?.message || t('errors.api.save_failed'))
+  }
+}
+
+const setSampleStatus = async (projectId: string, sampleId: string, status: string) => {
+  if (!status) return
+  try {
+    await api.adminUpdateOemSample(projectId, sampleId, { status })
+    await loadProjects()
+    toast.success(t('admin.oem.sample_updated') || 'Sample updated')
+  } catch (e: any) {
+    toast.error(e?.data?.message || e?.message || t('errors.api.save_failed'))
+  }
 }
 
 const statusClass = (s: string) => {

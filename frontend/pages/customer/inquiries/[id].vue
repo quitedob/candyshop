@@ -488,7 +488,7 @@ const acceptOffer = async (offerId: string) => {
     await api.post(`/user/inquiries/${route.params.id}/negotiations/${offerId}/accept`, {})
     await fetchNegotiationOffers()
   } catch (err: any) {
-    alert(err?.data?.message || err.message || t('errors.api.save_failed'))
+    notifyError(err, t('errors.api.save_failed'))
   }
 }
 
@@ -497,7 +497,7 @@ const rejectOffer = async (offerId: string) => {
     await api.post(`/user/inquiries/${route.params.id}/negotiations/${offerId}/reject`, {})
     await fetchNegotiationOffers()
   } catch (err: any) {
-    alert(err?.data?.message || err.message || t('errors.api.save_failed'))
+    notifyError(err, t('errors.api.save_failed'))
   }
 }
 

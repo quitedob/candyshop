@@ -79,16 +79,31 @@ func (h *Handler) AdminUpdateOEMProject(c *gin.Context) {
 	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
-	if req.ProductName != nil {
-		project.ProductName = strings.TrimSpace(*req.ProductName)
-	}
+
+	// R2 A-4 / G-OEM-4: route status changes through the guarded transition so
+	// this PUT path can't bypass the optimistic-concurrency check that
+	// UpdateProjectStatus enforces. A blind Save here would let two concurrent
+	// admins silently overwrite each other's status change.
 	if req.Status != nil {
 		newStatus := strings.TrimSpace(*req.Status)
-		if err := modelsProduct.ValidateOEMStatusTransition(project.Status, newStatus); err != nil {
-			response.InvalidResp(c, "oem_status_transition_invalid")
-			return
+		if newStatus != "" && newStatus != project.Status {
+			if serr := h.services.Project.UpdateProjectStatus(c.Request.Context(), id, newStatus); serr != nil {
+				if errors.Is(serr, oemSvc.ErrOEMStatusConflict) {
+					response.ErrorResp(c, http.StatusConflict, "oem_status_conflict")
+					return
+				}
+				response.InvalidResp(c, "oem_status_transition_invalid")
+				return
+			}
+			project, err = h.services.Project.GetProject(c.Request.Context(), id)
+			if err != nil {
+				response.ErrorResp(c, http.StatusNotFound, "oem_project_not_found")
+				return
+			}
 		}
-		project.Status = newStatus
+	}
+	if req.ProductName != nil {
+		project.ProductName = strings.TrimSpace(*req.ProductName)
 	}
 	if req.CurrentStep != nil {
 		project.CurrentStep = *req.CurrentStep
@@ -109,6 +124,10 @@ func (h *Handler) AdminUpdateOEMProject(c *gin.Context) {
 	}
 	project.UpdatedAt = time.Now()
 	if err := h.services.Project.UpdateProject(c.Request.Context(), project); err != nil {
+		if errors.Is(err, oemSvc.ErrOEMProjectConflict) {
+			response.ErrorResp(c, http.StatusConflict, "oem_project_conflict")
+			return
+		}
 		response.ErrorResp(c, http.StatusInternalServerError, "oem_project_update_failed")
 		return
 	}
@@ -206,12 +225,12 @@ func (h *Handler) AdminUpdateOEMFlow(c *gin.Context) {
 		return
 	}
 	var req struct {
-		Title       *string                 `json:"title"`
-		Description *string                 `json:"description"`
-		Type        *string                 `json:"type"`
+		Title       *string                    `json:"title"`
+		Description *string                    `json:"description"`
+		Type        *string                    `json:"type"`
 		Steps       *modelsCommon.OEMStepArray `json:"steps"`
-		Timeline    *string                 `json:"timeline"`
-		MOQ         *int                    `json:"moq"`
+		Timeline    *string                    `json:"timeline"`
+		MOQ         *int                       `json:"moq"`
 	}
 	if !response.BindJSONOrInvalid(c, &req) {
 		return

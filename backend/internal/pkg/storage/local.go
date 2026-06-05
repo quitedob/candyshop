@@ -32,27 +32,27 @@ func NewLocalStorageService(uploadPath, uploadURL string) *LocalStorageService {
 
 // Allowed image content types
 var allowedImageTypes = map[string]bool{
-	"image/jpeg": true,
-	"image/png":  true,
-	"image/webp": true,
-	"image/gif":  true,
+	"image/jpeg":    true,
+	"image/png":     true,
+	"image/webp":    true,
+	"image/gif":     true,
 	"image/svg+xml": true,
 }
 
 // Allowed document content types
 var allowedDocTypes = map[string]bool{
-	"application/pdf": true,
+	"application/pdf":    true,
 	"application/msword": true,
 	"application/vnd.openxmlformats-officedocument.wordprocessingml.document": true,
 }
 
 // Allowed media content types (for inquiry attachments)
 var allowedMediaTypes = map[string]bool{
-	"text/plain":        true,
-	"video/x-matroska":  true,
-	"video/mp4":         true,
-	"audio/mpeg":        true,
-	"audio/mp3":         true,
+	"text/plain":       true,
+	"video/x-matroska": true,
+	"video/mp4":        true,
+	"audio/mpeg":       true,
+	"audio/mp3":        true,
 }
 
 // Whitelisted folder names
@@ -138,8 +138,18 @@ func (s *LocalStorageService) Upload(ctx context.Context, reader io.Reader, opts
 	}
 	defer dst.Close()
 
-	if _, err := io.Copy(dst, fileReader); err != nil {
+	copyReader := fileReader
+	if opts.MaxFileSize > 0 {
+		copyReader = io.LimitReader(fileReader, opts.MaxFileSize+1)
+	}
+	written, err := io.Copy(dst, copyReader)
+	if err != nil {
 		return "", err
+	}
+	if opts.MaxFileSize > 0 && written > opts.MaxFileSize {
+		_ = dst.Close()
+		_ = os.Remove(destPath)
+		return "", fmt.Errorf("upload exceeds maximum size")
 	}
 
 	urlPath := fmt.Sprintf("%s/%s/%s", s.uploadURL, cleanFolder, filename)
@@ -180,8 +190,24 @@ func (s *LocalStorageService) GetPresignedURL(ctx context.Context, url string, e
 	return url, nil
 }
 
+// PresignUpload is unavailable for local disk storage.
+func (s *LocalStorageService) PresignUpload(context.Context, PresignUploadOptions, time.Duration) (*PresignedUpload, error) {
+	return nil, ErrDirectUploadUnsupported
+}
+
+// Stat returns metadata for a local upload.
+func (s *LocalStorageService) Stat(_ context.Context, url string) (*ObjectInfo, error) {
+	key := s.KeyFromURL(url)
+	info, err := os.Stat(filepath.Join(s.uploadPath, filepath.FromSlash(key)))
+	if err != nil {
+		return nil, err
+	}
+	return &ObjectInfo{Key: key, URL: url, SizeBytes: info.Size()}, nil
+}
+
 // KeyFromURL extracts the storage key from a public URL.
-func KeyFromURL(url string) string {
+func (s *LocalStorageService) KeyFromURL(url string) string {
+	url = strings.TrimPrefix(url, strings.TrimRight(s.uploadURL, "/")+"/")
 	url = strings.TrimPrefix(url, "/uploads/")
 	url = strings.TrimPrefix(url, "/")
 	return url

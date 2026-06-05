@@ -265,7 +265,7 @@ func (h *Handler) CustomerDownloadPaymentProofFile(c *gin.Context) {
 		response.ErrorResp(c, http.StatusNotFound, "proof_file_not_found")
 		return
 	}
-	if h.cfg.Upload.StorageDriver == "s3" {
+	if h.cfg.Upload.StorageDriver == "s3" || h.cfg.Upload.StorageDriver == "oss" {
 		presigned, err := h.storage.GetPresignedURL(c.Request.Context(), pay.ProofURL, 15*time.Minute)
 		if err != nil {
 			response.ErrorResp(c, http.StatusInternalServerError, "internal_error")

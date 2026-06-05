@@ -21,20 +21,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
     '/auth/check-email'
   ])
 
-  const protectedRoutes = new Set([
-    // /contact intentionally NOT listed here — it's a public marketing page.
-    // Anything customer-only lives under /customer/*; supplier portal pages
-    // are explicitly listed below.
-    '/supplier',
-    '/supplier/profile',
-    '/supplier/purchase-orders'
-  ])
-
   const isPublicRoute = publicRoutes.has(pathWithoutLocale)
   const requiresProtectedArea =
     pathWithoutLocale.startsWith('/admin') ||
-    pathWithoutLocale.startsWith('/customer') ||
-    protectedRoutes.has(pathWithoutLocale)
+    pathWithoutLocale.startsWith('/customer')
 
   if (!isAuthenticated.value && requiresProtectedArea) {
     const redirectPath = to.fullPath.startsWith('/') ? to.fullPath : localePath('/customer/dashboard')

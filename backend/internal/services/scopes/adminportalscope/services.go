@@ -11,6 +11,7 @@ import (
 	notificationsvc "candypro/api/internal/services/notification"
 	oem "candypro/api/internal/services/oem"
 	order "candypro/api/internal/services/order"
+	orderintake "candypro/api/internal/services/orderintake"
 	productRepo "candypro/api/internal/repository/product"
 	product "candypro/api/internal/services/product"
 	systemsettingSvc "candypro/api/internal/services/systemsetting"
@@ -53,6 +54,7 @@ type Services struct {
 	Translation      *translationSvc.TranslationService
 	OrderMessage     *order.OrderMessageService
 	Negotiation      *order.NegotiationService
+	OrderIntake      *orderintake.Service
 	Shipping         *order.ShippingService
 	Tax              *order.TaxService
 	Notification     *notificationsvc.NotificationService
@@ -69,24 +71,29 @@ func New(repos *repositoryCommon.AdminPortalRepositories, cfg *config.Config, au
 
 	userSvc := user.NewUserService(repos.User)
 	paymentSvc := order.NewPaymentService(repos.Payment, repos.Order)
+	inquirySvc := inquiry.NewInquiryService(repos.Inquiry, cfg)
+	orderSvc := order.NewOrderServiceWithConfig(repos.Order, cfg)
+	productSvc := product.NewProductService(repos.Product)
+	priceSvc := product.NewPriceService(repos.Price)
+	tradeSvc := trade.NewTradeService(repos.Trade)
 
 	return &Services{
 		User:             userSvc,
 		Company:          user.NewCompanyService(repos.Company, userSvc),
-		Inquiry:          inquiry.NewInquiryService(repos.Inquiry, cfg),
-		Order:            order.NewOrderServiceWithConfig(repos.Order, cfg),
+		Inquiry:          inquirySvc,
+		Order:            orderSvc,
 		Payment:          paymentSvc,
 		GatewayPayment:   order.NewGatewayPaymentService(cfg, paymentSvc),
 		Invoice:          order.NewInvoiceService(repos.Invoice, repos.Order, repos.DocumentAdjustment),
-		Product:          product.NewProductService(repos.Product),
+		Product:          productSvc,
 		Category:         product.NewCategoryService(repos.Category),
-		Price:            product.NewPriceService(repos.Price),
+		Price:            priceSvc,
 		Content:          content.NewContentService(repos.Content),
 		Auth:             authSvc,
 		Factory:          oem.NewFactoryService(repos.Factory),
 		Project:          oem.NewProjectService(repos.Project),
 		OEM:              oem.NewOEMService(repos.OEM),
-		Trade:            trade.NewTradeService(repos.Trade),
+		Trade:            tradeSvc,
 		Shipment:         trade.NewShipmentService(repos.Shipment),
 		Logistics:        trade.NewLogisticsService(repos.Shipment, repos.ShipmentEvent, repos.Order, repos.Trade, db),
 		TradeDocDetail:   trade.NewTradeDocumentDetailService(repos.TradeDocDetail),
@@ -102,6 +109,7 @@ func New(repos *repositoryCommon.AdminPortalRepositories, cfg *config.Config, au
 		Translation:      translationSvc.NewService(repos.Translation),
 		OrderMessage:     order.NewOrderMessageService(repos.OrderMessage),
 		Negotiation:      order.NewNegotiationService(repos.Negotiation),
+		OrderIntake:      orderintake.NewService(productSvc, priceSvc, orderSvc, tradeSvc, inquirySvc),
 		Shipping:         order.NewShippingService(repos.Shipping),
 			Tax:              order.NewTaxService(repos.Tax),
 		Notification:     notificationsvc.NewNotificationService(repos.Notification),

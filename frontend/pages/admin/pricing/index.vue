@@ -253,7 +253,7 @@ const savePriceList = async () => {
 const deletePriceList = async (id: string) => {
   if (!confirm(t('admin.pricing.confirm_delete_price_list'))) return
   try { await api.del(`/admin/price-lists/${id}`); await fetchPriceLists() }
-  catch (err: any) { alert(err?.message || t('errors.api.delete_failed')) }
+  catch (err: any) { notifyError(err, t('errors.api.delete_failed')) }
 }
 
 const openAddPriceRule = () => { Object.assign(priceRuleForm, { priceListId: '', minQuantity: 1, unitPrice: 0 }); priceRuleError.value = ''; showPriceRuleModal.value = true }
@@ -269,7 +269,7 @@ const savePriceRule = async () => {
 const deletePrice = async (id: string) => {
   if (!confirm(t('admin.pricing.confirm_delete_price'))) return
   try { await api.del(`/admin/products/${selectedProductId.value}/prices/${id}`); await fetchProductPrices() }
-  catch (err: any) { alert(err?.message || t('errors.api.delete_failed')) }
+  catch (err: any) { notifyError(err, t('errors.api.delete_failed')) }
 }
 
 onMounted(() => { fetchPriceLists(); fetchProducts() })

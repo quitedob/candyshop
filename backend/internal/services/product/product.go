@@ -35,6 +35,7 @@ type productRepository interface {
 	UpsertWarehouseStock(ctx context.Context, row *modelsProduct.WarehouseStock) error
 	SaveOEMProjectInventoryHold(ctx context.Context, row *modelsProduct.OEMProjectInventoryHold) error
 	ListOEMInventoryHoldsByProject(ctx context.Context, projectID string) ([]modelsProduct.OEMProjectInventoryHold, error)
+	UpdateOEMHoldStatusIfMatches(ctx context.Context, id uint, expected, target string) (int64, error)
 	SumActiveOEMHoldsForProduct(ctx context.Context, productID string) (int64, error)
 	SumActiveOEMHoldsByProductIDs(ctx context.Context, productIDs []string) (map[string]int64, error)
 	ListChannelInventoriesForProduct(ctx context.Context, productID string) ([]modelsProduct.ChannelInventory, error)
@@ -298,6 +299,16 @@ func (s *ProductService) SaveOEMProjectInventoryHold(ctx context.Context, row *m
 // ListOEMInventoryHoldsByProject 列出项目预留
 func (s *ProductService) ListOEMInventoryHoldsByProject(ctx context.Context, projectID string) ([]modelsProduct.OEMProjectInventoryHold, error) {
 	return s.repo.ListOEMInventoryHoldsByProject(ctx, projectID)
+}
+
+// ReleaseOEMInventoryHold 释放（取消）一条 active 的 OEM 成品预留，返回是否生效。
+// 仅当当前状态为 active 时成功，避免重复释放（P0.2 / G-OEM-3）。
+func (s *ProductService) ReleaseOEMInventoryHold(ctx context.Context, id uint) (bool, error) {
+	rows, err := s.repo.UpdateOEMHoldStatusIfMatches(ctx, id, "active", "released")
+	if err != nil {
+		return false, err
+	}
+	return rows > 0, nil
 }
 
 // BuildPricingCostContextJSON 供 AI 报价注入的成本栈摘要（只读）

@@ -13,8 +13,7 @@
     "postinstall": "node scripts/patch-nuxt-og-image.mjs && nuxt prepare",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test": "playwright test",
-    "api:generate": "orval --config orval.config.ts && node scripts/generate-api-index.mjs"
+    "test": "playwright test"
   },
   "dependencies": {
     "@iconify-json/heroicons": "^1.2.0",
@@ -47,7 +46,6 @@
     "@nuxtjs/tailwindcss": "^6.0.0",
     "@playwright/test": "^1.60.0",
     "@types/node": "^22.0.0",
-    "orval": "^7.10.0",
     "typescript": "^5.6.0"
   }
 }

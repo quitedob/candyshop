@@ -37,7 +37,7 @@ func TestGetSettingsGeneral(t *testing.T) {
 
 	repos := repositoryCommon.NewRepositories(db)
 	svcs := servicesCommon.NewServices(repos, cfg, db)
-	h := NewHandler(cfg, svcs.AdminPortal, svcs.CountryPaymentPolicy, nil)
+	h := NewHandler(cfg, svcs.AdminPortal, svcs.CountryPaymentPolicy, nil, nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)

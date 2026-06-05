@@ -205,6 +205,13 @@
                     </li>
                   </ul>
                   <p class="chat-bubble__time">{{ formatDate(msg.createdAt) }}</p>
+                  <span
+                    v-if="msg.senderType === 'customer'"
+                    class="chat-bubble__receipt"
+                    :class="{ 'chat-bubble__receipt--read': msg.readAt }"
+                    :title="msg.readAt ? formatDate(msg.readAt) : ''"
+                    aria-hidden="true"
+                  >{{ msg.readAt ? '✓✓' : '✓' }}</span>
                 </div>
               </div>
             </div>
@@ -669,8 +676,47 @@ const fetchMessages = async () => {
   try {
     const res = await api.get<any>(`/user/orders/${order.value.id}/messages`)
     messages.value = res.data || []
-  } catch { /* silent */ }
+  } catch (err: any) {
+    messageFileError.value = err?.message || t('errors.api.load_failed')
+  }
 }
+
+const markMessagesRead = async () => {
+  if (!order.value?.id) return
+  try {
+    await api.post(`/user/orders/${order.value.id}/messages/read`, {})
+  } catch {
+    // A reconnect REST fetch also marks messages read.
+  }
+}
+
+const appendMessage = (msg: any) => {
+  if (!msg?.id || messages.value.some((existing) => existing.id === msg.id)) return
+  messages.value.push(msg)
+  nextTick(() => {
+    if (messageListRef.value) messageListRef.value.scrollTop = messageListRef.value.scrollHeight
+  })
+}
+
+const applyReadReceipt = (payload: any) => {
+  if (!payload?.readerType || !payload?.readAt) return
+  for (const msg of messages.value) {
+    if (msg.senderType !== payload.readerType && !msg.readAt) msg.readAt = payload.readAt
+  }
+}
+
+const messageStream = useOrderMessageStream(
+  `/user/orders/${id}/messages/ws`,
+  (event) => {
+    if (event.type === 'order_message') {
+      appendMessage(event.payload)
+      if (event.payload?.senderType === 'admin') void markMessagesRead()
+    } else if (event.type === 'order_messages_read') {
+      applyReadReceipt(event.payload)
+    }
+  },
+  fetchMessages,
+)
 
 const attachmentLabel = (url: string) => {
   const name = url.split('/').pop() || url
@@ -708,27 +754,26 @@ const sendMessage = async () => {
       message: newMessage.value.trim(),
       files: messageFiles.value.length ? messageFiles.value : undefined,
     })
-    messages.value.push(msg)
+    appendMessage(msg)
     newMessage.value = ''
     messageFiles.value = []
     nextTick(() => {
       if (messageListRef.value) messageListRef.value.scrollTop = messageListRef.value.scrollHeight
     })
   } catch (err: any) {
-    alert(err?.message || t('customer.orders.message_send_error'))
+    notifyError(err, t('customer.orders.message_send_error'))
   } finally { sending.value = false }
 }
 
-let messageInterval: ReturnType<typeof setInterval> | null = null
 onMounted(async () => {
   await fetchOrder()
   await fetchOrderInvoices()
   await fetchProgress()
   initReturnItems()
   await fetchMessages()
-  messageInterval = setInterval(fetchMessages, 30000)
+  messageStream.connect()
 })
-onUnmounted(() => { if (messageInterval) clearInterval(messageInterval) })
+onUnmounted(messageStream.stop)
 
 const fetchOrder = async () => {
   pending.value = true; error.value = ''
@@ -1354,6 +1399,18 @@ const uploadPaymentProof = async () => {
   font-size: 0.625rem;
   opacity: 0.7;
   margin: 0.375rem 0 0;
+}
+
+.chat-bubble__receipt {
+  display: block;
+  margin-top: 0.125rem;
+  text-align: right;
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.chat-bubble__receipt--read {
+  color: #d1fae5;
 }
 
 .chat-compose {

@@ -171,7 +171,7 @@ const removeChannel = async (id: number) => {
     await api.delete(`/admin/channels/${id}`)
     await fetchChannels()
   } catch (err: any) {
-    alert(err?.message || t('errors.api.delete_failed'))
+    notifyError(err, t('errors.api.delete_failed'))
   }
 }
 

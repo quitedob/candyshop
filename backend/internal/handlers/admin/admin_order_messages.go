@@ -5,6 +5,7 @@ import (
 	modelsOrder "candypro/api/internal/models/order"
 	"candypro/api/internal/pkg/crypto"
 	"candypro/api/internal/pkg/pagination"
+	"candypro/api/internal/pkg/realtime"
 	"candypro/api/internal/pkg/response"
 	"net/http"
 	"strings"
@@ -41,8 +42,54 @@ func (h *Handler) AdminGetOrderMessages(c *gin.Context) {
 		response.ErrorResp(c, http.StatusInternalServerError, "fetch_messages_failed")
 		return
 	}
+	h.markAdminOrderMessagesRead(c, orderID)
 
 	c.JSON(http.StatusOK, result)
+}
+
+// AdminGetOrderMessageUnreadCount returns unread customer messages for one order.
+func (h *Handler) AdminGetOrderMessageUnreadCount(c *gin.Context) {
+	orderID, ok := h.authorizeAdminOrderMessages(c)
+	if !ok {
+		return
+	}
+	count, err := h.services.OrderMessage.CountUnread(c.Request.Context(), orderID, "admin")
+	if err != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "fetch_messages_failed")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"unreadCount": count})
+}
+
+// AdminGetOrderMessageUnreadTotal returns unread customer messages across all orders.
+func (h *Handler) AdminGetOrderMessageUnreadTotal(c *gin.Context) {
+	if h.services == nil || h.services.OrderMessage == nil {
+		response.ServiceUnavailableResp(c)
+		return
+	}
+	count, err := h.services.OrderMessage.CountUnreadForAdmin(c.Request.Context())
+	if err != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "fetch_messages_failed")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"unreadCount": count})
+}
+
+// AdminMarkOrderMessagesRead marks unread customer messages as read.
+func (h *Handler) AdminMarkOrderMessagesRead(c *gin.Context) {
+	orderID, ok := h.authorizeAdminOrderMessages(c)
+	if !ok {
+		return
+	}
+	count, readAt, err := h.services.OrderMessage.MarkRead(c.Request.Context(), orderID, "admin")
+	if err != nil {
+		response.ErrorResp(c, http.StatusInternalServerError, "mark_messages_read_failed")
+		return
+	}
+	if h.realtime != nil {
+		h.realtime.PublishOrderMessagesRead(orderID, "admin", readAt, count)
+	}
+	c.JSON(http.StatusOK, gin.H{"readCount": count, "readAt": readAt})
 }
 
 // AdminSendOrderMessage creates a new message from an admin on an order.
@@ -113,5 +160,56 @@ func (h *Handler) AdminSendOrderMessage(c *gin.Context) {
 		})
 	}
 
+	// Fan out to any admin/customer WebSocket subscribers on this order's thread.
+	if h.realtime != nil {
+		h.realtime.PublishOrderMessage(orderID, message)
+	}
+
 	c.JSON(http.StatusCreated, message)
+}
+
+// AdminStreamOrderMessages upgrades to a WebSocket and streams new messages for
+// any order. Admin role gating happens in the route middleware.
+func (h *Handler) AdminStreamOrderMessages(c *gin.Context) {
+	if h.services == nil || h.realtime == nil {
+		response.ServiceUnavailableResp(c)
+		return
+	}
+
+	orderID := strings.TrimSpace(c.Param("id"))
+	if orderID == "" {
+		response.InvalidResp(c, "invalid_request")
+		return
+	}
+
+	if _, err := h.services.Order.GetOrder(c.Request.Context(), orderID); err != nil {
+		response.ErrorResp(c, http.StatusNotFound, "order_not_found")
+		return
+	}
+
+	h.realtime.Serve(c.Writer, c.Request, realtime.OrderRoom(orderID))
+}
+
+func (h *Handler) authorizeAdminOrderMessages(c *gin.Context) (string, bool) {
+	if h.services == nil || h.services.OrderMessage == nil {
+		response.ServiceUnavailableResp(c)
+		return "", false
+	}
+	orderID := strings.TrimSpace(c.Param("id"))
+	if orderID == "" {
+		response.InvalidResp(c, "invalid_request")
+		return "", false
+	}
+	if _, err := h.services.Order.GetOrder(c.Request.Context(), orderID); err != nil {
+		response.ErrorResp(c, http.StatusNotFound, "order_not_found")
+		return "", false
+	}
+	return orderID, true
+}
+
+func (h *Handler) markAdminOrderMessagesRead(c *gin.Context, orderID string) {
+	count, readAt, err := h.services.OrderMessage.MarkRead(c.Request.Context(), orderID, "admin")
+	if err == nil && h.realtime != nil {
+		h.realtime.PublishOrderMessagesRead(orderID, "admin", readAt, count)
+	}
 }

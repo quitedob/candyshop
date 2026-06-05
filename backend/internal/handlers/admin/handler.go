@@ -5,6 +5,7 @@ import (
 
 	"candypro/api/internal/config"
 	"candypro/api/internal/pkg/eino"
+	"candypro/api/internal/pkg/realtime"
 	"candypro/api/internal/pkg/storage"
 	productRepo "candypro/api/internal/repository/product"
 	servicesCommon "candypro/api/internal/services/common"
@@ -21,16 +22,18 @@ type Handler struct {
 	aiService            *tradeSvc.AIService
 	tradeAgent           adk.Agent
 	checkPointStore      *eino.PostgresCheckPointStore
-	storage              storage.StorageService
+	storage              *storage.Manager
+	realtime             *realtime.Manager
 	Translations         *TranslationHandler
 }
 
-func NewHandler(cfg *config.Config, svcs *servicesCommon.AdminPortalServices, policySvc *orderSvc.CountryPaymentPolicyService, st storage.StorageService) *Handler {
+func NewHandler(cfg *config.Config, svcs *servicesCommon.AdminPortalServices, policySvc *orderSvc.CountryPaymentPolicyService, st *storage.Manager, rt *realtime.Manager) *Handler {
 	h := &Handler{
 		cfg:                  cfg,
 		services:             svcs,
 		countryPaymentPolicy: policySvc,
 		storage:              st,
+		realtime:             rt,
 	}
 	if svcs != nil && svcs.Translation != nil {
 		h.Translations = NewTranslationHandler(svcs.Translation)

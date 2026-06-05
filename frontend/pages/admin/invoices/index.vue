@@ -446,7 +446,7 @@ const deleteInvoice = async (invoice: any) => {
     await fetchInvoices()
     await fetchInvoiceStats()
   } catch (err: any) {
-    alert(err?.message || t('errors.api.delete_failed'))
+    notifyError(err, t('errors.api.delete_failed'))
   }
 }
 
@@ -467,7 +467,7 @@ const exportInvoiceDoc = async (invoice: any) => {
     a.click()
     URL.revokeObjectURL(url)
   } catch (err: any) {
-    alert(err?.message || t('errors.api.export_failed'))
+    notifyError(err, t('errors.api.export_failed'))
   }
 }
 
@@ -507,7 +507,7 @@ const viewInvoice = (invoice: any) => { previewInvoice.value = normalizeInvoice(
 
 const sendInvoice = async (invoice: any) => {
   try { await api.post(`/admin/invoices/${invoice.id}/send`, {}); await fetchInvoices() }
-  catch (err: any) { alert(err?.message || t('errors.api.send_failed')) }
+  catch (err: any) { notifyError(err, t('errors.api.send_failed')) }
 }
 
 const printInvoice = () => {

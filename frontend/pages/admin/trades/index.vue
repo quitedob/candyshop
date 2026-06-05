@@ -156,7 +156,7 @@ const exportTradesXlsx = async () => {
     a.click()
     URL.revokeObjectURL(url)
   } catch (err: any) {
-    alert(err?.message || t('errors.api.export_failed'))
+    notifyError(err, t('errors.api.export_failed'))
   }
 }
 

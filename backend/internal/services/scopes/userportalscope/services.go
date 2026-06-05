@@ -8,6 +8,7 @@ import (
 	notificationsvc "candypro/api/internal/services/notification"
 	oem "candypro/api/internal/services/oem"
 	order "candypro/api/internal/services/order"
+	orderintake "candypro/api/internal/services/orderintake"
 	product "candypro/api/internal/services/product"
 	trade "candypro/api/internal/services/trade"
 	user "candypro/api/internal/services/user"
@@ -33,6 +34,7 @@ type Services struct {
 	TradeDocDetail *trade.TradeDocumentDetailService
 	OrderMessage   *order.OrderMessageService
 	Negotiation    *order.NegotiationService
+	OrderIntake    *orderintake.Service
 	Shipping       *order.ShippingService
 	Tax            *order.TaxService
 	Notification   *notificationsvc.NotificationService
@@ -52,25 +54,31 @@ func New(repos *repositoryCommon.UserPortalRepositories, cfg *config.Config, db 
 
 	userSvc := user.NewUserService(repos.User)
 	paymentSvc := order.NewPaymentService(repos.Payment, repos.Order)
+	inquirySvc := inquiry.NewInquiryService(repos.Inquiry, cfg)
+	orderSvc := order.NewOrderServiceWithConfig(repos.Order, cfg)
+	productSvc := product.NewProductService(repos.Product)
+	priceSvc := product.NewPriceService(repos.Price)
+	tradeSvc := trade.NewTradeService(repos.Trade)
 
 	return &Services{
 		User:           userSvc,
 		Company:        user.NewCompanyService(repos.Company, userSvc),
-		Inquiry:        inquiry.NewInquiryService(repos.Inquiry, cfg),
-		Order:          order.NewOrderServiceWithConfig(repos.Order, cfg),
+		Inquiry:        inquirySvc,
+		Order:          orderSvc,
 		Payment:        paymentSvc,
 		GatewayPayment: order.NewGatewayPaymentService(cfg, paymentSvc),
 		Invoice:        order.NewInvoiceService(repos.Invoice, repos.Order, nil),
 		Cart:           order.NewCartService(repos.Cart),
-		Product:        product.NewProductService(repos.Product),
-		Price:          product.NewPriceService(repos.Price),
+		Product:        productSvc,
+		Price:          priceSvc,
 		OEM:            oem.NewProjectService(repos.Project),
-		Trade:          trade.NewTradeService(repos.Trade),
+		Trade:          tradeSvc,
 		Shipment:       trade.NewShipmentService(repos.Shipment),
 		Logistics:      trade.NewLogisticsService(repos.Shipment, repos.ShipmentEvent, repos.Order, repos.Trade, db),
 		TradeDocDetail: trade.NewTradeDocumentDetailService(repos.TradeDocDetail),
 		OrderMessage:   order.NewOrderMessageService(repos.OrderMessage),
 		Negotiation:    order.NewNegotiationService(repos.Negotiation),
+		OrderIntake:    orderintake.NewService(productSvc, priceSvc, orderSvc, tradeSvc, inquirySvc),
 		Shipping:       order.NewShippingService(repos.Shipping),
 			Tax:            order.NewTaxService(repos.Tax),
 		Notification:   notificationsvc.NewNotificationService(repos.Notification),
