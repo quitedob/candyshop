@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	einotool "github.com/cloudwego/eino-examples/adk/common/tool"
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
 )
@@ -92,5 +91,5 @@ func NewValidateLCTool(ctx context.Context) (tool.BaseTool, error) {
 		return nil, err
 	}
 
-	return &einotool.InvokableReviewEditTool{InvokableTool: baseTool}, nil
+	return &InvokableReviewEditTool{InvokableTool: baseTool}, nil
 }

@@ -7,7 +7,7 @@
 // Pipeline flow:
 //
 //	Planner:  Analyze inquiry/order → Generate execution plan
-//	Executor: Execute first step (validate, check inventory, calculate price, generate documents)
+//	Executor: Execute first step (validate compliance, validate L/C documents, track shipment)
 //	Replanner: Evaluate result → Complete (with response) or Revise plan
 //	↳ Loop until completion or max iterations
 package eino
@@ -30,11 +30,11 @@ import (
 //
 // The pipeline handles:
 // 1. Planning: Analyzes the order request and creates a step-by-step execution plan
-// 2. Execution: Executes each step (validation, inventory check, pricing, document generation)
+// 2. Execution: Executes each step (compliance check, L/C validation, shipment tracking)
 // 3. Replanning: Evaluates results and either completes or revises the plan
 //
 // chatModel is used by all three components (planner, executor, replanner).
-func NewOrderProcessingAgent(ctx context.Context, chatModel model.ToolCallingChatModel, _ einotool.DocumentPersister) (adk.Agent, error) {
+func NewOrderProcessingAgent(ctx context.Context, chatModel model.ToolCallingChatModel) (adk.Agent, error) {
 	// ── Common tools for the executor ──
 	compTool, err := einotool.NewComplianceCheckTool(ctx)
 	if err != nil {

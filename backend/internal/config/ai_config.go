@@ -20,6 +20,8 @@ type AIConfig struct {
 	TranslateRetryMax    int
 	// PublicRoutesDisabled 为 true 时关闭 /system 下无需登录的 AI（chatbot、推荐、语义搜索），防滥用与控成本
 	PublicRoutesDisabled bool
+	// RAGComplianceEnabled 为 true 时启用合规语料 RAG（compliance_lookup 工具），默认关闭
+	RAGComplianceEnabled bool
 }
 
 // LoadAIConfig creates AIConfig from environment variables
@@ -37,6 +39,7 @@ func LoadAIConfig() AIConfig {
 		HTTPTimeout:          time.Duration(getEnvInt("AI_HTTP_TIMEOUT_SEC", 90)) * time.Second,
 		TranslateRetryMax:    getEnvInt("AI_TRANSLATE_RETRY_MAX", 2),
 		PublicRoutesDisabled: getEnv("DISABLE_PUBLIC_AI_ROUTES", "") == "true",
+		RAGComplianceEnabled: getEnv("AI_RAG_COMPLIANCE_ENABLED", "") == "true",
 	}
 }
 

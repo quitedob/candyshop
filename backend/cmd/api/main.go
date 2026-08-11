@@ -130,7 +130,7 @@ func main() {
 		log.Fatalf("Failed to initialize handlers: %v", err)
 	}
 	if initErr := h.System.InitAgent(); initErr != nil {
-		log.Printf("Warning: trade AI agent initialization failed: %v", initErr)
+		log.Printf("Warning: trade AI agent initialization failed (%v); admin trade chat will run in non-streaming mode", initErr)
 	} else if h.System.IsAgentReady() {
 		// Propagate the full TradeAgent to admin and system AIService
 		if h.AdminPortal != nil {

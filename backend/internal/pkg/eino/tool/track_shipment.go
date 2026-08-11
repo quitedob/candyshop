@@ -9,7 +9,6 @@ import (
 
 	"candypro/api/internal/pkg/shipmenttrack"
 
-	einotool "github.com/cloudwego/eino-examples/adk/common/tool"
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
 )
@@ -97,5 +96,5 @@ func NewTrackShipmentTool(ctx context.Context) (tool.BaseTool, error) {
 		return nil, err
 	}
 
-	return &einotool.InvokableReviewEditTool{InvokableTool: baseTool}, nil
+	return &InvokableReviewEditTool{InvokableTool: baseTool}, nil
 }

@@ -159,12 +159,7 @@ func (h *Handler) InitOrderProcessingAgent() error {
 	}
 	chatModel := retry.New(rawModel, h.cfg.AI.RetryMaxAttempts, h.cfg.AI.RetryIntervalSec)
 
-	var persister einotool.DocumentPersister
-	if h.services != nil && h.services.Trade != nil {
-		persister = h.services.Trade
-	}
-
-	a, err := eino.NewOrderProcessingAgent(ctx, chatModel, persister)
+	a, err := eino.NewOrderProcessingAgent(ctx, chatModel)
 	if err != nil {
 		return err
 	}

@@ -20,6 +20,7 @@ import (
 
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/adk"
+	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/schema"
 	"github.com/gin-gonic/gin"
 )
@@ -32,6 +33,22 @@ type SSEEvent struct {
 	ActionType   string            `json:"action_type,omitempty"`
 	Error        string            `json:"error,omitempty"`
 	DocumentType string            `json:"document_type,omitempty"` // UI Anchor
+}
+
+// agentRunOptions reads optional temperature/model query params and returns Eino run options.
+// temperature is honored per-request; model is validated against the server config and a
+// warning logged when it differs (per-request model override is not supported).
+func (h *Handler) agentRunOptions(c *gin.Context) []adk.AgentRunOption {
+	var opts []adk.AgentRunOption
+	if raw := strings.TrimSpace(c.Query("temperature")); raw != "" {
+		if temp, err := strconv.ParseFloat(raw, 32); err == nil && temp >= 0 && temp <= 2 {
+			opts = append(opts, adk.WithChatModelOptions([]model.Option{model.WithTemperature(float32(temp))}))
+		}
+	}
+	if raw := strings.TrimSpace(c.Query("model")); raw != "" && h.cfg != nil && raw != h.cfg.AI.OpenAIModel {
+		log.Printf("Warning: AI console requested model %q but server is configured with %q; per-request model override not supported, using server model", raw, h.cfg.AI.OpenAIModel)
+	}
+	return opts
 }
 
 // InitAgent initializes the trade agent with the Graph Tool architecture.
@@ -120,7 +137,7 @@ func (h *Handler) HandleTradeChat(c *gin.Context) {
 	c.Writer.Flush()
 
 	// Query the runner
-	iter := runner.Query(ctx, query)
+	iter := runner.Query(ctx, query, h.agentRunOptions(c)...)
 
 	for {
 		event, ok := iter.Next()
@@ -169,7 +186,7 @@ func (h *Handler) HandleB2BCoordinatorChat(c *gin.Context) {
 	c.Writer.Header().Set("Connection", "keep-alive")
 	c.Writer.Flush()
 
-	iter := runner.Query(ctx, query)
+	iter := runner.Query(ctx, query, h.agentRunOptions(c)...)
 	for {
 		event, ok := iter.Next()
 		if !ok {
@@ -220,7 +237,7 @@ func (h *Handler) HandleOrderProcessingChat(c *gin.Context) {
 	c.Writer.Header().Set("Connection", "keep-alive")
 	c.Writer.Flush()
 
-	iter := runner.Query(ctx, query)
+	iter := runner.Query(ctx, query, h.agentRunOptions(c)...)
 	for {
 		event, ok := iter.Next()
 		if !ok {
@@ -258,31 +275,35 @@ func processAgentEvent(ctx context.Context, w gin.ResponseWriter, event *adk.Age
 			if len(msg.ToolCalls) > 0 {
 				sseEvent.ToolCalls = msg.ToolCalls
 				// Inject the document_type anchor based on tool name
-				if len(msg.ToolCalls) > 0 {
-					toolName := msg.ToolCalls[0].Function.Name
-					switch toolName {
-					case "generate_proforma_invoice":
-						sseEvent.DocumentType = "PROFORMA_INVOICE"
-					case "generate_commercial_invoice":
-						sseEvent.DocumentType = "COMMERCIAL_INVOICE"
-					case "generate_packing_list":
-						sseEvent.DocumentType = "PACKING_LIST"
-					case "generate_certificate_of_origin":
-						sseEvent.DocumentType = "ORIGIN_CERTIFICATE"
-					case "generate_sales_contract":
-						sseEvent.DocumentType = "SALES_CONTRACT"
-					case "generate_health_certificate_request":
-						sseEvent.DocumentType = "HEALTH_CERTIFICATE"
-					case "generate_ingredients_declaration":
-						sseEvent.DocumentType = "INGREDIENTS_DECLARATION"
-					case "generate_shipper_letter_of_instruction":
-						sseEvent.DocumentType = "SHIPMENT_INSTRUCTION"
-					case "validate_lc_documents":
-						sseEvent.DocumentType = "LC_VALIDATION"
-					case "generate_insurance_certificate_request":
-						sseEvent.DocumentType = "INSURANCE_CERTIFICATE"
-					case "track_shipment":
-						sseEvent.DocumentType = "SHIPMENT_TRACKING"
+				toolName := msg.ToolCalls[0].Function.Name
+				switch toolName {
+				case "generate_proforma_invoice":
+					sseEvent.DocumentType = "PROFORMA_INVOICE"
+				case "generate_commercial_invoice":
+					sseEvent.DocumentType = "COMMERCIAL_INVOICE"
+				case "generate_packing_list":
+					sseEvent.DocumentType = "PACKING_LIST"
+				case "generate_certificate_of_origin":
+					sseEvent.DocumentType = "ORIGIN_CERTIFICATE"
+				case "generate_sales_contract":
+					sseEvent.DocumentType = "SALES_CONTRACT"
+				case "generate_health_certificate_request":
+					sseEvent.DocumentType = "HEALTH_CERTIFICATE"
+				case "generate_ingredients_declaration":
+					sseEvent.DocumentType = "INGREDIENTS_DECLARATION"
+				case "generate_shipper_letter_of_instruction":
+					sseEvent.DocumentType = "SHIPMENT_INSTRUCTION"
+				case "validate_lc_documents":
+					sseEvent.DocumentType = "LC_VALIDATION"
+				case "generate_insurance_certificate_request":
+					sseEvent.DocumentType = "INSURANCE_CERTIFICATE"
+				case "track_shipment":
+					sseEvent.DocumentType = "SHIPMENT_TRACKING"
+				case "generate_trade_documents":
+					if docType := firstDocTypeFromArgs(msg.ToolCalls[0].Function.Arguments); docType != "" {
+						sseEvent.DocumentType = docType
+					} else {
+						sseEvent.DocumentType = "TRADE_DOCUMENT"
 					}
 				}
 			}
@@ -327,6 +348,28 @@ func processAgentEvent(ctx context.Context, w gin.ResponseWriter, event *adk.Age
 	}
 
 	return nil
+}
+
+// firstDocTypeFromArgs extracts the first recognized document type from the
+// generate_trade_documents tool call arguments (a JSON object with a "doc_types"
+// array of uppercase enum strings). Returns "" when the arguments do not parse
+// or the array is empty, so callers can fall back to a sentinel document_type.
+func firstDocTypeFromArgs(argsJSON string) string {
+	if strings.TrimSpace(argsJSON) == "" {
+		return ""
+	}
+	var args struct {
+		DocTypes []string `json:"doc_types"`
+	}
+	if err := json.Unmarshal([]byte(argsJSON), &args); err != nil {
+		return ""
+	}
+	for _, docType := range args.DocTypes {
+		if strings.TrimSpace(docType) != "" {
+			return strings.TrimSpace(docType)
+		}
+	}
+	return ""
 }
 
 func sendSSEEvent(w gin.ResponseWriter, event SSEEvent) error {

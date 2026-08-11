@@ -182,6 +182,11 @@ func generateDocument(_ context.Context, docType string, input DocGenerationInpu
 	now := time.Now()
 	ts := now.Format("20060102")
 	seq := now.UnixMilli() % 100000
+	if seq == 0 {
+		// seq must never be 0: downstream uses it as the Proforma Invoice reference
+		// (e.g. CI's pi_ref) and %05d would render a 0 as "00000".
+		seq = 1
+	}
 
 	switch normalizeDocType(docType) {
 	case tradeModels.DocTypeProformaInvoice:
@@ -199,7 +204,7 @@ func generateDocument(_ context.Context, docType string, input DocGenerationInpu
 		return GeneratedDocInfo{DocType: tradeModels.DocTypeProformaInvoice, DocNumber: docNo, Content: content}, nil
 
 	case tradeModels.DocTypeCommercialInvoice:
-		piRef := fmt.Sprintf("PI-%s-%05d", ts, seq-1)
+		piRef := fmt.Sprintf("PI-%s-%05d", ts, seq)
 		docNo := fmt.Sprintf("CI-%s-%05d", ts, seq)
 		content := fmt.Sprintf(`{
 	"pi_ref": %q,

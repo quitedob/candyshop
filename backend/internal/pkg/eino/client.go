@@ -18,7 +18,6 @@ import (
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/adk"
 	"github.com/cloudwego/eino/components/model"
-	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
 )
@@ -26,8 +25,8 @@ import (
 // ErrDisabled indicates the AI client is not configured (no API key).
 var ErrDisabled = errors.New("ai service is not configured")
 
-// RAGComplianceEnabled 控制合规语料 RAG；产品决策为永久关闭，语料与 rag 包仅保留供将来可选启用。
-const RAGComplianceEnabled = false
+// RAGComplianceEnabled 由 cfg.AI.RAGComplianceEnabled 在 NewClient 时赋值；控制合规语料 RAG 是否启用。
+var RAGComplianceEnabled = false
 
 // Client is the core AI client managing chat model lifecycle, agent attachment,
 // and generation (plain text + JSON mode). It is shared by all scoped AIService wrappers.
@@ -86,19 +85,30 @@ func NewClient(cfg config.AIConfig) (*Client, error) {
 		chatModelJSON = retry.New(rawJSONModel, translateRetry, cfg.RetryIntervalSec)
 	}
 
-	// 合规 RAG 未启用（RAGComplianceEnabled=false）；runner 不挂载 compliance 工具。
-	runner, err := buildClientRunner(ctx, chatModel, nil, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to build legacy runner: %w", err)
-	}
-
-	return &Client{
+	c := &Client{
 		cfg:           cfg,
 		chatModel:     chatModel,
 		chatModelJSON: chatModelJSON,
-		runner:        runner,
-		// complianceRetriever 仅在 RAGComplianceEnabled=true 时赋值
-	}, nil
+	}
+
+	// 合规 RAG 由配置驱动（AI_RAG_COMPLIANCE_ENABLED=true 时启用，默认关闭）。
+	RAGComplianceEnabled = cfg.RAGComplianceEnabled
+	if RAGComplianceEnabled {
+		if retriever, ragErr := rag.NewFromCorpus(); ragErr == nil {
+			c.complianceRetriever = retriever
+		} else {
+			log.Printf("Warning: compliance RAG enabled but corpus unavailable: %v", ragErr)
+		}
+	}
+
+	// legacy runner：不挂载 compliance 工具，仅保留纯 Chat 回退。
+	runner, err := buildClientRunner(ctx, chatModel)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build legacy runner: %w", err)
+	}
+	c.runner = runner
+
+	return c, nil
 }
 
 // NewClientWithAgent creates a client pre-wired with the full TradeAgent.
@@ -244,26 +254,13 @@ func (c *Client) GenerateJSON(ctx context.Context, prompt string) (string, error
 	return stripThinkBlocks(strings.TrimSpace(resp.Content)), nil
 }
 
-// buildClientRunner creates the legacy single-tool agent runner used when no full TradeAgent is attached.
-func buildClientRunner(ctx context.Context, chatModel model.ToolCallingChatModel, complianceTool tool.BaseTool, checkpointStore compose.CheckPointStore) (*adk.Runner, error) {
-	agentTools := make([]tool.BaseTool, 0, 1)
-	if complianceTool != nil {
-		agentTools = append(agentTools, complianceTool)
-	}
-
+// buildClientRunner creates the legacy tool-less agent runner used when no full TradeAgent is attached.
+func buildClientRunner(ctx context.Context, chatModel model.ToolCallingChatModel) (*adk.Runner, error) {
 	agentConfig := &adk.ChatModelAgentConfig{
 		Name:        "CandyProAssistant",
 		Description: "CandyPro OEM application assistant specialized in international B2B candy trade.",
-		Instruction: buildClientInstruction(len(agentTools) > 0),
+		Instruction: buildClientInstruction(),
 		Model:       chatModel,
-	}
-
-	if len(agentTools) > 0 {
-		agentConfig.ToolsConfig = adk.ToolsConfig{
-			ToolsNodeConfig: compose.ToolsNodeConfig{
-				Tools: agentTools,
-			},
-		}
 	}
 
 	chatAgent, err := adk.NewChatModelAgent(ctx, agentConfig)
@@ -274,14 +271,9 @@ func buildClientRunner(ctx context.Context, chatModel model.ToolCallingChatModel
 	return adk.NewRunner(ctx, adk.RunnerConfig{
 		Agent:           chatAgent,
 		EnableStreaming: false,
-		CheckPointStore: checkpointStore,
 	}), nil
 }
 
-func buildClientInstruction(hasComplianceTool bool) string {
-	instruction := agent.AssistantInstructionBase
-	if hasComplianceTool {
-		instruction += agent.AssistantInstructionComplianceAddition
-	}
-	return instruction
+func buildClientInstruction() string {
+	return agent.AssistantInstructionBase
 }

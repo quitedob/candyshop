@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	einotool "github.com/cloudwego/eino-examples/adk/common/tool"
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
 )
@@ -137,5 +136,5 @@ func NewTranslateContentTool(ctx context.Context, translateFn TranslateFunc) (to
 		return nil, err
 	}
 
-	return &einotool.InvokableReviewEditTool{InvokableTool: baseTool}, nil
+	return &InvokableReviewEditTool{InvokableTool: baseTool}, nil
 }

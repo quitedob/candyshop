@@ -293,7 +293,7 @@ async function callJsonMode(mode: string, text: string, orderId?: string): Promi
     return JSON.stringify(await res.json(), null, 2)
   }
   if (mode === 'generate-quotation') {
-    const res = await fetch(`${apiBase}/system/generate-quotation`, init({ requirements: text }))
+    const res = await fetch(`${apiBase}/system/generate-quotation`, init({ customerRequirements: text }))
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     return JSON.stringify(await res.json(), null, 2)
   }
@@ -445,6 +445,8 @@ async function sendMessage(text: string) {
     if (selectedOrderId.value && config.agentMode === 'plan-order') {
       url += `&orderId=${encodeURIComponent(selectedOrderId.value)}`
     }
+    url += `&temperature=${config.temperature}`
+    url += `&model=${encodeURIComponent(config.model)}`
     const response = await fetch(url, {
       method: 'GET',
       credentials: 'include',

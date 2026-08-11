@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	tradeSvc "candypro/api/internal/services/trade"
 
 	"github.com/cloudwego/eino/adk"
+	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/schema"
 	"github.com/gin-gonic/gin"
 )
@@ -131,12 +133,14 @@ func (h *Handler) AdminAITradeChat(c *gin.Context) {
 	agent := h.tradeAgent
 	if agent == nil {
 		// Fallback to non-streaming
+		log.Printf("Error: trade AI agent unavailable, /admin/trades/:id/ai-chat falling back to non-streaming mode")
 		if h.aiService == nil || !h.aiService.IsEnabled() {
 			response.ErrorResp(c, http.StatusServiceUnavailable, "ai_not_configured")
 			return
 		}
 		reply, genErr := h.aiService.Generate(c.Request.Context(), query)
 		if genErr != nil {
+			log.Printf("Error: trade AI non-streaming fallback generation failed: %v", genErr)
 			response.ErrorResp(c, http.StatusInternalServerError, "ai_chat_failed")
 			return
 		}
@@ -161,7 +165,13 @@ func (h *Handler) AdminAITradeChat(c *gin.Context) {
 	c.Writer.Header().Set("Connection", "keep-alive")
 	c.Writer.Flush()
 
-	iter := runner.Query(ctx, query)
+	var opts []adk.AgentRunOption
+	if raw := strings.TrimSpace(c.Query("temperature")); raw != "" {
+		if temp, err := strconv.ParseFloat(raw, 32); err == nil && temp >= 0 && temp <= 2 {
+			opts = append(opts, adk.WithChatModelOptions([]model.Option{model.WithTemperature(float32(temp))}))
+		}
+	}
+	iter := runner.Query(ctx, query, opts...)
 	for {
 		event, ok := iter.Next()
 		if !ok {
