@@ -14,6 +14,10 @@ import (
 type redisStore struct {
 	client *redis.Client
 	prefix string
+	// fallback is a bounded in-memory store used only while Redis is
+	// unreachable, so a Redis outage degrades to per-instance (not unlimited)
+	// rate limiting instead of silently disabling it.
+	fallback Store
 }
 
 // NewRedisStore 创建 Redis 限流存储；连接失败时返回 error
@@ -29,7 +33,11 @@ func NewRedisStore(redisURL string) (Store, error) {
 		_ = client.Close()
 		return nil, fmt.Errorf("redis ping: %w", err)
 	}
-	return &redisStore{client: client, prefix: "candypro:rl:"}, nil
+	return &redisStore{
+		client:   client,
+		prefix:   "candypro:rl:",
+		fallback: NewMemoryStore(),
+	}, nil
 }
 
 func (r *redisStore) Allow(key string, limit int, window time.Duration) bool {
@@ -47,8 +55,13 @@ func (r *redisStore) Allow(key string, limit int, window time.Duration) bool {
 
 	count, err := r.client.Incr(ctx, redisKey).Result()
 	if err != nil {
-		log.Printf("ratelimit redis INCR failed: %v", err)
-		return true
+		// Fail BOUNDED, not open: previously a Redis outage returned true
+		// (allow everything) and silently disabled rate limiting. Instead,
+		// fall back to the local bounded store for this key, enforcing the
+		// same limit. The counters are per-instance while Redis is down, so
+		// multi-instance deployments are warned rather than left unlimited.
+		log.Printf("ratelimit redis INCR failed: %v — applying bounded in-memory fallback (per-instance; NOT shared across instances)", err)
+		return r.fallback.Allow(key, limit, window)
 	}
 	if count == 1 {
 		_ = r.client.Expire(ctx, redisKey, window).Err()

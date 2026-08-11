@@ -321,6 +321,24 @@ const pickerDraftMap = ref(new Map<string, SelectedProduct>())
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 
+// The backend clamps the page size to 100 (pagination.ParsePagination max), so
+// requesting limit: 200 silently truncated the product set. Page through the
+// full set at the real page size so enrichment is never silently missing items.
+const PRODUCTS_PAGE_SIZE = 100
+
+/** Fetch every catalog product by paging through the backend's real page size. */
+const fetchAllProducts = async (): Promise<any[]> => {
+  const first = await getProducts({ page: 1, limit: PRODUCTS_PAGE_SIZE })
+  const totalPages = first.pagination?.totalPages ?? 1
+  if (totalPages <= 1) return first.data || []
+  const rest = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, index) =>
+      getProducts({ page: index + 2, limit: PRODUCTS_PAGE_SIZE })
+    )
+  )
+  return first.data.concat(...rest.map((response) => response.data))
+}
+
 /** 列表项 key */
 const itemKey = (item: SelectedProduct, index: number) => item.id || `manual-${item.name}-${index}`
 
@@ -356,8 +374,8 @@ const enrichSelectedProducts = async () => {
   const ids = selectedProducts.value.filter((p) => p.id && !p.slug).map((p) => p.id as string)
   if (!ids.length) return
   try {
-    const res = await getProducts({ limit: 200 })
-    const map = new Map((res.data || []).map((p: any) => [p.id, p]))
+    const products = await fetchAllProducts()
+    const map = new Map(products.map((p: any) => [p.id, p]))
     selectedProducts.value = selectedProducts.value.map((item) => {
       if (!item.id) return item
       const found = map.get(item.id)

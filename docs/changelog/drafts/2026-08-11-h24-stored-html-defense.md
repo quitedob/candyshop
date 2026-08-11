@@ -1,0 +1,52 @@
+# Changelog / Devlog — 2026-08-11 H24 — Stored HTML/XSS defense-in-depth (sanitize on write, harden upload validation)
+**Date:** 2026-08-11
+**Source report:** [../../reports/code-review-audit-2026-08-11.md](../../reports/code-review-audit-2026-08-11.md)
+**Scope:** backend Go (storage upload validation, AI trade-doc pipeline, AI product translation handler); defense-in-depth only, no client-side change
+**Trigger:** AI-generated trade-document content and AI-translated product fields were persisted raw, and the upload validator's extension-whitelist fallback let `.svg` (served inline, script-capable) and mismatched HTML/SVG payloads through.
+**Result:** Sanitize-on-write now applies at all three persistence boundaries using the repo's `pkg/sanitize` (bluemonday allowlist); `.svg`/HTML-family uploads are rejected at the shared `contentTypeAllowed` choke point and the blind extension fallback is removed. `go build ./...` clean; storage/graph/admin package tests pass (new H24 tests added); frontend typecheck exits 0.
+---
+## 1. Process
+1. Read the three owned files and traced how each persisted untrusted content: `pkg/storage/validate.go` (extension fallback at old line 43), `handlers/admin/admin_ai_translate.go` (product merge path lines 47-72), `pkg/eino/graph/pipeline.go` (PersistDocs at lines 143-158).
+2. Confirmed `pkg/sanitize` already exists (bluemonday allowlist mirroring the frontend DOMPurify config) and empirically probed its escaping (`&` → `&amp;`, `<script>` → `""`), which drove the field-scoping decisions.
+3. Implemented the three fixes, added targeted Go tests, and ran `go build ./...` + `REDIS_URL= go test` on the affected packages, plus the frontend typecheck.
+
+## 2. Fixes in detail
+#### H24(a) — Sanitize AI trade-document content before persist — `internal/pkg/eino/graph/pipeline.go`
+- **Problem:** `PrepareContext` passed the LLM/tool-supplied string fields (`BuyerName`, `SellerName`, `Incoterms`, `PaymentTerms`, `Currency`, `PortOfLoading`, `PortOfDestination`, `ExtraContext`) straight into the JSON content built by `generateDocument`, which `PersistDocs` then wrote raw into `TradeDocument.Content` (a `datatypes.JSON` blob). A `<script>`/`onerror` payload in any of those fields would land in the DB and execute when the document preview/DOCX renders it.
+- **Fix:** Added `sanitizeDocInput` (`pipeline.go:380-394`) which runs every untrusted string field through `sanitize.HTML` (the repo's bluemonday allowlist) inside `PrepareContext` (`pipeline.go:102-104`), before any value is formatted into document content. This is a single choke point: all persisted `Content` and the `GeneratedDocs` returned to the agent are sanitized, harmless inline formatting (`<b>`, `<i>`) is preserved, and numbers are never touched (no JSON re-serialization / float-precision risk). Test: `pipeline_h24_test.go` drives injected `buyer`/`seller`/`payment_terms` through the graph and asserts no `<script>`/`onerror` reaches generated or persisted content.
+
+#### H24(b) — Sanitize AI-translated product fields on write — `internal/handlers/admin/admin_ai_translate.go`
+- **Problem:** `AdminAITranslateProduct` merged the AI translation result into `product.Translations` with no sanitization (unlike `translatePost`/`translateCase`, which already call `sanitizeHTMLFields`). AI-injected HTML in product fields was persisted unsanitized.
+- **Fix:** `admin_ai_translate.go:61-65` now calls `sanitizeHTMLFields(transResult.Fields, "description")` before `mergeTranslations`, reusing the existing helper and matching the post/case pattern. Only the rich-text field `description` is sanitized: the plain-text scalars (`name`/`summary`/`ingredients`/…) are rendered escaped on the public site, and sanitizing them would corrupt a legitimate `&` (bluemonday rewrites it to `&amp;`). The H11 full-row-overwrite update path is untouched. Test: `admin_ai_translate_h24_test.go` asserts `sanitizeHTMLFields` strips active content from named fields and leaves non-HTML fields byte-for-byte intact.
+
+#### H24(c) — Harden upload validation — `internal/pkg/storage/validate.go`
+- **Problem:** `contentTypeAllowed` ended with a blind fallback (`allowedExtensions[ext] && detectedType != "application/x-executable"`, old line 43). Because `local.go`/`s3.go` whitelist `.svg` (and `image/svg+xml`), an SVG with embedded `<script>` passed and is served inline by `net/http` (no `Content-Disposition: attachment`) — a stored-XSS vector. The fallback also let any HTML/SVG payload named `.png`/`.txt` through, and S3 stores the detected ContentType, so a `text/html`/`image/svg+xml` object would be served inline even under a safe filename.
+- **Fix:** `validate.go:8-20` adds a `scriptExecutableExtensions` guard (`.svg`/`.htm`/`.html`/`.xhtml`/`.shtml`); `contentTypeAllowed` (`validate.go:42-46`) rejects those extensions **and** the detected types `image/svg+xml` / `text/html` outright (covers SVG/HTML smuggled under a safe extension on the S3 path); the CSV/text rule is narrowed to exactly `text/plain`/`text/csv` (`validate.go:63-67`); and the fallback is reduced to "indeterminate magic (`application/octet-stream`) + whitelisted extension" only (`validate.go:69-73`) — no more extension-alone approval of mismatched types. This is the shared choke point both `LocalStorageService.Upload` (`local.go`) and `S3StorageService.Upload`/`PresignUpload` (`s3.go`) call, so no storage-driver file needed editing. Tests: `validate_h24_test.go` (`RejectsScriptExecutable`, `NoBlindExtensionFallback`) plus the pre-existing `validate_test.go` still green.
+
+## 3. Verification
+| Check | Result |
+|-------|--------|
+| `go build ./...` (backend) | Clean |
+| `REDIS_URL= go test -count=1 ./internal/pkg/storage/... ./internal/pkg/eino/graph/... ./internal/handlers/admin/...` | ok (all three packages, incl. new H24 tests) |
+| `go vet` on the three packages | Clean |
+| `npm --prefix frontend run typecheck` | Exit 0 (only pre-existing nuxt.config env warning; no TS errors) |
+
+## 4. Adversarial review (arguer)
+
+**Verdict: CONFIRMED_FIXED.** I could not construct a credible scenario where any of the three reported vectors still manifests, and I found no regression on the non-affected paths.
+
+### Audit of each vector
+- **(a) pipeline.go sanitize-on-write.** `sanitizeDocInput` runs inside `PrepareContext` (pipeline.go:104), and `PrepareContext` is the mandatory entry node of the typed `compose.Graph[DocGenerationInput, DocGenerationOutput]` (START → PrepareContext → …), so every invocation passes through it. I checked every `generateDocument` branch: the only interpolated values are the sanitized string fields, `TotalAmount` (float64), `TradeID` (uint), `piRef`, and `seq` — no unsanitized string reaches `Content`. A repo-wide grep confirms the only runtime writers of `TradeDocument` are this graph (`AddDocument`, pipeline.go:159) and `AdminCreateTradeDocument` (admin_trade_docs.go:45), which sets no Content. So the choke point is complete. The new test drives the full compiled graph with `<script>`/`onerror` payloads and asserts both `GeneratedDocs` and the persisted `Content` are clean.
+- **(b) admin_ai_translate sanitize-on-write.** Product `description` is now sanitized before `mergeTranslations`; post/case rich-text fields were already sanitized via the same helper. I verified the plain-text scalars the fixer deliberately left untouched (`name`/`summary`/`ingredients`/…) are NOT an XSS vector: the public product page renders every product field with escaped `{{ tField(...) }}` interpolation, and the only `v-html` sinks in the app are `blog/[slug].vue` and `admin/ai/index.vue` (the latter sanitizes via `useSanitizer` before rendering). So scoping sanitization to `description` is sound defense-in-depth, not a hole. H11 full-row overwrite (`UpdateProductAll`) is preserved.
+- **(c) validate.go harden upload.** The `scriptExecutableExtensions` guard rejects `.svg/.htm/.html/.xhtml/.shtml` by extension; `image/svg+xml` and `text/html` are rejected by detected type regardless of filename (covers the S3 path where ContentType is stored and served inline); the extension-only fallback is removed. I empirically confirmed with this Go toolchain that `http.DetectContentType` maps: SVG → `text/xml` (so `.svg` is caught by the extension guard, and an SVG smuggled as `.png` fails the type whitelist), a bare `<script>…` → `text/html` (rejected), and `xlsx`/`docx` → `application/zip` (so the `.docx/.xlsx` zip rule still passes legitimate files — the OOXML-specific type is not emitted for the sampled files). No extension+type combination lets script-executable content through under a serving Content-Type that executes.
+
+### Edge cases / residual notes (non-blocking)
+- **E1 (UI mismatch, acknowledged):** `frontend/pages/customer/inquiries/[id].vue:158` still advertises `.svg` in the attachment accept list while the server now rejects it. Users get a generic upload error for `.svg`; removing the UI entry is a follow-up outside this fix's ownership. Not a security gap.
+- **E2 (cosmetic):** bluemonday rewrites a legitimate `&` → `&amp;` in the sanitized pipeline string fields and the translated `description`. For doc content this can surface as a literal `&amp;` in a raw-text consumer (e.g., DOCX export) for names containing `&`. Deliberate trade-off, already applied repo-wide for blog content; not exploitable.
+- **E3 (test depth):** the admin-package H24 test exercises the shared `sanitizeHTMLFields` helper white-box, not the full handler (which would need heavy service mocking). The write-path wiring is verified at helper level only.
+- **E4 (pre-existing objects):** an SVG/HTML object uploaded before the fix remains stored and served inline; the fix prevents new uploads but does not remediate existing rows (retroactive cleanup was out of scope).
+- **E5 (map completeness):** `.mhtml`/`.mht` are absent from `scriptExecutableExtensions`, but they are not in `allowedExtensions`, so they are already rejected upstream by the extension pre-check in `local.go`/`s3.go`; the map is belt-and-suspenders only.
+
+### Verification (independent)
+- `REDIS_URL= go test -count=1 ./internal/pkg/storage/... ./internal/pkg/eino/graph/... ./internal/handlers/admin/...` → all three packages `ok` (H24 tests + pre-existing tests green).
+- `npm --prefix frontend run typecheck` → exit 0 (only pre-existing nuxt.config env / nuxt-seo-utils warnings; no TS errors).

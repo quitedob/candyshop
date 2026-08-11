@@ -141,14 +141,9 @@ const navigateToDetail = (id: string) => {
 /** 导出贸易交易 XLSX */
 const exportTradesXlsx = async () => {
   try {
-    const { token } = useAuth()
-    const config = useRuntimeConfig()
-    const base = config.public.apiBase || '/api/v1'
-    const resp = await fetch(`${base}/admin/xlsx/export/trades`, {
-      headers: { Authorization: `Bearer ${token.value}` },
-    })
-    if (!resp.ok) throw new Error(t('errors.api.export_failed'))
-    const blob = await resp.blob()
+    // useApi 走 HttpOnly cookie 凭证（credentials: 'include'）。
+    // 不要用已废弃的 useAuth().token —— 恒为 null，会拼出 "Bearer null" 导致导出必然失败。
+    const blob = await api.exportAdminXlsx('trades')
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url

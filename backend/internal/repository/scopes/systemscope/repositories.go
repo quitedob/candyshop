@@ -16,9 +16,10 @@ type Repositories struct {
 	Order   *order.OrderRepository
 	Product *product.ProductRepository
 	Content *content.ContentRepository
-	Trade   trade.TradeRepository
-	User    *user.UserRepository
-	Payment *order.PaymentRepository
+	Trade           trade.TradeRepository
+	User            *user.UserRepository
+	Payment         *order.PaymentRepository
+	QuotationReview *trade.QuotationReviewRepository
 }
 
 func New(db *gorm.DB) *Repositories {
@@ -27,8 +28,9 @@ func New(db *gorm.DB) *Repositories {
 		Order:   order.NewOrderRepository(db),
 		Product: product.NewProductRepository(db),
 		Content: content.NewContentRepository(db),
-		Trade:   trade.NewTradeRepository(db),
-		User:    user.NewUserRepository(db),
-		Payment: order.NewPaymentRepository(db),
+		Trade:           trade.NewTradeRepository(db),
+		User:            user.NewUserRepository(db),
+		Payment:         order.NewPaymentRepository(db),
+		QuotationReview: trade.NewQuotationReviewRepository(db),
 	}
 }

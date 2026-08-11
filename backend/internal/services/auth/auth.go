@@ -16,6 +16,7 @@ import (
 type userRepository interface {
 	Create(ctx context.Context, user *modelsUser.User) error
 	FindByEmail(ctx context.Context, email string) (*modelsUser.User, error)
+	FindByID(ctx context.Context, id string) (*modelsUser.User, error)
 }
 
 type roleRepository interface {
@@ -134,27 +135,84 @@ func (s *AuthService) RevokeAllUserTokens(ctx context.Context, userID string) er
 	return s.sessions.RevokeAllUserRefreshTokens(ctx, userID)
 }
 
-// ResolveRoleID resolves a role ID from explicit roleID or roleName.
-func (s *AuthService) ResolveRoleID(ctx context.Context, roleID, roleName string) (string, error) {
+// ResolveRole resolves a role from explicit roleID or roleName, returning the
+// full role record so callers can inspect both its ID and its Name.
+func (s *AuthService) ResolveRole(ctx context.Context, roleID, roleName string) (*modelsAuth.Role, error) {
 	if s.roleRepo == nil {
-		return "", errors.New("role service unavailable")
+		return nil, errors.New("role service unavailable")
 	}
 
 	if strings.TrimSpace(roleID) != "" {
 		role, err := s.roleRepo.FindByID(ctx, strings.TrimSpace(roleID))
 		if err != nil || role == nil {
-			return "", errors.New("invalid role id")
+			return nil, errors.New("invalid role id")
 		}
-		return role.ID, nil
+		return role, nil
 	}
 
 	if strings.TrimSpace(roleName) != "" {
 		role, err := s.roleRepo.FindByName(ctx, strings.TrimSpace(roleName))
 		if err != nil || role == nil {
-			return "", errors.New("invalid role name")
+			return nil, errors.New("invalid role name")
 		}
-		return role.ID, nil
+		return role, nil
 	}
 
-	return "", errors.New("roleId or roleName is required")
+	return nil, errors.New("roleId or roleName is required")
+}
+
+// ResolveRoleID resolves a role ID from explicit roleID or roleName.
+func (s *AuthService) ResolveRoleID(ctx context.Context, roleID, roleName string) (string, error) {
+	role, err := s.ResolveRole(ctx, roleID, roleName)
+	if err != nil {
+		return "", err
+	}
+	return role.ID, nil
+}
+
+// ErrForbiddenRoleGrant is returned when a caller who is not a superadmin
+// attempts to assign the admin or superadmin role.
+var ErrForbiddenRoleGrant = errors.New("forbidden: only superadmin can grant admin or superadmin roles")
+
+// IsPrivilegedRole reports whether the role is reserved for superadmin grants.
+func (s *AuthService) IsPrivilegedRole(role *modelsAuth.Role) bool {
+	return role != nil && (role.Name == modelsAuth.Admin || role.Name == modelsAuth.SuperAdmin)
+}
+
+// CanGrantRole enforces the invariant that only a superadmin may grant the
+// admin or superadmin roles. Lower roles (customer, supplier, custom) are
+// grantable by any admin. It returns ErrForbiddenRoleGrant when the caller
+// cannot be identified or is not a superadmin while the target is privileged.
+func (s *AuthService) CanGrantRole(ctx context.Context, callerUserID string, target *modelsAuth.Role) error {
+	if !s.IsPrivilegedRole(target) {
+		return nil
+	}
+	if strings.TrimSpace(callerUserID) == "" {
+		return ErrForbiddenRoleGrant
+	}
+	caller, err := s.userRepo.FindByID(ctx, callerUserID)
+	if err != nil || caller == nil {
+		return ErrForbiddenRoleGrant
+	}
+	if s.roleNameFor(ctx, caller) != modelsAuth.SuperAdmin {
+		return ErrForbiddenRoleGrant
+	}
+	return nil
+}
+
+// roleNameFor returns the user's effective role name, preferring the preloaded
+// role snapshot and falling back to a roles-table lookup by RoleID.
+func (s *AuthService) roleNameFor(ctx context.Context, user *modelsUser.User) string {
+	if user == nil {
+		return ""
+	}
+	if user.Role != nil && strings.TrimSpace(user.Role.Name) != "" {
+		return user.Role.Name
+	}
+	if user.RoleID != "" && s.roleRepo != nil {
+		if role, err := s.roleRepo.FindByID(ctx, user.RoleID); err == nil && role != nil {
+			return role.Name
+		}
+	}
+	return ""
 }

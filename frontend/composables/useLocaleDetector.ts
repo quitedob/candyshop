@@ -4,8 +4,9 @@ export default defineI18nLocaleDetector((event, config) => {
     return query.lang
   }
 
-  const locales = config.locales
-  const supported = Array.isArray(locales) ? locales.map((l: any) => l.code || l) : []
+  const cfg = config as { locales?: Array<{ code?: string } | string>; defaultLocale?: string }
+  const locales = cfg.locales
+  const supported = Array.isArray(locales) ? locales.map((l) => (typeof l === 'string' ? l : (l.code ?? ''))) : []
 
   const userLocale = getCookie(event, 'user-locale')
   if (userLocale && supported.includes(userLocale)) return userLocale
@@ -17,5 +18,5 @@ export default defineI18nLocaleDetector((event, config) => {
     if (preferred && supported.includes(preferred)) return preferred
   }
 
-  return config.defaultLocale || 'zh'
+  return cfg.defaultLocale || 'zh'
 })

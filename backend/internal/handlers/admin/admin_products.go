@@ -243,7 +243,13 @@ func (h *Handler) AdminUpdateProduct(c *gin.Context) {
 		return
 	}
 
-	if err := h.services.Product.UpdateProduct(c.Request.Context(), product); err != nil {
+	// AdminUpdateProduct loads the full row (GetProductByID) then applies
+	// applyProductPatch, which writes zero values for any pointer field the
+	// caller supplied ({"featured":false}, {"stockQuantity":0},
+	// {"basePrice":0}, {"summary":""}). Routing through the zero-skip Update
+	// would silently drop those while reporting success (H11) — the full-row
+	// overwrite is required so a load-then-patch write persists.
+	if err := h.services.Product.UpdateProductAll(c.Request.Context(), product); err != nil {
 		if dberror.IsDuplicateKeyError(err) {
 			response.ErrorResp(c, http.StatusConflict, "product_slug_conflict")
 			return

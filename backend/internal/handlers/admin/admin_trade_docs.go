@@ -3,7 +3,6 @@ package admin
 import (
 	modelsTrade "candypro/api/internal/models/trade"
 	"candypro/api/internal/pkg/response"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -40,7 +39,7 @@ func (h *Handler) AdminCreateTradeDocument(c *gin.Context) {
 
 	docNumber := strings.TrimSpace(req.DocNumber)
 	if docNumber == "" {
-		docNumber = generateDocNo(docTypePrefix(req.Type))
+		docNumber = h.services.TradeDocDetail.GenerateDocNo(docTypePrefix(req.Type))
 	}
 
 	doc := &modelsTrade.TradeDocument{
@@ -776,11 +775,6 @@ func docTypePrefix(docType string) string {
 	default:
 		return "DOC"
 	}
-}
-
-// generateDocNo generates a sequential document number with a given prefix.
-func generateDocNo(prefix string) string {
-	return fmt.Sprintf("%s-%s-%06d", prefix, time.Now().UTC().Format("200601"), time.Now().UnixNano()%1000000)
 }
 
 // --- ProformaInvoice ---

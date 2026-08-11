@@ -3,11 +3,13 @@ package tool
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+
+	tradeModels "candypro/api/internal/models/trade"
 
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
+	"gorm.io/datatypes"
 )
 
 // QuotationReviewRequest 结构化报价草稿，供人工审核与后续向量索引闭环
@@ -26,20 +28,49 @@ type QuotationReviewResponse struct {
 	Summary string `json:"summary"`
 }
 
-// NewQuotationHumanReviewTool 注册「报价提交人工审核」工具，配合 Graph/HITL 扩展
-func NewQuotationHumanReviewTool(ctx context.Context) (tool.BaseTool, error) {
+// QuotationReviewSaver persists a quotation review submission. TradeService
+// satisfies this interface so the agent never needs to know the storage layer.
+type QuotationReviewSaver interface {
+	SaveQuotationReview(ctx context.Context, qr *tradeModels.QuotationReview) error
+}
+
+// NewQuotationHumanReviewTool 注册「报价提交人工审核」工具，配合 Graph/HITL 扩展。
+// saver 为空时退化为仅返回 pending 状态（不持久化）；持久化失败返回
+// review_queue_failed 而非硬失败，保证 agent 流程不中断。
+func NewQuotationHumanReviewTool(ctx context.Context, saver QuotationReviewSaver) (tool.BaseTool, error) {
 	return utils.InferTool("submit_quotation_for_human_review",
 		"After computing prices for a B2B quote, call this to queue the draft for sales manager approval before sending PI to the buyer. Include strategy_notes for audit and future RAG feedback.",
 		func(ctx context.Context, req *QuotationReviewRequest) (*QuotationReviewResponse, error) {
 			if req == nil {
 				return nil, fmt.Errorf("empty request")
 			}
-			_, _ = json.Marshal(req)
 			summary := fmt.Sprintf("Queued quotation review: %s %s total=%.2f (discount hint %.1f%%)",
 				req.CustomerRef, req.Currency, req.TotalAmount, req.SuggestedDiscountPct)
+
+			qr := &tradeModels.QuotationReview{
+				CustomerRef:          req.CustomerRef,
+				Currency:             req.Currency,
+				TotalAmount:          req.TotalAmount,
+				StrategyNotes:        req.StrategyNotes,
+				SuggestedDiscountPct: req.SuggestedDiscountPct,
+				Status:               tradeModels.QuotationReviewStatusPending,
+			}
+			if raw := req.LineItemsJSON; raw != "" {
+				qr.LineItems = datatypes.JSON([]byte(raw))
+			}
+
+			if saver != nil {
+				if err := saver.SaveQuotationReview(ctx, qr); err != nil {
+					return &QuotationReviewResponse{
+						Status:  "review_queue_failed",
+						Summary: fmt.Sprintf("%s (persist error: %v)", summary, err),
+					}, nil
+				}
+			}
 			return &QuotationReviewResponse{
 				Status:  "pending_human_review",
 				Summary: summary,
 			}, nil
 		})
 }
+

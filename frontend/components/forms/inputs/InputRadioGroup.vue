@@ -46,7 +46,7 @@ interface RadioOption {
 interface Props {
   id?: string
   name: string
-  modelValue: string | number | boolean | undefined
+  modelValue: string | number | boolean | null | undefined
   options: RadioOption[]
   label?: string
   error?: string

@@ -97,7 +97,7 @@
             />
             <button
               type="submit"
-              :disabled="!input.trim() || isStreaming"
+              :disabled="!isStreaming && !input.trim()"
               class="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:opacity-50"
             >
               <Icon v-if="isStreaming" name="heroicons:stop" class="h-4 w-4" />
@@ -115,6 +115,14 @@
           <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
             <Icon name="heroicons:clipboard-document-check" class="h-4 w-4 text-orange-500" />
             {{ t('admin.ai.pending_approvals') }}
+            <button
+              type="button"
+              class="ml-auto p-1 text-gray-400 hover:text-orange-600 transition-colors"
+              :aria-label="t('admin.ai.pending_approvals')"
+              @click="fetchPendingApprovals"
+            >
+              <Icon name="heroicons:arrow-path" class="h-3.5 w-3.5" :class="{ 'animate-spin': hitlLoading }" />
+            </button>
           </h3>
           <div v-if="pendingActions.length === 0" class="text-xs text-gray-400 text-center py-4">
             {{ t('admin.ai.no_pending_approvals') }}
@@ -124,13 +132,15 @@
             <p class="text-xs text-gray-400 mt-1">{{ action.detail }}</p>
             <div class="flex gap-2 mt-3">
               <button
-                class="flex-1 rounded-lg bg-green-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600 transition-colors"
+                class="flex-1 rounded-lg bg-green-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600 disabled:opacity-50 transition-colors"
+                :disabled="hitlBusy"
                 @click="approveAction(action.id)"
               >
                 {{ t('admin.ai.approve') }}
               </button>
               <button
-                class="flex-1 rounded-lg bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-200 transition-colors"
+                class="flex-1 rounded-lg bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-200 disabled:opacity-50 transition-colors"
+                :disabled="hitlBusy"
                 @click="rejectAction(action.id)"
               >
                 {{ t('admin.ai.reject') }}
@@ -314,7 +324,7 @@ interface ToolCall {
 }
 
 interface HITLAction {
-  id: string
+  id: string | number
   label: string
   detail: string
 }
@@ -331,15 +341,31 @@ const isStreaming = ref(false)
 const messages = ref<Message[]>([])
 const pendingActions = ref<HITLAction[]>([])
 const toolHistory = ref<ToolHistoryEntry[]>([])
+const hitlLoading = ref(false)
+const hitlBusy = ref(false)
 const chatContainer = ref<HTMLElement>()
 const inputEl = ref<HTMLInputElement>()
 const abortController = ref<AbortController | null>(null)
 
 const config = reactive({
-  model: 'MiniMax-M2.7',
+  model: (runtimeConfig.public.aiModel as string) || 'deepseek-v4-flash',
   temperature: 0.7,
   agentMode: 'b2b-coordinator',
 })
+
+/**
+ * 以服务端 /system/ai/config 为单一事实来源覆盖 AI 模型默认值。
+ * 后端不支持按请求覆盖 model（per-request override not supported），
+ * 之前前端硬编码值每次 SSE 请求都会触发一条 Warning 日志。
+ */
+async function loadAIModel() {
+  try {
+    const res = await api.get<any>('/system/ai/config')
+    if (res?.model) config.model = res.model
+  } catch {
+    // 保持 runtimeConfig.public.aiModel 或内置默认
+  }
+}
 
 /** Chatbot / 订单处理模式可选绑定订单上下文 */
 const selectedOrderId = ref('')
@@ -446,7 +472,8 @@ async function sendMessage(text: string) {
       url += `&orderId=${encodeURIComponent(selectedOrderId.value)}`
     }
     url += `&temperature=${config.temperature}`
-    url += `&model=${encodeURIComponent(config.model)}`
+    // model 参数不再随请求发送：后端忽略它（per-request override not supported），
+    // 发送不一致值只会产生 Warning 噪音。真实模型见 /system/ai/config。
     const response = await fetch(url, {
       method: 'GET',
       credentials: 'include',
@@ -531,11 +558,15 @@ function handleSSEEvent(event: Record<string, unknown>, msg: Message) {
 
   if (type === 'action') {
     if (event.action_type === 'interrupted') {
-      pendingActions.value.push({
-        id: `hitl-${Date.now()}`,
-        label: (event.action_type as string) || 'approval',
-        detail: content,
-      })
+      // Eino review-and-edit interrupts have no cross-request resume path in
+      // this build (the SSE runner is created fresh per request, so the
+      // interrupt state is not persisted). Surfacing them as an actionable
+      // "approve/reject" item would send a literal string into a NEW stream and
+      // reject would be a no-op. The real HITL approval queue is the persisted
+      // QuotationReview list (admin.ai.pending_approvals), wired in
+      // fetchPendingApprovals / approveAction / rejectAction. Here we keep the
+      // interrupt context visible in the transcript instead of dead UI.
+      if (content) msg.content += `\n\n⚠️ ${content}`
     }
     if (event.action_type === 'exit') {
       msg.streaming = false
@@ -549,20 +580,56 @@ function handleSSEEvent(event: Record<string, unknown>, msg: Message) {
   }
 }
 
-async function approveAction(id: string) {
-  const action = pendingActions.value.find((a) => a.id === id)
-  if (!action) return
-  pendingActions.value = pendingActions.value.filter((a) => a.id !== id)
-  await sendMessage(`${t('admin.ai.approve')}: ${action.label}`)
+/** 加载待审报价队列（HITL 审批的真实端点：GET /admin/quotation-reviews?status=pending） */
+async function fetchPendingApprovals() {
+  hitlLoading.value = true
+  try {
+    const res = await api.get<any>('/admin/quotation-reviews', { status: 'pending', page: 1, limit: 50 })
+    const rows = Array.isArray(res?.data) ? res.data : []
+    pendingActions.value = rows.map((r: any) => ({
+      id: r.id,
+      label: `${r.customerRef || 'quotation'} · ${r.currency || ''} ${r.totalAmount ?? ''}`.trim(),
+      detail: r.strategyNotes || (r.suggestedDiscountPct != null ? `discount ${r.suggestedDiscountPct}%` : ''),
+    }))
+  } catch {
+    pendingActions.value = []
+  } finally {
+    hitlLoading.value = false
+  }
 }
 
-async function rejectAction(id: string) {
-  pendingActions.value = pendingActions.value.filter((a) => a.id !== id)
+function appendAssistantNote(text: string) {
+  messages.value.push({ role: 'assistant', content: text, streaming: false })
+  scrollToBottom()
+}
+
+async function decideAction(id: string | number, decision: 'approve' | 'reject') {
+  const action = pendingActions.value.find((a) => a.id === id)
+  if (!action || hitlBusy.value) return
+  hitlBusy.value = true
+  try {
+    await api.post(`/admin/quotation-reviews/${id}/${decision}`, {})
+    pendingActions.value = pendingActions.value.filter((a) => a.id !== id)
+  } catch (err: unknown) {
+    appendAssistantNote(`[${decision}] failed: ${err instanceof Error ? err.message : 'unknown error'}`)
+  } finally {
+    hitlBusy.value = false
+  }
+}
+
+async function approveAction(id: string | number) {
+  await decideAction(id, 'approve')
+}
+
+async function rejectAction(id: string | number) {
+  await decideAction(id, 'reject')
 }
 
 onMounted(() => {
   inputEl.value?.focus()
   loadOrderOptions()
+  loadAIModel()
+  fetchPendingApprovals()
 })
 </script>
 

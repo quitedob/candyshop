@@ -16,10 +16,11 @@ type Services struct {
 	Order   *order.OrderService
 	Product *product.ProductService
 	Search  *search.SearchService
-	Trade   *trade.TradeService
-	User    *user.UserService
-	Payment        *order.PaymentService
-	GatewayPayment *order.GatewayPaymentService
+	Trade           *trade.TradeService
+	User            *user.UserService
+	Payment         *order.PaymentService
+	GatewayPayment  *order.GatewayPaymentService
+	QuotationReview *trade.QuotationReviewService
 }
 
 func New(repos *repositoryCommon.SystemRepositories, cfg *config.Config, searchSvc *search.SearchService) *Services {
@@ -34,9 +35,10 @@ func New(repos *repositoryCommon.SystemRepositories, cfg *config.Config, searchS
 		Order:          order.NewOrderService(repos.Order),
 		Product:        product.NewProductService(repos.Product),
 		Search:         searchSvc,
-		Trade:          trade.NewTradeService(repos.Trade),
-		User:           user.NewUserService(repos.User),
-		Payment:        paymentSvc,
-		GatewayPayment: order.NewGatewayPaymentService(cfg, paymentSvc),
+		Trade:           trade.NewTradeService(repos.Trade),
+		User:            user.NewUserService(repos.User),
+		Payment:         paymentSvc,
+		GatewayPayment:  order.NewGatewayPaymentService(cfg, paymentSvc),
+		QuotationReview: trade.NewQuotationReviewService(repos.QuotationReview),
 	}
 }

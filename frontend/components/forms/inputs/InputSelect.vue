@@ -23,7 +23,7 @@
         </option>
         <option
           v-for="option in options"
-          :key="option.value"
+          :key="String(option.value)"
           :value="option.value"
           :disabled="option.disabled"
         >

@@ -1,7 +1,7 @@
 <template>
   <div class="empty-state">
     <div class="empty-state__icon" aria-hidden="true">
-      <Icon :name="icon" size="48" />
+      <Icon :name="icon || 'lucide:box'" size="48" />
     </div>
     <h3 class="empty-state__title">{{ title }}</h3>
     <p v-if="description" class="empty-state__description">{{ description }}</p>

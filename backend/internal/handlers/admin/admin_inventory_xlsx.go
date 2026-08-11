@@ -520,7 +520,21 @@ func (h *Handler) AdminApplyInventoryImport(c *gin.Context) {
 			product.ViewCount = existing.ViewCount
 			product.UpdatedAt = time.Now()
 			product.UpdatedBy = &operatorID
-			if err := h.services.Product.UpdateProduct(c.Request.Context(), &product); err != nil {
+			// The importer builds a fresh struct from a subset of the row's
+			// columns and must leave absent columns untouched (partial contract —
+			// a full-row overwrite would wipe marketing / dietary / translation
+			// data). UpdateProductColumns writes only the columns actually
+			// supplied by presentProductColumns, which carries a cell only when
+			// it holds a meaningful value: an explicit zero ("0", "false") is
+			// persisted instead of being silently dropped by the zero-skip
+			// Update (H11), while a blank cell or unparseable formatted value
+			// ("$12.50", "1,234.50") is skipped so it cannot zero/clear the
+			// stored value (data-wipe regression). updated_at and updated_by are
+			// appended so the bump and the audit trail survive the column-scoped
+			// write.
+			cols := presentProductColumns(row)
+			cols = append(cols, "updated_by")
+			if err := h.services.Product.UpdateProductColumns(c.Request.Context(), &product, cols...); err != nil {
 				errors++
 				errorMessages = append(errorMessages, fmt.Sprintf("Update %s failed: %v", product.Name, err))
 				continue
@@ -558,6 +572,216 @@ func (h *Handler) AdminApplyInventoryImport(c *gin.Context) {
 }
 
 // ── Helpers ──
+
+// productColumnForRowKey maps XLSX row keys (as read in AdminApplyInventoryImport)
+// to the DB column each one writes. It exists so the importer can pass
+// UpdateProductColumns exactly the columns the row carries a meaningful value
+// for: absent columns and blank/unparseable cells stay untouched (the partial
+// contract) while a field the row carries as an explicit zero
+// (stockQuantity:"0", halalCertified:"false", …) is persisted instead of being
+// silently dropped by the zero-skip Update (H11). See presentProductColumns.
+var productColumnForRowKey = map[string]string{
+	"name":           "name",
+	"category":       "category",
+	"categorySlug":   "category_slug",
+	"basePrice":      "base_price",
+	"moq":            "moq",
+	"stockQuantity":  "stock_quantity",
+	"leadTime":       "lead_time",
+	"halalCertified": "halal_certified",
+	"oemAvailable":   "oem_available",
+	"hsCode":         "hs_code",
+	"shelfLife":      "shelf_life",
+	"storage":        "storage",
+	"status":         "status",
+	"thumbnail":      "thumbnail",
+	"images":         "images",
+	"flavors":        "flavors",
+	"shapes":         "shapes",
+	"ingredients":    "ingredients",
+	"allergens":      "allergens",
+	"certifications": "certifications",
+	"description":    "description",
+	"summary":        "summary",
+}
+
+// presentProductColumns returns the DB columns whose row keys are present in
+// the imported row AND carry a meaningful value, plus "updated_at" so the
+// timestamp bump is always written. The frontend sends every mapped cell as a
+// string, so a blank cell arrives as "" — writing it would zero/clear the
+// stored value (H11 data-wipe regression, the same failure class that refuted
+// the round-1 full-row attempt). Only cells that would actually apply a change
+// are carried: blank cells and unparseable formatted values ("$12.50",
+// "1,234.50", and decimal/exponent integer cells like "10.5"/"1e2" that the
+// integer writer would parse to 0) are skipped, while an explicit zero ("0",
+// "false") IS carried so the importer can still clear stock/price/bools (H11).
+// Each column's gate matches the writer that produces its value, so a carried
+// column is always one the importer actually applies: base_price via
+// floatCellMeaningful (toFloat64/ParseFloat), moq/stock_quantity via
+// intCellMeaningful (toInt/Atoi), halal/oem via boolCellMeaningful (toBool),
+// array columns (images/flavors/shapes/certifications) via arrayCellMeaningful
+// (toStringArray), and scalar string columns via stringCellMeaningful. The
+// "status" column is special-cased to mirror the importer's own guard
+// (AdminApplyInventoryImport only applies a status value that passes
+// IsValidProductStatus): a present-but-invalid status leaves product.Status
+// zero, so carrying the column would blank the stored status.
+func presentProductColumns(row map[string]interface{}) []string {
+	cols := make([]string, 0, len(row)+1)
+	for key, col := range productColumnForRowKey {
+		v, ok := row[key]
+		if !ok {
+			continue
+		}
+		switch col {
+		case "status":
+			if s, isStr := v.(string); isStr && modelsProduct.IsValidProductStatus(strings.TrimSpace(s)) {
+				cols = append(cols, col)
+			}
+		case "base_price":
+			if floatCellMeaningful(v) {
+				cols = append(cols, col)
+			}
+		case "moq", "stock_quantity":
+			if intCellMeaningful(v) {
+				cols = append(cols, col)
+			}
+		case "halal_certified", "oem_available":
+			if boolCellMeaningful(v) {
+				cols = append(cols, col)
+			}
+		default:
+			if stringArrayColumns[col] {
+				if arrayCellMeaningful(v) {
+					cols = append(cols, col)
+				}
+			} else if stringCellMeaningful(v) {
+				cols = append(cols, col)
+			}
+		}
+	}
+	cols = append(cols, "updated_at")
+	return cols
+}
+
+// floatCellMeaningful reports whether an uploaded cell carries a numeric value
+// the importer's float writer (toFloat64, strconv.ParseFloat) would apply to
+// base_price. Blank cells ("") and unparseable formatted values ("$12.50",
+// "1,234.50") are skipped — toFloat64 would parse them to 0 and wipe the stored
+// value. An explicit "0" parses and is written so a zeroing correction persists
+// (H11). Decimal/exponent strings ("100.0", "1e2") ARE carried because the
+// float writer accepts them (a real value is applied, not a wipe).
+func floatCellMeaningful(v interface{}) bool {
+	switch val := v.(type) {
+	case float64, float32, int, int64:
+		return true
+	case json.Number:
+		_, err := val.Float64()
+		return err == nil
+	case string:
+		s := strings.TrimSpace(val)
+		if s == "" {
+			return false
+		}
+		_, err := strconv.ParseFloat(s, 64)
+		return err == nil
+	}
+	return false
+}
+
+// intCellMeaningful reports whether an uploaded cell carries an integer value
+// the importer's integer writer (toInt, strconv.Atoi) would apply to moq and
+// stock_quantity. The gate MUST use the writer's parser (Atoi), not ParseFloat:
+// a decimal/exponent-formatted Excel cell ("10.5", "100.0", "1e2", "12.5") is
+// rejected by Atoi, so toInt falls back to 0 and would silently wipe the stored
+// stock/MOQ while the endpoint reports success — exactly the "formatted value
+// must not wipe data" contract this closes. Those cells are skipped like any
+// other unparseable value. An explicit "0" parses (Atoi ok) and is written so a
+// zeroing correction persists (H11). base_price is NOT gated here — it uses
+// floatCellMeaningful because its writer (toFloat64) also uses ParseFloat.
+func intCellMeaningful(v interface{}) bool {
+	switch val := v.(type) {
+	case float64, float32, int, int64:
+		return true
+	case json.Number:
+		_, err := val.Int64()
+		return err == nil
+	case string:
+		s := strings.TrimSpace(val)
+		if s == "" {
+			return false
+		}
+		_, err := strconv.Atoi(s)
+		return err == nil
+	}
+	return false
+}
+
+// boolCellMeaningful reports whether an uploaded cell carries a boolean value
+// the importer should write. A blank string ("") is skipped so a present-but-
+// empty halal/OEM cell cannot clear the stored value; an explicit "false" or
+// "No" is written (H11).
+func boolCellMeaningful(v interface{}) bool {
+	switch val := v.(type) {
+	case bool:
+		return true
+	case float64, int:
+		return true
+	case string:
+		return strings.TrimSpace(val) != ""
+	}
+	return false
+}
+
+// stringArrayColumns are the DB columns the importer writes via toStringArray
+// (a comma-separated string or a []interface{}), as opposed to the scalar
+// string columns handled by stringCellMeaningful. They get their own predicate
+// because an array value is a legitimate applied value for them.
+var stringArrayColumns = map[string]bool{
+	"images":         true,
+	"flavors":        true,
+	"shapes":         true,
+	"certifications": true,
+}
+
+// stringCellMeaningful reports whether an uploaded cell carries text the
+// importer's scalar string writer would apply. Only a non-blank string is
+// meaningful: a blank cell ("") is skipped so a present-but-empty string column
+// (lead_time, hs_code, shelf_life, storage, summary, …) cannot be cleared by
+// accident, and a non-string value (e.g. a numeric JSON value sent by a
+// non-frontend caller) is never applied by the writer — which type-asserts
+// string — so carrying the column would write "" and clear stored text. It is
+// therefore also skipped.
+func stringCellMeaningful(v interface{}) bool {
+	s, ok := v.(string)
+	return ok && strings.TrimSpace(s) != ""
+}
+
+// arrayCellMeaningful reports whether an uploaded cell carries a value the
+// importer's array writer (toStringArray) would apply to images/flavors/shapes/
+// certifications. A comma-separated string is meaningful only when it splits to
+// at least one non-empty item (toStringArray drops empty/whitespace parts), and
+// a []interface{} only when it holds at least one non-empty string item —
+// otherwise toStringArray returns nil and carrying the column would clear the
+// stored list. Blank strings and non-string arrays are skipped.
+func arrayCellMeaningful(v interface{}) bool {
+	switch val := v.(type) {
+	case string:
+		for _, part := range strings.Split(val, ",") {
+			if strings.TrimSpace(part) != "" {
+				return true
+			}
+		}
+		return false
+	case []interface{}:
+		for _, item := range val {
+			if s, ok := item.(string); ok && strings.TrimSpace(s) != "" {
+				return true
+			}
+		}
+		return false
+	}
+	return false
+}
 
 func toFloat64(v interface{}) float64 {
 	switch val := v.(type) {

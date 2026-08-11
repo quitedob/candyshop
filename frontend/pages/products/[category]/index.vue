@@ -265,7 +265,7 @@ const { tField } = useTranslation()
 const localePath = useLocalePath()
 const route = useRoute()
 const config = useRuntimeConfig()
-const { getProducts, getCategory } = useApi()
+const { getProducts, getCategory, getCategories } = useApi()
 
 // State
 const currentPage = ref(1)
@@ -285,7 +285,21 @@ const { data: categoryData, status: categoryStatus, refresh: refreshCategory } =
   }
 )
 
-const category = computed(() => {
+// Category may carry OEM/detail fields the API type doesn't declare; model them
+// as optional so the fallback object and the API payload share one shape.
+interface CategoryDetail {
+  name: string
+  description: string
+  productCount: number
+  image: string
+  minMOQ?: string
+  leadTime?: string
+  dailyCapacity?: string
+  packagingOptions?: string
+  [key: string]: unknown
+}
+
+const category = computed<CategoryDetail>(() => {
   const data = categoryData.value
   if (!data) {
     return {
@@ -300,6 +314,14 @@ const category = computed(() => {
     image: data.thumbnail || `/images/categories/${categorySlug.value}.jpg`
   }
 })
+
+// Fetch all categories for the "related categories" section (real counts from API)
+const { data: relatedCategoriesData } = await useAsyncData(
+  () => `related-categories-${locale.value}`,
+  async () => {
+    return await getCategories()
+  }
+)
 
 // Fetch products
 const { data: productsData, status: productsStatus, refresh: refreshProducts } = await useAsyncData(
@@ -362,18 +384,34 @@ const filterTags = [
   { id: 'vitamin', label: t('filters.vitamin'), icon: 'lucide:pill' }
 ]
 
-// Related categories
+// Related categories — real counts from the API (backend sets ProductCount),
+// with the original hardcoded list kept as a fallback so the section never
+// renders blank when the API fails or returns no categories.
+const fallbackCategories = [
+  { slug: 'gummy-candy', name: t('product.categories.gummy_candy'), productCount: 120, image: '/images/categories/gummy-candy.jpg' },
+  { slug: 'hard-candy', name: t('product.categories.hard_candy'), productCount: 85, image: '/images/categories/hard-candy.jpg' },
+  { slug: 'aerated-candy', name: t('product.categories.aerated_candy'), productCount: 45, image: '/images/categories/aerated-candy.jpg' },
+  { slug: 'toffee-candy', name: t('product.categories.toffee_candy'), productCount: 35, image: '/images/categories/toffee-candy.jpg' },
+  { slug: 'compound-chocolate', name: t('product.categories.compound_chocolate'), productCount: 60, image: '/images/categories/compound-chocolate.jpg' },
+  { slug: 'licorice', name: t('product.categories.licorice'), productCount: 25, image: '/images/categories/licorice.jpg' },
+  { slug: 'sour-candies', name: t('product.categories.sour_candies'), productCount: 40, image: '/images/categories/sour-candies.jpg' }
+]
+
 const relatedCategories = computed(() => {
-  const allCategories = [
-    { slug: 'gummy-candy', name: t('product.categories.gummy_candy'), productCount: 120, image: '/images/categories/gummy-candy.jpg' },
-    { slug: 'hard-candy', name: t('product.categories.hard_candy'), productCount: 85, image: '/images/categories/hard-candy.jpg' },
-    { slug: 'aerated-candy', name: t('product.categories.aerated_candy'), productCount: 45, image: '/images/categories/aerated-candy.jpg' },
-    { slug: 'toffee-candy', name: t('product.categories.toffee_candy'), productCount: 35, image: '/images/categories/toffee-candy.jpg' },
-    { slug: 'compound-chocolate', name: t('product.categories.compound_chocolate'), productCount: 60, image: '/images/categories/compound-chocolate.jpg' },
-    { slug: 'licorice', name: t('product.categories.licorice'), productCount: 25, image: '/images/categories/licorice.jpg' },
-    { slug: 'sour-candies', name: t('product.categories.sour_candies'), productCount: 40, image: '/images/categories/sour-candies.jpg' }
-  ]
-  return allCategories.filter(c => c.slug !== categorySlug.value)
+  const data = relatedCategoriesData.value
+  const apiCategories = Array.isArray(data)
+    ? data
+        .filter(c => c.slug !== categorySlug.value)
+        .slice(0, 8)
+        .map(c => ({
+          slug: c.slug,
+          name: tField(c, 'name'),
+          productCount: c.productCount || 0,
+          image: c.thumbnail || `/images/categories/${c.slug}.jpg`
+        }))
+    : []
+  if (apiCategories.length) return apiCategories
+  return fallbackCategories.filter(c => c.slug !== categorySlug.value)
 })
 
 // Category FAQs（随分类与语言变化）

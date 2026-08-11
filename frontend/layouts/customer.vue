@@ -300,7 +300,7 @@ const handleLogout = async () => {
   await logout()
 }
 
-let mediaQuery
+let mediaQuery: MediaQueryList | null = null
 const closeMobileIfDesktop = () => {
   if (mediaQuery && !mediaQuery.matches) isMobileNavOpen.value = false
 }
@@ -321,7 +321,7 @@ watch(isMobileNavOpen, (open) => {
   if (import.meta.client) document.body.classList.toggle('body-lock', open)
 })
 
-const onEscape = (e) => { if (e.key === 'Escape') isMobileNavOpen.value = false }
+const onEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') isMobileNavOpen.value = false }
 
 onMounted(() => {
   const saved = localStorage.getItem('customer-sidebar-collapsed')

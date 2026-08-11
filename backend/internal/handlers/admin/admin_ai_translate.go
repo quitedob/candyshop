@@ -58,10 +58,18 @@ func (h *Handler) AdminAITranslateProduct(c *gin.Context) {
 	if product.Translations == nil {
 		product.Translations = make(modelsCommon.JSONMap)
 	}
+	// H24: sanitize the rich-text product fields on write so AI-injected HTML is
+	// never merged into Translations unsanitized. Plain-text scalars
+	// (name/summary/ingredients/…) are left untouched: they render escaped, and
+	// bluemonday would otherwise turn a legitimate '&' into '&amp;'.
+	sanitizeHTMLFields(transResult.Fields, "description")
 	ensureSourceLocaleInTranslations(product, sourceData)
 	mergeTranslations(product.Translations, transResult)
 
-	if err := h.services.Product.UpdateProduct(c.Request.Context(), product); err != nil {
+	// AdminAITranslateProduct loads the full row first, so the full-row
+	// overwrite is safe and persists the merged Translations map (H11); the
+	// zero-skip Update would drop a Translation patch.
+	if err := h.services.Product.UpdateProductAll(c.Request.Context(), product); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "update_failed")
 		return
 	}

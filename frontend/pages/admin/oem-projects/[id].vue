@@ -198,13 +198,11 @@ definePageMeta({
 })
 
 const route = useRoute()
-const { adminGetOemProject, adminUpdateOemStatus } = useApi()
+const { adminGetOemProject, adminUpdateOemStatus, adminUpdateOemProject } = useApi()
 const { t } = useI18n()
 const { tField } = useTranslation()
 const { enumLabel, formatDate } = useDisplay()
 const localePath = useLocalePath()
-const config = useRuntimeConfig()
-const baseURL = config.public.apiBase || '/api/v1'
 
 const project = ref<any>(null)
 const pending = ref(true)
@@ -250,11 +248,7 @@ const updateStatus = async () => {
       status: statusInput.value,
     })
     if (notesInput.value !== (project.value.adminNotes || '')) {
-      await $fetch(`${baseURL}/admin/oem-projects/${route.params.id}`, {
-        method: 'PUT',
-        credentials: 'include',
-        body: { adminNotes: notesInput.value },
-      })
+      await adminUpdateOemProject(String(route.params.id), { adminNotes: notesInput.value })
       project.value.adminNotes = notesInput.value
     }
     project.value.status = statusInput.value

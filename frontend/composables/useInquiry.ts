@@ -93,7 +93,8 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
     oemNeeded: {},
     expectedDelivery: {},
     message: {},
-    files: {}
+    files: {},
+    userId: {}
   }
 
   /**
@@ -303,8 +304,7 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
         oemNeeded: state.oemNeeded === true,
         expectedDelivery: state.expectedDelivery || undefined,
         message: state.message || undefined,
-        files: state.files,
-        userId: state.userId || undefined
+        files: state.files
       })
 
       isSubmitted.value = true

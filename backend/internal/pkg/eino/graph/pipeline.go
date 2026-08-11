@@ -9,10 +9,12 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	tradeModels "candypro/api/internal/models/trade"
 	einotool "candypro/api/internal/pkg/eino/tool"
+	"candypro/api/internal/pkg/sanitize"
 
 	"github.com/cloudwego/eino/compose"
 	"gorm.io/datatypes"
@@ -20,15 +22,17 @@ import (
 
 // DocGenerationInput defines the structured input for the document generation pipeline.
 type DocGenerationInput struct {
-	TradeID       uint     `json:"trade_id"`
-	DocTypes      []string `json:"doc_types"` // e.g. ["PROFORMA_INVOICE", "COMMERCIAL_INVOICE"]
-	BuyerName     string   `json:"buyer_name,omitempty"`
-	SellerName    string   `json:"seller_name,omitempty"`
-	Incoterms     string   `json:"incoterms,omitempty"`
-	PaymentTerms  string   `json:"payment_terms,omitempty"`
-	TotalAmount   float64  `json:"total_amount,omitempty"`
-	Currency      string   `json:"currency,omitempty"`
-	ExtraContext  string   `json:"extra_context,omitempty"`
+	TradeID           uint     `json:"trade_id"`
+	DocTypes          []string `json:"doc_types"` // e.g. ["PROFORMA_INVOICE", "COMMERCIAL_INVOICE"]
+	BuyerName         string   `json:"buyer_name,omitempty"`
+	SellerName        string   `json:"seller_name,omitempty"`
+	Incoterms         string   `json:"incoterms,omitempty"`
+	PaymentTerms      string   `json:"payment_terms,omitempty"`
+	TotalAmount       float64  `json:"total_amount,omitempty"`
+	Currency          string   `json:"currency,omitempty"`
+	ExtraContext      string   `json:"extra_context,omitempty"`
+	PortOfLoading     string   `json:"port_of_loading,omitempty"`
+	PortOfDestination string   `json:"port_of_destination,omitempty"`
 }
 
 // DocGenerationOutput contains results from the document generation pipeline.
@@ -86,20 +90,40 @@ func NewDocumentPipelineGraph(ctx context.Context, persister einotool.DocumentPe
 			if input.Incoterms == "" {
 				input.Incoterms = "FOB Shanghai"
 			}
+			if input.PortOfLoading == "" {
+				input.PortOfLoading = "Shanghai"
+			}
+			if input.PortOfDestination == "" {
+				input.PortOfDestination = "Destination Port"
+			}
 			if input.Currency == "" {
 				input.Currency = "USD"
 			}
+			// H24: strip active HTML from untrusted string fields before they are
+			// formatted into document content and persisted (defense-in-depth).
+			input = sanitizeDocInput(input)
 			return pipelineState{Input: input, Persister: persister}, nil
 		},
 	)); err != nil {
 		return nil, fmt.Errorf("PrepareContext node: %w", err)
 	}
 
-	// Node 2: GenerateDocs — iterates doc types and generates content
+	// Node 2: GenerateDocs — iterates doc types and generates content.
+	// A single batch identity is computed once so every document in the batch
+	// shares the same number suffix, and the CI's pi_ref is resolved from the
+	// batch's actual PI (or the trade's existing PI) instead of being re-derived
+	// from a fresh time.Now().
 	if err := graph.AddLambdaNode("GenerateDocs", compose.InvokableLambda(
 		func(ctx context.Context, state pipelineState) (pipelineState, error) {
+			seq := NewBatchDocSeq(time.Now())
+			piRef := ""
+			if batchContainsDocType(state.Input.DocTypes, tradeModels.DocTypeProformaInvoice) {
+				piRef = fmt.Sprintf("PI-%s-%05d", seq.Date, seq.Seq)
+			} else if state.Persister != nil {
+				piRef, _ = state.Persister.ResolveProformaInvoiceRef(ctx, state.Input.TradeID)
+			}
 			for _, docType := range state.Input.DocTypes {
-				doc, err := generateDocument(ctx, docType, state.Input)
+				doc, err := generateDocument(ctx, docType, state.Input, seq, piRef)
 				if err != nil {
 					log.Printf("Graph: generate %s failed: %v", docType, err)
 					state.Errors = append(state.Errors, fmt.Sprintf("%s: %v", docType, err))
@@ -178,19 +202,62 @@ func NewDocumentPipelineGraph(ctx context.Context, persister einotool.DocumentPe
 	return graph, nil
 }
 
-func generateDocument(_ context.Context, docType string, input DocGenerationInput) (GeneratedDocInfo, error) {
-	now := time.Now()
-	ts := now.Format("20060102")
-	seq := now.UnixMilli() % 100000
+// BatchDocSeq is the shared identity for one document-generation batch. All
+// documents in a batch share the same Date/Seq so cross-references (e.g. a
+// Commercial Invoice's pi_ref) resolve deterministically instead of racing on
+// per-call time.Now().
+type BatchDocSeq struct {
+	Date string    // YYYYMMDD
+	Seq  int       // >= 1, batch-shared sequence suffix
+	Now  time.Time // batch time, used for content fields such as valid_until
+}
+
+// docSeqCounter is a per-process monotonic counter that disambiguates batches
+// which the ms-residue scheme could not: two batches in the same millisecond,
+// or exactly 100,000 ms apart on the same day (the old residue wrapped every
+// 100 s, so each residue recurred ~864×/day and birthday-collided at a few
+// hundred batches/day against TradeDocument's global uniqueIndex on DocNumber).
+var docSeqCounter atomic.Uint64
+
+func init() {
+	// Seed with a time-derived offset so a process restart (or two processes
+	// sharing one database) does not replay the same sequence range on the same
+	// date.
+	docSeqCounter.Store(uint64(time.Now().UnixMilli() % 100000))
+}
+
+// NewBatchDocSeq derives a batch identity from a clock time. Seq is a
+// per-process monotonic counter (>= 1, seeded at init), NOT the ms residue, so
+// it is strictly increasing across batches within a process and can never
+// produce the same Date+Seq for distinct batches. The shared-batch invariant is
+// preserved: the graph computes one seq per batch, so every document in the
+// batch renders the same suffix (CI pi_ref resolves against the batch's PI).
+func NewBatchDocSeq(now time.Time) BatchDocSeq {
+	seq := int(docSeqCounter.Add(1))
 	if seq == 0 {
-		// seq must never be 0: downstream uses it as the Proforma Invoice reference
-		// (e.g. CI's pi_ref) and %05d would render a 0 as "00000".
 		seq = 1
 	}
+	return BatchDocSeq{Date: now.Format("20060102"), Seq: seq, Now: now}
+}
 
+// batchContainsDocType reports whether docTypes includes docType (case/whitespace
+// normalized via normalizeDocType).
+func batchContainsDocType(docTypes []string, docType string) bool {
+	target := normalizeDocType(docType)
+	for _, dt := range docTypes {
+		if normalizeDocType(dt) == target {
+			return true
+		}
+	}
+	return false
+}
+
+// generateDocument builds one document's content from a shared batch identity.
+// piRef is passed in (not recomputed) so a CI references the batch's actual PI.
+func generateDocument(_ context.Context, docType string, input DocGenerationInput, seq BatchDocSeq, piRef string) (GeneratedDocInfo, error) {
 	switch normalizeDocType(docType) {
 	case tradeModels.DocTypeProformaInvoice:
-		docNo := fmt.Sprintf("PI-%s-%05d", ts, seq)
+		docNo := fmt.Sprintf("PI-%s-%05d", seq.Date, seq.Seq)
 		content := fmt.Sprintf(`{
 	"buyer": %q,
 	"seller": %q,
@@ -200,12 +267,11 @@ func generateDocument(_ context.Context, docType string, input DocGenerationInpu
 	"currency": %q,
 	"valid_until": %q
 }`, input.BuyerName, input.SellerName, input.Incoterms, input.PaymentTerms,
-			input.TotalAmount, input.Currency, now.AddDate(0, 1, 0).Format("2006-01-02"))
+			input.TotalAmount, input.Currency, seq.Now.AddDate(0, 1, 0).Format("2006-01-02"))
 		return GeneratedDocInfo{DocType: tradeModels.DocTypeProformaInvoice, DocNumber: docNo, Content: content}, nil
 
 	case tradeModels.DocTypeCommercialInvoice:
-		piRef := fmt.Sprintf("PI-%s-%05d", ts, seq)
-		docNo := fmt.Sprintf("CI-%s-%05d", ts, seq)
+		docNo := fmt.Sprintf("CI-%s-%05d", seq.Date, seq.Seq)
 		content := fmt.Sprintf(`{
 	"pi_ref": %q,
 	"quantity": 1,
@@ -213,12 +279,13 @@ func generateDocument(_ context.Context, docType string, input DocGenerationInpu
 	"currency": %q,
 	"vessel": "TBA",
 	"pol": %q,
-	"pod": "Destination Port"
-}`, piRef, input.TotalAmount, input.Currency, input.Incoterms)
+	"pod": %q,
+	"incoterms": %q
+}`, piRef, input.TotalAmount, input.Currency, input.PortOfLoading, input.PortOfDestination, input.Incoterms)
 		return GeneratedDocInfo{DocType: tradeModels.DocTypeCommercialInvoice, DocNumber: docNo, Content: content}, nil
 
 	case tradeModels.DocTypeSalesContract:
-		docNo := fmt.Sprintf("SC-%s-%05d", ts, seq)
+		docNo := fmt.Sprintf("SC-%s-%05d", seq.Date, seq.Seq)
 		content := fmt.Sprintf(`{
 	"reference": "TRADE-%d",
 	"buyer": %q,
@@ -233,7 +300,7 @@ func generateDocument(_ context.Context, docType string, input DocGenerationInpu
 		return GeneratedDocInfo{DocType: tradeModels.DocTypeSalesContract, DocNumber: docNo, Content: content}, nil
 
 	case tradeModels.DocTypePackingList:
-		docNo := fmt.Sprintf("PL-%s-%05d", ts, seq)
+		docNo := fmt.Sprintf("PL-%s-%05d", seq.Date, seq.Seq)
 		content := fmt.Sprintf(`{
 	"reference": "TRADE-%d",
 	"total_cartons": 1,
@@ -245,7 +312,7 @@ func generateDocument(_ context.Context, docType string, input DocGenerationInpu
 		return GeneratedDocInfo{DocType: tradeModels.DocTypePackingList, DocNumber: docNo, Content: content}, nil
 
 	case tradeModels.DocTypeOriginCertificate:
-		docNo := fmt.Sprintf("COO-%s-%05d", ts, seq)
+		docNo := fmt.Sprintf("COO-%s-%05d", seq.Date, seq.Seq)
 		content := fmt.Sprintf(`{
 	"origin": "China",
 	"destination": "Buyer Country",
@@ -255,7 +322,7 @@ func generateDocument(_ context.Context, docType string, input DocGenerationInpu
 		return GeneratedDocInfo{DocType: tradeModels.DocTypeOriginCertificate, DocNumber: docNo, Content: content}, nil
 
 	case tradeModels.DocTypeHealthCertificate:
-		docNo := fmt.Sprintf("HC-REQ-%s-%05d", ts, seq)
+		docNo := fmt.Sprintf("HC-REQ-%s-%05d", seq.Date, seq.Seq)
 		content := fmt.Sprintf(`{
 	"product": "Candy Products",
 	"producer": %q,
@@ -265,45 +332,45 @@ func generateDocument(_ context.Context, docType string, input DocGenerationInpu
 		return GeneratedDocInfo{DocType: tradeModels.DocTypeHealthCertificate, DocNumber: docNo, Content: content}, nil
 
 	case "BILL_OF_LADING":
-		docNo := fmt.Sprintf("BL-%s-%05d", ts, seq)
+		docNo := fmt.Sprintf("BL-%s-%05d", seq.Date, seq.Seq)
 		content := fmt.Sprintf(`{
 	"shipper": %q,
 	"consignee": %q,
 	"notify_party": %q,
 	"vessel": "TBA",
-	"port_of_loading": "Shanghai",
-	"port_of_discharge": "Destination Port",
+	"port_of_loading": %q,
+	"port_of_discharge": %q,
 	"freight_terms": "PREPAID"
-}`, input.SellerName, input.BuyerName, input.BuyerName)
+}`, input.SellerName, input.BuyerName, input.BuyerName, input.PortOfLoading, input.PortOfDestination)
 		return GeneratedDocInfo{DocType: "BILL_OF_LADING", DocNumber: docNo, Content: content}, nil
 
 	case "INGREDIENTS_DECLARATION":
-		docNo := fmt.Sprintf("ING-%s-%05d", ts, seq)
+		docNo := fmt.Sprintf("ING-%s-%05d", seq.Date, seq.Seq)
 		content := `{"product": "Candy Products", "ingredients": [], "allergens": [], "halal": false}`
 		return GeneratedDocInfo{DocType: "INGREDIENTS_DECLARATION", DocNumber: docNo, Content: content}, nil
 
 	case "SHIPPER_LETTER_OF_INSTRUCTION":
-		docNo := fmt.Sprintf("SLI-%s-%05d", ts, seq)
+		docNo := fmt.Sprintf("SLI-%s-%05d", seq.Date, seq.Seq)
 		content := fmt.Sprintf(`{
 	"shipper": %q,
 	"consignee": %q,
-	"origin_port": "Shanghai",
-	"destination_port": "Destination Port",
+	"origin_port": %q,
+	"destination_port": %q,
 	"cargo": "Candy Products",
 	"fcl_status": true
-}`, input.SellerName, input.BuyerName)
+}`, input.SellerName, input.BuyerName, input.PortOfLoading, input.PortOfDestination)
 		return GeneratedDocInfo{DocType: "SHIPPER_LETTER_OF_INSTRUCTION", DocNumber: docNo, Content: content}, nil
 
 	case "INSURANCE_CERTIFICATE":
-		docNo := fmt.Sprintf("INS-%s-%05d", ts, seq)
+		docNo := fmt.Sprintf("INS-%s-%05d", seq.Date, seq.Seq)
 		content := fmt.Sprintf(`{
 	"insured": %q,
 	"vessel": "TBA",
-	"route": "Shanghai to Destination Port",
+	"route": "%s to %s",
 	"invoice_value": %.2f,
 	"coverage": "110.0%%",
 	"insured_amount": %.2f
-}`, input.BuyerName, input.TotalAmount, input.TotalAmount*1.1)
+}`, input.BuyerName, input.PortOfLoading, input.PortOfDestination, input.TotalAmount, input.TotalAmount*1.1)
 		return GeneratedDocInfo{DocType: "INSURANCE_CERTIFICATE", DocNumber: docNo, Content: content}, nil
 
 	default:
@@ -313,4 +380,21 @@ func generateDocument(_ context.Context, docType string, input DocGenerationInpu
 
 func normalizeDocType(docType string) string {
 	return strings.ToUpper(strings.TrimSpace(docType))
+}
+
+// sanitizeDocInput strips active HTML (scripts, event handlers, javascript:
+// URLs) from untrusted string fields before they are formatted into document
+// content. The LLM/tool caller can inject markup into buyer/seller/port fields
+// that would later render in the admin trade-document preview or a DOCX export;
+// pkg/sanitize's allowlist preserves harmless inline formatting (<b>, <i>, …).
+func sanitizeDocInput(in DocGenerationInput) DocGenerationInput {
+	in.BuyerName = sanitize.HTML(in.BuyerName)
+	in.SellerName = sanitize.HTML(in.SellerName)
+	in.Incoterms = sanitize.HTML(in.Incoterms)
+	in.PaymentTerms = sanitize.HTML(in.PaymentTerms)
+	in.Currency = sanitize.HTML(in.Currency)
+	in.PortOfLoading = sanitize.HTML(in.PortOfLoading)
+	in.PortOfDestination = sanitize.HTML(in.PortOfDestination)
+	in.ExtraContext = sanitize.HTML(in.ExtraContext)
+	return in
 }

@@ -81,11 +81,12 @@ func (r *fakeNegotiationRepo) FindPendingByInquiryID(ctx context.Context, inquir
 	return nil, context.Canceled
 }
 
-// TransitionStatus 模拟 A-4 的条件 UPDATE：仅当当前 status==fromStatus 时才改为 toStatus。
-// 返回受影响行数，0 表示并发竞争 / 已被改写。
-func (r *fakeNegotiationRepo) TransitionStatus(ctx context.Context, id, fromStatus, toStatus string, updatedAt time.Time) (int64, error) {
+// TransitionStatus 模拟 A-4 的条件 UPDATE：仅当 id、inquiry_id、status 三者匹配时
+// 才改为 toStatus（H-3 归属限定）。返回受影响行数，0 表示并发竞争 / 已被改写 /
+// 询盘不匹配。
+func (r *fakeNegotiationRepo) TransitionStatus(ctx context.Context, id, inquiryID, fromStatus, toStatus string, updatedAt time.Time) (int64, error) {
 	for i, o := range r.offers {
-		if o.ID == id {
+		if o.ID == id && o.InquiryID == inquiryID {
 			if o.Status != fromStatus {
 				return 0, nil
 			}
@@ -277,16 +278,20 @@ func TestCustomerRejectNegotiationOffer(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	userID := "u-nego-7"
+	inquiryID := "inq-nego-7"
 	offerID := "offer-reject-1"
 	now := time.Now()
 	negoRepo := &fakeNegotiationRepo{
 		offers: []modelsOrder.NegotiationOffer{
-			{ID: offerID, InquiryID: "inq-nego-7", UserID: userID, SenderType: "admin", Status: "pending", TotalAmount: 500, Currency: "USD", CreatedAt: now, UpdatedAt: now},
+			{ID: offerID, InquiryID: inquiryID, UserID: userID, SenderType: "admin", Status: "pending", TotalAmount: 500, Currency: "USD", CreatedAt: now, UpdatedAt: now},
 		},
 	}
-	handler := buildTestNegotiationHandler(negoRepo, &fakeNegotiationInquiryRepo{})
+	inquiryRepo := &fakeNegotiationInquiryRepo{
+		inquiry: &modelsProduct.Inquiry{ID: inquiryID, UserID: &userID},
+	}
+	handler := buildTestNegotiationHandler(negoRepo, inquiryRepo)
 
-	rec := performCustomerRejectNegotiation(handler, userID, offerID)
+	rec := performCustomerRejectNegotiation(handler, userID, inquiryID, offerID)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d, body=%s", rec.Code, rec.Body.String())
 	}
@@ -294,6 +299,99 @@ func TestCustomerRejectNegotiationOffer(t *testing.T) {
 	for _, o := range negoRepo.offers {
 		if o.ID == offerID && o.Status != "rejected" {
 			t.Fatalf("expected offer status=rejected, got %s", o.Status)
+		}
+	}
+}
+
+// TestCustomerAcceptNegotiationOffer_OfferFromOtherInquiry H-3: 一个客户在自己
+// 的询盘 X 上接受属于询盘 Y 的 offer 必须被拒绝（404），且 offer 状态不得变化。
+func TestCustomerAcceptNegotiationOffer_OfferFromOtherInquiry(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	userID := "u-nego-8"
+	ownInquiryID := "inq-nego-8"
+	otherInquiryID := "inq-other-8"
+	offerID := "offer-cross-inq"
+	now := time.Now()
+	negoRepo := &fakeNegotiationRepo{
+		offers: []modelsOrder.NegotiationOffer{
+			{ID: offerID, InquiryID: otherInquiryID, UserID: userID, SenderType: "admin", Status: "pending", TotalAmount: 200, Currency: "USD", CreatedAt: now, UpdatedAt: now},
+		},
+	}
+	inquiryRepo := &fakeNegotiationInquiryRepo{
+		inquiry: &modelsProduct.Inquiry{ID: ownInquiryID, UserID: &userID},
+	}
+	handler := buildTestNegotiationHandler(negoRepo, inquiryRepo)
+
+	rec := performCustomerAcceptNegotiation(handler, userID, ownInquiryID, offerID)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d, body=%s", rec.Code, rec.Body.String())
+	}
+	for _, o := range negoRepo.offers {
+		if o.ID == offerID && o.Status != "pending" {
+			t.Fatalf("expected offer status still pending, got %s", o.Status)
+		}
+	}
+}
+
+// TestCustomerRejectNegotiationOffer_OfferFromOtherInquiry H-3: reject 之前没有
+// 归属校验，这里验证属于其他询盘的 offer 无法被当前客户拒绝。
+func TestCustomerRejectNegotiationOffer_OfferFromOtherInquiry(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	userID := "u-nego-9"
+	ownInquiryID := "inq-nego-9"
+	otherInquiryID := "inq-other-9"
+	offerID := "offer-reject-cross-inq"
+	now := time.Now()
+	negoRepo := &fakeNegotiationRepo{
+		offers: []modelsOrder.NegotiationOffer{
+			{ID: offerID, InquiryID: otherInquiryID, UserID: userID, SenderType: "admin", Status: "pending", TotalAmount: 500, Currency: "USD", CreatedAt: now, UpdatedAt: now},
+		},
+	}
+	inquiryRepo := &fakeNegotiationInquiryRepo{
+		inquiry: &modelsProduct.Inquiry{ID: ownInquiryID, UserID: &userID},
+	}
+	handler := buildTestNegotiationHandler(negoRepo, inquiryRepo)
+
+	rec := performCustomerRejectNegotiation(handler, userID, ownInquiryID, offerID)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d, body=%s", rec.Code, rec.Body.String())
+	}
+	for _, o := range negoRepo.offers {
+		if o.ID == offerID && o.Status != "pending" {
+			t.Fatalf("expected offer status still pending, got %s", o.Status)
+		}
+	}
+}
+
+// TestCustomerRejectNegotiationOffer_ForbiddenInquiry H-3: 路径询盘属于他人时
+// reject 必须返回 403，且不触碰任何 offer。
+func TestCustomerRejectNegotiationOffer_ForbiddenInquiry(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	userID := "u-nego-10"
+	otherUserID := "u-other-10"
+	inquiryID := "inq-nego-10"
+	offerID := "offer-forbid"
+	now := time.Now()
+	negoRepo := &fakeNegotiationRepo{
+		offers: []modelsOrder.NegotiationOffer{
+			{ID: offerID, InquiryID: inquiryID, UserID: otherUserID, SenderType: "admin", Status: "pending", TotalAmount: 500, Currency: "USD", CreatedAt: now, UpdatedAt: now},
+		},
+	}
+	inquiryRepo := &fakeNegotiationInquiryRepo{
+		inquiry: &modelsProduct.Inquiry{ID: inquiryID, UserID: &otherUserID},
+	}
+	handler := buildTestNegotiationHandler(negoRepo, inquiryRepo)
+
+	rec := performCustomerRejectNegotiation(handler, userID, inquiryID, offerID)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("expected 403, got %d, body=%s", rec.Code, rec.Body.String())
+	}
+	for _, o := range negoRepo.offers {
+		if o.ID == offerID && o.Status != "pending" {
+			t.Fatalf("expected offer status still pending, got %s", o.Status)
 		}
 	}
 }
@@ -342,12 +440,12 @@ func performCustomerAcceptNegotiation(handler *Handler, userID, inquiryID, offer
 	return rec
 }
 
-func performCustomerRejectNegotiation(handler *Handler, userID, offerID string) *httptest.ResponseRecorder {
-	req := httptest.NewRequest(http.MethodPost, "/user/inquiries/inq-x/negotiations/"+offerID+"/reject", nil)
+func performCustomerRejectNegotiation(handler *Handler, userID, inquiryID, offerID string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(http.MethodPost, "/user/inquiries/"+inquiryID+"/negotiations/"+offerID+"/reject", nil)
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
 	c.Request = req
-	c.Params = gin.Params{{Key: "offerId", Value: offerID}}
+	c.Params = gin.Params{{Key: "id", Value: inquiryID}, {Key: "offerId", Value: offerID}}
 	c.Set("userID", userID)
 	handler.CustomerRejectNegotiationOffer(c)
 	return rec

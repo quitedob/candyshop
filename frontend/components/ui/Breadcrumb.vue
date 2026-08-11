@@ -16,7 +16,7 @@
           <Icon name="lucide:home" size="16" aria-hidden="true" />
           <span itemprop="name">{{ $t('nav.home') }}</span>
         </NuxtLink>
-        <meta itemprop="position" :content="1" />
+        <meta itemprop="position" :content="'1'" />
       </li>
 
       <!-- Breadcrumb items -->

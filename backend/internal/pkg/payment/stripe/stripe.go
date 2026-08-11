@@ -65,21 +65,40 @@ func (a *Adapter) Authorize(ctx context.Context, req payment.GatewayRequest) (*p
 }
 
 // Capture captures a previously authorized PaymentIntent.
+//
+// amount is in the gateway-facing minor unit (dollars for USD, yen for JPY), so
+// the raw value passed to Stripe must be scaled currency-aware: x100 for
+// two-decimal currencies, raw for zero-decimal currencies (JPY, KRW, ...). The
+// currency is not part of the PaymentGateway interface, so it is read from the
+// PaymentIntent itself rather than guessed (G16). A zero amount captures the
+// full authorized amount and needs no scaling.
 func (a *Adapter) Capture(ctx context.Context, transactionID string, amount float64) (*payment.GatewayResponse, error) {
 	params := map[string]string{}
 	if amount > 0 {
-		params["amount_to_capture"] = fmt.Sprintf("%.0f", amount*100)
+		cur, err := a.intentCurrency(ctx, transactionID)
+		if err != nil {
+			return nil, err
+		}
+		params["amount_to_capture"] = stripeAmount(amount, cur)
 	}
 	return a.postForm(ctx, "/payment_intents/"+transactionID+"/capture", params, "")
 }
 
 // Refund refunds a payment (full or partial).
+//
+// Same currency-aware scaling as Capture: the PaymentIntent's currency decides
+// whether amount is in cents (x100) or the raw minor unit (zero-decimal). A zero
+// amount refunds the full payment and needs no scaling.
 func (a *Adapter) Refund(ctx context.Context, transactionID string, amount float64) (*payment.GatewayResponse, error) {
 	params := map[string]string{
 		"payment_intent": transactionID,
 	}
 	if amount > 0 {
-		params["amount"] = fmt.Sprintf("%.0f", amount*100)
+		cur, err := a.intentCurrency(ctx, transactionID)
+		if err != nil {
+			return nil, err
+		}
+		params["amount"] = stripeAmount(amount, cur)
 	}
 	return a.postForm(ctx, "/refunds", params, "")
 }
@@ -87,6 +106,50 @@ func (a *Adapter) Refund(ctx context.Context, transactionID string, amount float
 // Void cancels an authorized but uncaptured PaymentIntent.
 func (a *Adapter) Void(ctx context.Context, transactionID string) (*payment.GatewayResponse, error) {
 	return a.postForm(ctx, "/payment_intents/"+transactionID+"/cancel", nil, "")
+}
+
+// get sends a GET request to the Stripe API and returns the raw response body.
+func (a *Adapter) get(ctx context.Context, path string) ([]byte, error) {
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, baseURL+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("stripe: build request: %w", err)
+	}
+	httpReq.SetBasicAuth(a.secretKey, "")
+	resp, err := a.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("stripe: request failed: %w", err)
+	}
+	defer resp.Body.Close()
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("stripe: read response: %w", err)
+	}
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("stripe: %s (%d): %s", path, resp.StatusCode, string(respBody))
+	}
+	return respBody, nil
+}
+
+// intentCurrency fetches the PaymentIntent to learn its currency. Capture/Refund
+// need it to scale partial amounts correctly, because the PaymentGateway
+// interface does not carry a currency (G16). Reading it from the intent is
+// authoritative and works across processes/restarts, unlike caching it from a
+// prior Authorize call.
+func (a *Adapter) intentCurrency(ctx context.Context, transactionID string) (string, error) {
+	body, err := a.get(ctx, "/payment_intents/"+transactionID)
+	if err != nil {
+		return "", err
+	}
+	var pi struct {
+		Currency string `json:"currency"`
+	}
+	if err := json.Unmarshal(body, &pi); err != nil {
+		return "", fmt.Errorf("stripe: parse payment intent %s: %w", transactionID, err)
+	}
+	if pi.Currency == "" {
+		return "", fmt.Errorf("stripe: payment intent %s has no currency", transactionID)
+	}
+	return pi.Currency, nil
 }
 
 // postForm sends a POST request with form-encoded parameters to the Stripe API.
@@ -215,8 +278,11 @@ func (a *Adapter) ValidateWebhookPayload(payload []byte, signatureHeader string)
 	return nil, fmt.Errorf("no matching signature found")
 }
 
-// stripeEvent represents a minimal Stripe webhook event.
+// stripeEvent represents a minimal Stripe webhook event. ID is the Stripe event
+// id ("evt_...") that lets webhook consumers dedupe replayed deliveries (G16);
+// it was previously dropped by ParseWebhookEvent, so replays were indistinguishable.
 type stripeEvent struct {
+	ID   string          `json:"id"`
 	Type string          `json:"type"`
 	Data stripeEventData `json:"data"`
 }
@@ -245,6 +311,19 @@ func ParseWebhookEvent(payload []byte) (eventType string, pi *PaymentIntent, err
 		return event.Type, nil, nil
 	}
 	return event.Type, &intent, nil
+}
+
+// EventID extracts the Stripe event id ("evt_...") from a webhook payload so
+// consumers can skip replayed deliveries. Returns "" for unparseable payloads
+// or events without an id. Combined with the payment status state machine (which
+// rejects confirm/authorize/fail transitions on already-processed records), this
+// makes webhook replays idempotent (G16).
+func EventID(payload []byte) string {
+	var event stripeEvent
+	if err := json.Unmarshal(payload, &event); err != nil {
+		return ""
+	}
+	return event.ID
 }
 
 // Stripe sends amounts in smallest currency units (e.g., cents).

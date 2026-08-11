@@ -125,7 +125,9 @@ func (h *Handler) CustomerAcceptNegotiationOffer(c *gin.Context) {
 		return
 	}
 
-	offer, err := h.services.Negotiation.AcceptOffer(c.Request.Context(), offerID, userID)
+	// H-3: 把路径 inquiryID 传入服务层，服务层会校验 offer 归属于该询盘，
+	// 防止在当前询盘上接受属于其他询盘（其他用户）的 offer。
+	offer, err := h.services.Negotiation.AcceptOffer(c.Request.Context(), offerID, inquiryID)
 	if err != nil {
 		status, code := translateNegotiationError(err)
 		response.ErrorResp(c, status, code)
@@ -176,8 +178,22 @@ func (h *Handler) CustomerRejectNegotiationOffer(c *gin.Context) {
 		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
+	inquiryID := c.Param("id")
 	offerID := c.Param("offerId")
-	offer, err := h.services.Negotiation.RejectOffer(c.Request.Context(), offerID, userID)
+
+	// H-3: reject 路径之前完全没有归属校验，任何客户只要拿到他人 offer ID 就能
+	// 拒绝它。这里先确认路径 inquiry 属于当前用户，再交给服务层限定询盘归属。
+	inquiry, err := h.services.Inquiry.GetInquiry(c.Request.Context(), inquiryID)
+	if err != nil {
+		response.ErrorResp(c, http.StatusNotFound, "inquiry_not_found")
+		return
+	}
+	if inquiry.UserID == nil || *inquiry.UserID != userID {
+		response.ErrorResp(c, http.StatusForbidden, "forbidden")
+		return
+	}
+
+	offer, err := h.services.Negotiation.RejectOffer(c.Request.Context(), offerID, inquiryID)
 	if err != nil {
 		status, code := translateNegotiationError(err)
 		response.ErrorResp(c, status, code)

@@ -1,11 +1,15 @@
 package customer
 
 import (
-	"candypro/api/internal/pkg/response"
+	"errors"
 	"net/http"
 	"strconv"
 
+	"candypro/api/internal/pkg/response"
+	tradeSvc "candypro/api/internal/services/trade"
+
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // CustomerGetShipmentTimeline returns the tracking event timeline for a specific shipment.
@@ -41,9 +45,19 @@ func (h *Handler) CustomerGetShipmentTimeline(c *gin.Context) {
 		response.InvalidResp(c, "invalid_request")
 		return
 	}
-	events, err := h.services.Logistics.GetShipmentTimeline(c.Request.Context(), uint(shipmentID))
+	// Verify the shipment actually belongs to the (already ownership-checked)
+	// trade. Without this, any authenticated customer could enumerate another
+	// tenant's shipment timeline by supplying an arbitrary shipmentId (H4).
+	events, err := h.services.Logistics.GetTransactionShipmentTimeline(c.Request.Context(), uint(tradeID), uint(shipmentID))
 	if err != nil {
-		response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
+		switch {
+		case errors.Is(err, tradeSvc.ErrShipmentNotInTransaction):
+			response.ErrorResp(c, http.StatusForbidden, "forbidden")
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			response.ErrorResp(c, http.StatusNotFound, "shipment_not_found")
+		default:
+			response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
+		}
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": events})

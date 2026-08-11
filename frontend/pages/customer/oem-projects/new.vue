@@ -255,6 +255,24 @@ const fileError = ref('')
 const availableProducts = ref<any[]>([])
 const selectedFiles = ref<File[]>([])
 
+// The backend clamps the page size to 100 (pagination.ParsePagination max), so
+// requesting limit: 200 silently truncated the product picker. Page through the
+// full set at the real page size so the picker shows the complete catalog.
+const PRODUCTS_PAGE_SIZE = 100
+
+/** Fetch every catalog product by paging through the backend's real page size. */
+const fetchAllProducts = async (): Promise<any[]> => {
+  const first = await getProducts({ page: 1, limit: PRODUCTS_PAGE_SIZE })
+  const totalPages = first.pagination?.totalPages ?? 1
+  if (totalPages <= 1) return first.data || []
+  const rest = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, index) =>
+      getProducts({ page: index + 2, limit: PRODUCTS_PAGE_SIZE })
+    )
+  )
+  return first.data.concat(...rest.map((response) => response.data))
+}
+
 const form = reactive({
   productId: '', productName: '', flavor: '', shape: '', packaging: '',
   targetMarket: '', certificationsInput: '', moq: 0, requirements: ''
@@ -349,8 +367,7 @@ watch(() => form.productId, (id) => {
 
 onMounted(async () => {
   try {
-    const result = await getProducts({ limit: 200 })
-    availableProducts.value = result.data || []
+    availableProducts.value = await fetchAllProducts()
   } catch {
     // 产品列表加载失败不阻塞表单提交
   }

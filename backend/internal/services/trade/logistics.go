@@ -5,19 +5,27 @@ import (
 	modelsTrade "candypro/api/internal/models/trade"
 	"candypro/api/internal/pkg/shipmenttrack"
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
+
+// ErrShipmentNotInTransaction guards against cross-tenant shipment-timeline
+// enumeration: a customer may only read the timeline of a shipment that belongs
+// to a trade transaction they own (H4/MEDIUM-3).
+var ErrShipmentNotInTransaction = errors.New("shipment does not belong to transaction")
 
 type logisticsShipmentRepo interface {
 	FindByID(ctx context.Context, id uint) (*modelsTrade.ShipmentTracking, error)
 	FindByTransactionID(ctx context.Context, transactionID uint) ([]modelsTrade.ShipmentTracking, error)
 	FindTrackable(ctx context.Context, limit int) ([]modelsTrade.ShipmentTracking, error)
 	Update(ctx context.Context, shipment *modelsTrade.ShipmentTracking) error
+	Dispatch(ctx context.Context, db *gorm.DB, id uint, dispatchedAt time.Time) (bool, error)
 }
 
 type logisticsEventRepo interface {
@@ -80,30 +88,86 @@ func (s *LogisticsService) DispatchShipment(ctx context.Context, shipmentID uint
 		return fmt.Errorf("trade transaction has no linked order")
 	}
 
-	order, err := s.orderRepo.FindByID(ctx, *trans.OrderID)
-	if err != nil {
+	// Validate the order exists up front (cheap, no lock) so a genuinely missing
+	// order fails before any transaction is opened. The authoritative, locked
+	// copy used for the deduction math is re-read inside the transaction below.
+	if _, err := s.orderRepo.FindByID(ctx, *trans.OrderID); err != nil {
 		return fmt.Errorf("linked order not found: %w", err)
 	}
 
 	now := time.Now()
-	warehouseID := ""
-	if order.WarehouseID != nil {
-		warehouseID = *order.WarehouseID
-	}
 
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		for _, item := range order.Items {
-			_, stockErr := logisticsDeductStockForProductLine(tx, warehouseID, item.ProductID, item.Quantity, order.StockReserved, modelsOrder.StockReasonDispatched, order.ID, operatorID, now)
-			if stockErr != nil {
-				return fmt.Errorf("stock deduction failed for product %s: %w", item.ProductID, stockErr)
-			}
+		// Atomically claim the PENDING -> DISPATCHED transition. Only one
+		// concurrent dispatch may win; the loser fails here before touching
+		// stock or emitting an event, and its transaction rolls back cleanly.
+		won, dispatchErr := s.shipmentRepo.Dispatch(ctx, tx, shipmentID, now)
+		if dispatchErr != nil {
+			return dispatchErr
+		}
+		if !won {
+			return fmt.Errorf("shipment %d is no longer PENDING (concurrent dispatch)", shipmentID)
 		}
 
-		// Update shipment status
-		shipment.Status = "DISPATCHED"
-		shipment.UpdatedAt = now
-		if saveErr := tx.Save(shipment).Error; saveErr != nil {
-			return saveErr
+		// G21-d: re-read the linked order inside the transaction under a FOR UPDATE
+		// row lock before computing the remaining deduction. FulfillmentRepository.Create
+		// takes the same order-row lock, so a fulfillment that commits between the
+		// FindByID snapshot above and this point either (a) wins the order lock first —
+		// its FulfilledQuantity is reflected in this fresh read and only the unfulfilled
+		// remainder is deducted — or (b) blocks until this transaction commits and then
+		// sees the StockReasonDispatched audit rows written below and skips its own
+		// deduction. Without the lock and the in-transaction re-read, the dispatch would
+		// iterate the stale snapshot and could re-deduct the full quantity.
+		var order modelsOrder.Order
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("id = ?", *trans.OrderID).First(&order).Error; err != nil {
+			return fmt.Errorf("re-read order %s for dispatch: %w", *trans.OrderID, err)
+		}
+		warehouseID := ""
+		if order.WarehouseID != nil {
+			warehouseID = *order.WarehouseID
+		}
+
+		// Dispatch is idempotent per order (G21-d, dispatch/dispatch actor pair).
+		// ShipmentTracking carries no quantity field, so the FIRST dispatch on an
+		// order issues the entire unfulfilled remainder as goods-issue
+		// (StockReasonDispatched audit rows) and a second shipment on the same order
+		// must not re-deduct that same stock. The order-row FOR UPDATE lock above
+		// serializes two concurrent dispatches on the same order, so this count sees
+		// the first dispatch's committed audit rows before the second can proceed —
+		// without it, two shipments on one order silently deduct the order's stock
+		// twice (or fail loudly when warehouse stock < 2x qty) even though the
+		// multi-shipment flow is a designed path.
+		var priorDispatch int64
+		if err := tx.Model(&modelsOrder.StockTransaction{}).
+			Where("reference_id = ? AND reason = ?", order.ID, modelsOrder.StockReasonDispatched).
+			Count(&priorDispatch).Error; err != nil {
+			return fmt.Errorf("dispatch idempotency check failed for order %s: %w", order.ID, err)
+		}
+
+		if priorDispatch == 0 {
+			// Deduct only the quantity not already issued by a fulfillment
+			// (FulfilledQuantity); a fulfillment's deduction was already applied by
+			// FulfillmentRepository.Create. Deduction records are written as
+			// StockReasonDispatched audit rows so a later fulfillment on the same order
+			// can detect the deduction and skip it too.
+			var dispatchAudit []*modelsOrder.StockTransaction
+			for _, item := range order.Items {
+				remaining := item.Quantity - item.FulfilledQuantity
+				if remaining <= 0 {
+					continue
+				}
+				recs, stockErr := logisticsDeductStockForProductLine(tx, warehouseID, item.ProductID, remaining, order.StockReserved, modelsOrder.StockReasonDispatched, order.ID, operatorID, now)
+				if stockErr != nil {
+					return fmt.Errorf("stock deduction failed for product %s: %w", item.ProductID, stockErr)
+				}
+				dispatchAudit = append(dispatchAudit, recs...)
+			}
+			if len(dispatchAudit) > 0 {
+				if ae := tx.Create(&dispatchAudit).Error; ae != nil {
+					return fmt.Errorf("dispatch stock audit failed: %w", ae)
+				}
+			}
 		}
 
 		// Create dispatch event
@@ -221,6 +285,23 @@ func (s *LogisticsService) ConfirmDelivery(ctx context.Context, shipmentID uint,
 
 // GetShipmentTimeline returns all tracking events for a shipment.
 func (s *LogisticsService) GetShipmentTimeline(ctx context.Context, shipmentID uint) ([]modelsTrade.ShipmentEvent, error) {
+	return s.eventRepo.FindByShipmentID(ctx, shipmentID)
+}
+
+// GetTransactionShipmentTimeline returns the tracking events for a shipment, but
+// only when the shipment belongs to the given trade transaction. This is the
+// customer-portal entry point: verifying the shipment's owning transaction inside
+// the service (rather than trusting a caller-provided shipment ID) prevents an
+// authenticated customer from enumerating another tenant's timeline by guessing
+// shipment IDs (H4/MEDIUM-3).
+func (s *LogisticsService) GetTransactionShipmentTimeline(ctx context.Context, transactionID, shipmentID uint) ([]modelsTrade.ShipmentEvent, error) {
+	shipment, err := s.shipmentRepo.FindByID(ctx, shipmentID)
+	if err != nil {
+		return nil, err
+	}
+	if shipment.TransactionID != transactionID {
+		return nil, ErrShipmentNotInTransaction
+	}
 	return s.eventRepo.FindByShipmentID(ctx, shipmentID)
 }
 

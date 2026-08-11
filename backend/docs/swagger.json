@@ -1,0 +1,2543 @@
+{
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "API for CandyPro OEM candy manufacturing website",
+        "title": "CandyPro OEM API",
+        "contact": {
+            "name": "API Support",
+            "email": "info@candypro.com"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api/v1",
+    "paths": {
+        "/admin/certifications": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-certifications"
+                ],
+                "summary": "Admin get certifications",
+                "responses": {}
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-certifications"
+                ],
+                "summary": "Admin create certification",
+                "responses": {}
+            }
+        },
+        "/admin/certifications/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-certifications"
+                ],
+                "summary": "Admin get certification by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Certification ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-certifications"
+                ],
+                "summary": "Admin update certification",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Certification ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-certifications"
+                ],
+                "summary": "Admin delete certification",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Certification ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/admin/content": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-content"
+                ],
+                "summary": "Admin list content",
+                "responses": {}
+            },
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-content"
+                ],
+                "summary": "Admin create content",
+                "responses": {}
+            }
+        },
+        "/admin/content/ai-generate": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-content"
+                ],
+                "summary": "AI generate content",
+                "responses": {}
+            }
+        },
+        "/admin/content/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-content"
+                ],
+                "summary": "Admin get content detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Content ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-content"
+                ],
+                "summary": "Admin update content",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Content ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-content"
+                ],
+                "summary": "Admin delete content",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Content ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/admin/dashboard/stats": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "dashboard"
+                ],
+                "summary": "Get admin dashboard stats",
+                "responses": {}
+            }
+        },
+        "/admin/inquiries": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-inquiries"
+                ],
+                "summary": "Admin get inquiries",
+                "responses": {}
+            }
+        },
+        "/admin/inquiries/{id}/status": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-inquiries"
+                ],
+                "summary": "Admin update inquiry status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Inquiry ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Inquiry status",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/admin/orders": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-orders"
+                ],
+                "summary": "Admin get orders",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/candypro_api_internal_models_common.PaginatedResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/orders/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-orders"
+                ],
+                "summary": "Admin get order",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/admin/orders/{id}/status": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-orders"
+                ],
+                "summary": "Admin update order status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Order status",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/admin/products": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-products"
+                ],
+                "summary": "Admin create product",
+                "responses": {}
+            }
+        },
+        "/admin/products/ai-generate": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-products"
+                ],
+                "summary": "AI generate product",
+                "responses": {}
+            }
+        },
+        "/admin/products/{id}": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-products"
+                ],
+                "summary": "Admin update product",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-products"
+                ],
+                "summary": "Admin delete product",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/admin/upload/:filename": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-upload"
+                ],
+                "summary": "Admin delete file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filename (relative to /uploads/)",
+                        "name": "filename",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/admin/upload/document": {
+            "post": {
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-upload"
+                ],
+                "summary": "Admin upload document",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Document file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Upload folder",
+                        "name": "folder",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/admin/upload/image": {
+            "post": {
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-upload"
+                ],
+                "summary": "Admin upload image",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Image file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Upload folder (products, certifications, etc.)",
+                        "name": "folder",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/admin/upload/multiple": {
+            "post": {
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-upload"
+                ],
+                "summary": "Admin upload multiple files",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Files",
+                        "name": "files",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Upload folder",
+                        "name": "folder",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/admin/users": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-users"
+                ],
+                "summary": "Admin get users",
+                "responses": {}
+            }
+        },
+        "/admin/users/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-users"
+                ],
+                "summary": "Admin get user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-users"
+                ],
+                "summary": "Admin update user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/admin/users/{id}/status": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-users"
+                ],
+                "summary": "Admin update user status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User status",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/auth/change-password": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Change current user password",
+                "responses": {}
+            }
+        },
+        "/auth/forgot-password": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Forgot password",
+                "responses": {}
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "User login",
+                "parameters": [
+                    {
+                        "description": "Login credentials",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "User logout",
+                "responses": {}
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Get current user",
+                "responses": {}
+            }
+        },
+        "/auth/profile": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Update current user profile",
+                "responses": {}
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Refresh token",
+                "parameters": [
+                    {
+                        "description": "Refresh token",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "User registration",
+                "parameters": [
+                    {
+                        "description": "Registration credentials",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/reset-password": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Reset password",
+                "responses": {}
+            }
+        },
+        "/auth/verify-email": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Verify email",
+                "responses": {}
+            }
+        },
+        "/cases": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cases"
+                ],
+                "summary": "Get case studies",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by industry",
+                        "name": "industry",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/candypro_api_internal_models_product.PaginatedResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/cases/{slug}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cases"
+                ],
+                "summary": "Get case study by slug",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Case study slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/candypro_api_internal_models_product.CaseStudy"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/candypro_api_internal_models_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/cases/{slug}/related": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cases"
+                ],
+                "summary": "Get related case studies",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Case study slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 3,
+                        "description": "Number of cases",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/candypro_api_internal_models_product.CaseStudy"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/categories": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Get all categories",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/candypro_api_internal_models_product.Category"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/categories/{slug}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Get category by slug",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/candypro_api_internal_models_product.Category"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/candypro_api_internal_models_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/certifications": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "certifications"
+                ],
+                "summary": "Get certifications",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/candypro_api_internal_models_product.Certification"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/certifications/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "certifications"
+                ],
+                "summary": "Get certification by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Certification ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/candypro_api_internal_models_product.Certification"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/candypro_api_internal_models_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/customer/change-password": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customer-profile"
+                ],
+                "summary": "Customer change password",
+                "responses": {}
+            }
+        },
+        "/customer/inquiries": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customer-inquiries"
+                ],
+                "summary": "Customer get inquiries",
+                "responses": {}
+            }
+        },
+        "/customer/inquiries/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customer-inquiries"
+                ],
+                "summary": "Customer get inquiry",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Inquiry ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/customer/orders": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customer-orders"
+                ],
+                "summary": "Customer get orders",
+                "responses": {}
+            }
+        },
+        "/customer/orders/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customer-orders"
+                ],
+                "summary": "Customer get order",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/customer/profile": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customer-profile"
+                ],
+                "summary": "Customer update profile",
+                "responses": {}
+            }
+        },
+        "/exchange-rates": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exchange-rates"
+                ],
+                "summary": "Get exchange rates",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/factory": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "factory"
+                ],
+                "summary": "Get factory information",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/candypro_api_internal_models_product.FactoryInfo"
+                        }
+                    }
+                }
+            }
+        },
+        "/factory/quality-controls": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "factory"
+                ],
+                "summary": "Get process controls",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/candypro_api_internal_models_product.ProcessControl"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/factory/timeline": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "factory"
+                ],
+                "summary": "Get quality timeline",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/candypro_api_internal_models_product.Milestone"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/inquiry": {
+            "post": {
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "inquiry"
+                ],
+                "summary": "Submit inquiry",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Company name",
+                        "name": "companyName",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Contact person",
+                        "name": "contactPerson",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Email address",
+                        "name": "email",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "WhatsApp number",
+                        "name": "whatsapp",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Target country",
+                        "name": "targetCountry",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Estimated quantity",
+                        "name": "estimatedQuantity",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Interested products",
+                        "name": "interestedProducts",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Packaging requirements",
+                        "name": "packagingRequirements",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Flavor requirements",
+                        "name": "flavorRequirements",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "OEM needed",
+                        "name": "oemNeeded",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Expected delivery",
+                        "name": "expectedDelivery",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Message",
+                        "name": "message",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Attached files",
+                        "name": "files",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/oem/flows": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oem"
+                ],
+                "summary": "Get OEM flows",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/candypro_api_internal_models_product.OEMFlow"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/oem/flows/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oem"
+                ],
+                "summary": "Get OEM flow by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "OEM Flow ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/candypro_api_internal_models_product.OEMFlow"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/candypro_api_internal_models_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/oem/solutions": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oem"
+                ],
+                "summary": "Get OEM solutions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/candypro_api_internal_models_product.OEMSolution"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/oem/solutions/{slug}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oem"
+                ],
+                "summary": "Get OEM solution by slug",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "OEM Solution slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/candypro_api_internal_models_product.OEMSolution"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/candypro_api_internal_models_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/posts": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "blog"
+                ],
+                "summary": "Get blog posts",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by category",
+                        "name": "category",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/candypro_api_internal_models_product.PaginatedResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/posts/{slug}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "blog"
+                ],
+                "summary": "Get blog post by slug",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/candypro_api_internal_models_product.BlogPost"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/candypro_api_internal_models_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/posts/{slug}/related": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "blog"
+                ],
+                "summary": "Get related blog posts",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 3,
+                        "description": "Number of posts",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/candypro_api_internal_models_product.BlogPost"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/products": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Get products",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 12,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by category slug",
+                        "name": "category",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/candypro_api_internal_models_product.PaginatedResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/products/featured": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Get featured products",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 8,
+                        "description": "Number of products",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/candypro_api_internal_models_product.Product"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/products/{slug}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Get product by slug",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/candypro_api_internal_models_product.Product"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/candypro_api_internal_models_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/products/{slug}/related": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Get related products",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 4,
+                        "description": "Number of products",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/candypro_api_internal_models_product.Product"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/search": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "search"
+                ],
+                "summary": "Search content",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "all",
+                        "description": "Content type (products, posts, cases, all)",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Number of results per type",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/candypro_api_internal_models_product.SearchResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/cart": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customer-cart"
+                ],
+                "summary": "Get customer cart",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "candypro_api_internal_models_common.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "details": {},
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "candypro_api_internal_models_common.JSONMap": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "object",
+                "additionalProperties": {
+                    "type": "string"
+                }
+            }
+        },
+        "candypro_api_internal_models_common.Milestone": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "milestone": {
+                    "type": "string"
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "candypro_api_internal_models_common.OEMStep": {
+            "type": "object",
+            "properties": {
+                "deliverables": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "duration": {
+                    "type": "string"
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "candypro_api_internal_models_common.PaginatedResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "pagination": {
+                    "$ref": "#/definitions/candypro_api_internal_models_common.Pagination"
+                }
+            }
+        },
+        "candypro_api_internal_models_common.Pagination": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "totalPages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "candypro_api_internal_models_product.BlogAuthor": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "bio": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "candypro_api_internal_models_product.BlogPost": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "$ref": "#/definitions/candypro_api_internal_models_product.BlogAuthor"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "excerpt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ogImage": {
+                    "type": "string"
+                },
+                "publishedAt": {
+                    "type": "string"
+                },
+                "readTime": {
+                    "description": "in minutes",
+                    "type": "integer"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "thumbnail": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "translations": {
+                    "$ref": "#/definitions/candypro_api_internal_models_common.JSONMap"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "candypro_api_internal_models_product.CaseStudy": {
+            "type": "object",
+            "properties": {
+                "challenge": {
+                    "type": "string"
+                },
+                "client": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "industry": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "ogImage": {
+                    "type": "string"
+                },
+                "result": {
+                    "type": "string"
+                },
+                "services": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "solution": {
+                    "type": "string"
+                },
+                "thumbnail": {
+                    "type": "string"
+                },
+                "timeline": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "translations": {
+                    "$ref": "#/definitions/candypro_api_internal_models_common.JSONMap"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "candypro_api_internal_models_product.Category": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "productCount": {
+                    "type": "integer"
+                },
+                "products": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/candypro_api_internal_models_product.Product"
+                    }
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "thumbnail": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "candypro_api_internal_models_product.Certification": {
+            "type": "object",
+            "properties": {
+                "abbreviation": {
+                    "type": "string"
+                },
+                "badgeUrl": {
+                    "type": "string"
+                },
+                "certificateUrl": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "issuer": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "validUntil": {
+                    "type": "string"
+                }
+            }
+        },
+        "candypro_api_internal_models_product.CertificationDetail": {
+            "type": "object",
+            "properties": {
+                "abbrev": {
+                    "type": "string"
+                },
+                "certNumber": {
+                    "type": "string"
+                },
+                "docUrl": {
+                    "type": "string"
+                },
+                "issuedBy": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "validUntil": {
+                    "type": "string"
+                }
+            }
+        },
+        "candypro_api_internal_models_product.FactoryCapacity": {
+            "type": "object",
+            "properties": {
+                "daily": {
+                    "type": "string"
+                },
+                "monthly": {
+                    "type": "string"
+                }
+            }
+        },
+        "candypro_api_internal_models_product.FactoryInfo": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "area": {
+                    "type": "string"
+                },
+                "capacity": {
+                    "$ref": "#/definitions/candypro_api_internal_models_product.FactoryCapacity"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "employees": {
+                    "type": "integer"
+                },
+                "founded": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "markets": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "milestones": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/candypro_api_internal_models_common.Milestone"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "candypro_api_internal_models_product.Milestone": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "milestone": {
+                    "type": "string"
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "candypro_api_internal_models_product.OEMFlow": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "moq": {
+                    "type": "integer"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/candypro_api_internal_models_common.OEMStep"
+                    }
+                },
+                "timeline": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "description": "quick_odm, full_oem",
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "candypro_api_internal_models_product.OEMSolution": {
+            "type": "object",
+            "properties": {
+                "applications": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "category": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "moq": {
+                    "type": "integer"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "thumbnail": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "candypro_api_internal_models_product.PaginatedResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "pagination": {
+                    "$ref": "#/definitions/candypro_api_internal_models_common.Pagination"
+                }
+            }
+        },
+        "candypro_api_internal_models_product.ProcessControl": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "stage": {
+                    "description": "raw_material, production, finished_product",
+                    "type": "string"
+                },
+                "standards": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "candypro_api_internal_models_product.Product": {
+            "type": "object",
+            "properties": {
+                "additives": {
+                    "description": "Ingredient Compliance",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "allergens": {
+                    "type": "string"
+                },
+                "basePrice": {
+                    "type": "number"
+                },
+                "carbohydratesG": {
+                    "type": "number"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "categorySlug": {
+                    "type": "string"
+                },
+                "certificationDetails": {
+                    "description": "Certification Details (structured)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/candypro_api_internal_models_product.CertificationDetail"
+                    }
+                },
+                "certifications": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cocoaSolidsPct": {
+                    "description": "chocolate products",
+                    "type": "number"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdBy": {
+                    "description": "Existing audit / meta",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "energyKcal": {
+                    "type": "number"
+                },
+                "energyKj": {
+                    "description": "Nutrition (per 100g)",
+                    "type": "number"
+                },
+                "featured": {
+                    "type": "boolean"
+                },
+                "fiberG": {
+                    "type": "number"
+                },
+                "flavors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "gmoStatus": {
+                    "description": "\"GMO\", \"Non-GMO\", \"GMO-Free Certified\"",
+                    "type": "string"
+                },
+                "grossWeightPerCarton": {
+                    "description": "kg — incl. packaging",
+                    "type": "number"
+                },
+                "gtin": {
+                    "description": "Trade \u0026 Barcode",
+                    "type": "string"
+                },
+                "halalCertified": {
+                    "type": "boolean"
+                },
+                "hsCode": {
+                    "description": "Harmonized System code for customs",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "ingredients": {
+                    "type": "string"
+                },
+                "innerPackConfig": {
+                    "description": "e.g. \"12 units per display box\"",
+                    "type": "string"
+                },
+                "isGlutenFree": {
+                    "type": "boolean"
+                },
+                "isKosher": {
+                    "type": "boolean"
+                },
+                "isOrganic": {
+                    "type": "boolean"
+                },
+                "isSugarFree": {
+                    "type": "boolean"
+                },
+                "isVegan": {
+                    "description": "Dietary Labels",
+                    "type": "boolean"
+                },
+                "leadTime": {
+                    "type": "string"
+                },
+                "mayContain": {
+                    "description": "cross-contamination allergen risks",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "milkSolidsPct": {
+                    "description": "milk chocolate",
+                    "type": "number"
+                },
+                "moq": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "netWeightPerPack": {
+                    "description": "g — per retail pack",
+                    "type": "number"
+                },
+                "netWeightPerPiece": {
+                    "description": "Weight \u0026 Measurement",
+                    "type": "number"
+                },
+                "oemAvailable": {
+                    "type": "boolean"
+                },
+                "ogImage": {
+                    "type": "string"
+                },
+                "packsPerCarton": {
+                    "description": "retail packs per carton",
+                    "type": "integer"
+                },
+                "palletConfig": {
+                    "description": "e.g. \"48 cases/layer × 5 layers\"",
+                    "type": "string"
+                },
+                "piecesPerPack": {
+                    "description": "pieces per retail pack",
+                    "type": "integer"
+                },
+                "primaryPackaging": {
+                    "description": "Packaging",
+                    "type": "string"
+                },
+                "productHeightMM": {
+                    "type": "number"
+                },
+                "productLengthMM": {
+                    "description": "Product Dimensions (mm)",
+                    "type": "number"
+                },
+                "productWidthMM": {
+                    "type": "number"
+                },
+                "proteinG": {
+                    "type": "number"
+                },
+                "safetyStock": {
+                    "type": "integer"
+                },
+                "saltG": {
+                    "type": "number"
+                },
+                "sampleLeadTime": {
+                    "type": "string"
+                },
+                "sampleMOQ": {
+                    "description": "Sample Specs",
+                    "type": "integer"
+                },
+                "samplePrice": {
+                    "type": "number"
+                },
+                "saturatedFatG": {
+                    "type": "number"
+                },
+                "shapes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "shelfLife": {
+                    "type": "string"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "stockQuantity": {
+                    "type": "integer"
+                },
+                "storage": {
+                    "type": "string"
+                },
+                "sugarsG": {
+                    "type": "number"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "sweetenerType": {
+                    "type": "string"
+                },
+                "thumbnail": {
+                    "type": "string"
+                },
+                "totalFatG": {
+                    "type": "number"
+                },
+                "translations": {
+                    "$ref": "#/definitions/candypro_api_internal_models_common.JSONMap"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "updatedBy": {
+                    "type": "string"
+                },
+                "viewCount": {
+                    "type": "integer"
+                },
+                "waterActivity": {
+                    "description": "aʷ — shelf-life determinant",
+                    "type": "number"
+                },
+                "weightedAvgCost": {
+                    "description": "computed from PO receipts",
+                    "type": "number"
+                }
+            }
+        },
+        "candypro_api_internal_models_product.SearchResponse": {
+            "type": "object",
+            "properties": {
+                "cases": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/candypro_api_internal_models_product.CaseStudy"
+                    }
+                },
+                "posts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/candypro_api_internal_models_product.BlogPost"
+                    }
+                },
+                "products": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/candypro_api_internal_models_product.Product"
+                    }
+                }
+            }
+        }
+    }
+}

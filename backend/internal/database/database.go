@@ -162,6 +162,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&modelsCommon.NotificationOutbox{},
 		&modelsCommon.UploadedFile{},
 		&modelsTrade.ComplianceRequirement{},
+		&modelsTrade.QuotationReview{},
 		&modelsOrder.StockTransaction{},
 		&modelsOrder.EventOutbox{},
 		&modelsOrder.OrderMessage{},
@@ -246,7 +247,33 @@ func AutoMigrate(db *gorm.DB) error {
 		}
 	}
 
+	// G24a: GORM AutoMigrate never drops an index that was removed from a model,
+	// so on every already-migrated database the pre-G24a full-table unique
+	// indexes idx_users_email / idx_products_slug still span soft-deleted rows and
+	// block re-registering a deleted email / re-creating a deleted slug with a
+	// unique-constraint 5xx. Drop them once after migration so the partial unique
+	// indexes (WHERE deleted_at IS NULL) declared on the models are the only
+	// uniqueness constraint. The drops are HasIndex-guarded and idempotent.
+	if err := dropLegacyUniqueIndexes(db); err != nil {
+		return err
+	}
+
 	log.Println("Database migration completed")
+	return nil
+}
+
+// dropLegacyUniqueIndexes removes the pre-G24a full-table unique indexes on
+// users.email and products.slug (idx_users_email, idx_products_slug) that GORM
+// AutoMigrate does not drop. Each drop is idempotent (a no-op when the index is
+// absent), so this is safe to run on every startup, on fresh databases, and on
+// deployments that already dropped them.
+func dropLegacyUniqueIndexes(db *gorm.DB) error {
+	if err := modelsUser.DropLegacyEmailUniqueIndex(db); err != nil {
+		return fmt.Errorf("failed to drop legacy users.email unique index: %w", err)
+	}
+	if err := modelsProduct.DropLegacySlugUniqueIndex(db); err != nil {
+		return fmt.Errorf("failed to drop legacy products.slug unique index: %w", err)
+	}
 	return nil
 }
 

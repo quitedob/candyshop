@@ -297,7 +297,7 @@ const { tField } = useTranslation()
 const localePath = useLocalePath()
 const { currencyOrDefault: cur, cell, enumLabel, formatNumber } = useDisplay()
 const { incotermsOptions, defaultIncoterms, incotermsHint } = useIncotermsOptions()
-const selectedIncoterms = ref(defaultIncoterms())
+const selectedIncoterms = ref(defaultIncoterms)
 const api = useApi()
 
 const shippingAddress = reactive({ street: '', city: '', state: '', zipCode: '', country: '' })

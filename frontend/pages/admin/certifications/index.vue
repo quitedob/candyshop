@@ -172,8 +172,18 @@ const fetchCertifications = async () => {
   pending.value = true
   error.value = ''
   try {
+    // GET /admin/certifications returns a BARE ARRAY, not a PaginatedResponse:
+    // backend internal/handlers/admin/admin_certifications.go -> AdminGetCertifications
+    // serializes []modelsProduct.Certification directly via c.JSON(200, certifications).
+    // The composable mislabels it as PaginatedResponse, so res.data would always be
+    // undefined for the real payload. Guard for both shapes so rows actually render.
     const res = await api.adminGetCertifications()
-    certifications.value = res.data || []
+    const payload = (res as any) ?? {}
+    certifications.value = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload.data)
+        ? payload.data
+        : []
   } catch (err: any) {
     error.value = err?.message || t('errors.api.load_failed')
   } finally {

@@ -2,11 +2,15 @@ package order
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	modelsOrder "candypro/api/internal/models/order"
 	countrypkg "candypro/api/internal/pkg/country"
 	"candypro/api/internal/pkg/crypto"
+
+	"gorm.io/gorm"
 )
 
 type taxRepository interface {
@@ -65,7 +69,18 @@ func (s *TaxService) CalculateTax(ctx context.Context, subtotal float64, country
 func (s *TaxService) CalculateTaxWithFlag(ctx context.Context, subtotal float64, country, region string) (float64, string, float64, bool, error) {
 	country = countrypkg.NormalizeCountryCode(country)
 	rate, err := s.repo.FindBestRate(ctx, country, region)
-	if err != nil || rate == nil {
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// No rate configured for the destination — legitimately uncovered,
+			// not an error; callers surface the "not configured" flag (M-10).
+			return 0, "", 0, false, nil
+		}
+		// A real DB failure must not be misread as "0% tax for this
+		// destination": fail closed so checkout surfaces the lookup failure
+		// instead of silently under-charging (G24c).
+		return 0, "", 0, false, fmt.Errorf("tax: rate lookup failed for %s: %w", country, err)
+	}
+	if rate == nil {
 		return 0, "", 0, false, nil
 	}
 	return subtotal * rate.Rate, rate.Name, rate.Rate, true, nil

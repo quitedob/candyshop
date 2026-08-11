@@ -18,7 +18,6 @@ import (
 	"candypro/api/internal/pkg/response"
 	tradeSvc "candypro/api/internal/services/trade"
 
-	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/adk"
 	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/schema"
@@ -35,9 +34,10 @@ type SSEEvent struct {
 	DocumentType string            `json:"document_type,omitempty"` // UI Anchor
 }
 
-// agentRunOptions reads optional temperature/model query params and returns Eino run options.
-// temperature is honored per-request; model is validated against the server config and a
-// warning logged when it differs (per-request model override is not supported).
+// agentRunOptions reads optional temperature query params and returns Eino run
+// options. temperature is honored per-request; model override is not supported
+// and the frontend no longer sends it — the effective model is read from
+// /system/ai/config (SystemAIConfig), which is the single source of truth.
 func (h *Handler) agentRunOptions(c *gin.Context) []adk.AgentRunOption {
 	var opts []adk.AgentRunOption
 	if raw := strings.TrimSpace(c.Query("temperature")); raw != "" {
@@ -45,10 +45,19 @@ func (h *Handler) agentRunOptions(c *gin.Context) []adk.AgentRunOption {
 			opts = append(opts, adk.WithChatModelOptions([]model.Option{model.WithTemperature(float32(temp))}))
 		}
 	}
-	if raw := strings.TrimSpace(c.Query("model")); raw != "" && h.cfg != nil && raw != h.cfg.AI.OpenAIModel {
-		log.Printf("Warning: AI console requested model %q but server is configured with %q; per-request model override not supported, using server model", raw, h.cfg.AI.OpenAIModel)
-	}
 	return opts
+}
+
+// SystemAIConfig reports the effective AI configuration to the admin console.
+// GET /api/v1/system/ai/config
+func (h *Handler) SystemAIConfig(c *gin.Context) {
+	modelName := ""
+	enabled := false
+	if h.cfg != nil {
+		modelName = h.cfg.AI.OpenAIModel
+		enabled = h.cfg.AI.IsEnabled()
+	}
+	c.JSON(http.StatusOK, gin.H{"model": modelName, "enabled": enabled})
 }
 
 // InitAgent initializes the trade agent with the Graph Tool architecture.
@@ -60,18 +69,14 @@ func (h *Handler) agentRunOptions(c *gin.Context) []adk.AgentRunOption {
 func (h *Handler) InitAgent() error {
 	ctx := context.Background()
 
-	rawModel, modelErr := openai.NewChatModel(ctx, &openai.ChatModelConfig{
-		Model:   h.cfg.AI.OpenAIModel,
-		APIKey:  h.cfg.AI.OpenAIAPIKey,
-		BaseURL: h.cfg.AI.OpenAIBaseURL,
-	})
+	rawModel, modelErr := eino.NewDeepSeekChatModel(ctx, h.cfg.AI, nil)
 	if modelErr != nil {
 		return fmt.Errorf("init chat model: %w", modelErr)
 	}
 	chatModel := retry.New(rawModel, h.cfg.AI.RetryMaxAttempts, h.cfg.AI.RetryIntervalSec)
 
 	if h.services != nil && h.services.Trade != nil {
-		a, err := eino.NewTradeAgent(ctx, chatModel, h.services.Trade, h.translateFunc())
+		a, err := eino.NewTradeAgent(ctx, chatModel, h.services.Trade, h.quotationReviewSaver(), h.translateFunc())
 		if err != nil {
 			return err
 		}
@@ -80,7 +85,7 @@ func (h *Handler) InitAgent() error {
 		return nil
 	}
 
-	a, err := eino.NewTradeAgent(ctx, chatModel, nil, h.translateFunc())
+	a, err := eino.NewTradeAgent(ctx, chatModel, nil, h.quotationReviewSaver(), h.translateFunc())
 	if err != nil {
 		return err
 	}
@@ -300,10 +305,10 @@ func processAgentEvent(ctx context.Context, w gin.ResponseWriter, event *adk.Age
 				case "track_shipment":
 					sseEvent.DocumentType = "SHIPMENT_TRACKING"
 				case "generate_trade_documents":
-					if docType := firstDocTypeFromArgs(msg.ToolCalls[0].Function.Arguments); docType != "" {
+					if docType := eino.FirstDocTypeFromArgs(msg.ToolCalls[0].Function.Arguments); docType != "" {
 						sseEvent.DocumentType = docType
 					} else {
-						sseEvent.DocumentType = "TRADE_DOCUMENT"
+						sseEvent.DocumentType = eino.FallbackTradeDocumentType
 					}
 				}
 			}
@@ -348,28 +353,6 @@ func processAgentEvent(ctx context.Context, w gin.ResponseWriter, event *adk.Age
 	}
 
 	return nil
-}
-
-// firstDocTypeFromArgs extracts the first recognized document type from the
-// generate_trade_documents tool call arguments (a JSON object with a "doc_types"
-// array of uppercase enum strings). Returns "" when the arguments do not parse
-// or the array is empty, so callers can fall back to a sentinel document_type.
-func firstDocTypeFromArgs(argsJSON string) string {
-	if strings.TrimSpace(argsJSON) == "" {
-		return ""
-	}
-	var args struct {
-		DocTypes []string `json:"doc_types"`
-	}
-	if err := json.Unmarshal([]byte(argsJSON), &args); err != nil {
-		return ""
-	}
-	for _, docType := range args.DocTypes {
-		if strings.TrimSpace(docType) != "" {
-			return strings.TrimSpace(docType)
-		}
-	}
-	return ""
 }
 
 func sendSSEEvent(w gin.ResponseWriter, event SSEEvent) error {

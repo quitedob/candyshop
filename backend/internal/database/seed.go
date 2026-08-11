@@ -843,16 +843,25 @@ func seedProductTranslations(db *gorm.DB) error {
 		if p.Translations == nil {
 			p.Translations = make(modelsCommon.JSONMap)
 		}
+		// Only the initial seed run maps the zh translations onto the scalar
+		// columns (Name/Summary/...). Once a product already carries a zh name,
+		// re-seeding must not clobber admin edits — it only fills keys that are
+		// genuinely missing (G27-c, mirroring the base_price guard).
+		alreadyLocalized := isProductLocalized(&p)
 		for locale, fields := range localeMap {
 			if p.Translations[locale] == nil {
 				p.Translations[locale] = make(map[string]string)
 			}
 			for k, v := range fields {
-				p.Translations[locale][k] = v
+				if strings.TrimSpace(p.Translations[locale][k]) == "" {
+					p.Translations[locale][k] = v
+				}
 			}
 		}
 		seedEnglishProductTranslation(&p)
-		syncProductScalarsFromZh(&p)
+		if !alreadyLocalized {
+			syncProductScalarsFromZh(&p)
+		}
 		db.Model(&p).Select(
 			"Translations", "Name", "Summary", "Description", "Category",
 			"Ingredients", "Allergens", "Storage", "ShelfLife", "LeadTime",
@@ -867,8 +876,13 @@ func seedProductTranslations(db *gorm.DB) error {
 				allProducts[i].Translations = make(modelsCommon.JSONMap)
 			}
 			seedEnglishProductTranslation(&allProducts[i])
-			repairProductZhCopiedFromEN(&allProducts[i])
-			syncProductScalarsFromZh(&allProducts[i])
+			// G27-c: never re-map zh -> scalar on already-localized rows, and never
+			// run repairProductZhCopiedFromEN — it deletes the entire zh map when an
+			// admin legitimately sets zh.name == en.name (data-loss edge). The seed
+			// path never copies zh from en, so there is nothing to "repair".
+			if !isProductLocalized(&allProducts[i]) {
+				syncProductScalarsFromZh(&allProducts[i])
+			}
 			db.Model(&allProducts[i]).Select(
 				"Translations", "Name", "Summary", "Description", "Category",
 				"Ingredients", "Allergens", "Storage", "ShelfLife", "LeadTime",
@@ -876,6 +890,135 @@ func seedProductTranslations(db *gorm.DB) error {
 		}
 	}
 	return nil
+}
+
+// isProductLocalized reports whether a product already carries a localized zh
+// name (a prior seed run or an admin authored it). Once localized, re-seeding
+// must not re-map zh onto the scalar columns (G27-c).
+func isProductLocalized(p *modelsProduct.Product) bool {
+	zh, ok := p.Translations["zh"]
+	return ok && strings.TrimSpace(zh["name"]) != ""
+}
+
+// seedProductMissingLocalesGuarded fills missing product locale translations
+// (non-zh/en) from the English fields without clobbering admin edits (G27-c).
+// Unlike the legacy seedProductMissingLocales (seed_catalog_i18n.go) it (a)
+// never re-maps zh onto the scalar columns of already-localized products, and
+// (b) never runs repairProductZhCopiedFromEN, which deletes the entire zh map
+// when an admin legitimately sets zh.name == en.name. Divergence vectors such as
+// the inventory XLSX importer (UpdateProductColumns) or AI-translate writes leave
+// Name != zh.name; an AUTO_SEED_DATA restart must not revert those scalars.
+func seedProductMissingLocalesGuarded(db *gorm.DB) error {
+	var products []modelsProduct.Product
+	if err := db.Find(&products).Error; err != nil {
+		return err
+	}
+	copyFields := []string{"name", "summary", "description", "category", "ingredients", "allergens", "storage", "shelfLife", "leadTime", "flavors", "shapes"}
+	for i := range products {
+		p := &products[i]
+		if p.Translations == nil {
+			p.Translations = make(modelsCommon.JSONMap)
+		}
+		seedEnglishProductTranslation(p)
+		en, hasEN := p.Translations["en"]
+		if !hasEN || len(en) == 0 {
+			continue
+		}
+		for _, loc := range catalogSeedLocales {
+			if loc == "en" || loc == "zh" {
+				continue
+			}
+			if p.Translations[loc] != nil && strings.TrimSpace(p.Translations[loc]["name"]) != "" {
+				continue
+			}
+			if p.Translations[loc] == nil {
+				p.Translations[loc] = make(map[string]string)
+			}
+			for _, field := range copyFields {
+				if strings.TrimSpace(p.Translations[loc][field]) == "" && strings.TrimSpace(en[field]) != "" {
+					p.Translations[loc][field] = en[field]
+				}
+			}
+		}
+		// Fresh (never-localized) products map zh onto the scalar columns (zh is
+		// the primary display locale); already-localized rows keep admin values.
+		if !isProductLocalized(p) {
+			syncProductScalarsFromZh(p)
+		}
+		if err := db.Model(p).Updates(map[string]interface{}{
+			"translations": p.Translations,
+			"name":         p.Name,
+			"summary":      p.Summary,
+			"description":  p.Description,
+			"category":     p.Category,
+			"ingredients":  p.Ingredients,
+			"allergens":    p.Allergens,
+			"storage":      p.Storage,
+			"shelf_life":   p.ShelfLife,
+			"lead_time":    p.LeadTime,
+		}).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// isCategoryLocalized reports whether a category already carries a localized zh
+// name (a prior seed run or an admin authored it). Once localized, re-seeding the
+// 9-locale category seed must not re-map zh onto the scalar Name column (M3 /
+// G27-c) — the mirror of isProductLocalized for the product path.
+func isCategoryLocalized(cat *modelsProduct.Category) bool {
+	if cat.Translations == nil {
+		return false
+	}
+	zh, ok := cat.Translations["zh"]
+	return ok && strings.TrimSpace(zh["name"]) != ""
+}
+
+// applyCategoryI18nSeedGuarded merges one category's 9-locale seed map into an
+// existing category without clobbering admin edits (M3 / G27-c). It mirrors the
+// product fix: the translation merge is fill-only (a key is only written when it
+// is empty/whitespace), the en fallback still backfills empty scalar
+// Name/Alias/Description, and the zh name is only mapped onto the scalar Name on
+// the initial seed run (when the category was not already localized). It mutates
+// cat in place; the caller persists via db.Model(&cat).Updates(...).
+//
+// seedAllCategoryTranslations (seed_catalog_i18n.go) routes every category
+// through this helper, so the unconditional every-boot call at cmd/api/main.go:85
+// is idempotent and admin zh/scalar edits survive restarts (M3 closed).
+func applyCategoryI18nSeedGuarded(cat *modelsProduct.Category, localeMap map[string]map[string]string) {
+	if cat.Translations == nil {
+		cat.Translations = make(modelsCommon.JSONMap)
+	}
+	alreadyLocalized := isCategoryLocalized(cat)
+	for locale, fields := range localeMap {
+		if cat.Translations[locale] == nil {
+			cat.Translations[locale] = make(map[string]string)
+		}
+		for k, v := range fields {
+			if strings.TrimSpace(cat.Translations[locale][k]) == "" {
+				cat.Translations[locale][k] = v
+			}
+		}
+		if locale == "en" {
+			if strings.TrimSpace(cat.Name) == "" {
+				cat.Name = fields["name"]
+			}
+			if strings.TrimSpace(cat.Alias) == "" {
+				cat.Alias = fields["alias"]
+			}
+			if strings.TrimSpace(cat.Description) == "" {
+				cat.Description = fields["description"]
+			}
+		}
+	}
+	if !alreadyLocalized {
+		if zh, ok := cat.Translations["zh"]; ok {
+			if v := strings.TrimSpace(zh["name"]); v != "" {
+				cat.Name = v
+			}
+		}
+	}
 }
 
 // seedEnglishProductTranslation 用产品标量字段填充 en 翻译（若尚未存在）。
@@ -914,15 +1057,21 @@ func seedEnglishProductTranslation(p *modelsProduct.Product) {
 	}
 }
 
-// SeedProductTranslations is the exported wrapper for seeding product translations.
+// SeedProductTranslations is the exported wrapper for seeding product
+// translations. It is invoked on the AUTO_SEED_DATA=true startup path
+// (cmd/api/main.go) and must never clobber admin-authored translations or scalar
+// columns (G27-c). Category translations are seeded every boot by
+// SeedCategoryTranslations, so this wrapper intentionally does not touch
+// categories.
 func SeedProductTranslations(db *gorm.DB) error {
 	if err := seedProductTranslations(db); err != nil {
 		return err
 	}
-	if err := seedProductMissingLocales(db); err != nil {
-		return err
-	}
-	return seedAllCategoryTranslations(db)
+	// The legacy seedProductMissingLocales (seed_catalog_i18n.go) re-maps zh onto
+	// the scalar columns unconditionally and runs repairProductZhCopiedFromEN; it
+	// would revert admin edits on every AUTO_SEED_DATA restart. Route through the
+	// guarded fill below instead.
+	return seedProductMissingLocalesGuarded(db)
 }
 
 // seedOEMFlows seeds OEM flow data

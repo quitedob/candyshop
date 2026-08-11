@@ -50,13 +50,48 @@ func init() {
 	schema.Register[*ReviewEditInfo]()
 }
 
+// reviewExemptTools are read-only, informational tools that add no value to a
+// human review-and-edit gate. Without an exemption the HITL wrapper would
+// interrupt them on every call and, because the SSE flow has no resume path,
+// they could never complete — leaving e.g. the 17track shipment provider behind
+// track_shipment unreachable. The default review policy passes these through so
+// they execute immediately.
+var reviewExemptTools = map[string]struct{}{
+	"track_shipment":        {},
+	"translate_content":     {},
+	"validate_lc_documents": {},
+}
+
+// ReviewPolicyFunc decides whether a tool call must pass through the human
+// review-and-edit gate before execution. It returns true when the call requires
+// review and false when it should execute immediately. A nil policy (the zero
+// value) uses the built-in default, which exempts read-only informational tools.
+type ReviewPolicyFunc func(toolName, argumentsInJSON string) bool
+
+func defaultReviewPolicy(toolName, _ string) bool {
+	_, exempt := reviewExemptTools[toolName]
+	return !exempt
+}
+
 // InvokableReviewEditTool is a wrapper that enforces a review-and-edit step.
 type InvokableReviewEditTool struct {
 	tool.InvokableTool
+
+	// RequiresReview, when non-nil, overrides the default review policy. It lets
+	// a caller force a normally-exempt tool through the gate or exempt a tool
+	// that the default policy would review.
+	RequiresReview ReviewPolicyFunc
 }
 
 func (i InvokableReviewEditTool) Info(ctx context.Context) (*schema.ToolInfo, error) {
 	return i.InvokableTool.Info(ctx)
+}
+
+func (i InvokableReviewEditTool) reviewRequired(toolName, argumentsInJSON string) bool {
+	if i.RequiresReview != nil {
+		return i.RequiresReview(toolName, argumentsInJSON)
+	}
+	return defaultReviewPolicy(toolName, argumentsInJSON)
 }
 
 func (i InvokableReviewEditTool) InvokableRun(ctx context.Context, argumentsInJSON string,
@@ -69,6 +104,12 @@ func (i InvokableReviewEditTool) InvokableRun(ctx context.Context, argumentsInJS
 
 	wasInterrupted, _, storedArguments := tool.GetInterruptState[string](ctx)
 	if !wasInterrupted {
+		if !i.reviewRequired(toolInfo.Name, argumentsInJSON) {
+			// Read-only informational tool: execute directly instead of
+			// interrupting, so the call completes and any backing provider
+			// stays reachable.
+			return i.InvokableTool.InvokableRun(ctx, argumentsInJSON, opts...)
+		}
 		return "", tool.StatefulInterrupt(ctx, &ReviewEditInfo{
 			ToolName:        toolInfo.Name,
 			ArgumentsInJSON: argumentsInJSON,

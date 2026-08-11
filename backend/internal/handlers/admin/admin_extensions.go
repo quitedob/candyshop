@@ -136,12 +136,16 @@ func (h *Handler) AdminCreateUser(c *gin.Context) {
 	}
 
 	if strings.TrimSpace(req.RoleID) != "" || strings.TrimSpace(req.RoleName) != "" {
-		resolvedRoleID, roleErr := h.services.Auth.ResolveRoleID(c.Request.Context(), req.RoleID, req.RoleName)
+		resolvedRole, roleErr := h.services.Auth.ResolveRole(c.Request.Context(), req.RoleID, req.RoleName)
 		if roleErr != nil {
 			response.InvalidResp(c, "invalid_request")
 			return
 		}
-		user.RoleID = resolvedRoleID
+		// Only a superadmin may mint admin/superadmin accounts.
+		if !h.authorizeRoleGrant(c, resolvedRole) {
+			return
+		}
+		user.RoleID = resolvedRole.ID
 	}
 
 	if user.Status == "" {
@@ -211,13 +215,22 @@ func (h *Handler) AdminUpdateUserRole(c *gin.Context) {
 		return
 	}
 
-	resolvedRoleID, resolveErr := h.services.Auth.ResolveRoleID(c.Request.Context(), req.RoleID, req.RoleName)
+	resolvedRole, resolveErr := h.services.Auth.ResolveRole(c.Request.Context(), req.RoleID, req.RoleName)
 	if resolveErr != nil {
 		response.InvalidResp(c, "invalid_request")
 		return
 	}
 
-	user.RoleID = resolvedRoleID
+	// Only a superadmin may promote a user to admin/superadmin.
+	if !h.authorizeRoleGrant(c, resolvedRole) {
+		return
+	}
+
+	user.RoleID = resolvedRole.ID
+	// GORM Save re-writes a preloaded belongs-to association's foreign key, so a
+	// stale Role snapshot would silently revert the role change. Drop it so the
+	// new role actually persists.
+	user.Role = nil
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "user_role_update_failed")
 		return
@@ -226,7 +239,7 @@ func (h *Handler) AdminUpdateUserRole(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "User role updated successfully",
 		"id":      user.ID,
-		"roleId":  resolvedRoleID,
+		"roleId":  resolvedRole.ID,
 	})
 }
 
@@ -562,7 +575,10 @@ func (h *Handler) AdminUpdateProductStatus(c *gin.Context) {
 			product.UpdatedBy = &uid
 		}
 	}
-	if err := h.services.Product.UpdateProduct(c.Request.Context(), product); err != nil {
+	// AdminUpdateProductStatus loads the full row first, so the full-row
+	// overwrite is safe (H11). The zero-skip Update would drop a status-only
+	// patch that also carried zero-value fields.
+	if err := h.services.Product.UpdateProductAll(c.Request.Context(), product); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "product_update_failed")
 		return
 	}

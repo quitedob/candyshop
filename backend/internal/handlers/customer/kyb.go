@@ -18,22 +18,6 @@ func isUSD(currency string) bool {
 	return c == "" || c == "USD"
 }
 
-// usdCapValue converts a monetary amount to its USD-equivalent using the
-// configured exchange rates (base USD). Amounts already in USD pass through;
-// empty currency is treated as USD. A currency without a configured rate fails
-// closed (+Inf) so it can never satisfy a USD cap (M6: non-USD bypass).
-func usdCapValue(rates map[string]float64, currency string, amount float64) float64 {
-	cur := strings.ToUpper(strings.TrimSpace(currency))
-	if cur == "" || cur == "USD" {
-		return amount
-	}
-	rate, ok := rates[cur]
-	if !ok || rate <= 0 {
-		return math.Inf(1)
-	}
-	return amount / rate
-}
-
 // cartSubtotalUSD calculates the USD-equivalent cart line total (unit price *
 // quantity) for the KYB cap comparison. Non-USD lines are converted with the
 // configured exchange rates; a line whose currency has no known rate fails
@@ -41,7 +25,7 @@ func usdCapValue(rates map[string]float64, currency string, amount float64) floa
 func cartSubtotalUSD(rates map[string]float64, items []modelsOrder.CartItem) float64 {
 	var s float64
 	for _, it := range items {
-		s += usdCapValue(rates, it.Currency, float64(it.Quantity)*it.UnitPrice)
+		s += kyb.UsdCapValue(rates, it.Currency, float64(it.Quantity)*it.UnitPrice)
 	}
 	return s
 }
@@ -114,7 +98,7 @@ func (h *Handler) ensureActiveOrKYBBypassForAmount(c *gin.Context, userID string
 	// fail closed (+Inf) and are never allowed to bypass (M6).
 	orderTotalUSD := orderTotal
 	if h.cfg != nil {
-		orderTotalUSD = usdCapValue(h.cfg.ExchangeRates, currency, orderTotal)
+		orderTotalUSD = kyb.UsdCapValue(h.cfg.ExchangeRates, currency, orderTotal)
 	}
 	if !kyb.PendingOrderAllowed(tier, orderTotalUSD, lineProductIDs) {
 		response.ErrorResp(c, http.StatusForbidden, "kyb_order_limit_exceeded")

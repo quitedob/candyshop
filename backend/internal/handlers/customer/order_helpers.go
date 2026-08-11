@@ -6,7 +6,10 @@ import (
 	"candypro/api/internal/pkg/i18n"
 	"candypro/api/internal/pkg/orderpolicy"
 	"candypro/api/internal/pkg/orderwarehouse"
+	"candypro/api/internal/pkg/response"
 	"context"
+	"log/slog"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -185,6 +188,58 @@ func (h *Handler) checkCompanyCreditLimit(c *gin.Context, userID string, totalAm
 		return true
 	}
 	return orderpolicy.CheckCompanyCreditLimit(c, customerCompanyProvider{h: h}, userID, totalAmount)
+}
+
+// checkCompanyCreditLimitCumulative enforces the buyer company's credit limit
+// against cumulative outstanding exposure at confirm: the sum of every buyer
+// user's open (non-terminal) order totals for the company, excluding the order
+// being confirmed, plus this order's confirmed total, must not exceed the limit
+// (G20). The per-order check at draft creation cannot catch a buyer stacking
+// several under-limit orders, and bulk/requisition/reorder drafts bypass that
+// check entirely, so this runs at confirm before stock is committed.
+//
+// The exposure sum is scoped to the COMPANY, not the user (G20 r3): the credit
+// limit lives on the company, so a per-user sum let two buyer users of one
+// company each confirm up to the full limit (e.g. limit 1000, users A and B
+// each confirm 800 → 1600 outstanding with neither per-user confirm blocked).
+// SumOpenOrderTotalsByCompany aggregates across all company users in a single
+// query. Companies without an explicit limit are treated as unlimited,
+// mirroring orderpolicy.CheckCompanyCreditLimit. When the company/limit cannot
+// be resolved the check fails open (nothing to enforce); when the limit is
+// known but the open-exposure sum fails, it fails CLOSED so a transient DB
+// failure cannot silently lift the credit guard.
+func (h *Handler) checkCompanyCreditLimitCumulative(c *gin.Context, userID, excludeOrderID string, totalAmount float64) bool {
+	if h.services == nil || h.services.Order == nil {
+		return true
+	}
+	provider := customerCompanyProvider{h: h}
+	companyID, ok := provider.GetUserCompanyID(c.Request.Context(), userID)
+	if !ok || companyID == "" {
+		return true // no company → no limit applies
+	}
+	limit, ok := provider.GetCompanyCreditLimit(c.Request.Context(), companyID)
+	if !ok || limit <= 0 {
+		return true // unlimited
+	}
+	open, err := h.services.Order.SumOpenOrderTotalsByCompany(c.Request.Context(), companyID, excludeOrderID)
+	if err != nil {
+		// Fail CLOSED on the open-exposure sum. The resolution failures above are
+		// different: no company / no limit means there is nothing to enforce, so
+		// failing open mirrors the per-order check. But a failed sum means the
+		// company's limit IS known and we simply cannot verify the cumulative
+		// exposure fits — confirming would silently disable the credit guard on a
+		// transient DB failure and let a buyer exceed their limit (G20 refutation).
+		// Over-credit is the worse failure mode than a blocked confirm.
+		slog.Error("checkCompanyCreditLimitCumulative: company open-order sum failed",
+			"userID", userID, "companyID", companyID, "orderID", excludeOrderID, "error", err)
+		response.ErrorResp(c, http.StatusInternalServerError, "order_confirm_failed")
+		return false
+	}
+	if open+totalAmount > limit {
+		response.ErrorResp(c, http.StatusUnprocessableEntity, "credit_limit_exceeded")
+		return false
+	}
+	return true
 }
 
 // customerCompanyProvider adapts customer-portal services to the

@@ -45,14 +45,31 @@ type productRepository interface {
 	ComputeWeightedAvgCost(ctx context.Context, productID string) float64
 }
 
+// productZeroValueRepository is the subset of ProductRepository that can write
+// zero values (H11): clearing featured/halal, zeroing stock/price, or emptying
+// a text field. It is kept separate from productRepository so existing test
+// fakes that only model the partial-update surface keep compiling;
+// ProductService type-asserts the injected repository at construction and
+// exposes the zero-capable paths when available (always true for the
+// production *ProductRepository, which implements both).
+type productZeroValueRepository interface {
+	UpdateAll(ctx context.Context, product *modelsProduct.Product) error
+	UpdateColumns(ctx context.Context, product *modelsProduct.Product, columns ...string) error
+}
+
 // ProductService handles product business logic.
 type ProductService struct {
 	repo productRepository
+	zero productZeroValueRepository
 }
 
 // NewProductService creates a new ProductService.
 func NewProductService(repo productRepository) *ProductService {
-	return &ProductService{repo: repo}
+	s := &ProductService{repo: repo}
+	if z, ok := repo.(productZeroValueRepository); ok {
+		s.zero = z
+	}
+	return s
 }
 
 // GetProducts returns paginated products.
@@ -220,9 +237,35 @@ func (s *ProductService) CreateProduct(ctx context.Context, product *modelsProdu
 	return s.repo.Create(ctx, product)
 }
 
-// UpdateProduct updates a product.
+// UpdateProduct updates a product using the partial, zero-skip Update.
 func (s *ProductService) UpdateProduct(ctx context.Context, product *modelsProduct.Product) error {
 	return s.repo.Update(ctx, product)
+}
+
+// UpdateProductAll writes the product with a full-row overwrite that persists
+// zero values. The admin load-then-patch callers (AdminUpdateProduct,
+// AdminUpdateProductStatus, AdminBatchUpdateInventory, AdminAITranslateProduct)
+// load the current row first, so clearing featured/halal, zeroing stock/price,
+// or emptying a text field must be written (H11) — the zero-skip Update would
+// silently drop those changes while the UI reports success. Do NOT use with a
+// fresh struct built from a partial column set.
+func (s *ProductService) UpdateProductAll(ctx context.Context, product *modelsProduct.Product) error {
+	if s.zero == nil {
+		return fmt.Errorf("product: repository does not support zero-value full-row updates")
+	}
+	return s.zero.UpdateAll(ctx, product)
+}
+
+// UpdateProductColumns writes only the named DB columns, including zero values.
+// Partial callers that must be able to clear/zero a specific field (the XLSX
+// importer) pass the columns actually present in the row, so absent columns
+// stay untouched while a carried zero value (e.g. stockQuantity:0) is persisted
+// (H11). Add "updated_at" explicitly to bump the timestamp.
+func (s *ProductService) UpdateProductColumns(ctx context.Context, product *modelsProduct.Product, columns ...string) error {
+	if s.zero == nil {
+		return fmt.Errorf("product: repository does not support column-scoped updates")
+	}
+	return s.zero.UpdateColumns(ctx, product, columns...)
 }
 
 // DeleteProduct deletes a product.

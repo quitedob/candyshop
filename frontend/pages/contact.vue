@@ -305,8 +305,11 @@ const offices = computed(() => [
 ])
 
 const faqs = computed(() => {
-  const items = tm('faq.items') as Array<any>
-  if (items && items.length >= 4) {
+  const items = tm('faq.items') as Array<any> | undefined
+  // items[4] and items[2] are accessed below, so the guard must require at
+  // least 5 entries — length >= 4 was an off-by-one that would crash on
+  // rt(undefined.question) if the FAQ list ever shrank to exactly 4.
+  if (items && items.length >= 5) {
     return [
       { question: rt(items[4].question), answer: rt(items[4].answer) }, // How do I place an order?
       { question: t('contact.faq.response_time_q'), answer: t('contact.faq.response_time_a') },

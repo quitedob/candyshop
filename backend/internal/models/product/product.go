@@ -15,12 +15,12 @@ import (
 
 // CertificationDetail stores structured certification information (issuer, number, validity, document URL).
 type CertificationDetail struct {
-	Name        string `json:"name"`
-	Abbrev      string `json:"abbrev"`
-	IssuedBy    string `json:"issuedBy"`
-	CertNumber  string `json:"certNumber"`
-	ValidUntil  string `json:"validUntil"`
-	DocURL      string `json:"docUrl"`
+	Name       string `json:"name"`
+	Abbrev     string `json:"abbrev"`
+	IssuedBy   string `json:"issuedBy"`
+	CertNumber string `json:"certNumber"`
+	ValidUntil string `json:"validUntil"`
+	DocURL     string `json:"docUrl"`
 }
 
 // CertificationDetailArray stores certification details in JSONB.
@@ -28,8 +28,11 @@ type CertificationDetailArray []CertificationDetail
 
 // Product represents a candy product
 type Product struct {
-	ID             string             `json:"id" gorm:"primaryKey"`
-	Slug           string             `json:"slug" gorm:"uniqueIndex"`
+	ID string `json:"id" gorm:"primaryKey"`
+	// Slug is unique only among non-deleted rows (partial unique index on
+	// deleted_at IS NULL) so a soft-deleted product's slug can be reused instead
+	// of 5xx-ing on a full-table unique constraint (G24a).
+	Slug           string             `json:"slug" gorm:"uniqueIndex:idx_products_slug_active,where:deleted_at IS NULL"`
 	Name           string             `json:"name"`
 	Summary        string             `json:"summary"`
 	Description    string             `json:"description" gorm:"type:text"`
@@ -79,13 +82,13 @@ type Product struct {
 	FiberG         float64 `json:"fiberG" gorm:"default:0"`
 
 	// Ingredient Compliance
-	Additives      common.StringArray `json:"additives" gorm:"type:jsonb"`   // E-numbers / INS codes
+	Additives      common.StringArray `json:"additives" gorm:"type:jsonb"` // E-numbers / INS codes
 	SweetenerType  string             `json:"sweetenerType" gorm:"type:varchar(100)"`
-	CocoaSolidsPct float64            `json:"cocoaSolidsPct" gorm:"default:0"` // chocolate products
-	MilkSolidsPct  float64            `json:"milkSolidsPct" gorm:"default:0"`  // milk chocolate
-	GMOStatus       string             `json:"gmoStatus" gorm:"type:varchar(50)"` // "GMO", "Non-GMO", "GMO-Free Certified"
-	MayContain     common.StringArray `json:"mayContain" gorm:"type:jsonb"`   // cross-contamination allergen risks
-	WaterActivity  float64            `json:"waterActivity" gorm:"default:0"` // aʷ — shelf-life determinant
+	CocoaSolidsPct float64            `json:"cocoaSolidsPct" gorm:"default:0"`   // chocolate products
+	MilkSolidsPct  float64            `json:"milkSolidsPct" gorm:"default:0"`    // milk chocolate
+	GMOStatus      string             `json:"gmoStatus" gorm:"type:varchar(50)"` // "GMO", "Non-GMO", "GMO-Free Certified"
+	MayContain     common.StringArray `json:"mayContain" gorm:"type:jsonb"`      // cross-contamination allergen risks
+	WaterActivity  float64            `json:"waterActivity" gorm:"default:0"`    // aʷ — shelf-life determinant
 
 	// Trade & Barcode
 	GTIN string `json:"gtin" gorm:"type:varchar(20);index"` // EAN/UPC/GTIN-14
@@ -106,20 +109,20 @@ type Product struct {
 	CertificationDetails CertificationDetailArray `json:"certificationDetails" gorm:"type:jsonb"`
 
 	// Sample Specs
-	SampleMOQ       int     `json:"sampleMOQ" gorm:"default:0"`
-	SampleLeadTime  string  `json:"sampleLeadTime" gorm:"type:varchar(50)"`
-	SamplePrice     float64 `json:"samplePrice" gorm:"default:0"`
+	SampleMOQ      int     `json:"sampleMOQ" gorm:"default:0"`
+	SampleLeadTime string  `json:"sampleLeadTime" gorm:"type:varchar(50)"`
+	SamplePrice    float64 `json:"samplePrice" gorm:"default:0"`
 
 	// Existing audit / meta
-	CreatedBy   *string        `json:"createdBy" gorm:"index"`
-	UpdatedBy   *string        `json:"updatedBy" gorm:"index"`
-	Status      string         `json:"status" gorm:"default:'active'"`
-	BasePrice        float64        `json:"basePrice" gorm:"default:0"`
-	WeightedAvgCost  float64        `json:"weightedAvgCost" gorm:"default:0"` // computed from PO receipts
-	ViewCount   int            `json:"viewCount" gorm:"default:0"`
-	CreatedAt   time.Time      `json:"createdAt"`
-	UpdatedAt   time.Time      `json:"updatedAt"`
-	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
+	CreatedBy       *string        `json:"createdBy" gorm:"index"`
+	UpdatedBy       *string        `json:"updatedBy" gorm:"index"`
+	Status          string         `json:"status" gorm:"default:'active'"`
+	BasePrice       float64        `json:"basePrice" gorm:"default:0"`
+	WeightedAvgCost float64        `json:"weightedAvgCost" gorm:"default:0"` // computed from PO receipts
+	ViewCount       int            `json:"viewCount" gorm:"default:0"`
+	CreatedAt       time.Time      `json:"createdAt"`
+	UpdatedAt       time.Time      `json:"updatedAt"`
+	DeletedAt       gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
 // Value implements driver.Valuer.
@@ -182,10 +185,18 @@ func ValidateProductStatusTransition(from, to string) error {
 	return fmt.Errorf("product: invalid status transition from %q to %q", from, to)
 }
 
+// EmbeddingDim is the fixed dimension of the product_embeddings.embedding
+// column (declared as vector(1536) below). pgvector fixes the dimension at DDL
+// time, so an embedding model whose output dimension differs can never be
+// stored or queried. The write path validates against this constant so a
+// misconfigured model surfaces a clear error instead of silently leaving
+// semantic search inert (G24b).
+const EmbeddingDim = 1536
+
 // ProductEmbedding stores semantic-search vectors separately so baseline product migration works on plain Postgres.
 type ProductEmbedding struct {
 	ProductID string           `json:"productId" gorm:"primaryKey;type:varchar(255)"`
-	Embedding *pgvector.Vector `json:"-" gorm:"type:vector(1536)"`
+	Embedding *pgvector.Vector `json:"-" gorm:"type:vector(1536)"` // must equal EmbeddingDim
 	CreatedAt time.Time        `json:"createdAt"`
 	UpdatedAt time.Time        `json:"updatedAt"`
 	Product   Product          `json:"-" gorm:"foreignKey:ProductID;references:ID;constraint:OnDelete:CASCADE"`
@@ -195,29 +206,49 @@ func (ProductEmbedding) TableName() string {
 	return "product_embeddings"
 }
 
+// LegacyUniqueIndexSlug is the pre-G24a full-table unique index name that GORM
+// created from the former unnamed `uniqueIndex` tag on Product.Slug. GORM
+// AutoMigrate never drops indexes that were removed from the model, so on any
+// already-migrated database this index still spans soft-deleted rows and blocks
+// re-creating a deleted slug with a unique-constraint 5xx. The replacement
+// partial index is idx_products_slug_active (WHERE deleted_at IS NULL).
+const LegacyUniqueIndexSlug = "idx_products_slug"
+
+// DropLegacySlugUniqueIndex removes the pre-G24a full-table unique index on
+// products.slug if it is still present. It is a no-op when the index does not
+// exist, so it is safe to call on every startup and on fresh databases. Call it
+// once after AutoMigrate on already-migrated deployments so a soft-deleted
+// slug can be reused instead of raising the G24a 5xx.
+func DropLegacySlugUniqueIndex(db *gorm.DB) error {
+	if db.Migrator().HasIndex(&Product{}, LegacyUniqueIndexSlug) {
+		return db.Migrator().DropIndex(&Product{}, LegacyUniqueIndexSlug)
+	}
+	return nil
+}
+
 // Category represents a product category
 type Category struct {
-	Slug         string             `json:"slug" gorm:"primaryKey"`
-	Name         string             `json:"name"`
-	Alias        string             `json:"alias"`
-	Description  string             `json:"description"`
-	Thumbnail    string             `json:"thumbnail"`
-	Icon         string             `json:"icon"`
-	Translations common.JSONMap     `json:"translations" gorm:"type:jsonb"`
-	ProductCount int                `json:"productCount" gorm:"-"`
-	Products     []Product          `json:"products,omitempty" gorm:"foreignKey:CategorySlug"`
-	CreatedAt    time.Time          `json:"createdAt"`
-	UpdatedAt    time.Time          `json:"updatedAt"`
+	Slug         string         `json:"slug" gorm:"primaryKey"`
+	Name         string         `json:"name"`
+	Alias        string         `json:"alias"`
+	Description  string         `json:"description"`
+	Thumbnail    string         `json:"thumbnail"`
+	Icon         string         `json:"icon"`
+	Translations common.JSONMap `json:"translations" gorm:"type:jsonb"`
+	ProductCount int            `json:"productCount" gorm:"-"`
+	Products     []Product      `json:"products,omitempty" gorm:"foreignKey:CategorySlug"`
+	CreatedAt    time.Time      `json:"createdAt"`
+	UpdatedAt    time.Time      `json:"updatedAt"`
 }
 
 // InquiryUserSnapshot is a lightweight projection of user fields exposed on
 // inquiry list/detail views (H-5). Bound to the same "users" table so a single
 // JOIN-style Preload can populate it without round-trip per row.
 type InquiryUserSnapshot struct {
-	ID        string `json:"id" gorm:"primaryKey"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Email     string `json:"email"`
+	ID        string  `json:"id" gorm:"primaryKey"`
+	FirstName string  `json:"firstName"`
+	LastName  string  `json:"lastName"`
+	Email     string  `json:"email"`
 	CompanyID *string `json:"companyId,omitempty"`
 }
 
@@ -228,36 +259,36 @@ func (InquiryUserSnapshot) TableName() string {
 
 // Inquiry represents an inquiry submission
 type Inquiry struct {
-	ID                    string             `json:"id" gorm:"primaryKey"`
-	UserID                *string            `json:"userId" gorm:"index"`
+	ID                    string               `json:"id" gorm:"primaryKey"`
+	UserID                *string              `json:"userId" gorm:"index"`
 	User                  *InquiryUserSnapshot `json:"user,omitempty" gorm:"foreignKey:UserID;references:ID"`
-	CompanyName           string             `json:"companyName"`
-	ContactPerson         string             `json:"contactPerson"`
-	Email                 string             `json:"email"`
-	WhatsApp              string             `json:"whatsapp"`
-	TargetCountry         string             `json:"targetCountry"`
-	EstimatedQuantity     string             `json:"estimatedQuantity"`
-	InterestedProducts    common.StringArray `json:"interestedProducts" gorm:"type:jsonb"`
-	ProductIDs            common.StringArray `json:"productIds" gorm:"type:jsonb"`
-	PackagingRequirements string             `json:"packagingRequirements"`
-	FlavorRequirements    string             `json:"flavorRequirements"`
-	OEMNeeded             bool               `json:"oemNeeded"`
-	ExpectedDelivery      string             `json:"expectedDelivery"`
-	Message               string             `json:"message" gorm:"type:text"`
-	Files                 common.StringArray `json:"files" gorm:"type:jsonb"`
-	Status                string             `json:"status" gorm:"index;default:'pending'"` // pending, quoted, negotiating, won, lost
-	AssignedTo            *string            `json:"assignedTo" gorm:"index"`
-	Priority              string             `json:"priority" gorm:"default:'normal'"` // low, normal, high, urgent
-	Products              common.StringArray `json:"products" gorm:"type:jsonb"`       // Store selected products/specs
-	QuotedAmount          float64            `json:"quotedAmount"`
-	QuotedAt              *time.Time         `json:"quotedAt"`
-	ValidUntil            *time.Time         `json:"validUntil"`
-	InternalNotes         string             `json:"internalNotes" gorm:"type:text"`
-	CustomerNotes         string             `json:"customerNotes" gorm:"type:text"`
+	CompanyName           string               `json:"companyName"`
+	ContactPerson         string               `json:"contactPerson"`
+	Email                 string               `json:"email"`
+	WhatsApp              string               `json:"whatsapp"`
+	TargetCountry         string               `json:"targetCountry"`
+	EstimatedQuantity     string               `json:"estimatedQuantity"`
+	InterestedProducts    common.StringArray   `json:"interestedProducts" gorm:"type:jsonb"`
+	ProductIDs            common.StringArray   `json:"productIds" gorm:"type:jsonb"`
+	PackagingRequirements string               `json:"packagingRequirements"`
+	FlavorRequirements    string               `json:"flavorRequirements"`
+	OEMNeeded             bool                 `json:"oemNeeded"`
+	ExpectedDelivery      string               `json:"expectedDelivery"`
+	Message               string               `json:"message" gorm:"type:text"`
+	Files                 common.StringArray   `json:"files" gorm:"type:jsonb"`
+	Status                string               `json:"status" gorm:"index;default:'pending'"` // pending, quoted, negotiating, won, lost
+	AssignedTo            *string              `json:"assignedTo" gorm:"index"`
+	Priority              string               `json:"priority" gorm:"default:'normal'"` // low, normal, high, urgent
+	Products              common.StringArray   `json:"products" gorm:"type:jsonb"`       // Store selected products/specs
+	QuotedAmount          float64              `json:"quotedAmount"`
+	QuotedAt              *time.Time           `json:"quotedAt"`
+	ValidUntil            *time.Time           `json:"validUntil"`
+	InternalNotes         string               `json:"internalNotes" gorm:"type:text"`
+	CustomerNotes         string               `json:"customerNotes" gorm:"type:text"`
 	// Incoterms 询盘阶段议定的贸易术语（如 CIF New York），映射至 Trade.Terms
 	Incoterms string `json:"incoterms" gorm:"type:varchar(50)"`
 	// NegotiatedPaymentTerms 议定付款方式（如 30% T/T 预付），写入 Trade.CommercialNotes
-	NegotiatedPaymentTerms string    `json:"negotiatedPaymentTerms" gorm:"type:varchar(255)"`
+	NegotiatedPaymentTerms string `json:"negotiatedPaymentTerms" gorm:"type:varchar(255)"`
 	// Packaging/standards confirmation flow
 	PackagingType     string     `json:"packagingType" gorm:"type:varchar(100)"`
 	PackagingWeight   float64    `json:"packagingWeight"`
@@ -266,7 +297,7 @@ type Inquiry struct {
 	CustomerConfirmed bool       `json:"customerConfirmed"`
 	AdminConfirmed    bool       `json:"adminConfirmed"`
 	ConfirmationNotes string     `json:"confirmationNotes" gorm:"type:text"`
-	ConfirmedAt       *time.Time  `json:"confirmedAt"`
+	ConfirmedAt       *time.Time `json:"confirmedAt"`
 	CreatedAt         time.Time  `json:"createdAt"`
 	UpdatedAt         time.Time  `json:"updatedAt"`
 }
@@ -414,19 +445,19 @@ func (b *BlogPost) GetAuthor() Author {
 
 // CaseStudy represents a case study
 type CaseStudy struct {
-	ID        string             `json:"id" gorm:"primaryKey"`
-	Slug      string             `json:"slug" gorm:"uniqueIndex"`
-	Title     string             `json:"title"`
-	Client    string             `json:"client"`
-	Industry  string             `json:"industry" gorm:"index"`
-	Location  string             `json:"location"`
-	Thumbnail string             `json:"thumbnail"`
-	OgImage   string             `json:"ogImage" gorm:"column:og_image"`
-	Images    common.StringArray `json:"images" gorm:"type:jsonb"`
-	Challenge string             `json:"challenge" gorm:"type:text"`
-	Solution  string             `json:"solution" gorm:"type:text"`
-	Result    string             `json:"result" gorm:"type:text"`
-	Timeline  string             `json:"timeline"`
+	ID           string             `json:"id" gorm:"primaryKey"`
+	Slug         string             `json:"slug" gorm:"uniqueIndex"`
+	Title        string             `json:"title"`
+	Client       string             `json:"client"`
+	Industry     string             `json:"industry" gorm:"index"`
+	Location     string             `json:"location"`
+	Thumbnail    string             `json:"thumbnail"`
+	OgImage      string             `json:"ogImage" gorm:"column:og_image"`
+	Images       common.StringArray `json:"images" gorm:"type:jsonb"`
+	Challenge    string             `json:"challenge" gorm:"type:text"`
+	Solution     string             `json:"solution" gorm:"type:text"`
+	Result       string             `json:"result" gorm:"type:text"`
+	Timeline     string             `json:"timeline"`
 	Services     common.StringArray `json:"services" gorm:"type:jsonb"`
 	Translations common.JSONMap     `json:"translations" gorm:"type:jsonb"`
 	CreatedAt    time.Time          `json:"createdAt"`

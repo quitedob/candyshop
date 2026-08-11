@@ -171,9 +171,15 @@ func (h *Handler) GenerateQuotation(c *gin.Context) {
 	if marketCode == "" {
 		marketCode = "GLOBAL"
 	}
+	// 成本栈为内部定价数据（物流/关税/标签摊销/目标毛利），仅允许管理员读取与注入；
+	// 路由层已有 RequireRole(admin, superadmin) 兜底，此处为纵深防御，防止任何
+	// 已登录客户借该接口读取内部成本结构。
+	_, role := authContext(c)
+	isAdmin := role == modelsAuth.Admin || role == modelsAuth.SuperAdmin
+
 	var costInject []gin.H
 	var costStackInjection string
-	if h.services != nil && h.services.Product != nil {
+	if isAdmin && h.services != nil && h.services.Product != nil {
 		ids := append([]string{}, req.ProductIDs...)
 		if pid := strings.TrimSpace(req.ProductID); pid != "" {
 			ids = append([]string{pid}, ids...)

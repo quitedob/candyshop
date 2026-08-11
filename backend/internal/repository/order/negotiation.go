@@ -43,15 +43,17 @@ func (r *NegotiationRepository) Update(ctx context.Context, offer *modelsOrder.N
 	return r.db.WithContext(ctx).Save(offer).Error
 }
 
-// TransitionStatus 原子地把指定 offer 从 fromStatus 改为 toStatus。
-// 仅当数据库当前 status = fromStatus 时才会写入；返回 RowsAffected。
+// TransitionStatus 原子地把指定 offer 从 fromStatus 改为 toStatus，并按
+// inquiry_id 限定归属（H-3）：调用方只能翻转自己询盘下的 offer，即使知道
+// 他人 offer 的 ID 也无法作用到别的询盘。仅当 id、inquiry_id、status 三者
+// 同时匹配时才写入；返回 RowsAffected，0 表示并发竞争 / 状态已变 / 询盘不匹配。
 //
 // A-4: AcceptOffer / RejectOffer 不能再用 read→check→Save 的 TOCTOU 模式，
 // 必须依赖此方法的条件 WHERE 防止两个管理员同时接受同一 pending offer。
-func (r *NegotiationRepository) TransitionStatus(ctx context.Context, id, fromStatus, toStatus string, updatedAt time.Time) (int64, error) {
+func (r *NegotiationRepository) TransitionStatus(ctx context.Context, id, inquiryID, fromStatus, toStatus string, updatedAt time.Time) (int64, error) {
 	res := r.db.WithContext(ctx).
 		Model(&modelsOrder.NegotiationOffer{}).
-		Where("id = ? AND status = ?", id, fromStatus).
+		Where("id = ? AND inquiry_id = ? AND status = ?", id, inquiryID, fromStatus).
 		Updates(map[string]any{
 			"status":     toStatus,
 			"updated_at": updatedAt,

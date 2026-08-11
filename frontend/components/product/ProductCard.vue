@@ -27,24 +27,6 @@
           </span>
         </div>
 
-        <!-- Quick Actions -->
-        <div class="product-card__actions">
-          <button
-            class="product-card__action"
-            :aria-label="$t('product.inquire_now')"
-            @click.prevent="openInquiry"
-          >
-            <Icon name="lucide:message-circle" size="18" aria-hidden="true" />
-          </button>
-          <button
-            class="product-card__action"
-            :aria-label="$t('product.request_sample')"
-            @click.prevent="requestSample"
-          >
-            <Icon name="lucide:package" size="18" aria-hidden="true" />
-          </button>
-        </div>
-
         <!-- Overlay -->
         <div class="product-card__overlay">
           <span class="product-card__view">{{ $t('product.view_details') }}</span>
@@ -73,16 +55,35 @@
             {{ product.leadTime }}
           </span>
         </div>
-
-        <button
-          class="product-card__inquiry-btn"
-          @click.prevent.stop="openInquiry"
-        >
-          <Icon name="lucide:message-circle" size="16" aria-hidden="true" />
-          {{ $t('product.inquire_now') }}
-        </button>
       </div>
     </NuxtLink>
+
+    <!-- Quick Actions. Siblings of the NuxtLink — never nest interactive
+         controls inside a link. -->
+    <div class="product-card__actions">
+      <button
+        class="product-card__action"
+        :aria-label="$t('product.inquire_now')"
+        @click="openInquiry"
+      >
+        <Icon name="lucide:message-circle" size="18" aria-hidden="true" />
+      </button>
+      <button
+        class="product-card__action"
+        :aria-label="$t('product.request_sample')"
+        @click="requestSample"
+      >
+        <Icon name="lucide:package" size="18" aria-hidden="true" />
+      </button>
+    </div>
+
+    <button
+      class="product-card__inquiry-btn"
+      @click="openInquiry"
+    >
+      <Icon name="lucide:message-circle" size="16" aria-hidden="true" />
+      {{ $t('product.inquire_now') }}
+    </button>
   </div>
 </template>
 
@@ -156,6 +157,7 @@ const requestSample = () => {
 
 <style scoped>
 .product-card {
+  position: relative;
   background-color: var(--color-bg);
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -234,13 +236,18 @@ const requestSample = () => {
   gap: var(--spacing-xs);
   opacity: 0;
   transform: translateX(10px);
+  pointer-events: none;
   transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
   z-index: 2;
 }
 
-.product-card:hover .product-card__actions {
+/* Reveal on hover OR keyboard focus so hover-hidden controls stay accessible */
+.product-card:hover .product-card__actions,
+.product-card:focus-within .product-card__actions,
+.product-card__actions:focus-within {
   opacity: 1;
   transform: translateX(0);
+  pointer-events: auto;
 }
 
 .product-card__action {
@@ -404,6 +411,7 @@ const requestSample = () => {
 .product-card--grid .product-card__actions {
   opacity: 1;
   transform: translateX(0);
+  pointer-events: auto;
   flex-direction: row;
   top: auto;
   bottom: var(--spacing-sm);
@@ -414,6 +422,7 @@ const requestSample = () => {
   .product-card__actions {
     opacity: 1;
     transform: translateX(0);
+    pointer-events: auto;
   }
 }
 

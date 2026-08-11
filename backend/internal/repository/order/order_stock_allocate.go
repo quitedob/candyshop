@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"gorm.io/gorm"
-	"log"
 	"gorm.io/gorm/clause"
 )
 
@@ -189,7 +188,14 @@ func releaseWarehouseStock(tx *gorm.DB, warehouseID, productID string, qty int, 
 
 // deductWarehouseStock deducts physical stock from a warehouse (decrement both Quantity and Reserved).
 // Used when goods are actually shipped/picked.
-func deductWarehouseStock(tx *gorm.DB, warehouseID, productID string, qty int, reason, refID, operatorID string, t time.Time) ([]*modelsOrder.StockTransaction, error) {
+//
+// reserved indicates the quantity was previously reserved at the product level:
+// reserveWarehouseStock already decremented Product.StockQuantity at reservation
+// time, so a reserved deduction must not decrement it again. When reserved is
+// false (direct deduction without a prior reservation) Product.StockQuantity is
+// decremented here too, so the product-level and warehouse-level aggregates stay
+// in sync (G21-c).
+func deductWarehouseStock(tx *gorm.DB, warehouseID, productID string, qty int, reserved bool, reason, refID, operatorID string, t time.Time) ([]*modelsOrder.StockTransaction, error) {
 	var ws modelsProduct.WarehouseStock
 	err := tx.Where("warehouse_id = ? AND product_id = ?", warehouseID, productID).First(&ws).Error
 	if err != nil {
@@ -202,7 +208,15 @@ func deductWarehouseStock(tx *gorm.DB, warehouseID, productID string, qty int, r
 		Where("id = ? AND quantity >= ?", ws.ID, qty).
 		Updates(map[string]interface{}{
 			"quantity": gorm.Expr("quantity - ?", qty),
-			"reserved": gorm.Expr("GREATEST(reserved - ?, 0)", qty),
+			// Reserved drains first: shipping consumes the reserved units before
+			// dipping into sellable stock, so reserved decreases by
+			// min(reserved, qty) — not by the full qty, which would over-claim
+			// reservations belonging to other orders. The CASE WHEN clamps at 0
+			// without the PostgreSQL-only GREATEST(), keeping the expression atomic
+			// and portable (sqlite tests). Clamping (not erroring) when reserved < qty
+			// is correct: shipping qty units with reserved < qty means min(reserved,qty)
+			// reserved units plus unreserved sellable units leave the warehouse.
+			"reserved": gorm.Expr("CASE WHEN reserved - ? < 0 THEN 0 ELSE reserved - ? END", qty, qty),
 		})
 	if res.Error != nil {
 		return nil, res.Error
@@ -216,12 +230,25 @@ func deductWarehouseStock(tx *gorm.DB, warehouseID, productID string, qty int, r
 		return nil, err
 	}
 	beforeP := p.StockQuantity
+	afterP := beforeP
+	if !reserved {
+		res2 := tx.Model(&modelsProduct.Product{}).
+			Where("id = ? AND stock_quantity >= ?", productID, qty).
+			Update("stock_quantity", gorm.Expr("stock_quantity - ?", qty))
+		if res2.Error != nil {
+			return nil, res2.Error
+		}
+		if res2.RowsAffected == 0 {
+			return nil, fmt.Errorf("%w: insufficient aggregate stock_quantity for product %s", modelsOrder.ErrInsufficientStock, productID)
+		}
+		afterP = beforeP - qty
+	}
 	wid := warehouseID
 	rec := &modelsOrder.StockTransaction{
 		ProductID:   productID,
 		Change:      -qty,
 		StockBefore: beforeP,
-		StockAfter:  beforeP,
+		StockAfter:  afterP,
 		Reason:      reason,
 		ReferenceID: refID,
 		OperatorID:  operatorID,
@@ -237,7 +264,8 @@ func applyWarehouseStockChange(tx *gorm.DB, warehouseID, productID string, qty i
 	case modelsOrder.StockReasonStockReleased, modelsOrder.StockReasonOrderCancelled, modelsOrder.StockReasonOrderDeleted, modelsOrder.StockReasonDraftExpired:
 		return releaseWarehouseStock(tx, warehouseID, productID, qty, reason, refID, operatorID, t)
 	case modelsOrder.StockReasonDispatched, modelsOrder.StockReasonGoodsIssued, modelsOrder.StockReasonStockDeducted:
-		return deductWarehouseStock(tx, warehouseID, productID, qty, reason, refID, operatorID, t)
+		// Direct deduction (no prior reservation): decrement Product.StockQuantity too (G21-c).
+		return deductWarehouseStock(tx, warehouseID, productID, qty, false, reason, refID, operatorID, t)
 	default:
 		return reserveWarehouseStock(tx, warehouseID, productID, qty, reason, refID, operatorID, t)
 	}
@@ -518,19 +546,41 @@ func deductFEFOFromBatches(tx *gorm.DB, productID string, qty int, reason, refID
 		return nil, fmt.Errorf("%w: insufficient aggregate stock_quantity for product %s", modelsOrder.ErrInsufficientStock, productID)
 	}
 
-	// Also update warehouse_stock for consistency (mirror legacy path behavior)
+	// Mirror the FEFO deduction onto warehouse_stock. A sync failure is fatal so
+	// the whole transaction rolls back instead of reporting success while the
+	// warehouse mirror never moved (G21-b).
 	nWh, whErr := countWarehouseStockRows(tx, productID)
-	if whErr == nil && nWh > 0 {
-		if wid, wErr := resolveDefaultWarehouseID(tx, ""); wErr == nil {
-			if ue := tx.Model(&modelsProduct.WarehouseStock{}).
-				Where("warehouse_id = ? AND product_id = ? AND quantity >= ?", wid, productID, qty).
-				Update("quantity", gorm.Expr("quantity - ?", qty)).Error; ue != nil {
-				log.Printf("order_stock_allocate: warehouse stock update failed for product %s: %v", productID, ue)
-			}
+	if whErr != nil {
+		return nil, whErr
+	}
+	if nWh > 0 {
+		wid, wErr := resolveDefaultWarehouseID(tx, "")
+		if wErr != nil {
+			return nil, fmt.Errorf("FEFO warehouse sync: %w", wErr)
+		}
+		if sErr := syncFEFOWarehouseStock(tx, wid, productID, qty); sErr != nil {
+			return nil, sErr
 		}
 	}
 
 	return records, nil
+}
+
+// syncFEFOWarehouseStock mirrors a FEFO batch deduction onto the warehouse_stock
+// row of the warehouse the goods were taken from. A missing or insufficient row,
+// or a DB error, is a hard error so the caller's transaction rolls back instead
+// of reporting success while the warehouse mirror never moved (G21-b).
+func syncFEFOWarehouseStock(tx *gorm.DB, warehouseID, productID string, qty int) error {
+	res := tx.Model(&modelsProduct.WarehouseStock{}).
+		Where("warehouse_id = ? AND product_id = ? AND quantity >= ?", warehouseID, productID, qty).
+		Update("quantity", gorm.Expr("quantity - ?", qty))
+	if res.Error != nil {
+		return fmt.Errorf("FEFO warehouse_stock sync failed for product %s in warehouse %s: %w", productID, warehouseID, res.Error)
+	}
+	if res.RowsAffected == 0 {
+		return fmt.Errorf("FEFO warehouse_stock sync failed for product %s in warehouse %s: row missing or insufficient quantity", productID, warehouseID)
+	}
+	return nil
 }
 
 func deductFEFOFromBatchesWithWarehouse(tx *gorm.DB, warehouseID, productID string, qty int, reason, refID, operatorID string, t time.Time) ([]*modelsOrder.StockTransaction, error) {
@@ -606,10 +656,8 @@ func deductFEFOFromBatchesWithWarehouse(tx *gorm.DB, warehouseID, productID stri
 		return nil, fmt.Errorf("%w: insufficient aggregate stock_quantity for product %s", modelsOrder.ErrInsufficientStock, productID)
 	}
 
-	if ue := tx.Model(&modelsProduct.WarehouseStock{}).
-		Where("warehouse_id = ? AND product_id = ? AND quantity >= ?", warehouseID, productID, qty).
-		Update("quantity", gorm.Expr("quantity - ?", qty)).Error; ue != nil {
-		log.Printf("order_stock_allocate: warehouse stock update failed for product %s: %v", productID, ue)
+	if sErr := syncFEFOWarehouseStock(tx, warehouseID, productID, qty); sErr != nil {
+		return nil, sErr
 	}
 
 	return records, nil
@@ -620,16 +668,60 @@ func TransferStockBetweenWarehouses(tx *gorm.DB, fromWarehouseID, toWarehouseID,
 	if qty <= 0 {
 		return nil, nil
 	}
-	// Deduct from source warehouse (decrement both quantity and reserved if any)
-	fromRecs, err := deductWarehouseStock(tx, fromWarehouseID, productID, qty, reason, refID, operatorID, t)
+	// Read the source reserved quantity under a row lock before deducting so the
+	// customer reservations that sat on the moved goods travel with them instead of
+	// being silently dropped at the target (G21-a edge). Locking the source row also
+	// serializes concurrent transfers of the same product between warehouses.
+	var src modelsProduct.WarehouseStock
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("warehouse_id = ? AND product_id = ?", fromWarehouseID, productID).First(&src).Error; err != nil {
+		return nil, fmt.Errorf("transfer from warehouse: %w", err)
+	}
+	moveReserved := src.Reserved
+	if moveReserved > qty {
+		moveReserved = qty
+	}
+	// Deduct from source warehouse (decrement both quantity and reserved if any).
+	// reserved=true: a transfer is net-zero at the product level, so
+	// Product.StockQuantity must not change here (G21-c).
+	fromRecs, err := deductWarehouseStock(tx, fromWarehouseID, productID, qty, true, reason, refID, operatorID, t)
 	if err != nil {
 		return nil, fmt.Errorf("transfer from warehouse: %w", err)
 	}
-	// Add to target warehouse
-	if err := tx.Model(&modelsProduct.WarehouseStock{}).
-		Where("warehouse_id = ? AND product_id = ?", toWarehouseID, productID).
-		Update("quantity", gorm.Expr("quantity + ?", qty)).Error; err != nil {
+	// Add to target warehouse. The target may have no warehouse_stock row yet
+	// (e.g. a freshly created warehouse) — upsert it instead of silently dropping
+	// the transferred stock (G21-a). The additive ON CONFLICT update is a single
+	// atomic statement, so two concurrent transfers into the same empty target
+	// cannot race a create against the unique (warehouse_id, product_id) index.
+	if err := addStockToWarehouseUpsert(tx, toWarehouseID, productID, qty, moveReserved, t); err != nil {
 		return nil, fmt.Errorf("transfer to warehouse: %w", err)
 	}
 	return fromRecs, nil
+}
+
+// addStockToWarehouseUpsert adds quantity (and the reserved units that moved with
+// them) to a warehouse_stock row, creating the row first when it does not exist so
+// stock is never silently dropped (G21-a). It is a single atomic
+// INSERT ... ON CONFLICT ... DO UPDATE so it is safe under concurrent transfers
+// into the same target (no read-then-create TOCTOU) and portable across
+// PostgreSQL and the SQLite test driver.
+func addStockToWarehouseUpsert(tx *gorm.DB, warehouseID, productID string, qty, reserved int, t time.Time) error {
+	res := tx.Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "warehouse_id"}, {Name: "product_id"}},
+		DoUpdates: clause.Assignments(map[string]interface{}{
+			"quantity":   gorm.Expr("warehouse_stocks.quantity + excluded.quantity"),
+			"reserved":   gorm.Expr("warehouse_stocks.reserved + excluded.reserved"),
+			"updated_at": gorm.Expr("excluded.updated_at"),
+		}),
+	}).Create(&modelsProduct.WarehouseStock{
+		WarehouseID: warehouseID,
+		ProductID:   productID,
+		Quantity:    qty,
+		Reserved:    reserved,
+		UpdatedAt:   t,
+	})
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
 }

@@ -14,7 +14,6 @@ import (
 	servicesCommon "candypro/api/internal/services/common"
 	tradeService "candypro/api/internal/services/trade"
 
-	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/adk"
 	"gorm.io/gorm"
 )
@@ -117,15 +116,21 @@ func (h *Handler) CheckPointStore() *eino.PostgresCheckPointStore {
 	return h.checkPointStore
 }
 
+// quotationReviewSaver returns the quotation-review persistence adapter, or nil
+// when the service isn't wired (the AI tool then degrades to queue-only without
+// persisting, preserving the pre-P2-8 behavior).
+func (h *Handler) quotationReviewSaver() einotool.QuotationReviewSaver {
+	if h.services != nil && h.services.QuotationReview != nil {
+		return h.services.QuotationReview
+	}
+	return nil
+}
+
 // InitDeepAgent initializes the B2B DeepAgent coordinator (ProductExpert, PricingExpert, LogisticsExpert).
 func (h *Handler) InitDeepAgent() error {
 	ctx := context.Background()
 
-	rawModel, modelErr := openai.NewChatModel(ctx, &openai.ChatModelConfig{
-		Model:   h.cfg.AI.OpenAIModel,
-		APIKey:  h.cfg.AI.OpenAIAPIKey,
-		BaseURL: h.cfg.AI.OpenAIBaseURL,
-	})
+	rawModel, modelErr := eino.NewDeepSeekChatModel(ctx, h.cfg.AI, nil)
 	if modelErr != nil {
 		return fmt.Errorf("init deep agent chat model: %w", modelErr)
 	}
@@ -136,7 +141,7 @@ func (h *Handler) InitDeepAgent() error {
 		persister = h.services.Trade
 	}
 
-	a, err := eino.NewB2BCoordinatorAgent(ctx, chatModel, persister, newProductCatalogAdapter(h), newPricingAdapter(h))
+	a, err := eino.NewB2BCoordinatorAgent(ctx, chatModel, persister, h.quotationReviewSaver(), newProductCatalogAdapter(h), newPricingAdapter(h))
 	if err != nil {
 		return err
 	}
@@ -149,11 +154,7 @@ func (h *Handler) InitDeepAgent() error {
 func (h *Handler) InitOrderProcessingAgent() error {
 	ctx := context.Background()
 
-	rawModel, modelErr := openai.NewChatModel(ctx, &openai.ChatModelConfig{
-		Model:   h.cfg.AI.OpenAIModel,
-		APIKey:  h.cfg.AI.OpenAIAPIKey,
-		BaseURL: h.cfg.AI.OpenAIBaseURL,
-	})
+	rawModel, modelErr := eino.NewDeepSeekChatModel(ctx, h.cfg.AI, nil)
 	if modelErr != nil {
 		return fmt.Errorf("init order processing agent chat model: %w", modelErr)
 	}

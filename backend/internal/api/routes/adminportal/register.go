@@ -164,6 +164,11 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) 
 	group.PUT("/trades/:id/documents/:docId", h.AdminPortal.AdminUpdateTradeDocument)
 	group.DELETE("/trades/:id/documents/:docId", h.AdminPortal.AdminDeleteTradeDocument)
 
+	// Quotation human-review queue (submit_quotation_for_human_review persistence)
+	group.GET("/quotation-reviews", h.AdminPortal.AdminListQuotationReviews)
+	group.POST("/quotation-reviews/:id/approve", h.AdminPortal.AdminApproveQuotationReview)
+	group.POST("/quotation-reviews/:id/reject", h.AdminPortal.AdminRejectQuotationReview)
+
 	// Trade rich documents
 	group.GET("/trades/:id/sales-contract", h.AdminPortal.AdminGetSalesContract)
 	group.POST("/trades/:id/sales-contract", h.AdminPortal.AdminCreateSalesContract)

@@ -2,12 +2,16 @@ package order
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strings"
 	"time"
 
 	modelsOrder "candypro/api/internal/models/order"
 	countrypkg "candypro/api/internal/pkg/country"
 	"candypro/api/internal/pkg/crypto"
+
+	"gorm.io/gorm"
 )
 
 type shippingRepository interface {
@@ -65,7 +69,18 @@ func (s *ShippingService) CalculateShippingCost(ctx context.Context, destination
 func (s *ShippingService) CalculateShippingCostWithFlag(ctx context.Context, destinationCountry string, estimatedWeightKg float64) (float64, string, bool, error) {
 	destinationCountry = countrypkg.NormalizeCountryCode(destinationCountry)
 	rate, err := s.repo.FindBestRate(ctx, destinationCountry, estimatedWeightKg)
-	if err != nil || rate == nil {
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// No rate covers the destination — legitimately uncovered, not an
+			// error; callers surface the "not configured" flag (M-11).
+			return 0, "", false, nil
+		}
+		// A real DB failure must not be misread as "no shipping for this
+		// destination": fail closed so checkout surfaces the lookup failure
+		// instead of silently under-charging (G24c).
+		return 0, "", false, fmt.Errorf("shipping: rate lookup failed for %s: %w", destinationCountry, err)
+	}
+	if rate == nil {
 		return 0, "", false, nil
 	}
 	return rate.BaseCost + (rate.CostPerKg * estimatedWeightKg), rate.Currency, true, nil

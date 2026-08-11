@@ -32,7 +32,7 @@ export const authFetch = <T>(url: string, options: Record<string, unknown> = {})
     ...options,
     credentials: 'include',
     headers
-  })
+  }) as Promise<T>
 }
 
 export const useAuth = () => {

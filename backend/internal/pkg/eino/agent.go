@@ -36,7 +36,7 @@ var LastTradeAgentToolCount int
 // chatModel is injected by the caller so both agent and AIService share one model config.
 // persister may be nil for chat-only deployments.
 // translateFn may be nil to skip the translate_content tool.
-func NewTradeAgent(ctx context.Context, chatModel model.ToolCallingChatModel, persister einotool.DocumentPersister, translateFn einotool.TranslateFunc) (adk.Agent, error) {
+func NewTradeAgent(ctx context.Context, chatModel model.ToolCallingChatModel, persister einotool.DocumentPersister, quoteSaver einotool.QuotationReviewSaver, translateFn einotool.TranslateFunc) (adk.Agent, error) {
 	// ── Graph Tool: deterministic document generation pipeline ──
 	// Per Eino official guide: "Encapsulating Graph as Agent's Tool achieves 1+1 > 2"
 	docGraph, err := graph.NewDocumentPipelineGraph(ctx, persister)
@@ -59,12 +59,12 @@ func NewTradeAgent(ctx context.Context, chatModel model.ToolCallingChatModel, pe
 		return nil, err
 	}
 
-	trackTool, err := einotool.NewTrackShipmentTool(ctx)
+	trackTool, err := einotool.NewTrackShipmentTool(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	quoteReviewTool, err := einotool.NewQuotationHumanReviewTool(ctx)
+	quoteReviewTool, err := einotool.NewQuotationHumanReviewTool(ctx, quoteSaver)
 	if err != nil {
 		return nil, err
 	}

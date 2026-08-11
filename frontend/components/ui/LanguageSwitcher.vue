@@ -94,7 +94,7 @@ const getLocaleFlag = (code: string): string => {
 
 /** 解析可用语言：优先 props，其次 i18n 配置，最后回退到 LOCALE_META */
 const resolveConfiguredLocales = (): Locale[] => {
-  const fromI18n = unref(i18nLocales as { value?: Array<{ code: string; name?: string }> } | undefined)
+  const fromI18n = unref(i18nLocales)
   const list = Array.isArray(fromI18n) ? fromI18n : []
   const source = list.length > 0 ? list : LOCALE_META
   return source.map((l) => ({
@@ -200,8 +200,8 @@ const selectLocale = async (code: string) => {
     document.cookie = `user-locale=${code}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`
   }
 
-  await setLocale(code)
-  await navigateTo(switchLocalePath(code))
+  await setLocale(code as Parameters<typeof setLocale>[0])
+  await navigateTo(switchLocalePath(code as Parameters<typeof switchLocalePath>[0]))
 
   close()
 }

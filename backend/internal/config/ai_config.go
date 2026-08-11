@@ -29,7 +29,7 @@ func LoadAIConfig() AIConfig {
 	return AIConfig{
 		OpenAIAPIKey:         getEnv("OPENAI_API_KEY", ""),
 			OpenAIBaseURL:        getEnv("OPENAI_BASE_URL", ""),
-		OpenAIModel:          getEnv("OPENAI_MODEL", "gpt-4o"),
+		OpenAIModel:          getEnv("OPENAI_MODEL", "deepseek-v4-flash"),
 		OpenAIEmbeddingModel: getEnv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small"),
 		DefaultLanguage:      getEnv("AI_DEFAULT_LANGUAGE", "en"),
 		SupportedLanguages:   []string{"en", "zh", "ar", "es", "fr", "de", "ja"},

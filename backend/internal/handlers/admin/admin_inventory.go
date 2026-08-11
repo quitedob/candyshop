@@ -221,7 +221,13 @@ func (h *Handler) AdminBatchUpdateInventory(c *gin.Context) {
 
 		product.UpdatedAt = time.Now()
 		product.UpdatedBy = &operatorID
-		if err := h.services.Product.UpdateProduct(c.Request.Context(), product); err != nil {
+		// AdminBatchUpdateInventory loads the full row first, so the full-row
+		// overwrite is safe and persists zero-value corrections
+		// ({"stockQuantity":0}, {"basePrice":0}, {"halalCertified":false}).
+		// The zero-skip Update would silently drop them (H11), leaving the
+		// StockTransaction audit delta below written for a value the DB never
+		// stored.
+		if err := h.services.Product.UpdateProductAll(c.Request.Context(), product); err != nil {
 			errors++
 			errorMessages = append(errorMessages, fmt.Sprintf("%s: update failed - %v", product.Name, err))
 			continue

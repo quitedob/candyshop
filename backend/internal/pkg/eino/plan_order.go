@@ -46,7 +46,7 @@ func NewOrderProcessingAgent(ctx context.Context, chatModel model.ToolCallingCha
 		return nil, fmt.Errorf("L/C validation tool: %w", err)
 	}
 
-	trackTool, err := einotool.NewTrackShipmentTool(ctx)
+	trackTool, err := einotool.NewTrackShipmentTool(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("shipment tracking tool: %w", err)
 	}

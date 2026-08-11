@@ -300,6 +300,114 @@ func (h *Handler) checkAdminCompanyCreditLimit(c *gin.Context, userID string, to
 	return orderpolicy.CheckCompanyCreditLimit(c, adminCompanyProvider{h: h}, userID, totalAmount)
 }
 
+// checkAdminCompanyCreditLimitCumulative enforces the buyer company's credit
+// limit against cumulative outstanding exposure on the admin confirm paths
+// (AdminUpdateOrderStatus / AdminUpdateOrder transitioning to confirmed, G20
+// follow-up). The sum of every buyer user's open (non-terminal) order totals for
+// the company, excluding the order being confirmed, plus this order's total must
+// not exceed the limit. The customer confirm path already enforces this; the
+// admin paths must not be a bypass. Mirrors the customer-portal
+// checkCompanyCreditLimitCumulative semantics: companies without an explicit
+// limit are unlimited, company/limit resolution failures fail open (nothing to
+// enforce), and a known limit with a failed open-exposure sum fails CLOSED so a
+// transient DB failure cannot silently lift the credit guard.
+func (h *Handler) checkAdminCompanyCreditLimitCumulative(c *gin.Context, userID, excludeOrderID string, totalAmount float64) bool {
+	if h.services == nil || h.services.Order == nil {
+		return true
+	}
+	provider := adminCompanyProvider{h: h}
+	companyID, ok := provider.GetUserCompanyID(c.Request.Context(), userID)
+	if !ok || companyID == "" {
+		return true // no company → no limit applies
+	}
+	limit, ok := provider.GetCompanyCreditLimit(c.Request.Context(), companyID)
+	if !ok || limit <= 0 {
+		return true // unlimited
+	}
+	open, err := h.services.Order.SumOpenOrderTotalsByCompany(c.Request.Context(), companyID, excludeOrderID)
+	if err != nil {
+		slog.Error("checkAdminCompanyCreditLimitCumulative: company open-order sum failed",
+			"userID", userID, "companyID", companyID, "orderID", excludeOrderID, "error", err)
+		response.ErrorResp(c, http.StatusInternalServerError, "order_update_failed")
+		return false
+	}
+	if open+totalAmount > limit {
+		response.ErrorResp(c, http.StatusUnprocessableEntity, "credit_limit_exceeded")
+		return false
+	}
+	return true
+}
+
+// validateAdminConfirmMOQ re-enforces per-product MOQ on the admin confirm paths
+// (transitioning an order to confirmed). Draft creation paths (bulk CSV,
+// requisition, reorder) never validated MOQ, and the customer confirm path
+// re-enforces it — the admin confirm paths must not be a bypass (G20 follow-up,
+// arguer basis 2). MOQ is checked per aggregated product quantity, matching
+// OrderService.ValidateMOQ semantics. Returns false and writes the 422 when any
+// line is below its product MOQ; a product-lookup failure fails CLOSED (500)
+// because MOQ cannot be verified.
+func (h *Handler) validateAdminConfirmMOQ(c *gin.Context, items modelsOrder.OrderItemArray) bool {
+	if h.services == nil || h.services.Order == nil || h.services.Product == nil || len(items) == 0 {
+		return true
+	}
+	seen := make(map[string]struct{}, len(items))
+	ids := make([]string, 0, len(items))
+	for _, it := range items {
+		pid := strings.TrimSpace(it.ProductID)
+		if pid == "" {
+			continue
+		}
+		if _, ok := seen[pid]; ok {
+			continue
+		}
+		seen[pid] = struct{}{}
+		ids = append(ids, pid)
+	}
+	productByID := make(map[string]modelsProduct.Product, len(ids))
+	products, perr := h.services.Product.GetProductsByIDs(c.Request.Context(), ids)
+	if perr != nil {
+		slog.Error("validateAdminConfirmMOQ: product lookup failed",
+			"orderItems", len(items), "error", perr)
+		response.ErrorResp(c, http.StatusInternalServerError, "order_update_failed")
+		return false
+	}
+	for i := range products {
+		productByID[products[i].ID] = products[i]
+	}
+	if violations := h.services.Order.ValidateMOQ(items, productByID); len(violations) > 0 {
+		response.ErrorRespDetail(c, http.StatusUnprocessableEntity, "min_quantity_not_met", gin.H{
+			"violations": violations,
+		})
+		return false
+	}
+	return true
+}
+
+// validateAdminConfirmPriceListMin re-enforces the contract price-list minimum
+// per line on the admin confirm paths (G20 follow-up). Draft paths never
+// validated the price-list min (bulk CSV etc.), and the customer confirm path
+// enforces it per line — the admin confirm paths must not be a bypass. Returns
+// false and writes the 422 when any line is below its contract minimum. When the
+// user's company has no contract price list this is a no-op returning true.
+func (h *Handler) validateAdminConfirmPriceListMin(c *gin.Context, userID string, items modelsOrder.OrderItemArray) bool {
+	if h.services == nil || len(items) == 0 {
+		return true
+	}
+	contractPriceListID := h.resolveAdminContractPriceListID(c, userID)
+	if contractPriceListID == nil {
+		return true
+	}
+	for _, it := range items {
+		if it.Quantity < 1 {
+			continue
+		}
+		if !h.validateAdminLineMinQuantity(c, it.ProductID, it.Quantity, contractPriceListID) {
+			return false
+		}
+	}
+	return true
+}
+
 // adminCompanyProvider adapts admin-portal services to the
 // orderpolicy.UserCompanyProvider interface.
 type adminCompanyProvider struct {

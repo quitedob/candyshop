@@ -88,13 +88,23 @@ func (s *InvoiceService) CreateInvoice(ctx context.Context, invoice *modelsOrder
 	if invoice.Currency == "" {
 		invoice.Currency = "USD"
 	}
-	invoice.TotalAmount = invoice.Amount + invoice.TaxAmount
+	// H9: preserve a caller-computed total (order-derived invoices already
+	// include ShippingAmount in TotalAmount — see CreateInvoiceFromOrder);
+	// only fall back to amount+tax when no total was supplied, so derived
+	// invoices don't silently under-bill freight.
+	if invoice.TotalAmount == 0 {
+		invoice.TotalAmount = invoice.Amount + invoice.TaxAmount
+	}
 	return s.repo.Create(ctx, invoice)
 }
 
 // UpdateInvoice saves changes to an existing invoice.
 func (s *InvoiceService) UpdateInvoice(ctx context.Context, invoice *modelsOrder.Invoice) error {
-	invoice.TotalAmount = invoice.Amount + invoice.TaxAmount
+	// H9: same guard as CreateInvoice — don't clobber a total that already
+	// carries a freight component with a shipping-free recomputation.
+	if invoice.TotalAmount == 0 {
+		invoice.TotalAmount = invoice.Amount + invoice.TaxAmount
+	}
 	return s.repo.Update(ctx, invoice)
 }
 

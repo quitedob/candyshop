@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // PaymentRepository handles payment data operations.
@@ -44,9 +45,19 @@ func (r *PaymentRepository) Create(ctx context.Context, payment *modelsOrder.Pay
 }
 
 // CreateWithBalanceCheck atomically checks remaining balance and creates a payment within a transaction.
-// Prevents TOCTOU race where concurrent requests both pass balance validation.
+// Prevents TOCTOU race where concurrent requests both pass balance validation (M8).
 func (r *PaymentRepository) CreateWithBalanceCheck(ctx context.Context, orderTotalAmount float64, payment *modelsOrder.Payment) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Lock the order row (SELECT ... FOR UPDATE) so concurrent checkouts —
+		// including across multiple app instances — serialize on the row: the
+		// second transaction observes the first's committed payment and fails the
+		// balance check. The in-process mutex in PaymentService remains as a cheap
+		// single-process pre-serializer.
+		var order modelsOrder.Order
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("id = ?", payment.OrderID).First(&order).Error; err != nil {
+			return err
+		}
 		var payments []modelsOrder.Payment
 		if err := tx.Where("order_id = ?", payment.OrderID).Find(&payments).Error; err != nil {
 			return err
@@ -66,7 +77,11 @@ func (r *PaymentRepository) CreateWithBalanceCheck(ctx context.Context, orderTot
 		if remaining < 0 {
 			remaining = 0
 		}
-		if payment.Amount > remaining && remaining > 0 {
+		// Reject any payment above the remaining balance. This must also fire when
+		// remaining == 0 (fully-paid order): the previous `&& remaining > 0` clause
+		// disabled the guard exactly in the double-submit case, letting a second
+		// full payment land on an already-covered order (H7).
+		if payment.Amount > remaining {
 			return fmt.Errorf("payment amount %.2f exceeds remaining balance %.2f", payment.Amount, remaining)
 		}
 		return tx.Create(payment).Error

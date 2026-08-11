@@ -1,6 +1,9 @@
 package money
 
-import "testing"
+import (
+	"math"
+	"testing"
+)
 
 func TestMoneyCoversTotal(t *testing.T) {
 	if !MoneyCoversTotal(100.0, 100.0) {
@@ -21,5 +24,31 @@ func TestMoneyCoversTotal(t *testing.T) {
 func TestRoundMoney(t *testing.T) {
 	if got := RoundMoney(6695.8125); got != 6695.81 {
 		t.Fatalf("RoundMoney = %v, want 6695.81", got)
+	}
+}
+
+func TestMoneyToCentsInt(t *testing.T) {
+	cases := []struct {
+		name string
+		amt  float64
+		want int64
+	}{
+		{"clean value", 19.99, 1999},
+		{"round up at third decimal", 19.999, 2000},
+		{"sub-cent rounds down", 19.994, 1999},
+		{"sub-cent rounds up", 19.9951, 2000},
+		{"negative", -19.99, -1999},
+		{"negative rounds away", -19.999, -2000},
+		{"zero", 0, 0},
+		{"matches RoundMoney semantics", 6695.8125, 669581},
+		{"nan guards to zero", math.NaN(), 0},
+		{"inf guards to zero", math.Inf(1), 0},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := MoneyToCentsInt(tc.amt); got != tc.want {
+				t.Fatalf("MoneyToCentsInt(%v) = %d, want %d", tc.amt, got, tc.want)
+			}
+		})
 	}
 }

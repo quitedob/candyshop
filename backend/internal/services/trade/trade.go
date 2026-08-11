@@ -123,6 +123,25 @@ func (s *TradeService) GetDocument(ctx context.Context, id uint) (*modelsTrade.T
 	return s.repo.GetDocumentByID(ctx, id)
 }
 
+// ResolveProformaInvoiceRef returns the doc_number of the trade's existing
+// Proforma Invoice envelope row, or "" when none exists. Used by the AI doc
+// graph so a Commercial Invoice generated without a PI in the same batch still
+// cross-references the trade's real PI.
+func (s *TradeService) ResolveProformaInvoiceRef(ctx context.Context, transactionID uint) (string, error) {
+	docs, err := s.repo.ListDocumentsByTransactionID(ctx, transactionID)
+	if err != nil {
+		return "", err
+	}
+	for i := range docs {
+		if strings.ToUpper(strings.TrimSpace(docs[i].Type)) == modelsTrade.DocTypeProformaInvoice {
+			if n := strings.TrimSpace(docs[i].DocNumber); n != "" {
+				return n, nil
+			}
+		}
+	}
+	return "", nil
+}
+
 // UpdateDocument updates an existing document
 func (s *TradeService) UpdateDocument(ctx context.Context, doc *modelsTrade.TradeDocument) error {
 	// M-12: validate status transition before persisting. The previous repo

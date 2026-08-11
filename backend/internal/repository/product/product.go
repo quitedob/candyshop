@@ -3,6 +3,8 @@ package product
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -228,9 +230,62 @@ func (r *ProductRepository) Create(ctx context.Context, product *modelsProduct.P
 	return r.db.WithContext(ctx).Create(product).Error
 }
 
-// Update updates a product (non-zero fields only, avoids full-row Save overwrite).
+// Update updates a product using GORM's struct-based Updates, which skips
+// zero-valued fields. This preserves partial-update semantics: a caller that
+// builds a fresh struct from a subset of columns (e.g. the XLSX importer,
+// AdminApplyInventoryImport) leaves absent columns untouched.
+//
+// Callers that must persist zero values — clearing featured / halal_certified,
+// zeroing stock_quantity or base_price, emptying a text field (H11) — must use
+// UpdateAll (full-row overwrite) or UpdateColumns (explicit column list)
+// instead; GORM's zero-skipping otherwise silently no-ops the change while the
+// caller reports success.
+//
+// WARNING (H11 end-to-end status, 2026-08-11): the live admin edit paths
+// AdminUpdateProduct (admin_products.go), AdminUpdateProductStatus
+// (admin_extensions.go), AdminBatchUpdateInventory (admin_inventory.go) and
+// AdminAITranslate (admin_ai_translate.go) still call this zero-skip Update via
+// ProductService.UpdateProduct, so clearing featured/halal, zeroing
+// stock/price, or emptying a text field from the admin UI still silently no-ops
+// until those handlers migrate to UpdateAll. Do not add new callers here that
+// require zero-value persistence.
 func (r *ProductRepository) Update(ctx context.Context, product *modelsProduct.Product) error {
 	return r.db.WithContext(ctx).Model(product).Updates(product).Error
+}
+
+// UpdateAll performs a full-row overwrite, persisting zero values.
+//
+// GORM's struct-based Updates skips zero-valued fields, so an admin clearing
+// featured=false or halal_certified=false, zeroing stock_quantity or
+// base_price, or emptying a text field would silently no-op while the UI
+// reports success (H11). Select("*") writes every column of the struct, zero
+// values included.
+//
+// Safe for the load-then-patch callers (AdminUpdateProduct,
+// AdminUpdateProductStatus, the batch inventory update, the AI translate
+// handler) that read the current row first and patch only the changed fields:
+// every column is preserved from the loaded row and the patched zero values are
+// written. Do NOT use it with a fresh struct built from a partial column set —
+// the XLSX importer must merge the full existing row first or use UpdateColumns.
+//
+// Select("*") includes created_at and deleted_at in the UPDATE column set. For
+// a non-deleted row that writes the existing values (NULL for deleted_at) and
+// is harmless; soft-deleted rows are excluded from updates by GORM's default
+// scope.
+func (r *ProductRepository) UpdateAll(ctx context.Context, product *modelsProduct.Product) error {
+	return r.db.WithContext(ctx).Model(product).Select("*").Updates(product).Error
+}
+
+// UpdateColumns writes only the named DB columns from the struct, including
+// zero values. It is the column-scoped variant for partial updates that must be
+// able to clear or zero a specific field: pass the columns that were actually
+// supplied by the caller (add "updated_at" explicitly to bump the timestamp) so
+// absent columns stay untouched. At least one column is required.
+func (r *ProductRepository) UpdateColumns(ctx context.Context, product *modelsProduct.Product, columns ...string) error {
+	if len(columns) == 0 {
+		return errors.New("product: UpdateColumns requires at least one column")
+	}
+	return r.db.WithContext(ctx).Model(product).Select(columns).Updates(product).Error
 }
 
 // UpdateStockWithLock 行锁更新库存数量，返回旧库存
@@ -255,6 +310,61 @@ func (r *ProductRepository) UpdateStockWithLock(ctx context.Context, productID s
 // Delete deletes a product
 func (r *ProductRepository) Delete(ctx context.Context, id string) error {
 	return r.db.WithContext(ctx).Delete(&modelsProduct.Product{}, "id = ?", id).Error
+}
+
+// UpsertEmbedding inserts or updates a product's semantic-search vector in the
+// product_embeddings table (G24b). product_embeddings was previously never
+// written anywhere, which left the pgvector JOIN in SearchVectorSimilar
+// perpetually empty and semantic search silently falling back to keyword on
+// every request. Callers that generate vectors (the search-service backfill)
+// persist them here. A missing/blank product ID or an empty embedding is a
+// no-op.
+//
+// The embedding must be exactly modelsProduct.EmbeddingDim (1536) floats: the
+// column is declared vector(1536), so a different dimension can never be stored
+// on Postgres and, worse, is silently accepted by SQLite. Validating here makes
+// a misconfigured embedding model loud and actionable instead of reproducing
+// the inert-semantic-search symptom without a code error (G24b).
+func (r *ProductRepository) UpsertEmbedding(ctx context.Context, productID string, embedding []float32) error {
+	if strings.TrimSpace(productID) == "" || len(embedding) == 0 {
+		return nil
+	}
+	if len(embedding) != modelsProduct.EmbeddingDim {
+		return fmt.Errorf(
+			"product: embedding for %q has %d dimensions, want %d (vector(%d)); configure an embedding model with %d-dim output or migrate the product_embeddings column",
+			productID, len(embedding), modelsProduct.EmbeddingDim, modelsProduct.EmbeddingDim, modelsProduct.EmbeddingDim)
+	}
+	vec := pgvector.NewVector(embedding)
+	now := time.Now()
+	row := modelsProduct.ProductEmbedding{
+		ProductID: productID,
+		Embedding: &vec,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+	return r.db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "product_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"embedding", "updated_at"}),
+	}).Create(&row).Error
+}
+
+// FindProductsMissingEmbeddings returns up to limit active, non-deleted products
+// that have no row in product_embeddings. Used by the search-service backfill so
+// the semantic index stays populated for newly created products.
+func (r *ProductRepository) FindProductsMissingEmbeddings(ctx context.Context, limit int) ([]modelsProduct.Product, error) {
+	if limit <= 0 {
+		return nil, nil
+	}
+	var products []modelsProduct.Product
+	err := r.db.WithContext(ctx).
+		Where("status = ?", "active").
+		Where("id NOT IN (?)", r.db.WithContext(ctx).Model(&modelsProduct.ProductEmbedding{}).Select("product_id")).
+		Limit(limit).
+		Find(&products).Error
+	if err != nil {
+		return nil, err
+	}
+	return products, nil
 }
 
 // escapeLikePattern escapes special characters for SQL LIKE operator

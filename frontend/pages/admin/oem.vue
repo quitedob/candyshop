@@ -350,7 +350,9 @@ const saveFlow = async () => {
     }
     showFlowForm.value = false
     await loadFlows()
-  } catch {}
+  } catch (e: any) {
+    toast.error(e?.message || t('errors.api.save_failed'))
+  }
 }
 
 const deleteFlow = async (id: string) => {
@@ -358,12 +360,16 @@ const deleteFlow = async (id: string) => {
   try {
     await api.adminDeleteOemFlow(id)
     await loadFlows()
-  } catch {}
+  } catch (e: any) {
+    toast.error(e?.message || t('errors.api.delete_failed'))
+  }
 }
 
 const openSolutionForm = (s?: any) => {
   if (s) {
-    solutionForm.id = s.id || s.slug
+    // Backend PUT /admin/oem-solutions/:id is slug-keyed (GetSolutionBySlug),
+    // so the edit form must carry the slug, not the UUID.
+    solutionForm.id = s.slug || s.id
     solutionForm.title = s.title
     solutionForm.category = s.category || ''
     solutionForm.description = s.description || ''
@@ -395,15 +401,20 @@ const saveSolution = async () => {
     }
     showSolutionForm.value = false
     await loadSolutions()
-  } catch {}
+  } catch (e: any) {
+    toast.error(e?.message || t('errors.api.save_failed'))
+  }
 }
 
 const deleteSolution = async (id: string) => {
   if (!confirm(t('admin.oem.confirm_delete_solution'))) return
   try {
+    // Backend DELETE /admin/oem-solutions/:id is id-keyed (DeleteSolution by id).
     await api.adminDeleteOemSolution(id)
     await loadSolutions()
-  } catch {}
+  } catch (e: any) {
+    toast.error(e?.message || t('errors.api.delete_failed'))
+  }
 }
 
 const updateProjectStatus = async (id: string, status: string) => {

@@ -181,6 +181,10 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 	})
 
 	// Readiness check — verifies critical dependencies before serving traffic.
+	// The DB is a hard dependency: /ready must report 503 whenever the DB is
+	// unreachable, even when the optional AI agent hasn't initialized. Only
+	// after the DB passes do we return the degraded-200 with the agent warning
+	// (G27-a).
 	router.GET("/ready", func(c *gin.Context) {
 		failures := make([]string, 0)
 
@@ -195,6 +199,14 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 			failures = append(failures, "db_not_initialized")
 		}
 
+		if len(failures) > 0 {
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"status":   "not_ready",
+				"failures": failures,
+			})
+			return
+		}
+
 		if h.System != nil && !h.System.IsAgentReady() {
 			// AI 为可选依赖，不影响核心 B2B 流量就绪
 			status := gin.H{
@@ -204,14 +216,6 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 				"warnings": []string{"ai_agent_not_ready"},
 			}
 			c.JSON(http.StatusOK, status)
-			return
-		}
-
-		if len(failures) > 0 {
-			c.JSON(http.StatusServiceUnavailable, gin.H{
-				"status":   "not_ready",
-				"failures": failures,
-			})
 			return
 		}
 

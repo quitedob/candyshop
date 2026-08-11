@@ -1,0 +1,368 @@
+openapi: 3.0.0
+info:
+  title: CandyPro OEM API
+  description: API for CandyPro OEM candy manufacturing website
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: info@candypro.com
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+  - url: https://api.candypro.com/api/v1
+    description: Production server
+
+tags:
+  - name: products
+    description: Product catalog operations
+  - name: categories
+    description: Product category operations
+  - name: oem
+    description: OEM and private label solutions
+  - name: factory
+    description: Factory and quality information
+  - name: certifications
+    description: Quality certifications
+  - name: blog
+    description: Blog posts and news
+  - name: cases
+    description: Case studies and client success stories
+  - name: inquiry
+    description: Inquiry form submissions
+  - name: search
+    description: Search across all content
+
+paths:
+  /products:
+    get:
+      summary: Get products
+      tags: [products]
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by category slug
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 12
+          description: Items per page
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search term
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /products/featured:
+    get:
+      summary: Get featured products
+      tags: [products]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 8
+          description: Number of products to return
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+
+  /products/{slug}:
+    get:
+      summary: Get product by slug
+      tags: [products]
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Product slug
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+
+  /categories:
+    get:
+      summary: Get all categories
+      tags: [categories]
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+
+  /categories/{slug}:
+    get:
+      summary: Get category by slug
+      tags: [categories]
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Category slug
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '404':
+          description: Category not found
+
+  /inquiry:
+    post:
+      summary: Submit inquiry
+      tags: [inquiry]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - companyName
+                - contactPerson
+                - email
+              properties:
+                companyName:
+                  type: string
+                  description: Company name
+                contactPerson:
+                  type: string
+                  description: Contact person name
+                email:
+                  type: string
+                  format: email
+                  description: Email address
+                whatsapp:
+                  type: string
+                  description: WhatsApp/Phone number
+                targetCountry:
+                  type: string
+                  description: Target country
+                estimatedQuantity:
+                  type: string
+                  description: Estimated order quantity
+                interestedProducts:
+                  type: string
+                  description: Interested products (comma-separated)
+                packagingRequirements:
+                  type: string
+                  description: Packaging requirements
+                flavorRequirements:
+                  type: string
+                  description: Flavor requirements
+                oemNeeded:
+                  type: boolean
+                  description: OEM/Private label needed
+                expectedDelivery:
+                  type: string
+                  description: Expected delivery date
+                message:
+                  type: string
+                  description: Additional requirements
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Reference images
+      responses:
+        '200':
+          description: Inquiry submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  inquiryId:
+                    type: string
+
+  /search:
+    get:
+      summary: Search content
+      tags: [search]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [products, posts, cases, all]
+            default: all
+          description: Result type filter
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  products:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+                  posts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BlogPost'
+                  cases:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CaseStudy'
+
+components:
+  schemas:
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        name:
+          type: string
+        summary:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        thumbnail:
+          type: string
+        oemAvailable:
+          type: boolean
+        halalCertified:
+          type: boolean
+        moq:
+          type: integer
+        leadTime:
+          type: string
+
+    Category:
+      type: object
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        thumbnail:
+          type: string
+        productCount:
+          type: integer
+
+    BlogPost:
+      type: object
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        title:
+          type: string
+        excerpt:
+          type: string
+        category:
+          type: string
+        author:
+          type: object
+          properties:
+            name:
+              type: string
+        publishedAt:
+          type: string
+          format: date-time
+        readTime:
+          type: integer
+
+    CaseStudy:
+      type: object
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        client:
+          type: string
+        industry:
+          type: string
+        location:
+          type: string
+        result:
+          type: string
+
+    PaginatedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+        pagination:
+          type: object
+          properties:
+            total:
+              type: integer
+            page:
+              type: integer
+            limit:
+              type: integer
+            totalPages:
+              type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object

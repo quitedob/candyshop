@@ -107,8 +107,25 @@ const { getCases } = useApi()
 
 const activeIndustry = ref('')
 
+// The backend clamps the page size to 50 (pagination.ParsePagination max), so
+// requesting limit: 200 silently truncated the catalog. Page through the full
+// set at the real page size so the grid and the industry filter see every case.
+const CASES_PAGE_SIZE = 50
+
 const { data: casesResponse } = await useAsyncData('cases-all', async () => {
-  return await getCases({ page: 1, limit: 200 })
+  const first = await getCases({ page: 1, limit: CASES_PAGE_SIZE })
+  const totalPages = first.pagination?.totalPages ?? 1
+  if (totalPages <= 1) return first
+
+  const rest = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, index) =>
+      getCases({ page: index + 2, limit: CASES_PAGE_SIZE })
+    )
+  )
+  return {
+    data: first.data.concat(...rest.map((response) => response.data)),
+    pagination: first.pagination
+  }
 })
 
 const caseStudies = computed(() => {

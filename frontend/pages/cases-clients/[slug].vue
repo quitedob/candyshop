@@ -298,7 +298,7 @@ const relatedCases = computed(() => {
 
 const breadcrumbItems = computed(() => {
   const label = tField(caseStudy.value, 'client') || t('cases_detail.fallback_client')
-  const items = [{ label: t('nav.cases'), to: '/cases-clients' }]
+  const items: { label: string; to?: string }[] = [{ label: t('nav.cases'), to: '/cases-clients' }]
   const industry = tField(caseStudy.value, 'industry')
   if (industry) {
     items.push({ label: industry })
@@ -323,7 +323,7 @@ const loadError = computed(() => {
 usePageOgImage({
   title: computed(() => `${tField(caseStudy.value, 'client') || t('cases_detail.fallback_client')} | ${t('seo.default_title')}`),
   description: computed(() => tField(caseStudy.value, 'result') || t('cases.subtitle')),
-  ogImage: computed(() => caseStudy.value?.ogImage),
+  ogImage: computed(() => (caseStudy.value as { ogImage?: string } | null)?.ogImage),
   thumbnail: computed(() => caseStudy.value?.thumbnail),
   images: computed(() => caseStudy.value?.images),
   ogType: 'article',

@@ -167,16 +167,21 @@ func (s *GatewayPaymentService) CaptureAndConfirm(ctx context.Context, pay *mode
 	return s.payments.ConfirmPayment(ctx, pay.ID, confirmedBy)
 }
 
-// RefundGateway 通过网关退款并更新本地记录
+// RefundGateway 通过网关退款并更新本地记录。
+// Fail-closed：若支付带有网关交易 ID 但网关不可解析（未配置/未知方法），
+// 直接返回错误，绝不在网关退款失败时把本地记录标记为 refunded，
+// 否则钱仍被 Stripe/PayPal 捕获而数据库却显示已退款（H8）。
 func (s *GatewayPaymentService) RefundGateway(ctx context.Context, pay *modelsOrder.Payment) error {
 	if s.payments == nil || pay == nil {
 		return fmt.Errorf("service_unavailable")
 	}
 	if pay.GatewayTransactionID != nil && strings.TrimSpace(*pay.GatewayTransactionID) != "" {
-		if gw, err := s.gateway(pay.Method); err == nil {
-			if _, refundErr := gw.Refund(ctx, *pay.GatewayTransactionID, pay.Amount); refundErr != nil {
-				return refundErr
-			}
+		gw, err := s.gateway(pay.Method)
+		if err != nil {
+			return err
+		}
+		if _, refundErr := gw.Refund(ctx, *pay.GatewayTransactionID, pay.Amount); refundErr != nil {
+			return refundErr
 		}
 	}
 	return s.payments.RefundPayment(ctx, pay.ID)

@@ -78,7 +78,6 @@
             <option value="inactive">{{ t('admin.status_options.inactive') }}</option>
           </select>
         </div>
-        <p v-if="createdSecret" class="text-sm text-emerald-700 bg-emerald-50 p-3 rounded-md">{{ t('admin.webhooks.secret_created') }}: <code>{{ createdSecret }}</code></p>
         <p v-if="formError" class="text-sm text-red-600">{{ formError }}</p>
         <div class="flex justify-end gap-3 pt-2">
           <button type="button" class="rounded-md border border-gray-300 px-4 py-2 text-sm" @click="closeModal">{{ t('admin.webhooks.cancel') }}</button>
@@ -112,7 +111,6 @@ const showModal = ref(false)
 const editingId = ref<number | null>(null)
 const saving = ref(false)
 const formError = ref('')
-const createdSecret = ref('')
 
 const form = reactive({ name: '', url: '', events: [] as string[], status: 'active' })
 
@@ -163,7 +161,6 @@ const fetchDeliveries = async () => {
 
 const openCreate = () => {
   editingId.value = null
-  createdSecret.value = ''
   Object.assign(form, { name: '', url: '', events: ['order.created'], status: 'active' })
   formError.value = ''
   showModal.value = true
@@ -171,7 +168,6 @@ const openCreate = () => {
 
 const openEdit = (row: any) => {
   editingId.value = row.id
-  createdSecret.value = ''
   Object.assign(form, { name: row.name, url: row.url, events: [...(row.events || [])], status: row.status || 'active' })
   formError.value = ''
   showModal.value = true
@@ -190,10 +186,11 @@ const saveWebhook = async () => {
     if (editingId.value) {
       await api.put(`/admin/webhooks/${editingId.value}`, { name: form.name, url: form.url, events: form.events, status: form.status })
     } else {
-      const res = await api.post<any>('/admin/webhooks', { name: form.name, url: form.url, events: form.events })
-      createdSecret.value = res.secret || ''
+      // Backend creates a secret server-side but never serializes it
+      // (WebhookConfig.Secret is json:"-"), so there is no secret to display.
+      await api.post<any>('/admin/webhooks', { name: form.name, url: form.url, events: form.events })
     }
-    if (!createdSecret.value) closeModal()
+    closeModal()
     await fetchWebhooks()
   } catch (err: any) {
     formError.value = err?.message || t('errors.api.save_failed')
@@ -205,7 +202,7 @@ const saveWebhook = async () => {
 const removeWebhook = async (id: number) => {
   if (!confirm(t('admin.confirm_delete'))) return
   try {
-    await api.delete(`/admin/webhooks/${id}`)
+    await api.del(`/admin/webhooks/${id}`)
     await fetchWebhooks()
   } catch (err: any) {
     notifyError(err, t('errors.api.delete_failed'))

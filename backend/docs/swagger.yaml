@@ -1,0 +1,1689 @@
+basePath: /api/v1
+definitions:
+  candypro_api_internal_models_common.ErrorResponse:
+    properties:
+      details: {}
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  candypro_api_internal_models_common.JSONMap:
+    additionalProperties:
+      additionalProperties:
+        type: string
+      type: object
+    type: object
+  candypro_api_internal_models_common.Milestone:
+    properties:
+      description:
+        type: string
+      milestone:
+        type: string
+      year:
+        type: integer
+    type: object
+  candypro_api_internal_models_common.OEMStep:
+    properties:
+      deliverables:
+        items:
+          type: string
+        type: array
+      description:
+        type: string
+      duration:
+        type: string
+      order:
+        type: integer
+      title:
+        type: string
+    type: object
+  candypro_api_internal_models_common.PaginatedResponse:
+    properties:
+      data: {}
+      pagination:
+        $ref: '#/definitions/candypro_api_internal_models_common.Pagination'
+    type: object
+  candypro_api_internal_models_common.Pagination:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
+  candypro_api_internal_models_product.BlogAuthor:
+    properties:
+      avatar:
+        type: string
+      bio:
+        type: string
+      name:
+        type: string
+      title:
+        type: string
+    type: object
+  candypro_api_internal_models_product.BlogPost:
+    properties:
+      author:
+        $ref: '#/definitions/candypro_api_internal_models_product.BlogAuthor'
+      category:
+        type: string
+      content:
+        type: string
+      createdAt:
+        type: string
+      excerpt:
+        type: string
+      id:
+        type: string
+      ogImage:
+        type: string
+      publishedAt:
+        type: string
+      readTime:
+        description: in minutes
+        type: integer
+      slug:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      thumbnail:
+        type: string
+      title:
+        type: string
+      translations:
+        $ref: '#/definitions/candypro_api_internal_models_common.JSONMap'
+      updatedAt:
+        type: string
+    type: object
+  candypro_api_internal_models_product.CaseStudy:
+    properties:
+      challenge:
+        type: string
+      client:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      images:
+        items:
+          type: string
+        type: array
+      industry:
+        type: string
+      location:
+        type: string
+      ogImage:
+        type: string
+      result:
+        type: string
+      services:
+        items:
+          type: string
+        type: array
+      slug:
+        type: string
+      solution:
+        type: string
+      thumbnail:
+        type: string
+      timeline:
+        type: string
+      title:
+        type: string
+      translations:
+        $ref: '#/definitions/candypro_api_internal_models_common.JSONMap'
+      updatedAt:
+        type: string
+    type: object
+  candypro_api_internal_models_product.Category:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      icon:
+        type: string
+      name:
+        type: string
+      productCount:
+        type: integer
+      products:
+        items:
+          $ref: '#/definitions/candypro_api_internal_models_product.Product'
+        type: array
+      slug:
+        type: string
+      thumbnail:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  candypro_api_internal_models_product.Certification:
+    properties:
+      abbreviation:
+        type: string
+      badgeUrl:
+        type: string
+      certificateUrl:
+        type: string
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      issuer:
+        type: string
+      name:
+        type: string
+      updatedAt:
+        type: string
+      validUntil:
+        type: string
+    type: object
+  candypro_api_internal_models_product.CertificationDetail:
+    properties:
+      abbrev:
+        type: string
+      certNumber:
+        type: string
+      docUrl:
+        type: string
+      issuedBy:
+        type: string
+      name:
+        type: string
+      validUntil:
+        type: string
+    type: object
+  candypro_api_internal_models_product.FactoryCapacity:
+    properties:
+      daily:
+        type: string
+      monthly:
+        type: string
+    type: object
+  candypro_api_internal_models_product.FactoryInfo:
+    properties:
+      address:
+        type: string
+      area:
+        type: string
+      capacity:
+        $ref: '#/definitions/candypro_api_internal_models_product.FactoryCapacity'
+      createdAt:
+        type: string
+      description:
+        type: string
+      employees:
+        type: integer
+      founded:
+        type: integer
+      id:
+        type: string
+      images:
+        items:
+          type: string
+        type: array
+      markets:
+        items:
+          type: string
+        type: array
+      milestones:
+        items:
+          $ref: '#/definitions/candypro_api_internal_models_common.Milestone'
+        type: array
+      name:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  candypro_api_internal_models_product.Milestone:
+    properties:
+      description:
+        type: string
+      milestone:
+        type: string
+      year:
+        type: integer
+    type: object
+  candypro_api_internal_models_product.OEMFlow:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      moq:
+        type: integer
+      steps:
+        items:
+          $ref: '#/definitions/candypro_api_internal_models_common.OEMStep'
+        type: array
+      timeline:
+        type: string
+      title:
+        type: string
+      type:
+        description: quick_odm, full_oem
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  candypro_api_internal_models_product.OEMSolution:
+    properties:
+      applications:
+        items:
+          type: string
+        type: array
+      category:
+        type: string
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      images:
+        items:
+          type: string
+        type: array
+      moq:
+        type: integer
+      slug:
+        type: string
+      thumbnail:
+        type: string
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  candypro_api_internal_models_product.PaginatedResponse:
+    properties:
+      data: {}
+      pagination:
+        $ref: '#/definitions/candypro_api_internal_models_common.Pagination'
+    type: object
+  candypro_api_internal_models_product.ProcessControl:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      stage:
+        description: raw_material, production, finished_product
+        type: string
+      standards:
+        items:
+          type: string
+        type: array
+      updatedAt:
+        type: string
+    type: object
+  candypro_api_internal_models_product.Product:
+    properties:
+      additives:
+        description: Ingredient Compliance
+        items:
+          type: string
+        type: array
+      allergens:
+        type: string
+      basePrice:
+        type: number
+      carbohydratesG:
+        type: number
+      category:
+        type: string
+      categorySlug:
+        type: string
+      certificationDetails:
+        description: Certification Details (structured)
+        items:
+          $ref: '#/definitions/candypro_api_internal_models_product.CertificationDetail'
+        type: array
+      certifications:
+        items:
+          type: string
+        type: array
+      cocoaSolidsPct:
+        description: chocolate products
+        type: number
+      createdAt:
+        type: string
+      createdBy:
+        description: Existing audit / meta
+        type: string
+      description:
+        type: string
+      energyKcal:
+        type: number
+      energyKj:
+        description: Nutrition (per 100g)
+        type: number
+      featured:
+        type: boolean
+      fiberG:
+        type: number
+      flavors:
+        items:
+          type: string
+        type: array
+      gmoStatus:
+        description: '"GMO", "Non-GMO", "GMO-Free Certified"'
+        type: string
+      grossWeightPerCarton:
+        description: kg — incl. packaging
+        type: number
+      gtin:
+        description: Trade & Barcode
+        type: string
+      halalCertified:
+        type: boolean
+      hsCode:
+        description: Harmonized System code for customs
+        type: string
+      id:
+        type: string
+      images:
+        items:
+          type: string
+        type: array
+      ingredients:
+        type: string
+      innerPackConfig:
+        description: e.g. "12 units per display box"
+        type: string
+      isGlutenFree:
+        type: boolean
+      isKosher:
+        type: boolean
+      isOrganic:
+        type: boolean
+      isSugarFree:
+        type: boolean
+      isVegan:
+        description: Dietary Labels
+        type: boolean
+      leadTime:
+        type: string
+      mayContain:
+        description: cross-contamination allergen risks
+        items:
+          type: string
+        type: array
+      milkSolidsPct:
+        description: milk chocolate
+        type: number
+      moq:
+        type: integer
+      name:
+        type: string
+      netWeightPerPack:
+        description: g — per retail pack
+        type: number
+      netWeightPerPiece:
+        description: Weight & Measurement
+        type: number
+      oemAvailable:
+        type: boolean
+      ogImage:
+        type: string
+      packsPerCarton:
+        description: retail packs per carton
+        type: integer
+      palletConfig:
+        description: e.g. "48 cases/layer × 5 layers"
+        type: string
+      piecesPerPack:
+        description: pieces per retail pack
+        type: integer
+      primaryPackaging:
+        description: Packaging
+        type: string
+      productHeightMM:
+        type: number
+      productLengthMM:
+        description: Product Dimensions (mm)
+        type: number
+      productWidthMM:
+        type: number
+      proteinG:
+        type: number
+      safetyStock:
+        type: integer
+      saltG:
+        type: number
+      sampleLeadTime:
+        type: string
+      sampleMOQ:
+        description: Sample Specs
+        type: integer
+      samplePrice:
+        type: number
+      saturatedFatG:
+        type: number
+      shapes:
+        items:
+          type: string
+        type: array
+      shelfLife:
+        type: string
+      slug:
+        type: string
+      status:
+        type: string
+      stockQuantity:
+        type: integer
+      storage:
+        type: string
+      sugarsG:
+        type: number
+      summary:
+        type: string
+      sweetenerType:
+        type: string
+      thumbnail:
+        type: string
+      totalFatG:
+        type: number
+      translations:
+        $ref: '#/definitions/candypro_api_internal_models_common.JSONMap'
+      updatedAt:
+        type: string
+      updatedBy:
+        type: string
+      viewCount:
+        type: integer
+      waterActivity:
+        description: aʷ — shelf-life determinant
+        type: number
+      weightedAvgCost:
+        description: computed from PO receipts
+        type: number
+    type: object
+  candypro_api_internal_models_product.SearchResponse:
+    properties:
+      cases:
+        items:
+          $ref: '#/definitions/candypro_api_internal_models_product.CaseStudy'
+        type: array
+      posts:
+        items:
+          $ref: '#/definitions/candypro_api_internal_models_product.BlogPost'
+        type: array
+      products:
+        items:
+          $ref: '#/definitions/candypro_api_internal_models_product.Product'
+        type: array
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: info@candypro.com
+    name: API Support
+  description: API for CandyPro OEM candy manufacturing website
+  title: CandyPro OEM API
+  version: "1.0"
+paths:
+  /admin/certifications:
+    get:
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin get certifications
+      tags:
+      - admin-certifications
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin create certification
+      tags:
+      - admin-certifications
+  /admin/certifications/{id}:
+    delete:
+      parameters:
+      - description: Certification ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin delete certification
+      tags:
+      - admin-certifications
+    get:
+      parameters:
+      - description: Certification ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin get certification by ID
+      tags:
+      - admin-certifications
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Certification ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin update certification
+      tags:
+      - admin-certifications
+  /admin/content:
+    get:
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin list content
+      tags:
+      - admin-content
+    post:
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin create content
+      tags:
+      - admin-content
+  /admin/content/{id}:
+    delete:
+      parameters:
+      - description: Content ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin delete content
+      tags:
+      - admin-content
+    get:
+      parameters:
+      - description: Content ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin get content detail
+      tags:
+      - admin-content
+    put:
+      parameters:
+      - description: Content ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin update content
+      tags:
+      - admin-content
+  /admin/content/ai-generate:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses: {}
+      summary: AI generate content
+      tags:
+      - admin-content
+  /admin/dashboard/stats:
+    get:
+      produces:
+      - application/json
+      responses: {}
+      summary: Get admin dashboard stats
+      tags:
+      - dashboard
+  /admin/inquiries:
+    get:
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin get inquiries
+      tags:
+      - admin-inquiries
+  /admin/inquiries/{id}/status:
+    put:
+      parameters:
+      - description: Inquiry ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Inquiry status
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin update inquiry status
+      tags:
+      - admin-inquiries
+  /admin/orders:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/candypro_api_internal_models_common.PaginatedResponse'
+      summary: Admin get orders
+      tags:
+      - admin-orders
+  /admin/orders/{id}:
+    get:
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin get order
+      tags:
+      - admin-orders
+  /admin/orders/{id}/status:
+    put:
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Order status
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin update order status
+      tags:
+      - admin-orders
+  /admin/products:
+    post:
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin create product
+      tags:
+      - admin-products
+  /admin/products/{id}:
+    delete:
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin delete product
+      tags:
+      - admin-products
+    put:
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin update product
+      tags:
+      - admin-products
+  /admin/products/ai-generate:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses: {}
+      summary: AI generate product
+      tags:
+      - admin-products
+  /admin/upload/:filename:
+    delete:
+      parameters:
+      - description: Filename (relative to /uploads/)
+        in: path
+        name: filename
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin delete file
+      tags:
+      - admin-upload
+  /admin/upload/document:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Document file
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Upload folder
+        in: formData
+        name: folder
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin upload document
+      tags:
+      - admin-upload
+  /admin/upload/image:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Image file
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Upload folder (products, certifications, etc.)
+        in: formData
+        name: folder
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin upload image
+      tags:
+      - admin-upload
+  /admin/upload/multiple:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Files
+        in: formData
+        name: files
+        required: true
+        type: file
+      - description: Upload folder
+        in: formData
+        name: folder
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin upload multiple files
+      tags:
+      - admin-upload
+  /admin/users:
+    get:
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin get users
+      tags:
+      - admin-users
+  /admin/users/{id}:
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin get user
+      tags:
+      - admin-users
+    put:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User data
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin update user
+      tags:
+      - admin-users
+  /admin/users/{id}/status:
+    put:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User status
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses: {}
+      summary: Admin update user status
+      tags:
+      - admin-users
+  /auth/change-password:
+    put:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses: {}
+      summary: Change current user password
+      tags:
+      - auth
+  /auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses: {}
+      summary: Forgot password
+      tags:
+      - auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: User login
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      produces:
+      - application/json
+      responses: {}
+      summary: User logout
+      tags:
+      - auth
+  /auth/me:
+    get:
+      produces:
+      - application/json
+      responses: {}
+      summary: Get current user
+      tags:
+      - auth
+  /auth/profile:
+    put:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses: {}
+      summary: Update current user profile
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Refresh token
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Registration credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      summary: User registration
+      tags:
+      - auth
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses: {}
+      summary: Reset password
+      tags:
+      - auth
+  /auth/verify-email:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses: {}
+      summary: Verify email
+      tags:
+      - auth
+  /cases:
+    get:
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by industry
+        in: query
+        name: industry
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/candypro_api_internal_models_product.PaginatedResponse'
+      summary: Get case studies
+      tags:
+      - cases
+  /cases/{slug}:
+    get:
+      parameters:
+      - description: Case study slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/candypro_api_internal_models_product.CaseStudy'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/candypro_api_internal_models_common.ErrorResponse'
+      summary: Get case study by slug
+      tags:
+      - cases
+  /cases/{slug}/related:
+    get:
+      parameters:
+      - description: Case study slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      - default: 3
+        description: Number of cases
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/candypro_api_internal_models_product.CaseStudy'
+            type: array
+      summary: Get related case studies
+      tags:
+      - cases
+  /categories:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/candypro_api_internal_models_product.Category'
+            type: array
+      summary: Get all categories
+      tags:
+      - categories
+  /categories/{slug}:
+    get:
+      parameters:
+      - description: Category slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/candypro_api_internal_models_product.Category'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/candypro_api_internal_models_common.ErrorResponse'
+      summary: Get category by slug
+      tags:
+      - categories
+  /certifications:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/candypro_api_internal_models_product.Certification'
+            type: array
+      summary: Get certifications
+      tags:
+      - certifications
+  /certifications/{id}:
+    get:
+      parameters:
+      - description: Certification ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/candypro_api_internal_models_product.Certification'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/candypro_api_internal_models_common.ErrorResponse'
+      summary: Get certification by ID
+      tags:
+      - certifications
+  /customer/change-password:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses: {}
+      summary: Customer change password
+      tags:
+      - customer-profile
+  /customer/inquiries:
+    get:
+      produces:
+      - application/json
+      responses: {}
+      summary: Customer get inquiries
+      tags:
+      - customer-inquiries
+  /customer/inquiries/{id}:
+    get:
+      parameters:
+      - description: Inquiry ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Customer get inquiry
+      tags:
+      - customer-inquiries
+  /customer/orders:
+    get:
+      produces:
+      - application/json
+      responses: {}
+      summary: Customer get orders
+      tags:
+      - customer-orders
+  /customer/orders/{id}:
+    get:
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Customer get order
+      tags:
+      - customer-orders
+  /customer/profile:
+    put:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses: {}
+      summary: Customer update profile
+      tags:
+      - customer-profile
+  /exchange-rates:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get exchange rates
+      tags:
+      - exchange-rates
+  /factory:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/candypro_api_internal_models_product.FactoryInfo'
+      summary: Get factory information
+      tags:
+      - factory
+  /factory/quality-controls:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/candypro_api_internal_models_product.ProcessControl'
+            type: array
+      summary: Get process controls
+      tags:
+      - factory
+  /factory/timeline:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/candypro_api_internal_models_product.Milestone'
+            type: array
+      summary: Get quality timeline
+      tags:
+      - factory
+  /inquiry:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Company name
+        in: formData
+        name: companyName
+        required: true
+        type: string
+      - description: Contact person
+        in: formData
+        name: contactPerson
+        required: true
+        type: string
+      - description: Email address
+        in: formData
+        name: email
+        required: true
+        type: string
+      - description: WhatsApp number
+        in: formData
+        name: whatsapp
+        type: string
+      - description: Target country
+        in: formData
+        name: targetCountry
+        type: string
+      - description: Estimated quantity
+        in: formData
+        name: estimatedQuantity
+        type: string
+      - collectionFormat: csv
+        description: Interested products
+        in: formData
+        items:
+          type: string
+        name: interestedProducts
+        type: array
+      - description: Packaging requirements
+        in: formData
+        name: packagingRequirements
+        type: string
+      - description: Flavor requirements
+        in: formData
+        name: flavorRequirements
+        type: string
+      - description: OEM needed
+        in: formData
+        name: oemNeeded
+        type: boolean
+      - description: Expected delivery
+        in: formData
+        name: expectedDelivery
+        type: string
+      - description: Message
+        in: formData
+        name: message
+        type: string
+      - description: Attached files
+        in: formData
+        name: files
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Submit inquiry
+      tags:
+      - inquiry
+  /oem/flows:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/candypro_api_internal_models_product.OEMFlow'
+            type: array
+      summary: Get OEM flows
+      tags:
+      - oem
+  /oem/flows/{id}:
+    get:
+      parameters:
+      - description: OEM Flow ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/candypro_api_internal_models_product.OEMFlow'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/candypro_api_internal_models_common.ErrorResponse'
+      summary: Get OEM flow by ID
+      tags:
+      - oem
+  /oem/solutions:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/candypro_api_internal_models_product.OEMSolution'
+            type: array
+      summary: Get OEM solutions
+      tags:
+      - oem
+  /oem/solutions/{slug}:
+    get:
+      parameters:
+      - description: OEM Solution slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/candypro_api_internal_models_product.OEMSolution'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/candypro_api_internal_models_common.ErrorResponse'
+      summary: Get OEM solution by slug
+      tags:
+      - oem
+  /posts:
+    get:
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by category
+        in: query
+        name: category
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/candypro_api_internal_models_product.PaginatedResponse'
+      summary: Get blog posts
+      tags:
+      - blog
+  /posts/{slug}:
+    get:
+      parameters:
+      - description: Post slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/candypro_api_internal_models_product.BlogPost'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/candypro_api_internal_models_common.ErrorResponse'
+      summary: Get blog post by slug
+      tags:
+      - blog
+  /posts/{slug}/related:
+    get:
+      parameters:
+      - description: Post slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      - default: 3
+        description: Number of posts
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/candypro_api_internal_models_product.BlogPost'
+            type: array
+      summary: Get related blog posts
+      tags:
+      - blog
+  /products:
+    get:
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 12
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by category slug
+        in: query
+        name: category
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/candypro_api_internal_models_product.PaginatedResponse'
+      summary: Get products
+      tags:
+      - products
+  /products/{slug}:
+    get:
+      parameters:
+      - description: Product slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/candypro_api_internal_models_product.Product'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/candypro_api_internal_models_common.ErrorResponse'
+      summary: Get product by slug
+      tags:
+      - products
+  /products/{slug}/related:
+    get:
+      parameters:
+      - description: Product slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      - default: 4
+        description: Number of products
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/candypro_api_internal_models_product.Product'
+            type: array
+      summary: Get related products
+      tags:
+      - products
+  /products/featured:
+    get:
+      parameters:
+      - default: 8
+        description: Number of products
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/candypro_api_internal_models_product.Product'
+            type: array
+      summary: Get featured products
+      tags:
+      - products
+  /search:
+    get:
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: all
+        description: Content type (products, posts, cases, all)
+        in: query
+        name: type
+        type: string
+      - default: 10
+        description: Number of results per type
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/candypro_api_internal_models_product.SearchResponse'
+      summary: Search content
+      tags:
+      - search
+  /user/cart:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get customer cart
+      tags:
+      - customer-cart
+schemes:
+- http
+- https
+swagger: "2.0"

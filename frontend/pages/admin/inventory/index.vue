@@ -102,7 +102,7 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm text-gray-500">{{ t('admin.inventory.total_products') }}</p>
-            <p class="mt-1 text-2xl font-bold text-gray-900">{{ pagination?.total || items.length }}</p>
+            <p class="mt-1 text-2xl font-bold text-gray-900">{{ displayPagination?.total || items.length }}</p>
           </div>
           <div class="h-12 w-12 rounded-lg bg-orange-50 flex items-center justify-center">
             <Icon name="heroicons:cube" class="h-6 w-6 text-orange-600" aria-hidden="true" />
@@ -264,15 +264,15 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="pagination" class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+      <div v-if="displayPagination" class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
         <div class="text-sm text-gray-600">
-          {{ t('admin.inventory.showing', { from: ((page - 1) * pageSize) + 1, to: Math.min(page * pageSize, pagination.total), total: pagination.total }) }}
+          {{ t('admin.inventory.showing', { from: ((page - 1) * pageSize) + 1, to: Math.min(page * pageSize, displayPagination.total), total: displayPagination.total }) }}
         </div>
         <div class="flex items-center gap-2">
           <button @click="prevPage" :disabled="page <= 1" class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
             {{ t('admin.inventory.previous') }}
           </button>
-          <button @click="nextPage" :disabled="page >= pagination.totalPages" class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          <button @click="nextPage" :disabled="page >= displayPagination.totalPages" class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
             {{ t('admin.inventory.next') }}
           </button>
         </div>
@@ -374,11 +374,11 @@
                   </thead>
                   <tbody class="divide-y divide-gray-100">
                     <tr v-for="(row, ri) in importPreview.rows.slice(0, 20)" :key="ri" class="hover:bg-gray-50">
-                      <td class="px-3 py-1.5 text-gray-400">{{ ri + 1 }}</td>
+                      <td class="px-3 py-1.5 text-gray-400">{{ Number(ri) + 1 }}</td>
                       <td v-for="(cell, ci) in row" :key="ci" class="px-3 py-1.5 text-gray-700 max-w-[200px] truncate">
                         <template v-if="importPreview.imageColumns?.includes(ci) && isImageURL(cell)">
                           <div class="flex items-center gap-1.5">
-                            <img :src="cell" class="h-6 w-6 rounded object-cover" @error="$event.target.style.display='none'" />
+                            <img :src="cell" class="h-6 w-6 rounded object-cover" @error="hideBrokenImage" />
                             <span class="text-emerald-600 truncate">{{ cell }}</span>
                           </div>
                         </template>
@@ -714,6 +714,17 @@ const pageSize = 20
 const searchQuery = ref('')
 const stockFilter = ref('all')
 const categoryFilter = ref('')
+
+// Filters are client-side (the /admin/inventory endpoint has no filter query
+// params), so when any filter is active we load the WHOLE dataset and filter +
+// paginate locally. Otherwise the filters would only ever apply to the current
+// server page — search/category/stock results silently missing other pages.
+const allInventory = ref<any[]>([])
+let allInventoryFetched = false
+
+const filterActive = computed(() =>
+  !!searchQuery.value || stockFilter.value !== 'all' || !!categoryFilter.value,
+)
 const showAdjustmentModal = ref(false)
 const adjustmentProduct = ref<any>(null)
 const newStock = ref(0)
@@ -767,11 +778,13 @@ const batchDeleteError = ref('')
 const batchDeleteResult = ref<any>(null)
 
 const stats = computed(() => {
-  const total = pagination.value?.total || items.value.length
-  const low = items.value.filter(i => i.stockQuantity > 0 && i.stockQuantity <= (i.moq || 10)).length
-  const out = items.value.filter(i => !i.stockQuantity || i.stockQuantity <= 0).length
-  const value = items.value.reduce((sum, i) => sum + ((i.stockQuantity || 0) * (i.basePrice || 0)), 0)
-  return { totalProducts: total, lowStock: low, outOfStock: out, totalValue: value }
+  // When filters are active the counts must come from the full filtered set,
+  // otherwise low/out/value only reflect the current page.
+  const source = filterActive.value ? filteredFull.value : items.value
+  const low = source.filter(i => i.stockQuantity > 0 && i.stockQuantity <= (i.moq || 10)).length
+  const out = source.filter(i => !i.stockQuantity || i.stockQuantity <= 0).length
+  const value = source.reduce((sum, i) => sum + ((i.stockQuantity || 0) * (i.basePrice || 0)), 0)
+  return { totalProducts: displayPagination.value?.total || source.length, lowStock: low, outOfStock: out, totalValue: value, currency: '' }
 })
 
 const categoryOptions = computed(() =>
@@ -796,12 +809,33 @@ const categoryLabel = (item: any) => {
   return item?.category || '-'
 }
 
-const filteredItems = computed(() => items.value.filter(item => {
+const matchesFilters = (item: any) => {
   const matchesSearch = !searchQuery.value || (item.name || '').toLowerCase().includes(searchQuery.value.toLowerCase()) || (item.slug || '').toLowerCase().includes(searchQuery.value.toLowerCase())
   const matchesCategory = !categoryFilter.value || item.categorySlug === categoryFilter.value
   const matchesStock = (stockFilter.value === 'all') || (stockFilter.value === 'low' && item.stockQuantity > 0 && item.stockQuantity <= (item.moq || 10)) || (stockFilter.value === 'out' && (!item.stockQuantity || item.stockQuantity <= 0)) || (stockFilter.value === 'in' && item.stockQuantity > (item.moq || 10))
   return matchesSearch && matchesCategory && matchesStock
-}))
+}
+
+/** Full filtered set: the whole dataset when filtering, the current page otherwise. */
+const filteredFull = computed(() => {
+  const source = filterActive.value ? allInventory.value : items.value
+  return source.filter(matchesFilters)
+})
+
+/** Rendered rows: client-side page slice when filtering, raw current page otherwise. */
+const filteredItems = computed(() => {
+  const list = filteredFull.value
+  if (!filterActive.value) return list
+  const start = (page.value - 1) * pageSize
+  return list.slice(start, start + pageSize)
+})
+
+/** Pagination the footer/stats read: local filtered pagination while filtering. */
+const displayPagination = computed(() => {
+  if (!filterActive.value) return pagination.value
+  const total = filteredFull.value.length
+  return { total, page: page.value, limit: pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)) }
+})
 
 const isAllSelected = computed(() => {
   return filteredItems.value.length > 0 && filteredItems.value.every(i => selectedIds.value.has(i.id))
@@ -875,6 +909,7 @@ const submitBatchEdit = async () => {
     const result = await api.batchUpdateInventory(Array.from(selectedIds.value), updates)
     batchEditResult.value = result
     if (result.updated > 0) {
+      allInventoryFetched = false
       await fetchInventory()
       clearSelection()
     }
@@ -905,6 +940,7 @@ const submitBatchDelete = async () => {
     const result = await api.batchDeleteInventory(Array.from(selectedIds.value))
     batchDeleteResult.value = result
     if (result.deleted > 0) {
+      allInventoryFetched = false
       await fetchInventory()
       clearSelection()
     }
@@ -925,12 +961,36 @@ const fetchCategories = async () => {
   }
 }
 
+const fetchAllInventory = async () => {
+  if (allInventoryFetched) return
+  const out: any[] = []
+  let p = 1
+  let totalPages = 1
+  do {
+    const res = await api.get<any>('/admin/inventory', { page: p, limit: 100 })
+    const rows = res.data || []
+    out.push(...rows)
+    totalPages = res.pagination?.totalPages || 1
+    if (rows.length < 100) break
+    p++
+  } while (p <= totalPages && p <= 50) // safety cap; the admin backend caps limit at 100
+  allInventory.value = out
+  allInventoryFetched = true
+}
+
 const fetchInventory = async () => {
   pending.value = true; error.value = ''
   try {
-    const res = await api.get<any>('/admin/inventory', { page: page.value, limit: pageSize })
-    items.value = res.data || []
-    pagination.value = res.pagination
+    if (filterActive.value) {
+      await fetchAllInventory()
+    } else {
+      const res = await api.get<any>('/admin/inventory', { page: page.value, limit: pageSize })
+      items.value = res.data || []
+      pagination.value = res.pagination
+      // Leaving filter mode: invalidate the cached full dataset so the next
+      // filter session re-fetches fresh data.
+      allInventoryFetched = false
+    }
   } catch (err: any) {
     error.value = err?.message || t('errors.api.load_failed')
   } finally { pending.value = false }
@@ -971,16 +1031,164 @@ const exportSelected = async () => {
   }
 }
 
+// ── XLSX template (minimal OOXML) ──
+// The importer (/admin/inventory/import-xlsx) only accepts .xlsx and validates
+// the extension before excelize opens it, so the download template MUST be a
+// real XLSX, not CSV. No spreadsheet library is bundled, so we build a minimal
+// but valid .xlsx: a stored (uncompressed) ZIP containing the OOXML parts.
+function crc32(buf: Uint8Array): number {
+  let c = ~0
+  for (let i = 0; i < buf.length; i++) {
+    c ^= buf[i]
+    for (let k = 0; k < 8; k++) c = c & 1 ? (c >>> 1) ^ 0xedb88320 : c >>> 1
+  }
+  return ~c >>> 0
+}
+
+function buildXlsxZip(files: { name: string; data: Uint8Array }[]): Uint8Array<ArrayBuffer> {
+  const encoder = new TextEncoder()
+  const chunks: Uint8Array[] = []
+  const central: Uint8Array[] = []
+  let offset = 0
+  for (const f of files) {
+    const name = encoder.encode(f.name)
+    const crc = crc32(f.data)
+    const local = new DataView(new ArrayBuffer(30))
+    local.setUint32(0, 0x04034b50, true) // PK\x03\x04
+    local.setUint16(4, 20, true)         // version needed to extract
+    local.setUint16(6, 0, true)          // flags
+    local.setUint16(8, 0, true)          // compression method: stored
+    local.setUint16(10, 0, true)         // mod time
+    local.setUint16(12, 0x21, true)      // mod date
+    local.setUint32(14, crc, true)
+    local.setUint32(18, f.data.length, true) // compressed size
+    local.setUint32(22, f.data.length, true) // uncompressed size
+    local.setUint16(26, name.length, true)
+    local.setUint16(28, 0, true) // extra field length
+    chunks.push(new Uint8Array(local.buffer), name, f.data)
+
+    const cd = new DataView(new ArrayBuffer(46))
+    cd.setUint32(0, 0x02014b50, true) // PK\x01\x02
+    cd.setUint16(4, 20, true)         // version made by
+    cd.setUint16(6, 20, true)         // version needed
+    cd.setUint16(8, 0, true)          // flags
+    cd.setUint16(10, 0, true)         // method: stored
+    cd.setUint16(12, 0, true)         // mod time
+    cd.setUint16(14, 0x21, true)      // mod date
+    cd.setUint32(16, crc, true)
+    cd.setUint32(20, f.data.length, true)
+    cd.setUint32(24, f.data.length, true)
+    cd.setUint16(28, name.length, true)
+    cd.setUint16(30, 0, true) // extra
+    cd.setUint16(32, 0, true) // comment
+    cd.setUint16(34, 0, true) // disk start
+    cd.setUint16(36, 0, true) // internal attrs
+    cd.setUint32(38, 0, true) // external attrs
+    cd.setUint32(42, offset, true) // local header offset
+    central.push(new Uint8Array(cd.buffer), name)
+    offset += 30 + name.length + f.data.length
+  }
+
+  const cdSize = central.reduce((s, c) => s + c.length, 0)
+  const eocd = new DataView(new ArrayBuffer(22))
+  eocd.setUint32(0, 0x06054b50, true) // PK\x05\x06
+  eocd.setUint16(4, 0, true)
+  eocd.setUint16(6, 0, true)
+  eocd.setUint16(8, files.length, true)
+  eocd.setUint16(10, files.length, true)
+  eocd.setUint32(12, cdSize, true)
+  eocd.setUint32(16, offset, true)
+  eocd.setUint16(20, 0, true) // comment length
+
+  const all = [...chunks, ...central, new Uint8Array(eocd.buffer)]
+  const total = all.reduce((s, c) => s + c.length, 0)
+  const out = new Uint8Array(total)
+  let p = 0
+  for (const c of all) { out.set(c, p); p += c.length }
+  return out
+}
+
+function xlsxColName(index: number): string {
+  let n = index
+  let s = ''
+  while (n >= 0) { s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26) - 1 }
+  return s
+}
+
+function buildInventoryTemplateXlsx(rows: string[][]): Blob {
+  const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const sheetData = rows.map((row, r) =>
+    `<row r="${r + 1}">` +
+    row.map((cell, c) =>
+      `<c r="${xlsxColName(c)}${r + 1}" t="inlineStr"><is><t>${esc(cell)}</t></is></c>`,
+    ).join('') +
+    '</row>',
+  ).join('')
+
+  const parts: { name: string; data: Uint8Array }[] = [
+    {
+      name: '[Content_Types].xml',
+      data: new TextEncoder().encode(
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' +
+        '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+        '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
+        '</Types>',
+      ),
+    },
+    {
+      name: '_rels/.rels',
+      data: new TextEncoder().encode(
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
+        '</Relationships>',
+      ),
+    },
+    {
+      name: 'xl/workbook.xml',
+      data: new TextEncoder().encode(
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+        '<sheets><sheet name="Inventory" sheetId="1" r:id="rId1"/></sheets>' +
+        '</workbook>',
+      ),
+    },
+    {
+      name: 'xl/_rels/workbook.xml.rels',
+      data: new TextEncoder().encode(
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' +
+        '</Relationships>',
+      ),
+    },
+    {
+      name: 'xl/worksheets/sheet1.xml',
+      data: new TextEncoder().encode(
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>' +
+        sheetData +
+        '</sheetData></worksheet>',
+      ),
+    },
+  ]
+  const zip = buildXlsxZip(parts)
+  return new Blob([zip], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+}
+
 const downloadTemplate = async () => {
-  // Generate a template XLSX with headers matching product fields
+  // Generate a template XLSX (matching the importer's .xlsx-only contract)
+  // with headers matching product fields.
   const headers = ['Name', 'Category', 'Category Slug', 'Base Price', 'MOQ', 'Stock', 'Lead Time', 'Halal', 'OEM', 'HS Code', 'Shelf Life', 'Storage', 'Status', 'Thumbnail', 'Images', 'Flavors', 'Shapes', 'Ingredients', 'Allergens', 'Certifications', 'Description', 'Summary']
   const exampleRow = ['Example Candy', 'Hard Candy', 'hard-candy', '0.50', '1000', '5000', '', 'Yes', 'Yes', '170490', '12 months', 'Cool dry place', 'active', 'https://example.com/image.jpg', 'https://example.com/img1.jpg, https://example.com/img2.jpg', 'Strawberry, Mint', 'Round, Star', 'Sugar, Glucose', 'None', 'ISO, HACCP', 'A delicious candy product', 'Premium quality candy']
-  const csvContent = [headers.join(','), exampleRow.join(',')].join('\n')
-  const blob = new Blob(['﻿' + csvContent], { type: 'text/csv' })
+  const blob = buildInventoryTemplateXlsx([headers, exampleRow])
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = 'inventory_import_template.csv'
+  a.download = 'inventory_import_template.xlsx'
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -1071,6 +1279,7 @@ const applyImport = async () => {
     const result = await api.applyInventoryImport({ rows, imageColumns: imageColNames })
     importResult.value = result
     if (result.errors === 0 || result.created > 0 || result.updated > 0) {
+      allInventoryFetched = false
       await fetchInventory()
     }
   } catch (err: any) {
@@ -1083,6 +1292,11 @@ const applyImport = async () => {
 const isImageURL = (str: string) => {
   if (!str) return false
   return /^https?:\/\/.*\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?.*)?$/i.test(str)
+}
+
+const hideBrokenImage = (event: Event) => {
+  const img = event.target as HTMLImageElement | null
+  if (img) img.style.display = 'none'
 }
 
 // ── Stock Adjustment ──
@@ -1101,6 +1315,7 @@ const submitAdjustment = async () => {
   else if (adjustmentType.value === 'subtract') finalQty = Math.max(0, (adjustmentProduct.value.stockQuantity || 0) - newStock.value)
   try {
     await api.put(`/admin/inventory/${adjustmentProduct.value.id}`, { stockQuantity: finalQty, reason: adjustmentReason.value, notes: adjustmentNotes.value })
+    allInventoryFetched = false
     closeAdjustmentModal(); await fetchInventory()
   } catch (err: any) { adjustmentError.value = err?.message || t('errors.api.stock_adjust_failed') }
   finally { savingAdjustment.value = false }
@@ -1116,7 +1331,14 @@ const stockStatusClass = (qty: number, moq: number) => { if (!qty || qty <= 0) r
 const stockBadgeClass = (qty: number, moq: number) => { if (!qty || qty <= 0) return 'bg-red-100 text-red-800'; if (qty <= (moq || 10)) return 'bg-orange-100 text-orange-800'; return 'bg-emerald-100 text-emerald-800' }
 const stockStatusLabel = (qty: number, moq: number) => { if (!qty || qty <= 0) return t('admin.inventory.out_of_stock'); if (qty <= (moq || 10)) return t('admin.inventory.low_stock'); return t('admin.inventory.in_stock') }
 const prevPage = () => { if (page.value > 1) { page.value -= 1; fetchInventory() } }
-const nextPage = () => { if (pagination.value && page.value < pagination.value.totalPages) { page.value += 1; fetchInventory() } }
+const nextPage = () => { if (displayPagination.value && page.value < displayPagination.value.totalPages) { page.value += 1; fetchInventory() } }
+
+// Filters run client-side over the full dataset; re-slice from page 1 whenever
+// a filter changes so results stay page-correct.
+watch([searchQuery, stockFilter, categoryFilter], () => {
+  page.value = 1
+  fetchInventory()
+})
 
 const fetchWarehouses = async () => {
   warehousesPending.value = true

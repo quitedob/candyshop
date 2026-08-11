@@ -14,7 +14,7 @@ type Supplier struct {
 	PaymentTerms  string    `json:"paymentTerms"` // Net 30, Net 60, etc.
 	Rating        float64   `json:"rating" gorm:"default:0"`
 	IsActive      bool      `json:"isActive" gorm:"default:true"`
-	APIKey        string    `json:"-" gorm:"type:varchar(64)"` // self-service auth key
+	APIKey        string    `json:"apiKey,omitempty" gorm:"type:varchar(64)"` // self-service auth key; disclosed only to the owning supplier (registration/profile) and admins
 	Notes         string    `json:"notes" gorm:"type:text"`
 	CreatedAt     time.Time `json:"createdAt"`
 	UpdatedAt     time.Time `json:"updatedAt"`

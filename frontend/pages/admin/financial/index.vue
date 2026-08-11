@@ -23,22 +23,18 @@
 
     <div v-else class="mt-6 space-y-6 min-w-0">
       <!-- Summary Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div class="bg-white rounded-lg shadow p-5 min-w-0">
-          <dt class="text-sm font-medium text-gray-500 truncate">{{ t('admin.financial.accounts_receivable') }}</dt>
-          <dd class="mt-1 text-2xl font-bold text-gray-900 truncate">${{ formatNumber(overview?.accountsReceivable || 0) }}</dd>
+          <dt class="text-sm font-medium text-gray-500 truncate">{{ t('admin.dashboard.total_revenue') }}</dt>
+          <dd class="mt-1 text-2xl font-bold text-gray-900 truncate">${{ formatNumber(overview?.totalRevenue || 0) }}</dd>
         </div>
         <div class="bg-white rounded-lg shadow p-5 min-w-0">
           <dt class="text-sm font-medium text-gray-500 truncate">{{ t('admin.financial.overdue_amount') }}</dt>
           <dd class="mt-1 text-2xl font-bold text-red-600 truncate">${{ formatNumber(overview?.overdueAmount || 0) }}</dd>
         </div>
         <div class="bg-white rounded-lg shadow p-5 min-w-0">
-          <dt class="text-sm font-medium text-gray-500 truncate">{{ t('admin.financial.revenue_this_month') }}</dt>
-          <dd class="mt-1 text-2xl font-bold text-green-600 truncate">${{ formatNumber(overview?.revenueThisMonth || 0) }}</dd>
-        </div>
-        <div class="bg-white rounded-lg shadow p-5 min-w-0">
           <dt class="text-sm font-medium text-gray-500 truncate">{{ t('admin.financial.outstanding_invoices') }}</dt>
-          <dd class="mt-1 text-2xl font-bold text-gray-900 truncate">{{ overview?.overdueCount || 0 }}</dd>
+          <dd class="mt-1 text-2xl font-bold text-gray-900 truncate">{{ outstandingInvoices }}</dd>
         </div>
       </div>
 
@@ -118,6 +114,14 @@ const breakdown = ref<any[]>([])
 const revenueData = ref<any[]>([])
 const invoices = ref<any[]>([])
 const invoicesLoading = ref(true)
+
+// Backend GetFinancialOverview returns { invoiceStats, overdueAmount, confirmedPayments, totalRevenue }.
+// Outstanding (unpaid billed) invoices = sent + overdue counts from invoiceStats.
+const outstandingInvoices = computed(() => {
+  const stats = overview.value?.invoiceStats
+  if (!stats) return 0
+  return (stats.sent || 0) + (stats.overdue || 0)
+})
 
 const loadData = async () => {
   loading.value = true

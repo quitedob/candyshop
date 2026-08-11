@@ -232,7 +232,8 @@ onMounted(() => { hydrated.value = true })
 
 .footer__newsletter-btn--inquiry {
   background-color: var(--color-bg);
-  color: var(--color-highlight);
+  /* WCAG AA: #fd933d on white is 2.2:1; use a darker orange for the text. */
+  color: #c2410c;
 }
 
 .footer__newsletter-btn--inquiry:hover {
@@ -297,7 +298,8 @@ onMounted(() => { hydrated.value = true })
   border-radius: var(--radius-sm);
   font-size: var(--text-xs);
   font-weight: 600;
-  color: var(--color-accent);
+  /* WCAG AA: lighten the accent so cert badges pass contrast on the dark footer. */
+  color: #fbbf24;
 }
 
 .footer__title {
@@ -435,7 +437,8 @@ onMounted(() => { hydrated.value = true })
 }
 
 .footer__translation-note {
-  color: rgba(255, 255, 255, 0.35);
+  /* WCAG AA: 0.35 alpha ≈ #595959 on black (3:1); 0.6 passes for 12px text. */
+  color: rgba(255, 255, 255, 0.6);
   font-size: var(--text-xs);
   line-height: 1.5;
   margin: var(--spacing-sm) 0 0;

@@ -128,7 +128,7 @@ const load = async () => {
 const startEdit = () => {
   form.phone = company.value?.phone || ''
   form.website = company.value?.website || ''
-  form.address = { ...company.value?.address } || { street: '', city: '', state: '', country: '' }
+  form.address = { street: '', city: '', state: '', country: '', ...(company.value?.address as Record<string, string> | undefined) }
   editing.value = true
   saveError.value = ''
   saveSuccess.value = false

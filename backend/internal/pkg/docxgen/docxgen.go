@@ -6,6 +6,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 )
@@ -298,13 +299,16 @@ func escapeXML(s string) string {
 	return s
 }
 
-// FormatMoney formats a float64 as "USD 1,234.56".
+// FormatMoney formats a float64 as "USD 1,234.56", rounded to the nearest cent.
+// Rounding happens before formatting so values like 19.999 render as 20.00
+// instead of being truncated to 19.99 (off-by-one-cent).
 func FormatMoney(amt float64, currency string) string {
-	intPart := int(amt)
-	decPart := int((amt - float64(intPart)) * 100)
-	if decPart < 0 {
-		decPart = -decPart
+	if math.IsNaN(amt) || math.IsInf(amt, 0) {
+		return fmt.Sprintf("%s 0.00", currency)
 	}
+	rounded := math.Round(amt*100) / 100
+	intPart := int(rounded)
+	decPart := int(math.Abs(math.Round((rounded - float64(intPart)) * 100)))
 	return fmt.Sprintf("%s %s.%02d", currency, commaFormat(intPart), decPart)
 }
 

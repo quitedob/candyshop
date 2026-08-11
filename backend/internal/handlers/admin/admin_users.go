@@ -1,9 +1,11 @@
 package admin
 
 import (
+	modelsAuth "candypro/api/internal/models/auth"
 	"candypro/api/internal/pkg/pagination"
 	"candypro/api/internal/pkg/response"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -92,6 +94,28 @@ func (h *Handler) AdminUpdateUserStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+// authorizeRoleGrant enforces the invariant that only a superadmin may assign
+// the admin or superadmin roles. It writes a 403 and returns false when the
+// caller is not a superadmin and the target role is privileged; otherwise it
+// returns true and leaves the caller's own role untouched.
+func (h *Handler) authorizeRoleGrant(c *gin.Context, target *modelsAuth.Role) bool {
+	if h.services == nil || h.services.Auth == nil {
+		response.ErrorResp(c, http.StatusForbidden, "forbidden_insufficient_role")
+		return false
+	}
+	callerID, exists := c.Get("userID")
+	uid, _ := callerID.(string)
+	if !exists || strings.TrimSpace(uid) == "" {
+		response.ErrorResp(c, http.StatusForbidden, "forbidden_insufficient_role")
+		return false
+	}
+	if err := h.services.Auth.CanGrantRole(c.Request.Context(), uid, target); err != nil {
+		response.ErrorResp(c, http.StatusForbidden, "forbidden_insufficient_role")
+		return false
+	}
+	return true
+}
+
 // AdminUpdateUser updates a user profile.
 // @Summary Admin update user
 // @Tags admin-users
@@ -137,12 +161,19 @@ func (h *Handler) AdminUpdateUser(c *gin.Context) {
 		user.Phone = req.Phone
 	}
 	if req.RoleID != "" {
-		resolvedRoleID, roleErr := h.services.Auth.ResolveRoleID(c.Request.Context(), req.RoleID, "")
+		resolvedRole, roleErr := h.services.Auth.ResolveRole(c.Request.Context(), req.RoleID, "")
 		if roleErr != nil {
 			response.ErrorResp(c, http.StatusBadRequest, "invalid_role")
 			return
 		}
-		user.RoleID = resolvedRoleID
+		// Only a superadmin may promote a user to admin/superadmin.
+		if !h.authorizeRoleGrant(c, resolvedRole) {
+			return
+		}
+		user.RoleID = resolvedRole.ID
+		// Drop the stale preloaded Role snapshot so GORM Save cannot revert the
+		// foreign key back to the previous role.
+		user.Role = nil
 	}
 
 	if err := h.services.User.UpdateUser(c.Request.Context(), user); err != nil {

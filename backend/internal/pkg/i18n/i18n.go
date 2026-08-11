@@ -76,12 +76,36 @@ func TranslateWithVars(locale, key string, vars map[string]string) string {
 }
 
 // WarmCache merges records into the in-memory cache (called after DB changes).
+// It is additive: existing keys are updated, but keys absent from records stay.
 func WarmCache(records []struct{ Locale, Key, Value string }) {
 	mu.Lock()
 	defer mu.Unlock()
 	for _, r := range records {
 		cache[r.Locale+"|"+r.Key] = r.Value
 	}
+}
+
+// DeleteFromCache removes a single key from the in-memory cache so it stops
+// resolving immediately (Translate falls back to the default locale or the raw
+// key). Used when a translation is deleted or deactivated.
+func DeleteFromCache(locale, key string) {
+	mu.Lock()
+	defer mu.Unlock()
+	delete(cache, locale+"|"+key)
+}
+
+// ReplaceCache rebuilds the entire in-memory cache from the given records.
+// Unlike WarmCache (additive merge), any key not present in records is removed.
+// Used after bulk imports where a batch may have deactivated or removed keys
+// that must stop resolving without a process restart.
+func ReplaceCache(records []struct{ Locale, Key, Value string }) {
+	mu.Lock()
+	defer mu.Unlock()
+	next := make(map[string]string, len(records))
+	for _, r := range records {
+		next[r.Locale+"|"+r.Key] = r.Value
+	}
+	cache = next
 }
 
 // ClearCache clears the in-memory cache.

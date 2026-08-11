@@ -1,4 +1,6 @@
 /** 客户端 JWT 自动刷新：在 access token 过期前主动调用 /auth/refresh */
+import { refreshAuthSession } from '~/composables/useApi'
+
 export default defineNuxtPlugin((nuxtApp) => {
   if (import.meta.server) return
 
@@ -9,9 +11,13 @@ export default defineNuxtPlugin((nuxtApp) => {
   let timer: ReturnType<typeof setInterval> | null = null
 
   const tryRefresh = async () => {
-    const { isAuthenticated, refreshAccessToken } = useAuth()
+    const { isAuthenticated } = useAuth()
     if (!isAuthenticated.value) return
-    await refreshAccessToken()
+    // M1: coalesce through the shared in-flight refresh so the interval + focus/
+    // visibility triggers and useApi() 401 retries never issue overlapping
+    // /auth/refresh calls (which would rotate each other's tokens out and force
+    // spurious logouts).
+    await refreshAuthSession()
   }
 
   const schedule = () => {
@@ -37,7 +43,7 @@ export default defineNuxtPlugin((nuxtApp) => {
   window.addEventListener('focus', onFocus)
 
   // 插件内不能使用 onBeforeUnmount，改用 Nuxt 应用生命周期钩子清理
-  nuxtApp.hook('app:beforeUnmount', () => {
+  nuxtApp.hook('app:beforeUnmount' as unknown as Parameters<typeof nuxtApp.hook>[0], () => {
     if (timer) clearInterval(timer)
     document.removeEventListener('visibilitychange', onVisibilityChange)
     window.removeEventListener('focus', onFocus)

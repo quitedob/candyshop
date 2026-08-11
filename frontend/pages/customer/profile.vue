@@ -115,7 +115,7 @@ const profileError = ref(false)
 const editForm = reactive({ firstName: '', lastName: '', company: '', phone: '' })
 
 const roleLabel = computed(() => {
-  const raw = String(user.value?.role?.name || user.value?.role || 'customer').toLowerCase()
+  const raw = String(user.value?.role || 'customer').toLowerCase()
   const key = `roles.${raw}`
   return te(key) ? t(key) : t('roles.customer')
 })

@@ -91,19 +91,18 @@ const categories = computed(() => [
 ])
 
 const allFaqs = computed(() => {
-  const items = tm('faq.items') as Array<any>
-  const faqs = []
-  if (items && items.length === 15) {
-    const cats = ['general', 'general', 'general', 'general', 'ordering', 'ordering', 'ordering', 'oem', 'oem', 'oem', 'oem', 'shipping', 'shipping', 'shipping', 'shipping']
-    for (let i = 0; i < 15; i++) {
-      faqs.push({
-        category: cats[i],
-        question: rt(items[i].question),
-        answer: rt(items[i].answer)
-      })
-    }
-  }
-  return faqs
+  const items = tm('faq.items') as Array<any> | undefined
+  if (!items || items.length === 0) return []
+
+  // Category assignment for the canonical 15-item FAQ list. Items beyond the
+  // known mapping fall back to 'general', and fewer items still render — the
+  // page must not go blank when the FAQ content count changes.
+  const cats = ['general', 'general', 'general', 'general', 'ordering', 'ordering', 'ordering', 'oem', 'oem', 'oem', 'oem', 'shipping', 'shipping', 'shipping', 'shipping']
+  return items.slice(0, cats.length).map((item, index) => ({
+    category: cats[index] || 'general',
+    question: rt(item.question),
+    answer: rt(item.answer)
+  }))
 })
 
 const filteredFaqs = computed(() => {

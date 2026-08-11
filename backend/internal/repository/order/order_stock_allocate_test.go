@@ -36,6 +36,25 @@ func setupStockTestDB(t *testing.T) *gorm.DB {
 	)`).Error; err != nil {
 		t.Fatalf("create batches: %v", err)
 	}
+	// stock_transactions mirrors the modelsOrder.StockTransaction model so the
+	// FEFO restore path (restoreFEFOBatches) can read back the batches recorded
+	// during reservation (M1 regression test).
+	if err := db.Exec(`CREATE TABLE stock_transactions (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		product_id TEXT NOT NULL,
+		change INTEGER NOT NULL,
+		stock_before INTEGER NOT NULL,
+		stock_after INTEGER NOT NULL,
+		reason TEXT NOT NULL,
+		reference_id TEXT,
+		operator_id TEXT,
+		batch_id TEXT,
+		lot_number TEXT,
+		warehouse_id TEXT,
+		created_at DATETIME
+	)`).Error; err != nil {
+		t.Fatalf("create stock_transactions: %v", err)
+	}
 	return db
 }
 

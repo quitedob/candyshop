@@ -70,6 +70,71 @@
           {{ t('customer.quick_order.add_row') }}
         </button>
       </div>
+
+      <!-- Shipping Address: required by POST /user/orders (street/city/country) -->
+      <div class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
+        <h4 class="text-sm font-semibold text-gray-900">{{ t('customer.cart.shipping_to') }}</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="sm:col-span-2">
+            <label for="manual-street" class="block text-xs font-medium text-gray-600 mb-1">{{ t('customer.cart.street') }}</label>
+            <input
+              id="manual-street"
+              v-model="shippingAddress.street"
+              type="text"
+              name="shippingStreet"
+              autocomplete="street-address"
+              :class="['w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1', shippingErrors.street ? 'border-red-400 focus:border-red-400 focus:ring-red-100' : 'border-gray-300 focus:border-orange-400 focus:ring-orange-100']"
+            />
+            <p v-if="shippingErrors.street" class="mt-1 text-xs text-red-600">{{ shippingErrors.street }}</p>
+          </div>
+          <div>
+            <label for="manual-city" class="block text-xs font-medium text-gray-600 mb-1">{{ t('customer.cart.city') }}</label>
+            <input
+              id="manual-city"
+              v-model="shippingAddress.city"
+              type="text"
+              name="shippingCity"
+              autocomplete="address-level2"
+              :class="['w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1', shippingErrors.city ? 'border-red-400 focus:border-red-400 focus:ring-red-100' : 'border-gray-300 focus:border-orange-400 focus:ring-orange-100']"
+            />
+            <p v-if="shippingErrors.city" class="mt-1 text-xs text-red-600">{{ shippingErrors.city }}</p>
+          </div>
+          <div>
+            <label for="manual-country" class="block text-xs font-medium text-gray-600 mb-1">{{ t('customer.cart.country') }}</label>
+            <input
+              id="manual-country"
+              v-model="shippingAddress.country"
+              type="text"
+              name="shippingCountry"
+              autocomplete="country-name"
+              :class="['w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1', shippingErrors.country ? 'border-red-400 focus:border-red-400 focus:ring-red-100' : 'border-gray-300 focus:border-orange-400 focus:ring-orange-100']"
+            />
+            <p v-if="shippingErrors.country" class="mt-1 text-xs text-red-600">{{ shippingErrors.country }}</p>
+          </div>
+          <div>
+            <label for="manual-state" class="block text-xs font-medium text-gray-600 mb-1">{{ t('customer.cart.state') }}</label>
+            <input
+              id="manual-state"
+              v-model="shippingAddress.state"
+              type="text"
+              name="shippingState"
+              autocomplete="address-level1"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-100"
+            />
+          </div>
+          <div>
+            <label for="manual-zip" class="block text-xs font-medium text-gray-600 mb-1">{{ t('customer.cart.zip') }}</label>
+            <input
+              id="manual-zip"
+              v-model="shippingAddress.zipCode"
+              type="text"
+              name="shippingZipCode"
+              autocomplete="postal-code"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-100"
+            />
+          </div>
+        </div>
+      </div>
       <button
         :disabled="!validManualRows.length || submitting"
         class="mt-6 inline-flex items-center gap-2 rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
@@ -222,6 +287,12 @@ const submitting = ref(false)
 const submitError = ref('')
 const submitSuccess = ref('')
 const manualRows = ref<ManualRow[]>([{ productId: '', quantity: null }])
+
+// Shipping address is required by the backend (POST /user/orders validates
+// street/city/country). Prefill from the customer's saved company address when
+// available; the buyer can still edit it before submitting.
+const shippingAddress = reactive({ street: '', city: '', state: '', zipCode: '', country: '' })
+const shippingErrors = reactive<{ street: string; city: string; country: string }>({ street: '', city: '', country: '' })
 const csvFile = ref<File | null>(null)
 const csvFileName = ref('')
 const csvPreview = ref<any[]>([])
@@ -253,14 +324,14 @@ async function editRequisitionList(list: any) {
   editingListId.value = list.id
   reqForm.name = list.name
   try {
-    const detail = await api.get(`/user/requisition-lists/${list.id}`)
-    reqForm.items = (detail?.items || []).map((it: any) => ({ productId: it.productId, quantity: it.quantity }))
+    const detail = await api.get<{ items?: { productId: string; quantity: number }[] }>(`/user/requisition-lists/${list.id}`)
+    reqForm.items = (detail?.items || []).map((it) => ({ productId: it.productId, quantity: it.quantity }))
     if (!reqForm.items.length) reqForm.items = [{ productId: '', quantity: 1 }]
   } catch { /* silent */ }
 }
 
 async function deleteRequisitionList(id: string) {
-  await api.delete(`/user/requisition-lists/${id}`)
+  await api.del(`/user/requisition-lists/${id}`)
   await loadRequisitionLists()
 }
 
@@ -284,19 +355,53 @@ function formatCurrency(amount: number): string {
   return `${cur()} ${formatNumber(amount || 0)}`
 }
 
+function validateShippingAddress(): boolean {
+  shippingErrors.street = ''
+  shippingErrors.city = ''
+  shippingErrors.country = ''
+  let ok = true
+  if (!shippingAddress.street.trim()) {
+    shippingErrors.street = t('customer.common.shipping_street_required')
+    ok = false
+  }
+  if (!shippingAddress.city.trim()) {
+    shippingErrors.city = t('customer.common.shipping_city_required')
+    ok = false
+  }
+  if (!shippingAddress.country.trim()) {
+    shippingErrors.country = t('customer.common.shipping_country_required')
+    ok = false
+  }
+  return ok
+}
+
 async function submitManualOrder() {
   const items = validManualRows.value.map((r) => ({
     productId: r.productId.trim(),
     quantity: r.quantity!,
   }))
   if (!items.length) return
+  if (!validateShippingAddress()) {
+    submitError.value = ''
+    return
+  }
 
   submitting.value = true
   submitError.value = ''
   submitSuccess.value = ''
 
   try {
-    const order = await api.post('/user/orders', { items })
+    const order = await api.post<{ id: string }>('/user/orders', {
+      items,
+      incoterms: 'FOB',
+      shippingAddress: {
+        street: shippingAddress.street.trim(),
+        city: shippingAddress.city.trim(),
+        state: shippingAddress.state.trim(),
+        zipCode: shippingAddress.zipCode.trim(),
+        country: shippingAddress.country.trim(),
+      },
+    })
     submitSuccess.value = t('customer.quick_order.order_created')
     setTimeout(() => router.push({ path: localePath(`/customer/orders/${order.id}`) }), 1500)
   } catch (err: any) {
@@ -340,7 +445,7 @@ async function submitCsvOrder() {
   try {
     const formData = new FormData()
     formData.append('file', csvFile.value)
-    const order = await api.post('/user/orders/bulk', formData)
+    const order = await api.post<{ id: string }>('/user/orders/bulk', formData)
     submitSuccess.value = t('customer.quick_order.order_created')
     setTimeout(() => router.push({ path: localePath(`/customer/orders/${order.id}`) }), 1500)
   } catch (err: any) {
@@ -360,7 +465,7 @@ async function loadRequisitionLists() {
 
 async function loadOrderHistory() {
   try {
-    const res = await api.get('/user/orders', { limit: 10 })
+    const res = await api.get<{ data?: unknown[] }>('/user/orders', { limit: 10 })
     orderHistory.value = res?.data || []
   } catch {
     // silent
@@ -371,7 +476,7 @@ async function convertRequisitionToOrder(listId: string) {
   submitting.value = true
   submitError.value = ''
   try {
-    const order = await api.post(`/user/requisition-lists/${listId}/convert`)
+    const order = await api.post<{ id: string }>(`/user/requisition-lists/${listId}/convert`)
     router.push({ path: localePath(`/customer/orders/${order.id}`) })
   } catch (err: any) {
     submitError.value = err?.message || t('errors.unknown')
@@ -384,7 +489,7 @@ async function reorderFromHistory(orderId: string) {
   submitting.value = true
   submitError.value = ''
   try {
-    const order = await api.post(`/user/orders/${orderId}/reorder`)
+    const order = await api.post<{ id: string }>(`/user/orders/${orderId}/reorder`)
     router.push({ path: localePath(`/customer/orders/${order.id}`) })
   } catch (err: any) {
     submitError.value = err?.message || t('errors.unknown')
@@ -393,8 +498,25 @@ async function reorderFromHistory(orderId: string) {
   }
 }
 
+async function loadCompanyAddress() {
+  try {
+    const company = await api.get<{ address?: { street?: string; city?: string; state?: string; zipCode?: string; country?: string } }>('/user/company')
+    const a = company?.address
+    if (a) {
+      if (a.street) shippingAddress.street = a.street
+      if (a.city) shippingAddress.city = a.city
+      if (a.state) shippingAddress.state = a.state
+      if (a.zipCode) shippingAddress.zipCode = a.zipCode
+      if (a.country) shippingAddress.country = a.country
+    }
+  } catch {
+    // No saved company address — the buyer can enter one manually
+  }
+}
+
 onMounted(() => {
   loadRequisitionLists()
   loadOrderHistory()
+  loadCompanyAddress()
 })
 </script>

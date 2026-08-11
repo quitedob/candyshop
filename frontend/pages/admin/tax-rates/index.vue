@@ -254,7 +254,7 @@ const saveRate = async () => {
 const removeRate = async (id: string) => {
   if (!confirm(t('admin.confirm_delete'))) return
   try {
-    await api.delete(`/admin/tax-rates/${id}`)
+    await api.del(`/admin/tax-rates/${id}`)
     await fetchRates()
   } catch (err: any) {
     notifyError(err, t('errors.api.delete_failed'))

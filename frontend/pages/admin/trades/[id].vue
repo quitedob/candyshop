@@ -240,7 +240,7 @@
                 <td class="px-4 py-3 font-medium text-gray-900">{{ enumLabel('document_type', doc.type) }}</td>
                 <td class="px-4 py-3 text-gray-500">{{ doc.docNumber }}</td>
                 <td class="px-4 py-3">
-                  <span :class="docStatusBadge(doc.status)" class="px-2 py-0.5 text-xs font-semibold rounded-full">{{ enumLabel('document_status', doc.status) }}</span>
+                  <span :class="docStatusBadge(doc.status)" class="px-2 py-0.5 text-xs font-semibold rounded-full">{{ docStatusLabel(doc.status) }}</span>
                 </td>
                 <td class="px-4 py-3">
                   <button v-if="doc.status === 'DRAFT'" @click="confirmDoc(doc.id)"
@@ -257,7 +257,7 @@
         <div v-for="rdoc in richDocCards" :key="rdoc.key" class="bg-white shadow sm:rounded-lg">
           <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
             <h4 class="text-sm font-semibold text-gray-900">{{ rdoc.label }}</h4>
-            <span v-if="rdoc.data" :class="docStatusBadge(rdoc.data.status)" class="px-2 py-0.5 text-xs font-semibold rounded-full">{{ enumLabel('document_status', rdoc.data.status) }}</span>
+            <span v-if="rdoc.data?.status" :class="docStatusBadge(rdoc.data.status)" class="px-2 py-0.5 text-xs font-semibold rounded-full">{{ docStatusLabel(rdoc.data.status) }}</span>
           </div>
           <div class="p-4">
             <div v-if="!rdoc.data" class="text-gray-400 text-xs mb-3">{{ t('admin.trades.not_created') }}</div>
@@ -378,7 +378,7 @@ definePageMeta({ layout: 'admin', middleware: ['auth'] })
 
 const route = useRoute()
 const api = useApi()
-const { t } = useI18n()
+const { t, te } = useI18n()
 const localePath = useLocalePath()
 const { currencyOrDefault: cur, cell, enumLabel, formatNumber, formatDate } = useDisplay()
 
@@ -518,7 +518,7 @@ const saveSettlement = async () => {
 const deleteSettlement = async (id: number) => {
   if (!confirm(t('admin.confirm_delete'))) return
   try {
-    await api.delete(`/admin/trades/${route.params.id}/settlements/${id}`)
+    await api.del(`/admin/trades/${route.params.id}/settlements/${id}`)
     await fetchSettlements()
   } catch (err: any) {
     notifyError(err, t('errors.api.delete_failed'))
@@ -849,14 +849,30 @@ const openRichDocModal = (rdoc: any) => {
   }
 }
 
+const buildRichDocPayload = (fields: { key: string; type?: string }[]): Record<string, unknown> => {
+  const payload: Record<string, unknown> = {}
+  for (const field of fields) {
+    const raw = richDocForm[field.key]
+    if (field.type === 'number') {
+      // Backend binds numeric fields to float64/int; an empty string (as
+      // produced by a cleared v-model input) fails JSON binding and returns 400.
+      const n = Number(raw)
+      payload[field.key] = raw === '' || raw === null || raw === undefined || Number.isNaN(n) ? 0 : n
+    } else {
+      payload[field.key] = raw ?? ''
+    }
+  }
+  return payload
+}
+
 const saveRichDoc = async () => {
   if (!editingRichDoc.value) return
   savingRichDoc.value = true
   richDocError.value = ''
-  const { endpoint, data } = editingRichDoc.value
+  const { endpoint, data, fields } = editingRichDoc.value
   try {
     const method = data ? 'put' : 'post'
-    const result = await api[method]<any>(`/admin/trades/${route.params.id}/${endpoint}`, { ...richDocForm })
+    const result = await api[method]<any>(`/admin/trades/${route.params.id}/${endpoint}`, buildRichDocPayload(fields))
     // Update local data
     if (endpoint === 'proforma-invoice') piData.value = result
     else if (endpoint === 'commercial-invoice') ciData.value = result
@@ -888,6 +904,22 @@ const docStatusBadge = (status: string) => {
   if (status === 'CONFIRMED' || status === 'ISSUED' || status === 'PAID') return 'bg-green-100 text-green-800'
   if (status === 'DRAFT') return 'bg-gray-100 text-gray-800'
   return 'bg-yellow-100 text-yellow-800'
+}
+
+const docStatusLabel = (status: string | null | undefined): string => {
+  if (status == null || String(status).trim() === '') return ''
+  // Backend rich-doc / TradeDocument statuses are uppercase enums (DRAFT, SENT,
+  // CONFIRMED, ISSUED, PAID, SURRENDERED, VOIDED). Prefer the localized
+  // enum.document_status.* key when the locale defines one; the locale files only
+  // cover draft/pending/confirmed/completed/cancelled, so map the backend-only
+  // statuses to stable labels here instead of letting them render as "Unknown".
+  const normalized = String(status).trim().toUpperCase()
+  const enumKey = `enum.document_status.${normalized.toLowerCase().replace(/[^a-z0-9_]/g, '_')}`
+  if (te(enumKey)) return t(enumKey)
+  const fallback: Record<string, string> = {
+    SENT: 'Sent', ISSUED: 'Issued', PAID: 'Paid', SURRENDERED: 'Surrendered', VOIDED: 'Voided',
+  }
+  return fallback[normalized] ?? enumLabel('document_status', status)
 }
 
 onMounted(() => {

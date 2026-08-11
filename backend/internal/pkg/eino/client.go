@@ -8,7 +8,6 @@ import (
 	"log"
 	"regexp"
 	"strings"
-	"time"
 
 	"candypro/api/internal/config"
 	"candypro/api/internal/pkg/eino/prompts/agent"
@@ -47,21 +46,12 @@ func NewClient(cfg config.AIConfig) (*Client, error) {
 	}
 
 	ctx := context.Background()
-	httpTimeout := cfg.HTTPTimeout
-	if httpTimeout <= 0 {
-		httpTimeout = 90 * time.Second
-	}
 	translateRetry := cfg.TranslateRetryMax
 	if translateRetry <= 0 {
 		translateRetry = 2
 	}
 
-	rawModel, err := openai.NewChatModel(ctx, &openai.ChatModelConfig{
-		Model:   cfg.OpenAIModel,
-		APIKey:  cfg.OpenAIAPIKey,
-		BaseURL: cfg.OpenAIBaseURL,
-		Timeout: httpTimeout,
-	})
+	rawModel, err := NewDeepSeekChatModel(ctx, cfg, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize chat model: %w", err)
 	}
@@ -70,11 +60,7 @@ func NewClient(cfg config.AIConfig) (*Client, error) {
 	jsonResponseFormat := openai.ChatCompletionResponseFormat{
 		Type: openai.ChatCompletionResponseFormatTypeJSONObject,
 	}
-	rawJSONModel, err := openai.NewChatModel(ctx, &openai.ChatModelConfig{
-		Model:          cfg.OpenAIModel,
-		APIKey:         cfg.OpenAIAPIKey,
-		BaseURL:        cfg.OpenAIBaseURL,
-		Timeout:        httpTimeout,
+	rawJSONModel, err := NewDeepSeekChatModel(ctx, cfg, &openai.ChatModelConfig{
 		ResponseFormat: &jsonResponseFormat,
 	})
 	var chatModelJSON model.ToolCallingChatModel
@@ -167,6 +153,13 @@ func (c *Client) Generate(ctx context.Context, prompt string) (string, error) {
 
 	iter := runner.Query(ctx, prompt)
 	var finalResponse string
+	// lastOutput is the trailing MessageOutput event. A ReturnDirectly tool
+	// (e.g. submit_quotation_for_human_review) ends the agent with its own
+	// user-facing result carried as a Role==Tool message. That content is the
+	// answer, not raw tool output, so Generate re-appends it after the stream
+	// ends via appendTerminalToolResult; intermediate tool results are filtered
+	// by accumulateMessageOutput instead.
+	var lastOutput *adk.MessageVariant
 
 	for {
 		event, ok := iter.Next()
@@ -180,29 +173,87 @@ func (c *Client) Generate(ctx context.Context, prompt string) (string, error) {
 		}
 
 		if event.Output != nil && event.Output.MessageOutput != nil {
-			if msg := event.Output.MessageOutput.Message; msg != nil {
-				if len(msg.Content) > 0 {
-					finalResponse += msg.Content
-				}
-			} else if stream := event.Output.MessageOutput.MessageStream; stream != nil {
-				for {
-					chunk, err := stream.Recv()
-					if errors.Is(err, io.EOF) {
-						break
-					}
-					if err != nil {
-						log.Printf("ADK stream error: %v, RunPath: %v\n", err, event.RunPath)
-						return "", err
-					}
-					if len(chunk.Content) > 0 {
-						finalResponse += chunk.Content
-					}
-				}
+			lastOutput = event.Output.MessageOutput
+			var err error
+			finalResponse, err = accumulateMessageOutput(finalResponse, lastOutput)
+			if err != nil {
+				log.Printf("ADK stream error: %v, RunPath: %v\n", err, event.RunPath)
+				return "", err
 			}
 		}
 	}
 
+	finalResponse = appendTerminalToolResult(finalResponse, lastOutput)
+
 	return stripThinkBlocks(finalResponse), nil
+}
+
+// appendTerminalToolResult appends the content of a trailing Role==Tool
+// MessageOutput to final. A ReturnDirectly tool (e.g.
+// submit_quotation_for_human_review) terminates the agent run with its
+// user-facing result carried as a Role==Tool message; dropping it — as the
+// tool-role filter in accumulateMessageOutput would — leaves the answer empty.
+//
+// The trailing-event predicate is source-verified against Eino v0.7.36 for the
+// ChatModelAgent react loop that every attached agent is:
+//   - a non-ReturnDirectly tool result is never the trailing event, because
+//     compose/tool_node.go ToolsNode.Invoke returns it as a ToolMessage which
+//     is sent immediately and the react loop (adk/react.go checkReturnDirect)
+//     always routes back to the model, which then emits a further assistant
+//     event;
+//   - a failing tool never produces a Tool message at all — ToolsNode.Invoke
+//     returns an error, the graph run fails, and Generate returns early on
+//     event.Err before this helper runs.
+// So in the current wiring the ONLY way a Tool message is the trailing event is
+// the ReturnDirectly terminal, which carries the user-facing tool result.
+//
+// A separator is inserted between accumulated assistant text and the appended
+// terminal result so the two never merge without whitespace.
+func appendTerminalToolResult(final string, last *adk.MessageVariant) string {
+	if last == nil || last.Message == nil {
+		return final
+	}
+	if last.Message.Role != schema.Tool || last.Message.Content == "" {
+		return final
+	}
+	if final != "" && !strings.HasSuffix(final, " ") && !strings.HasSuffix(final, "\n") {
+		final += "\n\n"
+	}
+	return final + last.Message.Content
+}
+
+// accumulateMessageOutput appends user-facing text from one agent event's
+// MessageOutput to final. Intermediate tool-role messages (raw tool results)
+// and tool-result stream chunks are skipped so internal tool output never leaks
+// into the user-facing answer; only assistant text is accumulated. The terminal
+// result of a ReturnDirectly tool is preserved separately by Generate via
+// appendTerminalToolResult, because that message is the agent's final output
+// rather than an intermediate tool result.
+func accumulateMessageOutput(final string, mv *adk.MessageVariant) (string, error) {
+	if mv == nil {
+		return final, nil
+	}
+	if msg := mv.Message; msg != nil {
+		if msg.Role != schema.Tool && len(msg.Content) > 0 {
+			return final + msg.Content, nil
+		}
+		return final, nil
+	}
+	if stream := mv.MessageStream; stream != nil {
+		for {
+			chunk, err := stream.Recv()
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			if err != nil {
+				return final, err
+			}
+			if chunk.Role != schema.Tool && len(chunk.Content) > 0 {
+				final += chunk.Content
+			}
+		}
+	}
+	return final, nil
 }
 
 // HasAgent reports whether the full TradeAgent is attached.

@@ -38,6 +38,19 @@ func (r *FulfillmentRepository) Create(ctx context.Context, fulfillment *modelsO
 			return err
 		}
 
+		// G21-d: an order whose stock was already issued through the trade dispatch
+		// path (DispatchShipment writes StockReasonDispatched audit rows for the
+		// whole order) must not have the same stock deducted again by a
+		// fulfillment. Skip the physical deduction in that case — the goods already
+		// left the warehouse — but still book the fulfilled quantities.
+		var dispatched int64
+		if err := tx.Model(&modelsOrder.StockTransaction{}).
+			Where("reference_id = ? AND reason = ?", order.ID, modelsOrder.StockReasonDispatched).
+			Count(&dispatched).Error; err != nil {
+			return err
+		}
+		alreadyDispatched := dispatched > 0
+
 		var allAudit []*modelsOrder.StockTransaction
 		for i := range items {
 			items[i].FulfillmentID = fulfillment.ID
@@ -56,17 +69,22 @@ func (r *FulfillmentRepository) Create(ctx context.Context, fulfillment *modelsO
 					items[i].Quantity, remaining, oi.ProductID)
 			}
 
-			// Deduct warehouse stock (actual goods leaving warehouse)
-			wid, err := resolveWarehouseID(tx, warehouseID)
-			if err != nil {
-				return err
+			if !alreadyDispatched {
+				// Deduct warehouse stock (actual goods leaving warehouse). The
+				// reserved flag tells deductWarehouseStock whether
+				// Product.StockQuantity was already decremented at reservation time
+				// (G21-c).
+				wid, err := resolveWarehouseID(tx, warehouseID)
+				if err != nil {
+					return err
+				}
+				recs, err := deductWarehouseStock(tx, wid, items[i].ProductID, items[i].Quantity,
+					order.StockReserved, modelsOrder.StockReasonGoodsIssued, fulfillment.ID, "system", now)
+				if err != nil {
+					return err
+				}
+				allAudit = append(allAudit, recs...)
 			}
-			recs, err := deductWarehouseStock(tx, wid, items[i].ProductID, items[i].Quantity,
-				modelsOrder.StockReasonGoodsIssued, fulfillment.ID, "system", now)
-			if err != nil {
-				return err
-			}
-			allAudit = append(allAudit, recs...)
 
 			// Update order item fulfilled quantity
 			oi.FulfilledQuantity += items[i].Quantity
@@ -198,10 +216,17 @@ func (r *FulfillmentRepository) FindByID(ctx context.Context, id string) (*model
 }
 
 // Ship marks a fulfillment as shipped with tracking info.
+//
+// G21-e: the order row is read with FOR UPDATE and the fulfillment status
+// transition is a conditional UPDATE so concurrent ships cannot lose
+// ShippedQuantity updates. Only one caller can win the status transition for a
+// given fulfillment, and concurrent ships of different fulfillments of the same
+// order serialize on the order row lock before reading order.Items.
 func (r *FulfillmentRepository) Ship(ctx context.Context, id, trackingNumber, carrier string, shippedAt time.Time) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var f modelsOrder.Fulfillment
-		if err := tx.Where("id = ?", id).First(&f).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("id = ?", id).First(&f).Error; err != nil {
 			return err
 		}
 		if f.Status != modelsOrder.FulfillmentStatusPacked && f.Status != modelsOrder.FulfillmentStatusPending {
@@ -214,8 +239,14 @@ func (r *FulfillmentRepository) Ship(ctx context.Context, id, trackingNumber, ca
 			"shipped_at":      shippedAt,
 			"updated_at":      shippedAt,
 		}
-		if err := tx.Model(&f).Updates(updates).Error; err != nil {
-			return err
+		res := tx.Model(&modelsOrder.Fulfillment{}).
+			Where("id = ? AND status IN ?", id, []string{modelsOrder.FulfillmentStatusPacked, modelsOrder.FulfillmentStatusPending}).
+			Updates(updates)
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return fmt.Errorf("fulfillment %s cannot be shipped (concurrent ship)", id)
 		}
 		// Update order ShippedQuantity for each item
 		var items []modelsOrder.FulfillmentItem
@@ -223,7 +254,8 @@ func (r *FulfillmentRepository) Ship(ctx context.Context, id, trackingNumber, ca
 			return err
 		}
 		var order modelsOrder.Order
-		if err := tx.Where("id = ?", f.OrderID).First(&order).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("id = ?", f.OrderID).First(&order).Error; err != nil {
 			return err
 		}
 		for _, item := range items {

@@ -38,6 +38,17 @@ func MoneyCoversTotal(confirmedTotal, orderTotal float64) bool {
 	return confirmedTotal+tolerance >= orderTotal
 }
 
+// MoneyToCentsInt 将金额按货币精度（2 位小数）四舍五入后转为整数分
+// （19.999 -> 2000，-19.99 -> -1999）。用于 lineage/审计哈希等需要金额
+// 规范精确表示的序列化场景：以整数分参与哈希，避免 fmt.Sprintf("%f", ...)
+// 保留 6 位小数的浮点尾噪导致「相同分值产生不同哈希 / 相邻分值碰撞」。
+func MoneyToCentsInt(amount float64) int64 {
+	if math.IsNaN(amount) || math.IsInf(amount, 0) {
+		return 0
+	}
+	return int64(math.Round(amount * 100))
+}
+
 var isoCurrencyRegexp = regexp.MustCompile(`^[A-Z]{3}$`)
 
 // NormalizeISOCurrency 将币种规范为大写三位字母；空字符串表示未提供（由调用方默认 USD 等）

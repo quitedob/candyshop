@@ -37,6 +37,7 @@ type Repositories struct {
 	Shipment           *trade.ShipmentRepository
 	ShipmentEvent      *trade.ShipmentEventRepository
 	TradeDocDetail     *trade.TradeDocumentDetailRepository
+	QuotationReview    *trade.QuotationReviewRepository
 	ActivityLog        *activitylog.ActivityLogRepository
 	SystemSetting      *systemsetting.SystemSettingRepository
 	StockTransaction   *order.StockTransactionRepository
@@ -82,6 +83,7 @@ func New(db *gorm.DB) *Repositories {
 		Shipment:           trade.NewShipmentRepository(db),
 		ShipmentEvent:      trade.NewShipmentEventRepository(db),
 		TradeDocDetail:     trade.NewTradeDocumentDetailRepository(db),
+		QuotationReview:    trade.NewQuotationReviewRepository(db),
 		ActivityLog:        activitylog.NewActivityLogRepository(db),
 		SystemSetting:      systemsetting.NewSystemSettingRepository(db),
 		StockTransaction:   order.NewStockTransactionRepository(db),

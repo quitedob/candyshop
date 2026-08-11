@@ -10,10 +10,10 @@
     <!-- Tabs -->
     <div class="mt-6 border-b border-gray-200">
       <nav class="-mb-px flex space-x-8">
-        <button type="button" @click="activeTab = 'price-lists'" :class="[activeTab === 'price-lists' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'], 'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium'">
+        <button type="button" @click="activeTab = 'price-lists'" :class="[activeTab === 'price-lists' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700', 'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium']">
           {{ t('admin.pricing.price_lists') }}
         </button>
-        <button type="button" @click="activeTab = 'product-pricing'" :class="[activeTab === 'product-pricing' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'], 'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium'">
+        <button type="button" @click="activeTab = 'product-pricing'" :class="[activeTab === 'product-pricing' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700', 'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium']">
           {{ t('admin.pricing.product_pricing') }}
         </button>
       </nav>

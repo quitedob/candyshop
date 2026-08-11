@@ -201,6 +201,15 @@ func (r *RedisStore) SaveAccessSession(ctx context.Context, jti string, sess Acc
 	return err
 }
 
+// ValidateAccessSession returns the session for jti.
+//
+// Error contract (callers MUST NOT treat ErrSessionNotFound as an outage):
+//   - ErrSessionNotFound — the session does not exist (revoked via logout / admin
+//     revoke / password rotation, never written, or expired). The token is invalid;
+//     callers must deny the request.
+//   - ErrStoreUnavailable — the revocation state could not be verified (Redis
+//     unreachable, timeout, or corrupt payload). Callers must fail closed; they must
+//     NOT fall back to trusting the JWT claims.
 func (r *RedisStore) ValidateAccessSession(ctx context.Context, jti string) (*AccessSession, error) {
 	if strings.TrimSpace(jti) == "" {
 		return nil, fmt.Errorf("missing jti")
@@ -214,7 +223,9 @@ func (r *RedisStore) ValidateAccessSession(ctx context.Context, jti string) (*Ac
 	}
 	var p accessPayload
 	if err := json.Unmarshal(raw, &p); err != nil {
-		return nil, err
+		// Corrupt/empty payload — unverifiable, classify as store-unavailable so the
+		// caller fails closed rather than trusting the JWT.
+		return nil, fmt.Errorf("%w: corrupt access payload: %v", ErrStoreUnavailable, err)
 	}
 	return &AccessSession{UserID: p.UserID, Email: p.Email, Role: p.Role}, nil
 }

@@ -122,8 +122,9 @@ reset-db:
 	docker-compose down -v
 	docker-compose up -d postgres
 	@sleep 5
-	@make migrate
-	@make seed
+	# Run migrations + seeding via the seed CLI (cmd/seed runs AutoMigrate first).
+	# Do NOT call `make migrate` here: it starts the API server and blocks (G27-b).
+	cd backend && go run cmd/seed/main.go -all
 
 # Code quality targets
 lint:
@@ -157,8 +158,11 @@ install-tools:
 prod-build: build-all
 	@echo "Production build complete"
 
+# docker-compose.prod.yml only overrides services declared in the base
+# compose file (it declares no image/build), so it must be merged with
+# docker-compose.yml or `up` fails with "no image/build".
 prod-start:
-	docker-compose -f docker-compose.prod.yml up -d
+	docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 prod-stop:
-	docker-compose -f docker-compose.prod.yml down
+	docker-compose -f docker-compose.yml -f docker-compose.prod.yml down

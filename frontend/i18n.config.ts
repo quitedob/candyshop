@@ -1,3 +1,5 @@
+import type { VueMessageType } from 'vue-i18n'
+
 export default defineI18nConfig(() => ({
   legacy: false,
   globalInjection: true,
@@ -7,7 +9,7 @@ export default defineI18nConfig(() => ({
   fallbackWarn: false,
   availableLocales: ['en', 'zh', 'ko', 'ar', 'ja', 'th', 'vi', 'id', 'ms'],
   modifiers: {
-    kebabCase: (str: string) => typeof str === 'string' ? str.split(' ').join('-').toLowerCase() : str
+    kebabCase: (str: VueMessageType) => typeof str === 'string' ? str.split(' ').join('-').toLowerCase() : str
   },
   numberFormats: {
     en: {

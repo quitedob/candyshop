@@ -229,6 +229,16 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 		return
 	}
 
+	// G20: admin-supplied prices are validated before any field is mutated. A
+	// zero/negative line unit price would persist goods at no cost onto the
+	// order and its derived invoice, and a non-positive total or negative
+	// amount would manufacture a negative invoice. Previously AdminUpdateOrder
+	// wrote these values verbatim.
+	if reason := validateAdminOrderPrices(req); reason != "" {
+		response.ErrorRespDetail(c, http.StatusBadRequest, "invalid_request", gin.H{"reason": reason})
+		return
+	}
+
 	if req.UserID != nil {
 		userID := strings.TrimSpace(*req.UserID)
 		if userID == "" {
@@ -311,6 +321,25 @@ func (h *Handler) AdminUpdateOrder(c *gin.Context) {
 	if paymentInsufficientForExecution(currentStatus, order.PaymentStatus) {
 		response.ErrorResp(c, http.StatusUnprocessableEntity, "payment_policy_violation")
 		return
+	}
+
+	// G20 (follow-up): the admin confirm path must re-enforce the same policy the
+	// customer confirm path does — per-product MOQ, the contract price-list
+	// minimum, and the buyer company's CUMULATIVE credit exposure — before stock
+	// is committed. order.Items / order.TotalAmount / order.UserID here already
+	// reflect the request mutations, so the checks run against the final state.
+	// Placed before the stock-adjustment branch so an item edit that also
+	// confirms cannot bypass them.
+	if currentStatus == modelsOrder.OrderStatusConfirmed && previousStatus != currentStatus {
+		if !h.validateAdminConfirmMOQ(c, order.Items) {
+			return
+		}
+		if !h.validateAdminConfirmPriceListMin(c, order.UserID, order.Items) {
+			return
+		}
+		if !h.checkAdminCompanyCreditLimitCumulative(c, order.UserID, order.ID, order.TotalAmount) {
+			return
+		}
 	}
 
 	newFin := orderSvc.SnapshotOrderFinancial(order)
@@ -504,4 +533,48 @@ func buildItemQuantityMap(items []modelsOrder.OrderItem) map[string]int {
 		qtyByProduct[productID] += item.Quantity
 	}
 	return qtyByProduct
+}
+
+// validateAdminOrderPrices rejects client-supplied order prices that are never
+// legitimate on an admin edit: a negative line unit price or a negative
+// subtotal/tax/shipping/total (would manufacture a negative invoice on the order
+// and its derived invoice). Returns a human-readable reason, empty when valid.
+// G20: previously AdminUpdateOrder wrote these values verbatim, so a negative
+// TotalAmount or a negative-price line persisted untouched.
+//
+// Zero values are deliberately ALLOWED. Bulk / requisition / reorder drafts are
+// created unpriced by design — every line UnitPrice, Subtotal and TotalAmount are
+// 0 — and the admin order-edit modal echoes those zero values back on the next
+// save. Rejecting them would deadlock the draft workflow: the customer cannot
+// confirm an empty-country draft (target_country_required) and the admin cannot
+// edit that same draft to add a shipping country (the guard above would 400 on
+// its own zero prices). Draft prices are never authoritative anyway: the customer
+// confirm path re-prices every line server-side (CustomerConfirmOrder →
+// repriceOrderItems), and admin-created orders are server-priced in
+// AdminCreateOrder. Placeholder lines with quantity < 1 are ignored — they carry
+// no sellable value and are rejected by the quantity guards elsewhere.
+func validateAdminOrderPrices(req adminUpdateOrderRequest) string {
+	if req.Items != nil {
+		for i, it := range *req.Items {
+			if it.Quantity < 1 {
+				continue
+			}
+			if it.UnitPrice < 0 {
+				return fmt.Sprintf("items[%d].unitPrice must not be negative", i)
+			}
+		}
+	}
+	if req.Subtotal != nil && *req.Subtotal < 0 {
+		return "subtotal must not be negative"
+	}
+	if req.TaxAmount != nil && *req.TaxAmount < 0 {
+		return "taxAmount must not be negative"
+	}
+	if req.ShippingAmount != nil && *req.ShippingAmount < 0 {
+		return "shippingAmount must not be negative"
+	}
+	if req.TotalAmount != nil && *req.TotalAmount < 0 {
+		return "totalAmount must not be negative"
+	}
+	return ""
 }

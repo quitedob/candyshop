@@ -62,13 +62,13 @@
         />
         <MetricCard
           :title="t('customer.nav.quotes')"
-          :value="'—'"
+          :value="quoteCount"
           icon="heroicons:document-text"
           icon-bg="warning"
         />
         <MetricCard
           :title="t('customer.nav.notifications')"
-          :value="'—'"
+          :value="notificationUnread"
           icon="heroicons:bell"
           icon-bg="default"
         />
@@ -131,6 +131,8 @@ const { user, isPending } = useAuth()
 const api = useApi()
 
 const recentOrders = ref<any[]>([])
+const quoteCount = ref(0)
+const notificationUnread = ref(0)
 const pending = ref(true)
 const error = ref('')
 
@@ -143,8 +145,29 @@ const loadData = async () => {
   pending.value = true
   error.value = ''
   try {
-    const res = await api.get<any>('/user/orders?limit=5')
-    recentOrders.value = res.data || []
+    // The dashboard endpoint (GET /user/dashboard) is the real contract: it
+    // returns recent orders + summary totals. Quotes and unread-notification
+    // counts come from their dedicated endpoints instead of hardcoded '—'.
+    const [dash, quotes, notifs] = await Promise.allSettled([
+      api.get<any>('/user/dashboard'),
+      api.get<any>('/user/quotes?page=1&limit=50'),
+      api.get<any>('/user/notifications'),
+    ])
+    if (dash.status === 'fulfilled') {
+      recentOrders.value = dash.value.orders?.data || []
+    }
+    if (quotes.status === 'fulfilled') {
+      const q = quotes.value
+      // /user/quotes returns the quote rows in `data`; its pagination.total is
+      // the raw inquiry count, so the quote list length is the real count.
+      quoteCount.value = Number(q?.data?.length ?? 0)
+    }
+    if (notifs.status === 'fulfilled') {
+      notificationUnread.value = Number(notifs.value?.unreadCount ?? notifs.value?.total ?? 0)
+    }
+    if (dash.status === 'rejected') {
+      error.value = (dash as PromiseRejectedResult).reason?.message || t('customer.dashboard.error')
+    }
   } catch (err: any) {
     error.value = err?.message || t('customer.dashboard.error')
   } finally { pending.value = false }

@@ -137,6 +137,26 @@ func (h *Handler) AdminUpdateOrderStatus(c *gin.Context) {
 		return
 	}
 
+	// G20 (follow-up): the admin confirm path must re-enforce the same policy the
+	// customer confirm path does — per-product MOQ and the buyer company's
+	// CUMULATIVE credit exposure — before stock is committed. Drafts
+	// (bulk/requisition/reorder) never validated MOQ or the contract price-list
+	// min, and an admin confirming under-limit orders directly bypassed the
+	// customer's cumulative credit guard, letting a company stack several
+	// under-limit orders past its limit. The customer confirm path enforces all
+	// three; the admin confirm path must not be a bypass.
+	if targetStatus == modelsOrder.OrderStatusConfirmed && previousStatus != targetStatus {
+		if !h.validateAdminConfirmMOQ(c, order.Items) {
+			return
+		}
+		if !h.validateAdminConfirmPriceListMin(c, order.UserID, order.Items) {
+			return
+		}
+		if !h.checkAdminCompanyCreditLimitCumulative(c, order.UserID, order.ID, order.TotalAmount) {
+			return
+		}
+	}
+
 	if previousStatus != "cancelled" && targetStatus == "cancelled" && order.StockReserved {
 		if err := h.services.Order.ReleaseOrderStock(c.Request.Context(), order); err != nil {
 			response.ErrorResp(c, http.StatusInternalServerError, "order_stock_release_failed")

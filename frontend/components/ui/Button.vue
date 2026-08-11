@@ -32,7 +32,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useSlots } from 'vue'
+
+const slots = useSlots()
 
 interface Props {
   variant?: 'primary' | 'secondary' | 'accent' | 'highlight' | 'outline' | 'ghost' | 'link'
@@ -87,7 +89,7 @@ const buttonClasses = computed(() => {
       'btn--disabled': props.disabled,
       'btn--loading': props.loading,
       'btn--has-icon': props.icon,
-      'btn--icon-only': props.icon && !$slots.default
+      'btn--icon-only': props.icon && !slots.default
     }
   ]
 })

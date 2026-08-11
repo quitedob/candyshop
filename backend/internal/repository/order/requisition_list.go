@@ -2,6 +2,8 @@ package order
 
 import (
 	modelsOrder "candypro/api/internal/models/order"
+	modelsUser "candypro/api/internal/models/user"
+	"candypro/api/internal/pkg/money"
 	"context"
 	"fmt"
 	"time"
@@ -125,4 +127,44 @@ func (r *RequisitionListRepository) RemoveItem(ctx context.Context, listID strin
 		return fmt.Errorf("item not found")
 	}
 	return nil
+}
+
+// SumOpenOrderTotalsByCompany returns the sum of total_amount for all open
+// (non-terminal) orders of every user belonging to a buyer company, excluding a
+// single order ID (the order being confirmed, whose confirmed total the caller
+// adds separately). Orders carry only user_id, so the company is resolved
+// through users.company_id.
+//
+// G20 r3: the previous cumulative credit check summed open orders PER USER while
+// the credit limit is per COMPANY. Two buyer users of one company could each
+// confirm up to the full limit, leaving outstanding exposure exceeding the
+// limit with no check catching it. This single aggregate query replaces the
+// per-user pagination walk for the credit path — it also avoids the
+// created_at-tie skip/double-count hazard of offset pagination. Statuses
+// cancelled / returned / expired are terminal and carry no outstanding exposure
+// (mirrors openOrderTerminalStatuses in the order service). Soft-deleted rows
+// are excluded by the GORM scope on Model(&Order{}).
+func (r *OrderRepository) SumOpenOrderTotalsByCompany(ctx context.Context, companyID, excludeOrderID string) (float64, error) {
+	companyUsers := r.db.WithContext(ctx).
+		Model(&modelsUser.User{}).
+		Select("id").
+		Where("company_id = ?", companyID)
+	var result struct {
+		Amount float64
+	}
+	err := r.db.WithContext(ctx).
+		Model(&modelsOrder.Order{}).
+		Where("id <> ?", excludeOrderID).
+		Where("status NOT IN ?", []string{
+			modelsOrder.OrderStatusCancelled,
+			modelsOrder.OrderStatusReturned,
+			modelsOrder.OrderStatusExpired,
+		}).
+		Where("user_id IN (?)", companyUsers).
+		Select("COALESCE(SUM(total_amount), 0) AS amount").
+		Scan(&result).Error
+	if err != nil {
+		return 0, err
+	}
+	return money.RoundMoney(result.Amount), nil
 }

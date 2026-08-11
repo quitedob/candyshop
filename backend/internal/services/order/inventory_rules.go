@@ -3,6 +3,8 @@ package order
 import (
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
+	"candypro/api/internal/pkg/money"
+	"context"
 	"fmt"
 	"strings"
 )
@@ -134,4 +136,111 @@ func dedupeInventoryWarnings(warnings []InventoryWarning) []InventoryWarning {
 		out = append(out, w)
 	}
 	return out
+}
+
+// ValidateMOQ re-enforces each product's minimum order quantity against the
+// order's aggregated per-product quantity. Draft-creation paths (bulk CSV,
+// requisition conversion, reorder-from-history) never validate MOQ, and a
+// confirm-time M-19 quantity override can drop a line below MOQ, so the check
+// is re-run at confirm before stock is committed (G20). Returns the violation
+// strings; an empty slice means every line clears its product MOQ. Products
+// absent from productsByID are skipped (they would already have failed the
+// re-price step) and products without a configured MOQ always pass.
+func (s *OrderService) ValidateMOQ(items []modelsOrder.OrderItem, productsByID map[string]modelsProduct.Product) []string {
+	var violations []string
+	if len(items) == 0 {
+		return violations
+	}
+	aggregatedQty := make(map[string]int, len(items))
+	for _, item := range items {
+		pid := strings.TrimSpace(item.ProductID)
+		if pid == "" || item.Quantity < 1 {
+			continue
+		}
+		aggregatedQty[pid] += item.Quantity
+	}
+	for productID, qty := range aggregatedQty {
+		product, ok := productsByID[productID]
+		if !ok {
+			continue
+		}
+		if product.MOQ > 0 && qty < product.MOQ {
+			violations = append(violations, fmt.Sprintf("Product %s requested quantity %d is below MOQ %d.", productID, qty, product.MOQ))
+		}
+	}
+	return violations
+}
+
+// openOrderTerminalStatuses are order statuses that no longer represent
+// outstanding credit exposure — cancelled / returned / expired orders are
+// excluded from the cumulative credit-limit sum.
+var openOrderTerminalStatuses = map[string]bool{
+	modelsOrder.OrderStatusCancelled: true,
+	modelsOrder.OrderStatusReturned:  true,
+	modelsOrder.OrderStatusExpired:   true,
+}
+
+// SumOpenOrderTotalsByUser returns the sum of total_amount for all open
+// (non-terminal) orders of a user, optionally excluding a single order ID —
+// the order being confirmed, whose confirmed total the caller adds separately.
+// Orders in draft states (pending / pending_confirmation / pending_approval)
+// and in-flight states (confirmed → delivered) all count as open exposure.
+//
+// NOTE (G20 r3): the cumulative credit check at confirm now uses
+// SumOpenOrderTotalsByCompany — the credit limit is per COMPANY, and a per-user
+// sum lets two buyer users of one company each confirm up to the full limit.
+// This per-user helper is retained for callers that genuinely need a single
+// buyer's exposure.
+func (s *OrderService) SumOpenOrderTotalsByUser(ctx context.Context, userID, excludeOrderID string) (float64, error) {
+	const pageSize = 200
+	var sum float64
+	for page := 1; ; page++ {
+		orders, total, err := s.repo.FindByUserID(ctx, userID, page, pageSize)
+		if err != nil {
+			return 0, err
+		}
+		for i := range orders {
+			o := &orders[i]
+			if o.ID == excludeOrderID {
+				continue
+			}
+			if openOrderTerminalStatuses[o.Status] {
+				continue
+			}
+			sum += o.TotalAmount
+		}
+		if len(orders) == 0 || int64(page*pageSize) >= total {
+			break
+		}
+	}
+	return money.RoundMoney(sum), nil
+}
+
+// companyOpenOrderSummer is implemented by order repositories that can scope the
+// open-order sum to a buyer company. The orderRepository interface (order.go)
+// predates the company dimension of credit exposure and cannot be extended here,
+// so the concrete OrderRepository advertises the capability through this
+// interface and the service asserts it at runtime — the same idiom
+// ConfirmAndReserveOrderWithFinancials uses for its extended repo method.
+type companyOpenOrderSummer interface {
+	SumOpenOrderTotalsByCompany(ctx context.Context, companyID, excludeOrderID string) (float64, error)
+}
+
+// SumOpenOrderTotalsByCompany returns the sum of total_amount for all open
+// (non-terminal) orders of every user belonging to a buyer company, excluding a
+// single order ID. Enforces the cumulative credit limit at confirm against the
+// company dimension (G20 r3): the credit limit is per COMPANY, so the sum must
+// cover every buyer user of the company — the previous per-user sum let two
+// users of one company each confirm up to the full limit.
+//
+// A repository that cannot scope by company is an ERROR, deliberately failing
+// CLOSED: silently falling back to a per-user sum would re-open the exact
+// cross-user stacking bypass this method exists to close. The concrete
+// OrderRepository always implements it in production.
+func (s *OrderService) SumOpenOrderTotalsByCompany(ctx context.Context, companyID, excludeOrderID string) (float64, error) {
+	summer, ok := s.repo.(companyOpenOrderSummer)
+	if !ok {
+		return 0, fmt.Errorf("orderRepository does not support company-scoped open-order sum")
+	}
+	return summer.SumOpenOrderTotalsByCompany(ctx, companyID, excludeOrderID)
 }

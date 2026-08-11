@@ -18,7 +18,7 @@
               </span>
             </template>
             <template v-else-if="row.type === 'link'">
-              <a :href="row.value" target="_blank" rel="noopener noreferrer" class="spec-table__link">
+              <a :href="Array.isArray(row.value) ? row.value[0] : row.value" target="_blank" rel="noopener noreferrer" class="spec-table__link">
                 {{ row.displayValue || row.value }}
                 <Icon name="lucide:external-link" size="14" />
               </a>

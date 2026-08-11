@@ -92,51 +92,34 @@ var categoryI18nSeed = map[string]map[string]map[string]string{
 	},
 }
 
-// SeedCategoryTranslations merges category i18n seeds into existing categories (idempotent).
+// SeedCategoryTranslations merges category i18n seeds into existing categories
+// (idempotent, fill-only — never reverts admin edits, M3 / G27-c).
 func SeedCategoryTranslations(db *gorm.DB) error {
 	return seedAllCategoryTranslations(db)
 }
 
-// seedAllCategoryTranslations 写入分类 9 语言翻译。
+// seedAllCategoryTranslations 写入分类 9 语言翻译（fill-only，保留已有翻译与管理员标量编辑）。
+// M3 / G27-c: every category is routed through applyCategoryI18nSeedGuarded
+// (seed.go), so the unconditional every-boot call from cmd/api/main.go:85 is
+// idempotent — a translation key is only written when empty/whitespace, the en
+// fallback backfills empty scalar Name/Alias/Description, and the zh name is only
+// mapped onto the scalar Name on the initial seed run (never on an already
+// localized category). Admin-authored zh/scalar edits survive restarts.
 func seedAllCategoryTranslations(db *gorm.DB) error {
 	for slug, localeMap := range categoryI18nSeed {
 		var cat modelsProduct.Category
 		if err := db.Where("slug = ?", slug).First(&cat).Error; err != nil {
 			continue
 		}
-		if cat.Translations == nil {
-			cat.Translations = make(modelsCommon.JSONMap)
-		}
-		for locale, fields := range localeMap {
-			if cat.Translations[locale] == nil {
-				cat.Translations[locale] = make(map[string]string)
-			}
-			for k, v := range fields {
-				cat.Translations[locale][k] = v
-			}
-			if locale == "en" {
-				if strings.TrimSpace(cat.Name) == "" {
-					cat.Name = fields["name"]
-				}
-				if strings.TrimSpace(cat.Alias) == "" {
-					cat.Alias = fields["alias"]
-				}
-				if strings.TrimSpace(cat.Description) == "" {
-					cat.Description = fields["description"]
-				}
-			}
-		}
-		if zh, ok := cat.Translations["zh"]; ok {
-			if strings.TrimSpace(zh["name"]) != "" {
-				cat.Name = zh["name"]
-			}
-		}
-		db.Model(&cat).Updates(map[string]interface{}{
+		applyCategoryI18nSeedGuarded(&cat, localeMap)
+		if err := db.Model(&cat).Updates(map[string]interface{}{
 			"translations": cat.Translations,
 			"name":         cat.Name,
 			"alias":        cat.Alias,
 			"description":  cat.Description,
-		})
+		}).Error; err != nil {
+			return err
+		}
 	}
 	return nil
 }

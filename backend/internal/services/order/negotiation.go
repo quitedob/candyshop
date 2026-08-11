@@ -17,9 +17,10 @@ type negotiationRepository interface {
 	Create(ctx context.Context, offer *modelsOrder.NegotiationOffer) error
 	Update(ctx context.Context, offer *modelsOrder.NegotiationOffer) error
 	FindPendingByInquiryID(ctx context.Context, inquiryID string) (*modelsOrder.NegotiationOffer, error)
-	// TransitionStatus 条件更新：仅当 status=fromStatus 时把它改为 toStatus。
-	// 返回受影响行数；0 表示已被并发修改（A-4 TOCTOU 防护）。
-	TransitionStatus(ctx context.Context, id, fromStatus, toStatus string, updatedAt time.Time) (int64, error)
+	// TransitionStatus 条件更新：仅当 id、inquiry_id、status 三者匹配时才写入。
+	// inquiry_id 限定 offer 归属（H-3）；返回受影响行数，0 表示已被并发修改
+	// （A-4 TOCTOU 防护）或询盘不匹配。
+	TransitionStatus(ctx context.Context, id, inquiryID, fromStatus, toStatus string, updatedAt time.Time) (int64, error)
 }
 
 // Sentinel errors returned by NegotiationService. Handlers translate these to
@@ -72,11 +73,30 @@ func (s *NegotiationService) CreateOffer(ctx context.Context, inquiryID, userID,
 	return offer, nil
 }
 
-func (s *NegotiationService) AcceptOffer(ctx context.Context, id, userID string) (*modelsOrder.NegotiationOffer, error) {
+// AcceptOffer 把 pending offer 置为 accepted，并生成后续订单。
+//
+// H-3 所有权限定：offer 只属于一个 inquiry。调用方（handler）已先校验路径
+// inquiry 归属于当前用户（customer 场景），这里再校验传入的 inquiryID 与
+// offer 实际归属一致，防止调用方在询盘 X 上操作属于询盘 Y 的 offer；不匹配
+// 时返回 ErrNegotiationOfferNotFound（404），不泄漏 offer 是否存在。
+//
+// A-4: 写入仍然是原子条件 UPDATE（WHERE id AND inquiry_id AND status），
+// 上面的 FindByID 仅用于错误分类，不构成 read→check→Save 的 TOCTOU 模式。
+func (s *NegotiationService) AcceptOffer(ctx context.Context, id, inquiryID string) (*modelsOrder.NegotiationOffer, error) {
+	offer, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNegotiationOfferNotFound
+		}
+		return nil, err
+	}
+	if offer.InquiryID != inquiryID {
+		return nil, ErrNegotiationOfferNotFound
+	}
 	now := time.Now()
 	// A-4: 用条件 UPDATE … WHERE status='pending' 取代 read→check→Save，
 	// 保证两个管理员并发 Accept 时只有第一个写入成功。
-	rows, err := s.repo.TransitionStatus(ctx, id, "pending", "accepted", now)
+	rows, err := s.repo.TransitionStatus(ctx, id, inquiryID, "pending", "accepted", now)
 	if err != nil {
 		return nil, err
 	}
@@ -96,9 +116,20 @@ func (s *NegotiationService) AcceptOffer(ctx context.Context, id, userID string)
 	return s.repo.FindByID(ctx, id)
 }
 
-func (s *NegotiationService) RejectOffer(ctx context.Context, id, userID string) (*modelsOrder.NegotiationOffer, error) {
+// RejectOffer 把 pending offer 置为 rejected。所有权限定同 AcceptOffer（H-3）。
+func (s *NegotiationService) RejectOffer(ctx context.Context, id, inquiryID string) (*modelsOrder.NegotiationOffer, error) {
+	offer, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNegotiationOfferNotFound
+		}
+		return nil, err
+	}
+	if offer.InquiryID != inquiryID {
+		return nil, ErrNegotiationOfferNotFound
+	}
 	now := time.Now()
-	rows, err := s.repo.TransitionStatus(ctx, id, "pending", "rejected", now)
+	rows, err := s.repo.TransitionStatus(ctx, id, inquiryID, "pending", "rejected", now)
 	if err != nil {
 		return nil, err
 	}

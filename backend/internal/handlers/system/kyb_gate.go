@@ -3,29 +3,11 @@ package system
 import (
 	"candypro/api/internal/pkg/kyb"
 	"candypro/api/internal/pkg/response"
-	"math"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
-
-// usdCapValue converts a monetary amount to its USD-equivalent using the
-// configured exchange rates (base USD). Amounts already in USD pass through;
-// empty currency is treated as USD. A currency without a configured rate fails
-// closed (+Inf) so it can never satisfy a USD cap (M6: non-USD bypass). Kept in
-// sync with the customer portal's identical helper in internal/handlers/customer.
-func usdCapValue(rates map[string]float64, currency string, amount float64) float64 {
-	cur := strings.ToUpper(strings.TrimSpace(currency))
-	if cur == "" || cur == "USD" {
-		return amount
-	}
-	rate, ok := rates[cur]
-	if !ok || rate <= 0 {
-		return math.Inf(1)
-	}
-	return amount / rate
-}
 
 // ensureActiveOrKYBBypassAmount 与 customer 门户一致：pending 用户适用免审额度与可选样品档位。
 // currency 是 orderTotal 的 ISO 币种（"" 视为 USD）。
@@ -51,7 +33,7 @@ func (h *Handler) ensureActiveOrKYBBypassAmount(c *gin.Context, userID string, o
 	// 统一换算成 USD 后再与额度比较；无汇率的不支持币种 fail-closed（+Inf），绝不放行（M6）。
 	orderTotalUSD := orderTotal
 	if h.cfg != nil {
-		orderTotalUSD = usdCapValue(h.cfg.ExchangeRates, currency, orderTotal)
+		orderTotalUSD = kyb.UsdCapValue(h.cfg.ExchangeRates, currency, orderTotal)
 	}
 	if !kyb.PendingOrderAllowed(tier, orderTotalUSD, lineProductIDs) {
 		response.ErrorResp(c, http.StatusForbidden, "kyb_order_limit_exceeded")

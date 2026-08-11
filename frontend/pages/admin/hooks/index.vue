@@ -248,7 +248,7 @@ const saveHook = async () => {
 const removeHook = async (id: number) => {
   if (!confirm(t('admin.confirm_delete'))) return
   try {
-    await api.delete(`/admin/hooks/${id}`)
+    await api.del(`/admin/hooks/${id}`)
     await fetchHooks()
   } catch (err: any) {
     notifyError(err, t('errors.api.delete_failed'))

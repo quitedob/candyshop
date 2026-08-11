@@ -108,15 +108,15 @@
                   <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">#</th>
                   <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.analytics.col_product') }}</th>
                   <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.analytics.col_revenue') }}</th>
-                  <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ t('admin.analytics.col_quantity') }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200 bg-white">
-                <tr v-for="(product, idx) in topProducts" :key="idx" class="hover:bg-gray-50 transition-colors">
+                <tr v-for="(product, idx) in topProducts" :key="product.productId || idx" class="hover:bg-gray-50 transition-colors">
                   <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ idx + 1 }}</td>
-                  <td class="px-4 py-3 text-sm text-gray-700">{{ product.name || '-' }}</td>
+                  <!-- Backend returns { productId, revenue } only — there is no
+                       name/quantity. Show the product id and drop the quantity column. -->
+                  <td class="px-4 py-3 text-sm text-gray-700 font-mono">{{ product.productId || '-' }}</td>
                   <td class="px-4 py-3 text-sm text-gray-700 text-right font-medium">{{ cur() }} {{ formatNumber(product.revenue || 0) }}</td>
-                  <td class="px-4 py-3 text-sm text-gray-700 text-right">{{ formatNumber(product.quantity || 0) }}</td>
                 </tr>
               </tbody>
             </table>

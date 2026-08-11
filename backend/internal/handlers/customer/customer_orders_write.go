@@ -238,7 +238,7 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 		orderNumber = buildCustomerOrderNumber()
 	}
 
-	pricing := h.computeCheckoutPricing(c.Request.Context(), checkoutPricingInput{
+	pricing, perr := h.computeCheckoutPricing(c.Request.Context(), checkoutPricingInput{
 		Items:             items,
 		ProductByID:       productByID,
 		ShippingAddress:   req.ShippingAddress,
@@ -247,6 +247,12 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 		Subtotal:          subtotal,
 		Currency:          currency,
 	})
+	if perr != nil {
+		// G24c: a tax/shipping rate-lookup failure fails CLOSED — never book the
+		// order with 0 tax/shipping on a transient DB failure.
+		response.ErrorResp(c, http.StatusInternalServerError, "checkout_pricing_failed")
+		return
+	}
 	taxAmount := pricing.TaxAmount
 	shippingAmount := pricing.ShippingAmount
 	if pricing.Currency != "" {
@@ -300,21 +306,21 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 	hasOfficialEvidence := len(compliance.Violations) == 0 && len(compliance.Warnings) == 0
 
 	order := &modelsOrder.Order{
-		ID:             crypto.GenerateID(),
-		OrderNumber:    orderNumber,
-		UserID:         userID,
-		InquiryID:      inquiryID,
-		Source:         modelsOrder.OrderSourceCart,
-		Status:         orderStatus,
-		PaymentStatus:  paymentStatus,
-		Items:          items,
-		StockReserved:  false,
+		ID:                         crypto.GenerateID(),
+		OrderNumber:                orderNumber,
+		UserID:                     userID,
+		InquiryID:                  inquiryID,
+		Source:                     modelsOrder.OrderSourceCart,
+		Status:                     orderStatus,
+		PaymentStatus:              paymentStatus,
+		Items:                      items,
+		StockReserved:              false,
 		ComplianceOfficialEvidence: hasOfficialEvidence,
-		Subtotal:       subtotal,
-		TaxAmount:      taxAmount,
-		ShippingAmount: shippingAmount,
-		TotalAmount:    totalAmount,
-		Currency:       currency,
+		Subtotal:                   subtotal,
+		TaxAmount:                  taxAmount,
+		ShippingAmount:             shippingAmount,
+		TotalAmount:                totalAmount,
+		Currency:                   currency,
 		ShippingAddress: modelsOrder.Address{
 			Street:  strings.TrimSpace(req.ShippingAddress.Street),
 			City:    strings.TrimSpace(req.ShippingAddress.City),
@@ -430,7 +436,29 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 		}
 	}
 
-	if order.ShippingAddress.Country != "" && len(order.Items) > 0 {
+	// G20: never skip the destination-market compliance recheck at confirm.
+	// Previously the recheck was gated on a non-empty shipping country, so
+	// bulk/requisition/reorder drafts (created without an address) sailed past
+	// destination-market validation. A draft with line items that carries no
+	// official compliance evidence must declare a shipping country at confirm —
+	// without a destination we cannot evaluate market rules (halal-only bans,
+	// ingredient restrictions, prepayment policy). Orders with official
+	// compliance evidence were already validated against a declared destination
+	// at intake, so the recheck below is supplementary and tolerates a missing
+	// country (it degrades to generic labeling warnings, never a false pass on
+	// market-restricted products that were validated earlier).
+	if len(order.Items) > 0 && !order.ComplianceOfficialEvidence && strings.TrimSpace(order.ShippingAddress.Country) == "" {
+		c.JSON(http.StatusUnprocessableEntity, modelsCommon.ErrorResponse{
+			Error:   "target_country_required",
+			Message: i18n.T(c, "errors.target_country_required"),
+			Details: gin.H{
+				"reason": "a shipping country is required to validate destination-market compliance at confirm",
+			},
+		})
+		return
+	}
+
+	if len(order.Items) > 0 {
 		products := make([]modelsProduct.Product, 0, len(productByID))
 		allFound := true
 		for _, item := range order.Items {
@@ -460,8 +488,8 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 
 	// Parse compliance acknowledgement and optional item edits.
 	var parsedReq struct {
-		ComplianceAck bool                     `json:"complianceAck"`
-		Items         []modelsOrder.OrderItem  `json:"items"`
+		ComplianceAck bool                    `json:"complianceAck"`
+		Items         []modelsOrder.OrderItem `json:"items"`
 	}
 	if c.Request.Body != nil {
 		rawBody, readErr := io.ReadAll(c.Request.Body)
@@ -511,11 +539,56 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 		}
 	}
 
+	// M-19 override detection (G20 r3): the customer may supply an items array at
+	// confirm that changes line quantities from the server-authoritative draft.
+	// An overridden quantity is a NEW quantity that never passed intake
+	// validation, so it must be re-checked against product MOQ and the contract
+	// price-list minimum below. Unchanged lines keep the validation (or the
+	// negotiation, for H10 inquiry drafts) they received at intake. A product
+	// absent from the draft (a client-added line) always counts as overridden —
+	// draft quantity 0 != override quantity.
+	overriddenQty := make(map[string]bool)
+	if len(parsedReq.Items) > 0 {
+		draftQty := make(map[string]int, len(order.Items))
+		for _, it := range order.Items {
+			pid := strings.TrimSpace(it.ProductID)
+			if pid == "" {
+				continue
+			}
+			draftQty[pid] += it.Quantity
+		}
+		for _, it := range parsedReq.Items {
+			pid := strings.TrimSpace(it.ProductID)
+			if pid == "" {
+				continue
+			}
+			if draftQty[pid] != it.Quantity {
+				overriddenQty[pid] = true
+			}
+		}
+	}
+
 	// H1/H2: re-price every line server-side from the catalog / contract price
 	// list. Bulk, requisition and reorder drafts are created with UnitPrice=0 —
 	// trusting order.Subtotal at confirm would ship goods at ~zero cost. Confirm
 	// overrides are honored for quantity but their unit prices are discarded.
-	repricedItems, repricedProducts, repricedSubtotal, priceErr := h.repriceOrderItems(c, userID, itemsToConfirm, order.ShippingAddress.Country)
+	//
+	// H10: inquiry drafts are already server-priced at intake — an accepted
+	// negotiation offer's unit price, or the catalog price for a no-offer
+	// conversion (and OEM project conversions resolve their own unit price). The
+	// catalog / contract price list must NOT override these agreed prices at
+	// confirm, or the negotiated total is lost and a BasePrice=0 OEM-only offer
+	// would 422 (no_price) on a validly-priced order. Inquiry drafts keep their
+	// prices (client-supplied confirm prices are still discarded).
+	var repricedItems []modelsOrder.OrderItem
+	var repricedProducts map[string]modelsProduct.Product
+	var repricedSubtotal float64
+	var priceErr error
+	if order.Source == modelsOrder.OrderSourceInquiry {
+		repricedItems, repricedProducts, repricedSubtotal, priceErr = h.priceInquiryConfirmItems(c, userID, order.Items, itemsToConfirm, order.ShippingAddress.Country)
+	} else {
+		repricedItems, repricedProducts, repricedSubtotal, priceErr = h.repriceOrderItems(c, userID, itemsToConfirm, order.ShippingAddress.Country)
+	}
 	if priceErr != nil {
 		switch {
 		case errors.Is(priceErr, errRepriceNoPrice):
@@ -530,8 +603,78 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 	itemsToConfirm = repricedItems
 	productByID = repricedProducts
 
+	// G20: re-enforce per-product MOQ at confirm. Draft paths (bulk CSV,
+	// requisition, reorder) never validated MOQ, and a confirm-time M-19
+	// quantity override can reduce a line below MOQ. Enforce before stock is
+	// committed so a below-MOQ order cannot reserve inventory.
+	//
+	// G20 r3: inquiry (H10) drafts keep their negotiated line set authoritative —
+	// an accepted below-MOQ deal (e.g. a sample order the agent negotiated) must
+	// not 422 at confirm. Only lines the customer quantity-overrode (M-19) are
+	// re-checked on inquiry drafts; unchanged lines were settled by the
+	// negotiation. All other sources validate every line.
+	if h.services.Order != nil {
+		moqCheck := itemsToConfirm
+		if order.Source == modelsOrder.OrderSourceInquiry {
+			moqCheck = filterOverriddenItems(itemsToConfirm, overriddenQty)
+		}
+		if moqViolations := h.services.Order.ValidateMOQ(moqCheck, productByID); len(moqViolations) > 0 {
+			c.JSON(http.StatusUnprocessableEntity, modelsCommon.ErrorResponse{
+				Error:   "min_quantity_not_met",
+				Message: i18n.T(c, "errors.min_quantity_not_met"),
+				Details: gin.H{"violations": moqViolations},
+			})
+			return
+		}
+	}
+
+	// G20: bulk/requisition/reorder drafts bypass the contract price-list minimum
+	// quantity at creation (only the product-level MOQ is checked there — the
+	// price-list min is a separate B2B tier constraint, enforced on the cart path
+	// via validateLineMinQuantity). Enforce the price-list min at confirm for
+	// those drafts so a below-contract line cannot be confirmed.
+	//
+	// G20 r3: the recheck now also covers M-19 quantity overrides on non-bulk
+	// sources. A cart line validated at intake at qty 100 (>= min 50) could be
+	// confirmed at an overridden qty 20 (< min 50) — the override is a new
+	// quantity that never passed intake validation, so overridden lines are
+	// re-checked on every source. Unchanged inquiry lines stay excluded: a
+	// negotiated offer may legitimately sit below the list tier by design (H10),
+	// and an unchanged line was already validated (or negotiated) at intake.
+	if h.services.Price != nil && h.services.User != nil && h.services.Company != nil {
+		var contractPriceListID *string
+		if usr, userErr := h.services.User.GetByID(c.Request.Context(), userID); userErr == nil && usr.CompanyID != nil {
+			if company, compErr := h.services.Company.GetCompany(c.Request.Context(), *usr.CompanyID); compErr == nil && company.PriceListID != nil {
+				contractPriceListID = company.PriceListID
+			}
+		}
+		if contractPriceListID != nil {
+			// G20 (follow-up): enforce the contract price-list minimum PER LINE at
+			// confirm so a split / per-line redistribution cannot bypass the
+			// sub-min recheck. A draft line A qty 100 (>= min 50) confirmed as two
+			// lines A qty 30 + A qty 70 keeps the per-product aggregate at 100 —
+			// MOQ (aggregate) is fine, but each line must independently clear the
+			// contract min. Only the H10 negotiated-inquiry path stays gated to
+			// M-19-overridden lines (an unchanged negotiated deal may legitimately
+			// sit below a contract tier); every other source re-checks every line
+			// so the min gate no longer depends on the override map at all.
+			minCheckItems := itemsToConfirm
+			if order.Source == modelsOrder.OrderSourceInquiry {
+				minCheckItems = filterOverriddenItems(itemsToConfirm, overriddenQty)
+			}
+			for _, it := range minCheckItems {
+				if it.Quantity < 1 {
+					continue
+				}
+				if !h.validateLineMinQuantity(c, it.ProductID, it.Quantity, contractPriceListID) {
+					return
+				}
+			}
+		}
+	}
+
 	// 确认时重新计算税/运费（地址或费率可能已变化），基于重定价后的行与 subtotal。
-	confirmPricing := h.computeCheckoutPricing(c.Request.Context(), checkoutPricingInput{
+	confirmPricing, perr := h.computeCheckoutPricing(c.Request.Context(), checkoutPricingInput{
 		Items:           itemsToConfirm,
 		ProductByID:     productByID,
 		ShippingAddress: order.ShippingAddress,
@@ -539,12 +682,61 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 		Subtotal:        repricedSubtotal,
 		Currency:        order.Currency,
 	})
+	if perr != nil {
+		// G24c: a tax/shipping rate-lookup failure fails the confirm CLOSED — never
+		// confirm with 0 tax/shipping on a transient DB failure.
+		response.ErrorResp(c, http.StatusInternalServerError, "order_confirm_failed")
+		return
+	}
 	if h.services.Channel != nil && confirmPricing.TaxAmount <= 0 {
 		webstoreCh, _ := h.services.Channel.ResolveWebstoreChannel(c.Request.Context())
 		confirmPricing.TaxAmount = h.services.Channel.ComputeTaxAmount(repricedSubtotal, webstoreCh, confirmPricing.TaxAmount)
 	}
-	confirmTotal := repricedSubtotal + confirmPricing.TaxAmount + confirmPricing.ShippingAmount
-	if !h.ensureActiveOrKYBBypassForAmount(c, userID, confirmTotal, order.Currency, kyb.LineProductIDs(itemsToConfirm)...) {
+	// H10 follow-up: inquiry drafts carry the intake contract amount on
+	// order.TotalAmount — the accepted negotiation offer's total, or the
+	// line-price sum for a no-offer conversion. When the confirm line set
+	// matches the draft (no M-19 quantity override / added line) and the draft
+	// total is non-zero, that total IS the authoritative contract amount.
+	// Rebuilding it as subtotal+tax+shipping would discard a deal-level
+	// negotiated total that differs from the line-price sum (e.g. a
+	// round-number / discounted offer), and the confirmed order would then
+	// disagree with the trade created at intake (which carries order.TotalAmount).
+	preserveNegotiatedTotal := order.Source == modelsOrder.OrderSourceInquiry &&
+		order.TotalAmount > 0 &&
+		confirmLinesMatchDraft(order.Items, itemsToConfirm)
+
+	taxAmount := money.RoundMoney(confirmPricing.TaxAmount)
+	shippingAmount := money.RoundMoney(confirmPricing.ShippingAmount)
+	subtotal := money.RoundMoney(repricedSubtotal)
+	totalAmount := money.RoundMoney(subtotal + taxAmount + shippingAmount)
+	if preserveNegotiatedTotal {
+		// The negotiated total is the all-inclusive contract value captured at
+		// intake (intake stores tax/shipping as 0 and builds the trade from this
+		// total). Keep tax/shipping at zero AND rescale the confirmed lines so
+		// the persisted Subtotal equals the negotiated total exactly — the
+		// invoice-derivation path (services/order/invoice_policy.go
+		// CreateInvoiceFromOrder) derives Amount and TotalAmount from
+		// Subtotal/TaxAmount/ShippingAmount and assumes
+		// TotalAmount == Subtotal + Tax + Shipping. Persisting the intake draft's
+		// divergence (line-sum Subtotal 2500 on a 2000 negotiated total) would
+		// make the auto-derived invoice over-bill a discounted deal by exactly
+		// the discount. Scaling restores the invariant so the confirmed order,
+		// the derived invoice, the payment amount (order.TotalAmount) and the
+		// intake trade all agree on the negotiated total.
+		itemsToConfirm, subtotal = scaleInquiryLinesToTotal(itemsToConfirm, money.RoundMoney(order.TotalAmount))
+		totalAmount = money.RoundMoney(order.TotalAmount)
+		taxAmount = 0
+		shippingAmount = 0
+	}
+	// G20: enforce the buyer company's credit limit cumulatively at confirm. The
+	// per-order check at draft creation cannot catch a buyer stacking multiple
+	// under-limit orders, and bulk/requisition/reorder drafts bypass the creation
+	// check entirely, so the cumulative exposure (this order's total plus all
+	// other open order totals) is validated here, before stock is committed.
+	if !h.checkCompanyCreditLimitCumulative(c, userID, order.ID, totalAmount) {
+		return
+	}
+	if !h.ensureActiveOrKYBBypassForAmount(c, userID, totalAmount, order.Currency, kyb.LineProductIDs(itemsToConfirm)...) {
 		return
 	}
 
@@ -552,10 +744,6 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 	// same transaction as the status flip and stock reservation. Previously the
 	// confirm tx and the financial update were separate, leaving stock reserved
 	// with cogs=0 if the second update failed.
-	taxAmount := money.RoundMoney(confirmPricing.TaxAmount)
-	shippingAmount := money.RoundMoney(confirmPricing.ShippingAmount)
-	subtotal := money.RoundMoney(repricedSubtotal)
-	totalAmount := money.RoundMoney(subtotal + taxAmount + shippingAmount)
 	currency := order.Currency
 	if confirmPricing.Currency != "" {
 		currency = confirmPricing.Currency
@@ -611,6 +799,65 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 		"message": i18n.T(c, "messages.order_confirmed_success"),
 		"order":   order,
 	})
+}
+
+// confirmLinesMatchDraft reports whether the confirm-time line set (the server
+// draft, or any M-19 client override after quantities/specifications are
+// honored) matches the server draft by product and quantity. It gates H10 total
+// preservation: an inquiry draft's negotiated TotalAmount is authoritative only
+// for the exact negotiated line set — a quantity change or an added line
+// invalidates it, so the total falls back to a recompute from the preserved (and
+// for added lines, catalog) unit prices.
+func confirmLinesMatchDraft(draft, confirm []modelsOrder.OrderItem) bool {
+	if len(draft) != len(confirm) {
+		return false
+	}
+	type key struct {
+		productID string
+		quantity  int
+	}
+	count := func(items []modelsOrder.OrderItem) map[key]int {
+		out := make(map[key]int, len(items))
+		for _, it := range items {
+			pid := strings.TrimSpace(it.ProductID)
+			if pid == "" || it.Quantity < 1 {
+				continue
+			}
+			out[key{productID: pid, quantity: it.Quantity}]++
+		}
+		return out
+	}
+	draftCounts := count(draft)
+	confirmCounts := count(confirm)
+	if len(draftCounts) != len(confirmCounts) {
+		return false
+	}
+	for k, v := range draftCounts {
+		if confirmCounts[k] != v {
+			return false
+		}
+	}
+	return true
+}
+
+// filterOverriddenItems returns the subset of items whose productID was
+// quantity-overridden by the customer (M-19) at confirm. Used to gate the
+// confirm-time MOQ / contract price-list minimum re-checks on non-bulk drafts:
+// an unchanged line already passed intake validation (or was negotiated, for
+// H10 inquiry drafts) and must not be re-judged against catalog thresholds,
+// while an overridden quantity is new and must be re-validated. Returns nil when
+// nothing was overridden so the caller's ValidateMOQ short-circuits.
+func filterOverriddenItems(items []modelsOrder.OrderItem, overridden map[string]bool) []modelsOrder.OrderItem {
+	if len(overridden) == 0 {
+		return nil
+	}
+	out := make([]modelsOrder.OrderItem, 0, len(items))
+	for _, it := range items {
+		if overridden[strings.TrimSpace(it.ProductID)] {
+			out = append(out, it)
+		}
+	}
+	return out
 }
 
 func validateCustomerShippingAddress(address modelsOrder.Address) string {

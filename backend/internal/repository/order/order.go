@@ -619,6 +619,9 @@ func (r *OrderRepository) confirmAndReserve(ctx context.Context, id string, stoc
 
 // ReleaseExpiredPendingConfirmationOrders releases stock (if reserved) for expired pending_confirmation drafts and marks them cancelled.
 // Each order is processed in its own transaction to prevent one failure from rolling back the entire batch.
+// The stock release, its audit rows, and the pending_confirmation->expired transition are atomic: a
+// failed audit write now fails the release so the worker never commits the stock change while the
+// draft_expired audit rows are silently lost (G21-f).
 func (r *OrderRepository) ReleaseExpiredPendingConfirmationOrders(ctx context.Context, olderThan time.Time, limit int) (int, error) {
 	var orders []modelsOrder.Order
 	query := r.db.WithContext(ctx).
@@ -651,7 +654,7 @@ func (r *OrderRepository) ReleaseExpiredPendingConfirmationOrders(ctx context.Co
 					allAudit = append(allAudit, recs...)
 				}
 				if ae := writeStockAuditEntries(tx, allAudit); ae != nil {
-					log.Printf("order: writeStockAuditEntries failed: %v", ae)
+					return fmt.Errorf("order %s: write draft-expired stock audit rows failed: %w", order.ID, ae)
 				}
 			}
 
@@ -837,6 +840,7 @@ func (r *OrderRepository) TopProductsByRevenue(ctx context.Context, limit int) (
 		FROM orders o
 		CROSS JOIN LATERAL jsonb_array_elements(o.items) AS item
 		WHERE o.status NOT IN ('cancelled', 'expired')
+			AND o.deleted_at IS NULL
 			AND item->>'productId' IS NOT NULL
 		GROUP BY item->>'productId'
 		ORDER BY revenue DESC
@@ -1065,6 +1069,7 @@ func (r *OrderRepository) SalesVelocity(ctx context.Context, months int) ([]Sale
 			FROM orders o
 			CROSS JOIN LATERAL jsonb_array_elements(o.items) AS item
 			WHERE o.status NOT IN ('cancelled', 'expired')
+				AND o.deleted_at IS NULL
 				AND o.created_at >= date_trunc('month', NOW()) - (? * INTERVAL '1 month')
 			GROUP BY item->>'productId'
 		) oi ON oi.product_id = p.id
@@ -1104,6 +1109,7 @@ func (r *OrderRepository) RFMAnalysis(ctx context.Context) ([]RFMRecord, error) 
 		FROM users u
 		INNER JOIN orders o ON u.id = o.user_id
 			AND o.status NOT IN ('cancelled', 'expired')
+			AND o.deleted_at IS NULL
 			AND o.created_at >= NOW() - INTERVAL '12 months'
 			AND u.deleted_at IS NULL
 		GROUP BY u.id, u.first_name, u.last_name, u.email
@@ -1134,6 +1140,7 @@ func (r *OrderRepository) CustomerChurn(ctx context.Context, dormantDays int) ([
 		FROM users u
 		INNER JOIN orders o ON u.id = o.user_id
 		WHERE o.status NOT IN ('cancelled', 'expired')
+			AND o.deleted_at IS NULL
 			AND u.deleted_at IS NULL
 		GROUP BY u.id, u.first_name, u.last_name, u.email
 		HAVING MAX(o.created_at) < NOW() - (? * INTERVAL '1 day')
@@ -1174,6 +1181,7 @@ func (r *OrderRepository) InventoryHealth(ctx context.Context, salesWindowDays i
 			FROM orders o
 			CROSS JOIN LATERAL jsonb_array_elements(o.items) AS item
 			WHERE o.status NOT IN ('cancelled', 'expired')
+				AND o.deleted_at IS NULL
 				AND o.created_at >= NOW() - (? * INTERVAL '1 day')
 			GROUP BY item->>'productId'
 		) oi ON oi.product_id = p.id
@@ -1233,6 +1241,7 @@ func (r *OrderRepository) ProfitLossByPeriod(ctx context.Context, groupBy string
 			COUNT(o.id)::int AS order_count
 		FROM orders o
 		WHERE o.status NOT IN ('cancelled', 'expired')
+			AND o.deleted_at IS NULL
 			AND o.created_at >= date_trunc(?, NOW()) - (? * INTERVAL '1 ' || ?)
 		GROUP BY date_trunc(?, o.created_at)
 		ORDER BY period
@@ -1277,6 +1286,7 @@ func (r *OrderRepository) ReplenishmentSuggestions(ctx context.Context, cycleDay
 			FROM orders o
 			CROSS JOIN LATERAL jsonb_array_elements(o.items) AS item
 			WHERE o.status NOT IN ('cancelled', 'expired')
+				AND o.deleted_at IS NULL
 				AND o.created_at >= NOW() - (? * INTERVAL '1 day')
 			GROUP BY item->>'productId'
 		) oi ON oi.product_id = p.id

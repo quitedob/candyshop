@@ -9,10 +9,23 @@ const toastState = reactive({
   type: 'info'
 })
 
+// Single hide timer owned by the currently-visible toast. Cleared whenever a new toast
+// is shown (or the current one is hidden) so an older toast's timer can never hide a
+// newer, longer-lived toast — previously each show() leaked a timer that would fire
+// later and dismiss whatever was on screen.
+let hideTimer = null
+
 export const useToast = () => {
   const tts = useTTS()
 
   const show = (options) => {
+    // Clear any pending hide timer from a previous toast before showing the new one,
+    // including for duration === 0 (persist) which must outlive earlier timers.
+    if (hideTimer) {
+      clearTimeout(hideTimer)
+      hideTimer = null
+    }
+
     toastState.message = options.message
     toastState.type = options.type || 'info'
     toastState.visible = true
@@ -21,7 +34,7 @@ export const useToast = () => {
     tts.playForToast(toastState.type)
 
     if (options.duration !== 0) {
-      setTimeout(() => {
+      hideTimer = setTimeout(() => {
         hide()
       }, options.duration || 3000)
     }
@@ -29,6 +42,10 @@ export const useToast = () => {
 
   const hide = () => {
     toastState.visible = false
+    if (hideTimer) {
+      clearTimeout(hideTimer)
+      hideTimer = null
+    }
   }
 
   const success = (message, duration) => {

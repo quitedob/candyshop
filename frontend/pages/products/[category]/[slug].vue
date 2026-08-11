@@ -295,10 +295,19 @@ const currency = useCurrency()
 const api = useApi()
 const toast = useToast()
 
+const { getProduct, getRelatedProducts } = api
+
+// Product 返回结构来自 useApi 的 getProduct；补充本页额外使用的可选展示字段（sku/brand/inStock/currency 后端可能返回但接口未声明）
+type ProductDetail = Awaited<ReturnType<typeof getProduct>> & {
+  sku?: string
+  brand?: string
+  inStock?: boolean
+  currency?: string
+}
+
 const transactionCurrency = computed(() => cur((product.value as { currency?: string })?.currency || 'USD'))
 const priceDisplay = computed(() => `${transactionCurrency.value} ${formatNumber(product.value.basePrice || 0)}`)
 const referencePriceDisplay = computed(() => currency.formatPrice(product.value.basePrice || 0))
-const { getProduct, getRelatedProducts } = api
 
 // State
 const activeTab = ref('description')
@@ -335,7 +344,7 @@ const [
   )
 ])
 
-const product = computed(() => productData.value || {})
+const product = computed<ProductDetail>(() => (productData.value || {}) as ProductDetail)
 
 const categoryName = computed(() => {
   const slug = product.value.categorySlug || categorySlug.value
@@ -362,8 +371,13 @@ const tabs = [
 ]
 
 // Spec rows
+interface ProductSpecRow {
+  label: string
+  value: string
+  type: 'text'
+}
 const noVal = () => t('display.em_dash')
-const specRows = computed(() => {
+const specRows = computed<ProductSpecRow[]>(() => {
   const p = product.value
   return [
     // Basic
@@ -373,8 +387,8 @@ const specRows = computed(() => {
     { label: t('product.net_weight_per_piece'), value: p.netWeightPerPiece ? `${p.netWeightPerPiece}g` : noVal(), type: 'text' },
     { label: t('product.net_weight_per_pack'), value: p.netWeightPerPack ? `${p.netWeightPerPack}g` : noVal(), type: 'text' },
     { label: t('product.gross_weight_per_carton'), value: p.grossWeightPerCarton ? `${p.grossWeightPerCarton}kg` : noVal(), type: 'text' },
-    { label: t('product.pieces_per_pack'), value: p.piecesPerPack || noVal(), type: 'text' },
-    { label: t('product.packs_per_carton'), value: p.packsPerCarton || noVal(), type: 'text' },
+    { label: t('product.pieces_per_pack'), value: String(p.piecesPerPack || noVal()), type: 'text' },
+    { label: t('product.packs_per_carton'), value: String(p.packsPerCarton || noVal()), type: 'text' },
     { label: t('product.product_length'), value: p.productLengthMM ? `${p.productLengthMM}mm` : noVal(), type: 'text' },
     { label: t('product.product_width'), value: p.productWidthMM ? `${p.productWidthMM}mm` : noVal(), type: 'text' },
     { label: t('product.product_height'), value: p.productHeightMM ? `${p.productHeightMM}mm` : noVal(), type: 'text' },
@@ -409,7 +423,7 @@ const specRows = computed(() => {
     { label: t('product.shelf_life'), value: p.shelfLife || noVal(), type: 'text' },
     { label: t('product.storage'), value: p.storage || noVal(), type: 'text' },
     // Sample Specs
-    { label: t('product.sample_moq'), value: p.sampleMOQ || noVal(), type: 'text' },
+    { label: t('product.sample_moq'), value: String(p.sampleMOQ || noVal()), type: 'text' },
     { label: t('product.sample_lead_time'), value: p.sampleLeadTime || noVal(), type: 'text' },
     { label: t('product.sample_price'), value: p.samplePrice ? `${cur((p as { currency?: string })?.currency)} ${formatNumber(p.samplePrice)}` : noVal(), type: 'text' },
   ]

@@ -74,8 +74,8 @@
           <!-- Action -->
           <div v-if="option.cta" class="oem-option__action">
             <Button
-              :variant="option.cta.variant || 'highlight'"
-              :size="option.cta.size || 'sm'"
+              :variant="(option.cta.variant || 'highlight') as OEMButtonVariant"
+              :size="(option.cta.size || 'sm') as OEMButtonSize"
               @click="handleCTA(option)"
             >
               {{ option.cta.label }}
@@ -127,6 +127,10 @@ interface OEMOption {
     action?: string
   }
 }
+
+// Button prop unions — CTA data is dynamic, so cast at the usage site.
+type OEMButtonVariant = 'primary' | 'secondary' | 'accent' | 'highlight' | 'outline' | 'ghost' | 'link'
+type OEMButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 
 interface Props {
   options: OEMOption[]

@@ -12,8 +12,10 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -34,6 +36,11 @@ type Adapter struct {
 	sandbox      bool
 	httpClient   *http.Client
 
+	// certFetch fetches the PayPal signing certificate for a cert URL. It is
+	// defaulted to the real HTTP fetcher in New and may be overridden in tests
+	// to avoid the SSRF-restricted host check forcing external network calls.
+	certFetch func(ctx context.Context, certURL string) (*x509.Certificate, error)
+
 	tokenMu     sync.Mutex
 	accessToken string
 	tokenExpiry time.Time
@@ -41,13 +48,15 @@ type Adapter struct {
 
 // New creates a PayPal adapter. sandbox=true uses PayPal sandbox API.
 func New(clientID, clientSecret, webhookID string, sandbox bool) *Adapter {
-	return &Adapter{
+	a := &Adapter{
 		clientID:     clientID,
 		clientSecret: clientSecret,
 		webhookID:    webhookID,
 		sandbox:      sandbox,
 		httpClient:   &http.Client{Timeout: 20 * time.Second},
 	}
+	a.certFetch = a.fetchCertWithContext
+	return a
 }
 
 func (a *Adapter) Name() string { return "paypal" }
@@ -115,16 +124,49 @@ func (a *Adapter) Authorize(ctx context.Context, req payment.GatewayRequest) (*p
 }
 
 // Capture captures an approved PayPal order.
-func (a *Adapter) Capture(ctx context.Context, transactionID string, _ float64) (*payment.GatewayResponse, error) {
-	respBody, err := a.postJSON(ctx, "/v2/checkout/orders/"+transactionID+"/capture", nil)
+//
+// The Orders v2 capture endpoint (`POST /v2/checkout/orders/{id}/capture`) does
+// NOT accept an amount in the request body — it captures the full order amount
+// fixed at order creation (verified against the Orders v2 spec). So the adapter
+// cannot "send" the requested amount; instead it verifies that the capture the
+// API actually performed matches the requested amount and fails otherwise (G16).
+// This catches the case where the local payment record diverges from the PayPal
+// order amount and money is taken for a different value than the one recorded.
+func (a *Adapter) Capture(ctx context.Context, transactionID string, amount float64) (*payment.GatewayResponse, error) {
+	// Send an explicit empty object: PayPal rejects null/empty bodies with
+	// UNSUPPORTED_MEDIA_TYPE / INVALID_REQUEST, and `{}` is the documented form.
+	respBody, err := a.postJSON(ctx, "/v2/checkout/orders/"+transactionID+"/capture", map[string]interface{}{})
 	if err != nil {
 		return nil, err
 	}
 	var parsed struct {
 		ID     string `json:"id"`
 		Status string `json:"status"`
+		PurchaseUnits []struct {
+			Payments struct {
+				Captures []struct {
+					ID     string `json:"id"`
+					Status string `json:"status"`
+					Amount struct {
+						CurrencyCode string `json:"currency_code"`
+						Value        string `json:"value"`
+					} `json:"amount"`
+				} `json:"captures"`
+			} `json:"payments"`
+		} `json:"purchase_units"`
 	}
-	_ = json.Unmarshal(respBody, &parsed)
+	if err := json.Unmarshal(respBody, &parsed); err != nil {
+		return nil, fmt.Errorf("paypal: parse capture: %w", err)
+	}
+	if amount > 0 {
+		if len(parsed.PurchaseUnits) == 0 || len(parsed.PurchaseUnits[0].Payments.Captures) == 0 {
+			return nil, fmt.Errorf("paypal: capture response for order %s is missing capture details", transactionID)
+		}
+		captured := parsed.PurchaseUnits[0].Payments.Captures[0].Amount.Value
+		if !amountsEqual(captured, amount) {
+			return nil, fmt.Errorf("paypal: captured amount %s does not match requested %s (order %s)", captured, formatAmount(amount), transactionID)
+		}
+	}
 	return &payment.GatewayResponse{
 		TransactionID: parsed.ID,
 		Status:        parsed.Status,
@@ -252,6 +294,19 @@ func formatAmount(amount float64) string {
 	return fmt.Sprintf("%.2f", amount)
 }
 
+// amountsEqual reports whether the captured amount string reported by PayPal
+// matches the requested amount. PayPal reports values with the currency's
+// decimal places (e.g. "100.00" for USD, "1234" for JPY), so a plain string
+// compare against formatAmount would misfire on zero-decimal currencies; a
+// numeric compare with a half-cent tolerance is currency-agnostic (G16).
+func amountsEqual(value string, want float64) bool {
+	got, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		return false
+	}
+	return math.Abs(got-want) < 0.005
+}
+
 // VerifyWebhook validates a PayPal webhook transmission against PayPal's
 // signature headers before any payment mutation is performed (mirrors
 // Stripe's ValidateWebhookPayload). Requires the adapter to have been
@@ -299,7 +354,7 @@ func (a *Adapter) VerifyWebhook(payload []byte, transmissionID, transmissionTime
 		return nil, fmt.Errorf("paypal: transmission time outside tolerance window")
 	}
 
-	cert, err := a.fetchCert(u.String())
+	cert, err := a.certFetch(context.Background(), u.String())
 	if err != nil {
 		return nil, err
 	}
@@ -307,11 +362,20 @@ func (a *Adapter) VerifyWebhook(payload []byte, transmissionID, transmissionTime
 	if !ok {
 		return nil, fmt.Errorf("paypal: certificate public key is not RSA")
 	}
+	if err := verifyTransmissionSignature(pub, payload, transmissionID, transmissionTime, a.webhookID, transmissionSig); err != nil {
+		return nil, err
+	}
+	return payload, nil
+}
 
+// verifyTransmissionSignature performs the pure cryptographic check: builds the
+// signed transmission string, URL-unescapes and base64-decodes the signature,
+// and verifies it with RSA-SHA256 against the certificate's public key.
+func verifyTransmissionSignature(pub *rsa.PublicKey, payload []byte, transmissionID, transmissionTime, webhookID, transmissionSig string) error {
 	message := strings.Join([]string{
 		strings.TrimSpace(transmissionID),
 		strings.TrimSpace(transmissionTime),
-		a.webhookID,
+		webhookID,
 		string(payload),
 	}, "|")
 
@@ -325,14 +389,21 @@ func (a *Adapter) VerifyWebhook(payload []byte, transmissionID, transmissionTime
 		sigBytes, err = base64.RawStdEncoding.DecodeString(sig)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("paypal: decode transmission signature: %w", err)
+		return fmt.Errorf("paypal: decode transmission signature: %w", err)
 	}
 
 	digest := sha256.Sum256([]byte(message))
 	if err := rsa.VerifyPKCS1v15(pub, crypto.SHA256, digest[:], sigBytes); err != nil {
-		return nil, fmt.Errorf("paypal: signature verification failed: %w", err)
+		return fmt.Errorf("paypal: signature verification failed: %w", err)
 	}
-	return payload, nil
+	return nil
+}
+
+// fetchCertWithContext is the default certFetch implementation. It ignores the
+// context (matching the historical behavior of fetchCert, which made an
+// uncancellable request) and delegates to the cached HTTP fetcher.
+func (a *Adapter) fetchCertWithContext(_ context.Context, certURL string) (*x509.Certificate, error) {
+	return a.fetchCert(certURL)
 }
 
 // certCache caches PayPal signing certificates keyed by cert URL. Certs rotate

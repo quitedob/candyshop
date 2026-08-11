@@ -142,8 +142,9 @@ const team = [
 // Certifications
 const certifications = [
   {
-    id: 1,
+    id: '1',
     name: t('factory.haccp'),
+    abbreviation: 'HACCP',
     description: t('about.cert_desc.haccp'),
     issuer: 'SGS',
     validUntil: '2027',
@@ -151,8 +152,9 @@ const certifications = [
     certificateUrl: '/certificates/haccp.pdf'
   },
   {
-    id: 2,
+    id: '2',
     name: t('factory.iso'),
+    abbreviation: 'ISO',
     description: t('about.cert_desc.iso'),
     issuer: 'BSI',
     validUntil: '2027',
@@ -160,8 +162,9 @@ const certifications = [
     certificateUrl: '/certificates/iso22000.pdf'
   },
   {
-    id: 3,
+    id: '3',
     name: t('factory.brc'),
+    abbreviation: 'BRC',
     description: t('about.cert_desc.brc'),
     issuer: 'BRC',
     validUntil: '2026',
@@ -169,8 +172,9 @@ const certifications = [
     certificateUrl: '/certificates/brc.pdf'
   },
   {
-    id: 4,
+    id: '4',
     name: t('factory.halal'),
+    abbreviation: 'HALAL',
     description: t('about.cert_desc.halal'),
     issuer: 'IFRC',
     validUntil: '2027',

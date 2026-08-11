@@ -14,6 +14,11 @@ import (
 
 const redisChannelPrefix = "candypro:realtime:"
 
+// redisStartupTimeout bounds the Redis ping and pub/sub subscribe handshake so
+// a missing or unhealthy Redis degrades to a fast startup error instead of
+// hanging the process at boot.
+const redisStartupTimeout = 3 * time.Second
+
 type redisEnvelope struct {
 	InstanceID string `json:"instanceId"`
 	Payload    []byte `json:"payload"`
@@ -37,16 +42,21 @@ func NewRedisBroadcaster(redisURL string) (*RedisBroadcaster, error) {
 		return nil, fmt.Errorf("realtime: parse redis url: %w", err)
 	}
 	client := redis.NewClient(opts)
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	if err := client.Ping(ctx).Err(); err != nil {
+	startupCtx, startupCancel := context.WithTimeout(context.Background(), redisStartupTimeout)
+	defer startupCancel()
+	if err := client.Ping(startupCtx).Err(); err != nil {
 		_ = client.Close()
 		return nil, fmt.Errorf("realtime: redis ping: %w", err)
 	}
 
 	relayCtx, relayCancel := context.WithCancel(context.Background())
-	pubsub := client.PSubscribe(relayCtx, redisChannelPrefix+"*")
-	if _, err := pubsub.Receive(relayCtx); err != nil {
+	// Bound the subscribe handshake with its own timeout. Using a background
+	// context here lets the first Receive block indefinitely when Redis drops
+	// the connection right after Ping, which would hang process startup.
+	subCtx, subCancel := context.WithTimeout(context.Background(), redisStartupTimeout)
+	defer subCancel()
+	pubsub := client.PSubscribe(subCtx, redisChannelPrefix+"*")
+	if _, err := pubsub.Receive(subCtx); err != nil {
 		relayCancel()
 		_ = pubsub.Close()
 		_ = client.Close()

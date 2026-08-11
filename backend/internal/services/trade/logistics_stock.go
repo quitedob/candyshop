@@ -225,7 +225,42 @@ func logisticsDeductFEFOFromBatches(tx *gorm.DB, productID string, qty int, reas
 	if res.RowsAffected == 0 {
 		return nil, fmt.Errorf("insufficient aggregate stock_quantity for product %s during dispatch", productID)
 	}
+
+	// Mirror the FEFO deduction onto warehouse_stock. A sync failure is fatal so
+	// the whole dispatch transaction rolls back instead of reporting success while
+	// the warehouse mirror never moved (G21-b, dispatch FEFO path). This matches
+	// the order-stock FEFO path in repository/order/order_stock_allocate.go.
+	nWh, whErr := logisticsCountWarehouseStockRows(tx, productID)
+	if whErr != nil {
+		return nil, whErr
+	}
+	if nWh > 0 {
+		wid, wErr := logisticsResolveDefaultWarehouseID(tx)
+		if wErr != nil {
+			return nil, fmt.Errorf("FEFO warehouse sync: %w", wErr)
+		}
+		if sErr := logisticsSyncFEFOWarehouseStock(tx, wid, productID, qty); sErr != nil {
+			return nil, sErr
+		}
+	}
 	return records, nil
+}
+
+// logisticsSyncFEFOWarehouseStock mirrors a FEFO batch deduction onto the
+// warehouse_stock row of the warehouse the goods were taken from. A missing or
+// insufficient row, or a DB error, is a hard error so the caller's transaction
+// rolls back instead of reporting success while the warehouse mirror never moved.
+func logisticsSyncFEFOWarehouseStock(tx *gorm.DB, warehouseID, productID string, qty int) error {
+	res := tx.Model(&modelsProduct.WarehouseStock{}).
+		Where("warehouse_id = ? AND product_id = ? AND quantity >= ?", warehouseID, productID, qty).
+		Update("quantity", gorm.Expr("quantity - ?", qty))
+	if res.Error != nil {
+		return fmt.Errorf("FEFO warehouse_stock sync failed for product %s in warehouse %s: %w", productID, warehouseID, res.Error)
+	}
+	if res.RowsAffected == 0 {
+		return fmt.Errorf("FEFO warehouse_stock sync failed for product %s in warehouse %s: row missing or insufficient quantity", productID, warehouseID)
+	}
+	return nil
 }
 
 // logisticsDeductReservedWarehouseStock deducts shipped qty from warehouse (quantity + reserved) after prior reservation.
@@ -248,7 +283,12 @@ func logisticsDeductReservedWarehouseStock(tx *gorm.DB, warehouseID, productID s
 		Where("id = ? AND quantity >= ?", ws.ID, qty).
 		Updates(map[string]interface{}{
 			"quantity": gorm.Expr("quantity - ?", qty),
-			"reserved": gorm.Expr("GREATEST(reserved - ?, 0)", qty),
+			// Reserved drains first: shipping consumes the reserved units before
+			// dipping into sellable stock, so reserved decreases by min(reserved, qty)
+			// — not the full qty, which would over-claim reservations belonging to
+			// other orders. The CASE WHEN clamps at 0 without the PostgreSQL-only
+			// GREATEST(), keeping the expression atomic and portable (sqlite tests).
+			"reserved": gorm.Expr("CASE WHEN reserved - ? < 0 THEN 0 ELSE reserved - ? END", qty, qty),
 		})
 	if res.Error != nil {
 		return nil, res.Error

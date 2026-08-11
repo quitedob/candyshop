@@ -71,7 +71,14 @@
         </div>
       </section>
 
-      <section v-if="order.status === 'pending_confirmation' && isAIDraftOrder" class="callout callout--amber">
+      <!-- H23: gate the confirm control on the backend-authoritative status, not a
+           source allowlist. pending_confirmation orders arrive as ai_assist / bulk
+           (requisition & reorder) / inquiry, and cart-sourced orders reach this
+           status after the buyer-org approval flow (pending_approval →
+           pending_confirmation). The backend CustomerConfirmOrder endpoint only
+           checks status + ownership, so a source allowlist would leave a
+           confirmable order without any actionable control. -->
+      <section v-if="order.status === 'pending_confirmation'" class="callout callout--amber">
         <Icon name="heroicons:sparkles" class="callout__icon" aria-hidden="true" />
         <div class="callout__body">
           <p class="callout__title">{{ t('customer.orders.ai_draft_notice') }}</p>
@@ -119,12 +126,12 @@
                 <div class="progress-track__step" :class="{ 'progress-track__step--done': idx <= progress.currentStep, 'progress-track__step--current': idx === progress.currentStep }">
                   <div class="progress-track__dot">
                     <Icon v-if="idx < progress.currentStep" name="heroicons:check" class="h-4 w-4" aria-hidden="true" />
-                    <span v-else>{{ idx + 1 }}</span>
+                    <span v-else>{{ Number(idx) + 1 }}</span>
                   </div>
                   <p class="progress-track__label">{{ enumLabel('order_status', step) }}</p>
                   <p v-if="stepTimestamp(step)" class="progress-track__date">{{ formatDate(stepTimestamp(step)) }}</p>
                 </div>
-                <div v-if="idx < progress.steps.length - 1" class="progress-track__line" :class="{ 'progress-track__line--done': idx < progress.currentStep }" />
+                <div v-if="Number(idx) < progress.steps.length - 1" class="progress-track__line" :class="{ 'progress-track__line--done': Number(idx) < progress.currentStep }" />
               </template>
             </div>
             <!-- 移动端纵向时间线 -->
@@ -132,7 +139,7 @@
               <div v-for="(step, idx) in progress.steps" :key="`m-${step}`" class="progress-vertical__item">
                 <div class="progress-vertical__rail">
                   <div class="progress-vertical__dot" :class="{ 'progress-vertical__dot--done': idx <= progress.currentStep }" />
-                  <div v-if="idx < progress.steps.length - 1" class="progress-vertical__line" :class="{ 'progress-vertical__line--done': idx < progress.currentStep }" />
+                  <div v-if="Number(idx) < progress.steps.length - 1" class="progress-vertical__line" :class="{ 'progress-vertical__line--done': Number(idx) < progress.currentStep }" />
                 </div>
                 <div class="pb-4">
                   <p class="text-sm font-medium text-gray-900">{{ enumLabel('order_status', step) }}</p>
@@ -265,10 +272,10 @@
             <h2 class="panel__title">{{ t('customer.orders.gateway_payment') }}</h2>
             <p class="text-sm text-gray-500 mb-3">{{ t('customer.orders.gateway_payment_hint') }}</p>
             <div class="flex flex-wrap gap-2">
-              <button type="button" class="btn-secondary" :disabled="gatewayLoading" @click="startGatewayPayment('stripe')">
+              <button type="button" class="btn-secondary" :disabled="Boolean(gatewayLoading)" @click="startGatewayPayment('stripe')">
                 {{ gatewayLoading === 'stripe' ? '...' : t('customer.orders.pay_with_stripe') }}
               </button>
-              <button type="button" class="btn-secondary" :disabled="gatewayLoading" @click="startGatewayPayment('paypal')">
+              <button type="button" class="btn-secondary" :disabled="Boolean(gatewayLoading)" @click="startGatewayPayment('paypal')">
                 {{ gatewayLoading === 'paypal' ? '...' : t('customer.orders.pay_with_paypal') }}
               </button>
             </div>
@@ -421,7 +428,7 @@
             </button>
           </div>
 
-          <div v-if="order.status === 'pending'" class="panel panel--compact panel--danger">
+          <div v-if="['pending', 'pending_confirmation'].includes(order.status)" class="panel panel--compact panel--danger">
             <p class="text-sm font-medium text-red-800">{{ t('customer.orders.cancel_order') }}</p>
             <p class="text-xs text-red-600/80 mt-1">{{ t('customer.orders.cancel_order_desc') }}</p>
             <button type="button" class="btn-danger w-full mt-3" :disabled="cancelling" @click="cancelOrder">
@@ -555,10 +562,6 @@ const orderSnapshotDiffers = computed(() => {
   return Math.abs((Number(pi.amount) || 0) - (Number(o.subtotal) || 0)) > eps
     || Math.abs((Number(pi.taxAmount) || 0) - (Number(o.taxAmount) || 0)) > eps
     || Math.abs((Number(pi.totalAmount) || 0) - (Number(o.subtotal) || 0) - (Number(o.taxAmount) || 0)) > eps
-})
-const isAIDraftOrder = computed(() => {
-  const src = String(order.value?.source || '').toLowerCase()
-  return ['ai_assist', 'bulk', 'inquiry'].includes(src)
 })
 const canApprove = ref(false)
 const isOwner = ref(true)

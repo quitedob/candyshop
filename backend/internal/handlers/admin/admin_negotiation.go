@@ -74,10 +74,11 @@ func (h *Handler) AdminAcceptNegotiationOffer(c *gin.Context) {
 		response.ServiceUnavailableResp(c)
 		return
 	}
-	userID := c.GetString("userID")
 	inquiryID := c.Param("id")
 	offerID := c.Param("offerId")
-	offer, err := h.services.Negotiation.AcceptOffer(c.Request.Context(), offerID, userID)
+	// H-3: 传入路径 inquiryID，服务层限定 offer 必须属于该询盘，防止把其他
+	// 询盘的 offer 按当前询盘转成订单（询盘与报价条款错配）。
+	offer, err := h.services.Negotiation.AcceptOffer(c.Request.Context(), offerID, inquiryID)
 	if err != nil {
 		status, code := translateNegotiationError(err)
 		response.ErrorResp(c, status, code)
@@ -128,9 +129,9 @@ func (h *Handler) AdminRejectNegotiationOffer(c *gin.Context) {
 		response.ServiceUnavailableResp(c)
 		return
 	}
-	userID := c.GetString("userID")
+	inquiryID := c.Param("id")
 	offerID := c.Param("offerId")
-	offer, err := h.services.Negotiation.RejectOffer(c.Request.Context(), offerID, userID)
+	offer, err := h.services.Negotiation.RejectOffer(c.Request.Context(), offerID, inquiryID)
 	if err != nil {
 		status, code := translateNegotiationError(err)
 		response.ErrorResp(c, status, code)

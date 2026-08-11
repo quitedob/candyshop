@@ -37,7 +37,7 @@ import (
 //
 // chatModel is shared across all sub-agents and the coordinator.
 // persister may be nil for chat-only deployments.
-func NewB2BCoordinatorAgent(ctx context.Context, chatModel model.ToolCallingChatModel, persister einotool.DocumentPersister, catalog einotool.ProductCatalogSearcher, quoter einotool.PricingQuoter) (adk.Agent, error) {
+func NewB2BCoordinatorAgent(ctx context.Context, chatModel model.ToolCallingChatModel, persister einotool.DocumentPersister, quoteSaver einotool.QuotationReviewSaver, catalog einotool.ProductCatalogSearcher, quoter einotool.PricingQuoter) (adk.Agent, error) {
 	// ── Common tools (shared across coordinator and sub-agents) ──
 
 	// Document generation graph tool
@@ -61,12 +61,12 @@ func NewB2BCoordinatorAgent(ctx context.Context, chatModel model.ToolCallingChat
 		return nil, fmt.Errorf("L/C validation tool: %w", err)
 	}
 
-	trackTool, err := einotool.NewTrackShipmentTool(ctx)
+	trackTool, err := einotool.NewTrackShipmentTool(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("shipment tracking tool: %w", err)
 	}
 
-	quoteReviewTool, err := einotool.NewQuotationHumanReviewTool(ctx)
+	quoteReviewTool, err := einotool.NewQuotationHumanReviewTool(ctx, quoteSaver)
 	if err != nil {
 		return nil, fmt.Errorf("quotation review tool: %w", err)
 	}

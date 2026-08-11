@@ -118,40 +118,6 @@
         </div>
       </div>
 
-      <!-- AI Compliance Check Results -->
-      <div v-if="inquiry.aiComplianceCheck" class="bg-amber-50 shadow overflow-hidden sm:rounded-lg">
-        <div class="px-4 py-5 sm:px-6 bg-amber-100 border-b border-amber-200">
-          <h3 class="text-lg leading-6 font-medium text-amber-900 inline-flex items-center">
-            {{ t('admin.inquiryDetail.ai_compliance_check') }}
-            <AiHelpHint topic="inquiries_compliance" size="sm" />
-          </h3>
-        </div>
-        <div class="px-4 py-5 sm:p-6">
-          <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
-            <div>
-              <dt class="text-sm font-medium text-amber-700">{{ t('admin.inquiryDetail.compliance_status') }}</dt>
-              <dd class="mt-1">
-                <span :class="[inquiry.aiComplianceCheck.passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800', 'inline-flex rounded-full px-2 text-xs font-semibold leading-5']">
-                  {{ inquiry.aiComplianceCheck.passed ? t('admin.inquiryDetail.passed') : t('admin.inquiryDetail.failed') }}
-                </span>
-              </dd>
-            </div>
-            <div v-if="inquiry.aiComplianceCheck.warnings && inquiry.aiComplianceCheck.warnings.length">
-              <dt class="text-sm font-medium text-amber-700">{{ t('admin.inquiryDetail.warnings') }}</dt>
-              <dd class="mt-1 text-sm text-amber-900">
-                <ul class="list-disc list-inside">
-                  <li v-for="(warning, idx) in inquiry.aiComplianceCheck.warnings" :key="idx">{{ warning }}</li>
-                </ul>
-              </dd>
-            </div>
-            <div v-if="inquiry.aiComplianceCheck.summary" class="sm:col-span-2">
-              <dt class="text-sm font-medium text-amber-700">{{ t('admin.inquiryDetail.summary') }}</dt>
-              <dd class="mt-1 text-sm text-amber-900">{{ inquiry.aiComplianceCheck.summary }}</dd>
-            </div>
-          </dl>
-        </div>
-      </div>
-
       <!-- Quotation Section -->
       <div class="bg-white shadow overflow-hidden sm:rounded-lg">
         <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">

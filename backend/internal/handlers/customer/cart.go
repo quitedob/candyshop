@@ -508,7 +508,7 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 		return
 	}
 
-	pricing := h.computeCheckoutPricing(c.Request.Context(), checkoutPricingInput{
+	pricing, perr := h.computeCheckoutPricing(c.Request.Context(), checkoutPricingInput{
 		Items:             orderItems,
 		ProductByID:       productByID,
 		ShippingAddress:   req.ShippingAddress,
@@ -517,6 +517,13 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 		Subtotal:          subtotal,
 		Currency:          currency,
 	})
+	if perr != nil {
+		// G24c: a tax/shipping rate-lookup failure must fail checkout CLOSED —
+		// booking the order with TaxAmount=0/ShippingAmount=0 on a transient DB
+		// failure under-collects on the money-authoritative path.
+		response.ErrorResp(c, http.StatusInternalServerError, "checkout_pricing_failed")
+		return
+	}
 	shippingAmount := pricing.ShippingAmount
 	shippingCurrency := currency
 	if pricing.Currency != "" {
@@ -544,6 +551,16 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 			response.ErrorResp(c, http.StatusBadRequest, "coupon_apply_failed")
 			return
 		}
+	}
+	// G20 (follow-up): cart checkout COMMITS the order immediately (ConfirmedAt
+	// set + stock reserved for pending), so it is a confirm and must enforce the
+	// buyer company's CUMULATIVE credit exposure exactly like CustomerConfirmOrder
+	// does. The per-order check below cannot catch a buyer stacking two under-limit
+	// cart orders (e.g. 800 + 800 against a 1000 limit) — only the cumulative sum
+	// sees the 1600 exposure. The cumulative check subsumes the per-order check
+	// (open exposure >= 0), so it runs before stock is committed.
+	if !h.checkCompanyCreditLimitCumulative(c, userID, "", checkoutTotal) {
+		return
 	}
 	if !h.checkCompanyCreditLimit(c, userID, checkoutTotal) {
 		return

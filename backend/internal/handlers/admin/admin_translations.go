@@ -27,7 +27,7 @@ func (h *TranslationHandler) ListTranslations(c *gin.Context) {
 	search := c.Query("search")
 	page, limit := pagination.ParsePagination(c, 20, 100)
 
-	translations, total, err := h.svc.List(group, locale, search, page, limit)
+	translations, total, err := h.svc.List(c.Request.Context(), group, locale, search, page, limit)
 	if err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 		return
@@ -47,7 +47,7 @@ func (h *TranslationHandler) GetTranslation(c *gin.Context) {
 		return
 	}
 
-	t, err := h.svc.GetByID(id)
+	t, err := h.svc.GetByID(c.Request.Context(), id)
 	if err != nil {
 		response.ErrorResp(c, http.StatusNotFound, "not_found")
 		return
@@ -78,7 +78,7 @@ func (h *TranslationHandler) CreateTranslation(c *gin.Context) {
 		UpdatedBy: &userID,
 	}
 
-	if err := h.svc.Create(t); err != nil {
+	if err := h.svc.Create(c.Request.Context(), t); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 		return
 	}
@@ -103,7 +103,7 @@ func (h *TranslationHandler) UpdateTranslation(c *gin.Context) {
 		return
 	}
 
-	existing, err := h.svc.GetByID(id)
+	existing, err := h.svc.GetByID(c.Request.Context(), id)
 	if err != nil {
 		response.ErrorResp(c, http.StatusNotFound, "not_found")
 		return
@@ -119,7 +119,7 @@ func (h *TranslationHandler) UpdateTranslation(c *gin.Context) {
 	}
 	existing.UpdatedBy = &userID
 
-	if err := h.svc.Update(existing); err != nil {
+	if err := h.svc.Update(c.Request.Context(), existing); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 		return
 	}
@@ -135,7 +135,7 @@ func (h *TranslationHandler) DeleteTranslation(c *gin.Context) {
 		return
 	}
 
-	if err := h.svc.Delete(id); err != nil {
+	if err := h.svc.Delete(c.Request.Context(), id); err != nil {
 		response.ErrorResp(c, http.StatusNotFound, "not_found")
 		return
 	}
@@ -145,7 +145,7 @@ func (h *TranslationHandler) DeleteTranslation(c *gin.Context) {
 
 // ListGroups returns translation groups with counts.
 func (h *TranslationHandler) ListGroups(c *gin.Context) {
-	groups, err := h.svc.Groups()
+	groups, err := h.svc.Groups(c.Request.Context())
 	if err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 		return
@@ -181,7 +181,7 @@ func (h *TranslationHandler) ImportTranslations(c *gin.Context) {
 		}
 	}
 
-	if err := h.svc.Import(translations); err != nil {
+	if err := h.svc.Import(c.Request.Context(), translations); err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 		return
 	}
@@ -194,7 +194,7 @@ func (h *TranslationHandler) ImportTranslations(c *gin.Context) {
 
 // ExportTranslations exports all translations as JSON.
 func (h *TranslationHandler) ExportTranslations(c *gin.Context) {
-	translations, err := h.svc.Export()
+	translations, err := h.svc.Export(c.Request.Context())
 	if err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "internal_error")
 		return

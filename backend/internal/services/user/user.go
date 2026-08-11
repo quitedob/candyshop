@@ -1,6 +1,7 @@
 package user
 
 import (
+	modelsAuth "candypro/api/internal/models/auth"
 	modelsUser "candypro/api/internal/models/user"
 	"context"
 	"errors"
@@ -68,6 +69,34 @@ func (s *UserService) UpdateLastLogin(ctx context.Context, id string) error {
 
 func (s *UserService) GetUsers(ctx context.Context, page, limit int) ([]modelsUser.User, int64, error) {
 	return s.repo.FindAll(ctx, page, limit)
+}
+
+// GetStaffUsers returns a paginated list of staff-role accounts (admin,
+// superadmin) for the admin staff-management screen. The lookup is role-scoped
+// (FindByRoleNames), so customer and supplier records — and their PII — never
+// enter the /admin/staff response. There is no separate "staff" role in the
+// platform, so admin + superadmin are the staff set.
+func (s *UserService) GetStaffUsers(ctx context.Context, page, limit int) ([]modelsUser.User, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 20
+	}
+	staff, err := s.repo.FindByRoleNames(ctx, modelsAuth.AdminPortal())
+	if err != nil {
+		return nil, 0, err
+	}
+	total := int64(len(staff))
+	start := (page - 1) * limit
+	if start >= len(staff) {
+		return []modelsUser.User{}, total, nil
+	}
+	end := start + limit
+	if end > len(staff) {
+		end = len(staff)
+	}
+	return staff[start:end], total, nil
 }
 
 func (s *UserService) UpdateUser(ctx context.Context, user *modelsUser.User) error {

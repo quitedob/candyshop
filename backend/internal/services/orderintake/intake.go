@@ -161,7 +161,13 @@ func (s *Service) CreateOrderFromAcceptedOffer(
 			continue
 		}
 
-		unitPrice := s.resolveUnitPrice(ctx, product, quantity, destCountry)
+		// A negotiated offer's unit price is the agreed price and applies to EVERY
+		// matching line — not just single-product inquiries (H10). The previous
+		// guard (len(items)==1) silently dropped the negotiated price from
+		// multi-line orders, so confirm-time totals and trade documents disagreed
+		// with the accepted offer. When no offer is present the catalog / contract
+		// price resolved below stands.
+		unitPrice := effectiveUnitPrice(s.resolveUnitPrice(ctx, product, quantity, destCountry), offer)
 		if unitPrice <= 0 {
 			continue
 		}
@@ -174,13 +180,6 @@ func (s *Service) CreateOrderFromAcceptedOffer(
 	}
 	if len(items) == 0 {
 		return nil, ErrNoItems
-	}
-
-	// Snapshot the negotiated unit price when the offer is unambiguous (a single
-	// product line). Multi-product inquiries keep catalog unit prices but the
-	// negotiated total still wins below.
-	if offer != nil && offer.UnitPrice > 0 && len(items) == 1 {
-		items[0].UnitPrice = offer.UnitPrice
 	}
 
 	// Destination-country compliance (hard block — non-compliant goods cannot ship).
@@ -253,6 +252,22 @@ func (s *Service) CreateOrderFromAcceptedOffer(
 	s.createTrade(ctx, order, inquiry, offer)
 
 	return &IntakeResult{Order: order}, nil
+}
+
+// effectiveUnitPrice returns the unit price to persist for a line. An accepted
+// negotiation offer carries the agreed unit price, which is authoritative and
+// replaces whatever the catalog resolved — this is what keeps the negotiated
+// contract price on the order lines for both single- and multi-line inquiries
+// (H10). Without an offer (or when the offer carries no unit price) the catalog
+// / contract price is used. It returns 0 when no usable price can be established.
+func effectiveUnitPrice(catalogPrice float64, offer *modelsOrder.NegotiationOffer) float64 {
+	if offer != nil && offer.UnitPrice > 0 {
+		return offer.UnitPrice
+	}
+	if catalogPrice <= 0 {
+		return 0
+	}
+	return catalogPrice
 }
 
 // resolveUnitPrice mirrors the convert handler: price service → base price,

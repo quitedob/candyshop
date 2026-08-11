@@ -394,7 +394,7 @@ const cancelFulfillment = async (id: string) => {
   }
 }
 
-type OrderItem = { productId: string; quantity: number; unitPrice: number; specifications: string }
+type OrderItem = { productId: string; quantity: number; unitPrice: number; specifications: string; fulfilledQuantity?: number; shippedQuantity?: number }
 type ShippingAddress = { street: string; city: string; state: string; zipCode: string; country: string }
 
 const form = reactive({
@@ -473,7 +473,7 @@ const fillForm = (order: any) => {
   form.currency = cur(order.currency)
   form.trackingNumber = order.trackingNumber || ''
   form.items = Array.isArray(order.items) && order.items.length
-    ? order.items.map((i: any) => ({ productId: i.productId || '', quantity: i.quantity || 1, unitPrice: i.unitPrice || 0, specifications: i.specifications || '' }))
+    ? order.items.map((i: any) => ({ productId: i.productId || '', quantity: i.quantity || 1, unitPrice: i.unitPrice || 0, specifications: i.specifications || '', fulfilledQuantity: i.fulfilledQuantity || 0, shippedQuantity: i.shippedQuantity || 0 }))
     : [{ productId: '', quantity: 1, unitPrice: 0, specifications: '' }]
   const addr = order.shippingAddress || {}
   form.shippingAddress = { street: addr.street || '', city: addr.city || '', state: addr.state || '', zipCode: addr.zipCode || '', country: addr.country || '' }
@@ -519,7 +519,12 @@ const buildPayload = () => {
     productId: i.productId.trim(),
     quantity: Math.max(1, i.quantity),
     unitPrice: Math.max(0, i.unitPrice),
-    specifications: i.specifications.trim()
+    specifications: i.specifications.trim(),
+    // Preserve fulfillment progress so the backend doesn't zero-out
+    // fulfilledQuantity/shippedQuantity on edit (which previously made
+    // re-ship/fulfillment bookkeeping inconsistent and failed with 422).
+    fulfilledQuantity: i.fulfilledQuantity || 0,
+    shippedQuantity: i.shippedQuantity || 0,
   }))
 
   const payload: Record<string, any> = {

@@ -4,6 +4,7 @@ import (
 	"candypro/api/internal/config"
 	"candypro/api/internal/handlers"
 	"candypro/api/internal/middleware"
+	modelsAuth "candypro/api/internal/models/auth"
 
 	"github.com/gin-gonic/gin"
 )
@@ -33,8 +34,11 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 		systemProtected.GET("/ai/trade-assistant", h.System.HandleTradeChat)
 		systemProtected.GET("/ai/b2b-coordinator", h.System.HandleB2BCoordinatorChat)
 		systemProtected.GET("/ai/order-processing", h.System.HandleOrderProcessingChat)
-			systemProtected.POST("/analyze-inquiry", h.System.AnalyzeInquiry)
-		systemProtected.POST("/generate-quotation", h.System.GenerateQuotation)
+		systemProtected.GET("/ai/config", h.System.SystemAIConfig)
+		systemProtected.POST("/analyze-inquiry", h.System.AnalyzeInquiry)
+		// 生成报价会向模型与响应注入内部成本栈（物流/关税/标签摊销/目标毛利），
+		// 属内部定价数据，仅限管理员访问；角色守卫防止任何已登录客户读取成本结构。
+		systemProtected.POST("/generate-quotation", middleware.RequireRole(modelsAuth.AdminPortal()...), h.System.GenerateQuotation)
 		systemProtected.POST("/chatbot/order", h.System.ChatbotOrderContext)
 		systemProtected.POST("/translate", h.System.Translate)
 		systemProtected.GET("/conversations/:id", h.System.GetConversation)

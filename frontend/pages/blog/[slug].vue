@@ -290,7 +290,7 @@ const whatsappUrl = computed(() => {
 usePageOgImage({
   title: tField(post.value, 'title'),
   description: tField(post.value, 'excerpt'),
-  ogImage: post.value.ogImage,
+  ogImage: (post.value as { ogImage?: string }).ogImage,
   thumbnail: post.value.thumbnail,
   ogType: 'article',
   schema: {

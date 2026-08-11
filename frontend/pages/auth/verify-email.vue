@@ -84,7 +84,10 @@ const success = ref(false)
 const errorMessage = ref('')
 
 onMounted(async () => {
-  const token = route.query.token as string
+  // route.query.token may be string | string[] | null (Vue Router LocationQueryValue).
+  // Take the first value when duplicated instead of force-casting an array to string.
+  const rawToken = route.query.token
+  const token = Array.isArray(rawToken) ? rawToken[0] : rawToken
 
   if (!token) {
     verifying.value = false

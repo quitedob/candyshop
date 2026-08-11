@@ -263,7 +263,7 @@ const saveMember = async () => {
 const removeMember = async (id: number) => {
   if (!confirm(t('admin.confirm_delete'))) return
   try {
-    await api.delete(`/admin/organizations/members/${id}`)
+    await api.del(`/admin/organizations/members/${id}`)
     await fetchMembers()
   } catch (err: any) {
     notifyError(err, t('errors.api.delete_failed'))

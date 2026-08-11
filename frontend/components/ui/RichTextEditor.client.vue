@@ -214,7 +214,7 @@ const editor = useEditor({
 
 watch(() => props.modelValue, (val) => {
   if (editor.value && val !== editor.value.getHTML()) {
-    editor.value.commands.setContent(val, false)
+    editor.value.commands.setContent(val, { emitUpdate: false })
   }
 })
 

@@ -33,13 +33,10 @@ type PaymentService struct {
 	repo      paymentRepository
 	orderRepo orderRepository
 	// checkoutMu serializes CreatePaymentWithBalanceCheck within this process.
-	// The repo's CreateWithBalanceCheck already re-reads the order's payments and
-	// inserts inside one DB transaction, but without a SELECT ... FOR UPDATE on the
-	// order row two concurrently started transactions can both observe the same
-	// pre-commit snapshot and both pass the balance check (M8). This mutex closes
-	// that window for single-process deployments. Full multi-instance safety needs
-	// a repo-level LockOrderForPayment (SELECT ... FOR UPDATE) in
-	// internal/repository/order/payment.go, which is proposed but not edited here.
+	// The repo's CreateWithBalanceCheck now runs under SELECT ... FOR UPDATE on
+	// the order row, so multi-instance safety is guaranteed at the DB level (M8).
+	// This mutex remains as a cheap single-process pre-serializer that bounds DB
+	// lock wait for the common case.
 	checkoutMu sync.Mutex
 }
 

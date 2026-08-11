@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 )
 
@@ -142,10 +143,21 @@ func (r *SupplierRepository) FindPOByID(ctx context.Context, id string) (*models
 }
 
 // ReceivePO marks a purchase order as received and adds stock to the warehouse.
+//
+// H12: every productID/qty is validated against the PO's line items BEFORE any
+// stock is touched (membership, qty > 0, and a cap at ordered - already
+// received), the PO row is locked (SELECT ... FOR UPDATE) so a concurrent
+// double-receive re-reads the committed "received" status and is rejected, and
+// the received_qty update checks RowsAffected so a disappeared line fails
+// loudly instead of silently crediting an unrelated SKU.
 func (r *SupplierRepository) ReceivePO(ctx context.Context, id, warehouseID string, receivedItems map[string]int) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var po modelsProduct.PurchaseOrder
-		if err := tx.Where("id = ?", id).First(&po).Error; err != nil {
+		// Lock the PO row so concurrent receives serialize on it: the second
+		// transaction blocks, then re-reads the committed "received" status and is
+		// rejected below instead of double-crediting stock.
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("id = ?", id).First(&po).Error; err != nil {
 			return err
 		}
 		if po.Status == modelsProduct.POStatusReceived || po.Status == modelsProduct.POStatusCancelled {
@@ -157,8 +169,27 @@ func (r *SupplierRepository) ReceivePO(ctx context.Context, id, warehouseID stri
 			return err
 		}
 		itemCosts := make(map[string]float64, len(poItems))
+		ordered := make(map[string]int, len(poItems))
+		received := make(map[string]int, len(poItems))
 		for _, item := range poItems {
 			itemCosts[item.ProductID] = item.UnitCost
+			ordered[item.ProductID] = item.Quantity
+			received[item.ProductID] = item.ReceivedQty
+		}
+
+		// Validate every line up front so a single bad productID cannot partially
+		// apply stock. Reject unknown IDs, qty <= 0, and over-receipt beyond the
+		// remaining ordered quantity.
+		for productID, qty := range receivedItems {
+			if qty <= 0 {
+				return fmt.Errorf("receive qty for product %s must be > 0", productID)
+			}
+			if _, ok := ordered[productID]; !ok {
+				return fmt.Errorf("product %s is not on PO %s", productID, id)
+			}
+			if remaining := ordered[productID] - received[productID]; qty > remaining {
+				return fmt.Errorf("receive qty %d for product %s exceeds remaining ordered qty %d", qty, productID, remaining)
+			}
 		}
 
 		now := time.Now()
@@ -169,6 +200,12 @@ func (r *SupplierRepository) ReceivePO(ctx context.Context, id, warehouseID stri
 				Update("received_qty", gorm.Expr("received_qty + ?", qty))
 			if res.Error != nil {
 				return res.Error
+			}
+			// Membership was validated above; keep the RowsAffected guard so a line
+			// disappearing mid-transaction fails loudly instead of silently
+			// crediting an unrelated SKU.
+			if res.RowsAffected == 0 {
+				return fmt.Errorf("PO item for product %s not found", productID)
 			}
 			// Add stock to warehouse
 			if warehouseID != "" {

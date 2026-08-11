@@ -21,10 +21,12 @@
     --color-accent-light: #fdf8f7;
 
     /* ── Alexandria Palette: Secondary-Container (bright orange CTA) ── */
-    --color-highlight: #fd933d;
-    --color-highlight-hover: #e07d2a;
+    /* WCAG AA: #fd933d fails as text on white (2.2:1) and with white button text;
+       #c2410c passes 4.5:1 against white and with white text on the button. */
+    --color-highlight: #c2410c;
+    --color-highlight-hover: #a9360a;
     --color-highlight-light: #fff0e5;
-    --color-highlight-rgb: 253, 147, 61;
+    --color-highlight-rgb: 194, 65, 12;
 
     /* ── Alexandria Palette: Surface hierarchy ── */
     --color-bg: #ffffff;
@@ -158,10 +160,10 @@
     --color-accent-dark: #e07d2a;
     --color-accent-light: #1e1b19;
 
-    --color-highlight: #fd933d;
-    --color-highlight-hover: #ffb783;
+    --color-highlight: #c2410c;
+    --color-highlight-hover: #d96c1a;
     --color-highlight-light: #3b0900;
-    --color-highlight-rgb: 253, 147, 61;
+    --color-highlight-rgb: 194, 65, 12;
 
     --color-primary-container: #e6e1e0;
     --color-on-primary-container: #4a4643;

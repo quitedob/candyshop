@@ -1,6 +1,8 @@
 package translation
 
 import (
+	"context"
+
 	"candypro/api/internal/models/common"
 	"candypro/api/internal/pkg/i18n"
 	"log/slog"
@@ -8,17 +10,17 @@ import (
 )
 
 type translationRepository interface {
-	FindAll(group, locale, search string, page, limit int) ([]common.Translation, int64, error)
-	FindByID(id uint) (*common.Translation, error)
-	Create(t *common.Translation) error
-	Update(t *common.Translation) error
-	Delete(id uint) error
-	CountByGroup() ([]struct {
+	FindAll(ctx context.Context, group, locale, search string, page, limit int) ([]common.Translation, int64, error)
+	FindByID(ctx context.Context, id uint) (*common.Translation, error)
+	Create(ctx context.Context, t *common.Translation) error
+	Update(ctx context.Context, t *common.Translation) error
+	Delete(ctx context.Context, id uint) error
+	CountByGroup(ctx context.Context) ([]struct {
 		Group string
 		Count int64
 	}, error)
-	FindAllActive() ([]common.Translation, error)
-	BulkUpsert(translations []common.Translation) error
+	FindAllActive(ctx context.Context) ([]common.Translation, error)
+	BulkUpsert(ctx context.Context, translations []common.Translation) error
 }
 
 type TranslationService struct {
@@ -29,16 +31,16 @@ func NewService(repo translationRepository) *TranslationService {
 	return &TranslationService{repo: repo}
 }
 
-func (s *TranslationService) List(group, locale, search string, page, limit int) ([]common.Translation, int64, error) {
-	return s.repo.FindAll(group, locale, search, page, limit)
+func (s *TranslationService) List(ctx context.Context, group, locale, search string, page, limit int) ([]common.Translation, int64, error) {
+	return s.repo.FindAll(ctx, group, locale, search, page, limit)
 }
 
-func (s *TranslationService) GetByID(id uint) (*common.Translation, error) {
-	return s.repo.FindByID(id)
+func (s *TranslationService) GetByID(ctx context.Context, id uint) (*common.Translation, error) {
+	return s.repo.FindByID(ctx, id)
 }
 
-func (s *TranslationService) Create(t *common.Translation) error {
-	if err := s.repo.Create(t); err != nil {
+func (s *TranslationService) Create(ctx context.Context, t *common.Translation) error {
+	if err := s.repo.Create(ctx, t); err != nil {
 		return err
 	}
 	// R2 E-9: previously every single-key write triggered a full FindAllActive
@@ -50,64 +52,64 @@ func (s *TranslationService) Create(t *common.Translation) error {
 	return nil
 }
 
-func (s *TranslationService) Update(t *common.Translation) error {
-	if err := s.repo.Update(t); err != nil {
+func (s *TranslationService) Update(ctx context.Context, t *common.Translation) error {
+	if err := s.repo.Update(ctx, t); err != nil {
 		return err
 	}
 	s.applyDelta(*t)
 	return nil
 }
 
-func (s *TranslationService) Delete(id uint) error {
+func (s *TranslationService) Delete(ctx context.Context, id uint) error {
 	// Capture the row before deletion so we can invalidate the matching cache
 	// entry without falling back to a full reload.
 	var stale *common.Translation
-	if existing, ferr := s.repo.FindByID(id); ferr == nil {
+	if existing, ferr := s.repo.FindByID(ctx, id); ferr == nil {
 		stale = existing
 	}
-	if err := s.repo.Delete(id); err != nil {
+	if err := s.repo.Delete(ctx, id); err != nil {
 		return err
 	}
 	if stale != nil {
-		// Best signal we have for invalidation: overwrite with empty value.
-		// Translate() will still find the entry (returning ""), and the next
-		// full reload (Import) will remove it. This avoids the global reload
-		// cost while keeping correctness for the admin's immediate next read.
-		i18n.WarmCache([]struct{ Locale, Key, Value string }{{
-			Locale: stale.Locale,
-			Key:    stale.Group + "." + stale.Key,
-			Value:  "",
-		}})
+		// Remove the key from the in-memory cache entirely. Leaving a blank
+		// entry behind would make Translate() return "" and skip both the
+		// default-locale and raw-key fallbacks.
+		i18n.DeleteFromCache(stale.Locale, stale.Group+"."+stale.Key)
 	}
 	return nil
 }
 
-func (s *TranslationService) Groups() ([]struct {
+func (s *TranslationService) Groups(ctx context.Context) ([]struct {
 	Group string
 	Count int64
 }, error) {
-	return s.repo.CountByGroup()
+	return s.repo.CountByGroup(ctx)
 }
 
-func (s *TranslationService) Import(translations []common.Translation) error {
-	if err := s.repo.BulkUpsert(translations); err != nil {
+func (s *TranslationService) Import(ctx context.Context, translations []common.Translation) error {
+	if err := s.repo.BulkUpsert(ctx, translations); err != nil {
 		return err
 	}
 	// Bulk import is the one path where a full reload is justified — many
 	// rows change in one shot and the marginal cost of FindAllActive is
 	// dominated by the BulkUpsert work itself.
-	s.refreshCache()
+	s.refreshCache(ctx)
 	return nil
 }
 
-func (s *TranslationService) Export() ([]common.Translation, error) {
-	return s.repo.FindAllActive()
+func (s *TranslationService) Export(ctx context.Context) ([]common.Translation, error) {
+	return s.repo.FindAllActive(ctx)
 }
 
 // applyDelta merges a single translation into the in-memory cache without
-// re-reading the entire table.
+// re-reading the entire table. A deactivated translation behaves like a delete:
+// it is removed from the cache so it stops resolving.
 func (s *TranslationService) applyDelta(t common.Translation) {
 	if t.Locale == "" || t.Key == "" {
+		return
+	}
+	if !t.IsActive {
+		i18n.DeleteFromCache(t.Locale, t.Group+"."+t.Key)
 		return
 	}
 	i18n.WarmCache([]struct{ Locale, Key, Value string }{{
@@ -117,8 +119,8 @@ func (s *TranslationService) applyDelta(t common.Translation) {
 	}})
 }
 
-func (s *TranslationService) refreshCache() {
-	records, err := s.repo.FindAllActive()
+func (s *TranslationService) refreshCache(ctx context.Context) {
+	records, err := s.repo.FindAllActive(ctx)
 	if err != nil {
 		slog.Warn("translation cache refresh failed", "error", err)
 		return
@@ -129,7 +131,9 @@ func (s *TranslationService) refreshCache() {
 		entries[i].Key = r.Group + "." + r.Key
 		entries[i].Value = r.Value
 	}
-	i18n.WarmCache(entries)
+	// Full replace, not merge: a batch import may have deactivated or removed
+	// keys that must stop resolving instead of lingering as stale entries.
+	i18n.ReplaceCache(entries)
 }
 
 // ParseID parses a string ID to uint.

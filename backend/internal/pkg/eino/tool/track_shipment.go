@@ -46,7 +46,20 @@ func parseETA(raw string) (time.Time, bool) {
 	return time.Time{}, false
 }
 
-func NewTrackShipmentTool(ctx context.Context) (tool.BaseTool, error) {
+// CarrierTracker performs a live carrier lookup for a B/L or AWB number. A nil
+// tracker (or one resolved from env when no API key is set) keeps the tool on the
+// deterministic stub so the agent always answers without fabricating data.
+type CarrierTracker interface {
+	Track(ctx context.Context, req *TrackShipmentRequest) (*TrackShipmentResponse, error)
+}
+
+// NewTrackShipmentTool builds the track_shipment tool. When tracker is nil it is
+// resolved from the environment (newCarrierTrackerFromEnv); with no API key the
+// tool falls back to its deterministic stub behavior.
+func NewTrackShipmentTool(ctx context.Context, tracker CarrierTracker) (tool.BaseTool, error) {
+	if tracker == nil {
+		tracker = newCarrierTrackerFromEnv()
+	}
 	baseTool, err := utils.InferTool("track_shipment", "Track shipping container or air freight status globally using B/L or AWB.",
 		func(ctx context.Context, req *TrackShipmentRequest) (*TrackShipmentResponse, error) {
 			if req == nil {
@@ -62,6 +75,14 @@ func NewTrackShipmentTool(ctx context.Context) (tool.BaseTool, error) {
 			}
 			if len(carrierCode) < 2 || len(carrierCode) > 8 {
 				return nil, fmt.Errorf("invalid carrier_code format")
+			}
+
+			// Live carrier lookup first; on any provider error fall through to the
+			// deterministic stub so the agent still returns a tracking answer.
+			if tracker != nil {
+				if resp, trackErr := tracker.Track(ctx, req); trackErr == nil && resp != nil {
+					return resp, nil
+				}
 			}
 
 			eta, hasETA := parseETA(req.EstimatedArrival)

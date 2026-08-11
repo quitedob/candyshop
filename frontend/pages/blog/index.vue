@@ -177,9 +177,26 @@ const activeCategory = ref(typeof route.query.category === 'string' ? route.quer
 const currentPage = ref(1)
 const limit = 9
 
+// The backend clamps the page size to 50 (pagination.ParsePagination max), so
+// requesting limit: 200 silently truncated the category list. Page through the
+// full set at the real page size to surface the actual total.
+const ALL_POSTS_PAGE_SIZE = 50
+
 // Fetch all posts once for building the category filter list
 const { data: allPostsData } = await useAsyncData('blog-categories', async () => {
-  return await getPosts({ page: 1, limit: 200 })
+  const first = await getPosts({ page: 1, limit: ALL_POSTS_PAGE_SIZE })
+  const totalPages = first.pagination?.totalPages ?? 1
+  if (totalPages <= 1) return first
+
+  const rest = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, index) =>
+      getPosts({ page: index + 2, limit: ALL_POSTS_PAGE_SIZE })
+    )
+  )
+  return {
+    data: first.data.concat(...rest.map((response) => response.data)),
+    pagination: first.pagination
+  }
 })
 
 const allPosts = computed(() => {

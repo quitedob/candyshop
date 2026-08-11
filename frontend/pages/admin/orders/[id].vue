@@ -636,6 +636,17 @@ const updateStatus = async () => {
   try {
     const payload: Record<string, any> = { status }
     if (trackingInput.value.trim()) payload.trackingNumber = trackingInput.value.trim()
+    // P0.3 / G-ORD-3: cancelling an order with confirmed (captured) payments is
+    // blocked by the backend (422 order_cancel_requires_refund) unless the
+    // request explicitly authorises a refund. Opt in with refund:true after an
+    // explicit admin confirmation so money is never silently stranded.
+    if (status === 'cancelled' && isPaidOrPartial(order.value?.paymentStatus || 'unpaid')) {
+      if (!window.confirm(t('admin.orders.confirm_refund'))) {
+        statusMessage.value = ''
+        return
+      }
+      payload.refund = true
+    }
     await api.put(`/admin/orders/${route.params.id}/status`, payload)
     await fetchOrder()
     statusMessage.value = t('admin.orders.status_updated')

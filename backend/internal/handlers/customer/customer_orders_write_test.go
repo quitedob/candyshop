@@ -381,6 +381,11 @@ func (f *fakeOrderRepo) SumTotalAmount(ctx context.Context) (float64, error) {
 func (f *fakeOrderRepo) SumTotalAmountSince(ctx context.Context, since time.Time) (float64, error) {
 	return 0, nil
 }
+func (f *fakeOrderRepo) SumOpenOrderTotalsByCompany(ctx context.Context, companyID, excludeOrderID string) (float64, error) {
+	// G20 r3: the base fake has no open orders; the credit-aware fake overrides
+	// this to sum its seeded open orders.
+	return 0, nil
+}
 func (f *fakeOrderRepo) FindRecent(ctx context.Context, limit int) ([]modelsOrder.Order, error) {
 	return []modelsOrder.Order{}, nil
 }

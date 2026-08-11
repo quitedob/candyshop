@@ -42,6 +42,7 @@ type Services struct {
 	Shipment         *trade.ShipmentService
 	Logistics        *trade.LogisticsService
 	TradeDocDetail   *trade.TradeDocumentDetailService
+	QuotationReview  *trade.QuotationReviewService
 	ActivityLog      *activitylogSvc.ActivityLogService
 	SystemSetting    *systemsettingSvc.SystemSettingService
 	StockTransaction *orderRepo.StockTransactionRepository
@@ -97,6 +98,7 @@ func New(repos *repositoryCommon.AdminPortalRepositories, cfg *config.Config, au
 		Shipment:         trade.NewShipmentService(repos.Shipment),
 		Logistics:        trade.NewLogisticsService(repos.Shipment, repos.ShipmentEvent, repos.Order, repos.Trade, db),
 		TradeDocDetail:   trade.NewTradeDocumentDetailService(repos.TradeDocDetail),
+		QuotationReview:  trade.NewQuotationReviewService(repos.QuotationReview),
 		ActivityLog:      activitylogSvc.NewActivityLogService(repos.ActivityLog),
 		SystemSetting:    systemsettingSvc.NewSystemSettingService(repos.SystemSetting),
 		StockTransaction: repos.StockTransaction,

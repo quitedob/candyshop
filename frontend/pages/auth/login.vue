@@ -62,11 +62,6 @@
           </div>
 
           <div class="auth-actions-row">
-            <label class="auth-checkbox-label">
-              <input id="remember-me" v-model="form.remember" type="checkbox" class="auth-checkbox" />
-              <span class="auth-checkbox-ui" aria-hidden="true" />
-              {{ $t('auth.remember_me') }}
-            </label>
             <NuxtLink :to="localePath('/auth/forgot-password')" class="auth-link-muted">
               {{ $t('auth.forgot_password') }}
             </NuxtLink>
@@ -111,8 +106,7 @@ const { t } = useI18n()
 
 const form = reactive({
   email: '',
-  password: '',
-  remember: false
+  password: ''
 })
 
 const loading = ref(false)
@@ -147,7 +141,11 @@ const handleLogin = async () => {
       return
     }
     const rawRedirect = typeof route.query.redirect === 'string' ? route.query.redirect : undefined
-    const redirectUrl = rawRedirect && rawRedirect.startsWith('/') ? rawRedirect : null
+    // M1: only allow same-origin relative paths — reject '//host' (protocol-relative
+    // open redirect) and any embedded backslash (e.g. '/\evil.com').
+    const isSafeRedirect = (target) =>
+      target.startsWith('/') && !target.startsWith('//') && !target.includes('\\')
+    const redirectUrl = rawRedirect && isSafeRedirect(rawRedirect) ? rawRedirect : null
     if (redirectUrl) {
       navigateTo(redirectUrl)
     } else if (res.user.role === 'admin' || res.user.role === 'superadmin') {

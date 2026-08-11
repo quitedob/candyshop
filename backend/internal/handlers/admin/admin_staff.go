@@ -18,7 +18,10 @@ func (h *Handler) GetStaffList(c *gin.Context) {
 	}
 	page, limit := pagination.ParsePagination(c, 20, 100)
 
-	users, total, err := h.services.User.GetUsers(c.Request.Context(), page, limit)
+	// Role-scoped lookup (admin + superadmin only): the generic GetUsers/FindAll
+	// path returns every account including customers and their PII, which must
+	// never reach the /admin/staff response.
+	users, total, err := h.services.User.GetStaffUsers(c.Request.Context(), page, limit)
 	if err != nil {
 		response.ErrorResp(c, http.StatusInternalServerError, "staff_fetch_failed")
 		return

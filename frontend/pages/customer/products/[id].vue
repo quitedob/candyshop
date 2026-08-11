@@ -97,16 +97,46 @@
               </div>
             </div>
 
-            <!-- Destination Country -->
-            <div class="flex items-center gap-4 mb-4">
-              <label for="dest-country" class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ t('customer.products.destination_country') }}</label>
-              <input
-                id="dest-country"
-                v-model="shippingCountry"
-                type="text"
-                :placeholder="t('customer.products.destination_country_placeholder')"
-                class="flex-1 h-10 px-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
+            <!-- Shipping Address: street/city/country are required by POST /user/orders -->
+            <div class="mb-4 space-y-3">
+              <div class="flex items-center gap-4">
+                <label for="ship-street" class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ t('customer.cart.street') }}</label>
+                <input
+                  id="ship-street"
+                  v-model="shippingStreet"
+                  type="text"
+                  name="shippingStreet"
+                  autocomplete="street-address"
+                  :class="['flex-1 h-10 px-3 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500', shippingErrors.street ? 'border-red-400' : 'border-gray-200']"
+                />
+              </div>
+              <p v-if="shippingErrors.street" class="text-xs text-red-600">{{ shippingErrors.street }}</p>
+              <div class="flex items-center gap-4">
+                <label for="ship-city" class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ t('customer.cart.city') }}</label>
+                <input
+                  id="ship-city"
+                  v-model="shippingCity"
+                  type="text"
+                  name="shippingCity"
+                  autocomplete="address-level2"
+                  :class="['flex-1 h-10 px-3 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500', shippingErrors.city ? 'border-red-400' : 'border-gray-200']"
+                />
+              </div>
+              <p v-if="shippingErrors.city" class="text-xs text-red-600">{{ shippingErrors.city }}</p>
+              <div class="flex items-center gap-4">
+                <label for="dest-country" class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ t('customer.products.destination_country') }}</label>
+                <input
+                  id="dest-country"
+                  v-model="shippingCountry"
+                  type="text"
+                  name="shippingCountry"
+                  autocomplete="country-name"
+                  :placeholder="t('customer.products.destination_country_placeholder')"
+                  :class="['flex-1 h-10 px-3 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500', shippingErrors.country ? 'border-red-400' : 'border-gray-200']"
+                />
+              </div>
+              <p v-if="shippingErrors.country" class="text-xs text-red-600">{{ shippingErrors.country }}</p>
+              <p v-if="shippingErrorMessage" class="text-xs text-red-600">{{ shippingErrorMessage }}</p>
             </div>
 
             <!-- Quantity Selector -->
@@ -252,7 +282,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useTranslation } from '~/composables/useTranslation'
 
 definePageMeta({
@@ -275,7 +305,11 @@ const quantity = ref(1)
 const selectedImage = ref('')
 const contractPrice = ref<number | null>(null)
 const loadingPrice = ref(false)
+const shippingStreet = ref('')
+const shippingCity = ref('')
 const shippingCountry = ref('')
+const shippingErrors = reactive<{ street: string; city: string; country: string }>({ street: '', city: '', country: '' })
+const shippingErrorMessage = ref('')
 const submitting = ref(false)
 const addingToCart = ref(false)
 const showSuccess = ref(false)
@@ -370,7 +404,30 @@ const fetchContractPrice = async () => {
 // Re-fetch price when quantity changes (tier pricing)
 watch(quantity, () => { fetchContractPrice() })
 
+const validateShippingAddress = (): boolean => {
+  shippingErrors.street = ''
+  shippingErrors.city = ''
+  shippingErrors.country = ''
+  shippingErrorMessage.value = ''
+  const missing: string[] = []
+  if (!shippingStreet.value.trim()) {
+    shippingErrors.street = t('customer.common.shipping_street_required')
+    missing.push(shippingErrors.street)
+  }
+  if (!shippingCity.value.trim()) {
+    shippingErrors.city = t('customer.common.shipping_city_required')
+    missing.push(shippingErrors.city)
+  }
+  if (!shippingCountry.value.trim()) {
+    shippingErrors.country = t('customer.common.shipping_country_required')
+    missing.push(shippingErrors.country)
+  }
+  shippingErrorMessage.value = missing.join('; ')
+  return missing.length === 0
+}
+
 const submitOrderRequest = async () => {
+  if (!validateShippingAddress()) return
   submitting.value = true
   try {
     await api.createOrder({
@@ -381,7 +438,13 @@ const submitOrderRequest = async () => {
         specifications: selectedVariant.value?.sku || ''
       }],
       incoterms: 'FOB',
-      shippingAddress: { country: shippingCountry.value || '' } as any
+      shippingAddress: {
+        street: shippingStreet.value.trim(),
+        city: shippingCity.value.trim(),
+        state: '',
+        zipCode: '',
+        country: shippingCountry.value.trim(),
+      }
     })
     showSuccess.value = true
   } catch (err: any) {
@@ -408,7 +471,24 @@ const addToCart = async () => {
   }
 }
 
-onMounted(fetchProduct)
+const loadCompanyAddress = async () => {
+  try {
+    const company = await api.get<{ address?: { street?: string; city?: string; country?: string } }>('/user/company')
+    const a = company?.address
+    if (a) {
+      if (a.street) shippingStreet.value = a.street
+      if (a.city) shippingCity.value = a.city
+      if (a.country) shippingCountry.value = a.country
+    }
+  } catch {
+    // No saved company address — the buyer can enter one manually
+  }
+}
+
+onMounted(() => {
+  fetchProduct()
+  loadCompanyAddress()
+})
 watch(() => route.params.id, (id) => {
   if (id) fetchProduct()
 })

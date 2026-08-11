@@ -264,6 +264,37 @@ interface ApiError {
   details?: unknown
 }
 
+// M1: Module-scoped in-flight refresh promise.
+//
+// Without this, every useApi() instance carries its own refreshPromise and the
+// auth-auto-refresh plugin's interval + focus/visibility handlers call
+// refreshAccessToken() directly. Two overlapping /auth/refresh calls each carry
+// the same refresh-token cookie; the backend rotates the token on the first
+// success, so the second (racing) call fails and triggers a spurious forced
+// logout. Routing every trigger through one promise coalesces them into a
+// single refresh call.
+let sharedRefreshPromise: Promise<boolean> | null = null
+
+/**
+ * Trigger a token refresh, coalescing concurrent callers (useApi() 401 retries,
+ * the auth-auto-refresh plugin, focus/visibility handlers) into a single
+ * in-flight /auth/refresh request. On the server, SSR requests are isolated per
+ * render and must not share a module-level promise (cookies differ per request),
+ * so only the client path coalesces.
+ */
+export const refreshAuthSession = (): Promise<boolean> => {
+  const { refreshAccessToken } = useAuth()
+  if (import.meta.server) {
+    return refreshAccessToken()
+  }
+  if (!sharedRefreshPromise) {
+    sharedRefreshPromise = refreshAccessToken().finally(() => {
+      sharedRefreshPromise = null
+    })
+  }
+  return sharedRefreshPromise
+}
+
 export const useApi = () => {
   const config = useRuntimeConfig()
   // During SSR, $fetch uses Nitro's localFetch which bypasses devProxy.
@@ -274,7 +305,6 @@ export const useApi = () => {
   const publicBaseURL = `${baseURL}/public`
   const { t, locale } = useI18n()
   const auth = useAuth()
-  let refreshPromise: Promise<boolean> | null = null
   const requestHeaders = import.meta.server ? useRequestHeaders(['cookie']) : { cookie: undefined as string | undefined }
 
   /**
@@ -311,21 +341,15 @@ export const useApi = () => {
     try {
       return await doFetch()
     } catch (err: unknown) {
-      let error = err as { statusCode?: number; data?: { message?: string } }
+      let error = err as { statusCode?: number; data?: unknown }
 
       if (error?.statusCode === 401) {
-        if (!refreshPromise) {
-          refreshPromise = auth.refreshAccessToken().finally(() => {
-            refreshPromise = null
-          })
-        }
-
-        const refreshed = await refreshPromise
+        const refreshed = await refreshAuthSession()
         if (refreshed) {
           try {
             return await doFetch()
           } catch (retryErr: unknown) {
-            error = retryErr as { statusCode?: number; data?: { message?: string } }
+            error = retryErr as { statusCode?: number; data?: unknown }
           }
         } else {
           auth.logout()
@@ -338,11 +362,18 @@ export const useApi = () => {
         statusCode: error?.statusCode
       }
 
-      if (error?.data?.message) {
-        apiError.message = error.data.message
-      }
-      if (error?.data?.details) {
-        apiError.details = error.data.details
+      // M1: the error body may be a non-object (e.g. a proxy error page or a
+      // plain-text response), in which case the old `'details' in error.data`
+      // check threw a TypeError. Guard the shape before normalizing.
+      const errorData = error?.data
+      if (typeof errorData === 'object' && errorData !== null) {
+        const data = errorData as Record<string, unknown>
+        if (typeof data.message === 'string' && data.message) {
+          apiError.message = data.message
+        }
+        if ('details' in data) {
+          apiError.details = data.details
+        }
       }
 
       throw apiError
@@ -677,7 +708,7 @@ export const useApi = () => {
   }
 
   const DELETE = <T>(endpoint: string, data?: any): Promise<T> => {
-    const opts: RequestInit = { method: 'DELETE' }
+    const opts: Record<string, unknown> = { method: 'DELETE' }
     if (data !== undefined) {
       opts.body = JSON.stringify(data)
     }

@@ -113,7 +113,7 @@ const load = async () => {
     priceList.value = res.priceList || null
     emptyStatus.value = res.status || ''
     if (priceList.value?.prices?.length) {
-      const ids: string[] = [...new Set(priceList.value.prices.map((p: any) => p.productId))]
+      const ids: string[] = [...new Set<string>(priceList.value.prices.map((p: any) => p.productId as string))]
       await Promise.all(ids.map(async (id: string) => {
         try {
           const product = await api.getProduct(id)

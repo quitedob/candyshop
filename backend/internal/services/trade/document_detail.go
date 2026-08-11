@@ -4,6 +4,7 @@ import (
 	modelsTrade "candypro/api/internal/models/trade"
 	"context"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -61,7 +62,7 @@ func (s *TradeDocumentDetailService) GetSalesContract(ctx context.Context, trans
 
 func (s *TradeDocumentDetailService) CreateSalesContract(ctx context.Context, sc *modelsTrade.SalesContract) error {
 	if sc.ContractNo == "" {
-		sc.ContractNo = generateDocNo("SC")
+		sc.ContractNo = s.GenerateDocNo("SC")
 	}
 	if sc.Currency == "" {
 		sc.Currency = "USD"
@@ -81,7 +82,7 @@ func (s *TradeDocumentDetailService) GetPackingList(ctx context.Context, transac
 
 func (s *TradeDocumentDetailService) CreatePackingList(ctx context.Context, pl *modelsTrade.PackingList) error {
 	if pl.PLNumber == "" {
-		pl.PLNumber = generateDocNo("PL")
+		pl.PLNumber = s.GenerateDocNo("PL")
 	}
 	return s.repo.CreatePackingList(ctx, pl)
 }
@@ -98,7 +99,7 @@ func (s *TradeDocumentDetailService) GetCertificateOfOrigin(ctx context.Context,
 
 func (s *TradeDocumentDetailService) CreateCertificateOfOrigin(ctx context.Context, coo *modelsTrade.CertificateOfOrigin) error {
 	if coo.CertificateNo == "" {
-		coo.CertificateNo = generateDocNo("COO")
+		coo.CertificateNo = s.GenerateDocNo("COO")
 	}
 	return s.repo.CreateCertificateOfOrigin(ctx, coo)
 }
@@ -115,7 +116,7 @@ func (s *TradeDocumentDetailService) GetHealthCertificate(ctx context.Context, t
 
 func (s *TradeDocumentDetailService) CreateHealthCertificate(ctx context.Context, hc *modelsTrade.HealthCertificate) error {
 	if hc.CertificateNo == "" {
-		hc.CertificateNo = generateDocNo("HC")
+		hc.CertificateNo = s.GenerateDocNo("HC")
 	}
 	return s.repo.CreateHealthCertificate(ctx, hc)
 }
@@ -161,7 +162,9 @@ func (s *TradeDocumentDetailService) DeleteSettlement(ctx context.Context, id ui
 	return s.repo.DeleteSettlement(ctx, id)
 }
 
-func generateDocNo(prefix string) string {
+// GenerateDocNo generates a document number with a given prefix. Exposed so the
+// admin CRUD handler produces numbers identically to the service layer.
+func (s *TradeDocumentDetailService) GenerateDocNo(prefix string) string {
 	return fmt.Sprintf("%s-%s-%06d", prefix, time.Now().UTC().Format("200601"), time.Now().UnixNano()%1000000)
 }
 
@@ -173,7 +176,7 @@ func (s *TradeDocumentDetailService) GetProformaInvoice(ctx context.Context, tra
 
 func (s *TradeDocumentDetailService) CreateProformaInvoice(ctx context.Context, pi *modelsTrade.ProformaInvoice) error {
 	if pi.PINumber == "" {
-		pi.PINumber = generateDocNo("PI")
+		pi.PINumber = s.GenerateDocNo("PI")
 	}
 	if pi.Currency == "" {
 		pi.Currency = "USD"
@@ -196,7 +199,14 @@ func (s *TradeDocumentDetailService) GetCommercialInvoice(ctx context.Context, t
 
 func (s *TradeDocumentDetailService) CreateCommercialInvoice(ctx context.Context, ci *modelsTrade.CommercialInvoice) error {
 	if ci.CINumber == "" {
-		ci.CINumber = generateDocNo("CI")
+		ci.CINumber = s.GenerateDocNo("CI")
+	}
+	// Auto-populate the CI→PI cross-reference from the trade's existing PI so a
+	// CI created without an explicit pi_number never ships with an empty ref.
+	if strings.TrimSpace(ci.PINumber) == "" {
+		if pi, err := s.repo.GetProformaInvoice(ctx, ci.TransactionID); err == nil && pi != nil {
+			ci.PINumber = pi.PINumber
+		}
 	}
 	if ci.Currency == "" {
 		ci.Currency = "USD"
@@ -219,7 +229,7 @@ func (s *TradeDocumentDetailService) GetBillOfLading(ctx context.Context, transa
 
 func (s *TradeDocumentDetailService) CreateBillOfLading(ctx context.Context, bl *modelsTrade.BillOfLading) error {
 	if bl.BLNumber == "" {
-		bl.BLNumber = generateDocNo("BL")
+		bl.BLNumber = s.GenerateDocNo("BL")
 	}
 	if bl.Status == "" {
 		bl.Status = "DRAFT"

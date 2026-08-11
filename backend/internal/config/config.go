@@ -22,8 +22,16 @@ type Config struct {
 	Stripe        StripeConfig
 	PayPal        PayPalConfig
 	KYB           KYBConfig
+	Tracking      TrackingConfig
 	Order         OrderConfig
 	ExchangeRates map[string]float64
+}
+
+// TrackingConfig holds shipment-tracking provider configuration.
+type TrackingConfig struct {
+	// SeventeenTrackAPIKey enables live 17track lookups for the track_shipment AI
+	// tool. Empty keeps the deterministic stub (no fabricated carrier data).
+	SeventeenTrackAPIKey string
 }
 
 // OrderConfig 订单相关后台行为
@@ -209,6 +217,9 @@ func Load() (*Config, error) {
 			BypassMaxOrderUSD:       getEnvFloat("KYB_BYPASS_MAX_ORDER_USD", 0),
 			BypassSampleMaxOrderUSD: getEnvFloat("KYB_BYPASS_SAMPLE_MAX_ORDER_USD", 0),
 			SampleProductIDs:        parseCommaSeparated(getEnv("KYB_SAMPLE_PRODUCT_IDS", "")),
+		},
+		Tracking: TrackingConfig{
+			SeventeenTrackAPIKey: getEnv("TRACK_SHIPMENT_17TRACK_API_KEY", ""),
 		},
 		Order: OrderConfig{
 			AutoInvoiceOnPayment: getEnv("AUTO_INVOICE_ON_PAYMENT", "true") == "true",

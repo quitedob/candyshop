@@ -3,6 +3,7 @@ package trade
 import (
 	modelsTrade "candypro/api/internal/models/trade"
 	"context"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -61,6 +62,28 @@ func (r *ShipmentRepository) Create(ctx context.Context, shipment *modelsTrade.S
 // Update saves changes to a shipment.
 func (r *ShipmentRepository) Update(ctx context.Context, shipment *modelsTrade.ShipmentTracking) error {
 	return r.db.WithContext(ctx).Save(shipment).Error
+}
+
+// Dispatch atomically transitions a PENDING shipment to DISPATCHED using a
+// conditional UPDATE ... WHERE id=? AND status='PENDING' (mirrors the optimistic
+// lock in QuotationReviewRepository.UpdateStatus). It runs against the provided db
+// handle (the caller's transaction) so the transition is atomic with stock
+// deduction and dispatch-event creation. Returns true when this call won the
+// transition; false when the shipment was already advanced by a concurrent
+// dispatch or no longer exists. RowsAffected==0 is the guard that prevents a
+// concurrent dispatch from double-deducting stock or emitting duplicate events.
+func (r *ShipmentRepository) Dispatch(ctx context.Context, db *gorm.DB, id uint, dispatchedAt time.Time) (bool, error) {
+	res := db.WithContext(ctx).
+		Model(&modelsTrade.ShipmentTracking{}).
+		Where("id = ? AND status = ?", id, "PENDING").
+		Updates(map[string]any{
+			"status":     "DISPATCHED",
+			"updated_at": dispatchedAt,
+		})
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return res.RowsAffected > 0, nil
 }
 
 // Delete removes a shipment by ID.

@@ -205,6 +205,7 @@ func (h *Handler) CustomerConvertRequisitionToOrder(c *gin.Context) {
 	order := &modelsOrder.Order{
 		ID:            crypto.GenerateID(),
 		UserID:        userID,
+		Source:        modelsOrder.OrderSourceBulk,
 		Status:        modelsOrder.OrderStatusPendingConfirm,
 		StockReserved: false,
 		Items:         orderItems,
@@ -295,6 +296,7 @@ func (h *Handler) CustomerCreateBulkOrder(c *gin.Context) {
 	order := &modelsOrder.Order{
 		ID:            crypto.GenerateID(),
 		UserID:        userID,
+		Source:        modelsOrder.OrderSourceBulk,
 		Status:        modelsOrder.OrderStatusPendingConfirm,
 		StockReserved: false,
 		Items:         items,
@@ -338,6 +340,7 @@ func (h *Handler) CustomerReorderFromHistory(c *gin.Context) {
 	newOrder := &modelsOrder.Order{
 		ID:            crypto.GenerateID(),
 		UserID:        userID,
+		Source:        modelsOrder.OrderSourceBulk,
 		Status:        modelsOrder.OrderStatusPendingConfirm,
 		StockReserved: false,
 		Items:         sourceOrder.Items,

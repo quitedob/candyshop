@@ -39,7 +39,8 @@ function localizedCmsPaths(path: string): string[] {
 }
 
 export default defineNitroPlugin((nitroApp) => {
-  nitroApp.hooks.hook('prerender:routes', async (routes) => {
+  const hook = nitroApp.hooks.hook as unknown as (name: string, handler: (routes: Set<string>) => Promise<void>) => void
+  hook('prerender:routes', async (routes: Set<string>) => {
     for (const path of STATIC_PATHS) {
       for (const localized of localizedPaths(path)) {
         routes.add(localized)

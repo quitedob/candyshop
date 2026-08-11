@@ -222,6 +222,7 @@ const api = useApi()
 const { sanitize } = useSanitizer()
 const { t, locale, defaultLocale } = useI18n()
 const { enumLabel, formatDate } = useDisplay()
+const submitGuard = useSubmitGuard()
 
 const typeOptions = [{ value: 'post' }, { value: 'case' }] as const
 type ContentType = 'post' | 'case'
@@ -355,7 +356,7 @@ const generateWithAI = async () => {
   aiGenerating.value = true
   formError.value = ''
   try {
-    const res = await api.adminAIGenerateContent({ topic: aiTopic.value, type: form.type, language: defaultLocale.value || 'zh', translate: false })
+    const res = await api.adminAIGenerateContent({ topic: aiTopic.value, type: form.type, language: defaultLocale || 'zh', translate: false })
     const data = res.content
 
     if (res.parseError || typeof data === 'string') {
@@ -664,22 +665,26 @@ const buildPayload = () => {
 
 const saveContent = async () => {
   if (!form.translations[SOURCE_LOCALE]?.title?.trim()) { formError.value = t('admin.content.title_required'); return }
-  saving.value = true; formError.value = ''
-  try {
-    if (editingId.value) {
-      await api.adminUpdateContent(editingId.value, buildPayload())
-      actionMessage.value = t('admin.content.updated_success')
-    } else {
-      await api.adminCreateContent(buildPayload())
-      actionMessage.value = t('admin.content.created_success')
-    }
-    showModal.value = false
-    showCreateDrawer.value = false
-    aiDraftReady.value = false
-    await fetchContent()
-    refreshNuxtData('blog-posts-all')
-  } catch (err: any) { formError.value = err?.message || t('admin.content.save_failed') }
-  finally { saving.value = false }
+  // useSubmitGuard short-circuits concurrent invocations so a fast double-click
+  // on Save can no longer create/update the content twice.
+  await submitGuard.guard(async () => {
+    saving.value = true; formError.value = ''
+    try {
+      if (editingId.value) {
+        await api.adminUpdateContent(editingId.value, buildPayload())
+        actionMessage.value = t('admin.content.updated_success')
+      } else {
+        await api.adminCreateContent(buildPayload())
+        actionMessage.value = t('admin.content.created_success')
+      }
+      showModal.value = false
+      showCreateDrawer.value = false
+      aiDraftReady.value = false
+      await fetchContent()
+      refreshNuxtData('blog-posts-all')
+    } catch (err: any) { formError.value = err?.message || t('admin.content.save_failed') }
+    finally { saving.value = false }
+  })
 }
 
 const deleteContent = async (item: any) => {

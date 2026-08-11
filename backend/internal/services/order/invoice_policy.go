@@ -128,7 +128,16 @@ func (s *InvoiceService) ValidateAndPersistInvoiceUpdate(ctx context.Context, be
 	if before == nil || after == nil {
 		return errors.New("invalid invoice state")
 	}
-	after.TotalAmount = after.Amount + after.TaxAmount
+	// H9: order-derived invoices carry the freight component inside
+	// TotalAmount (TotalAmount = Amount + TaxAmount + ShippingAmount), but the
+	// Invoice model has no ShippingAmount column to persist it separately.
+	// Preserve that freight delta from the stored record so manual edits don't
+	// silently under-bill shipping; clamp negative leftovers to 0.
+	freight := before.TotalAmount - before.Amount - before.TaxAmount
+	if freight < 0 {
+		freight = 0
+	}
+	after.TotalAmount = after.Amount + after.TaxAmount + freight
 	st := strings.ToLower(strings.TrimSpace(before.Status))
 	orderID := strings.TrimSpace(before.OrderID)
 	if orderID != "" && st != modelsOrder.InvoiceStatusDraft && invoiceFinancialChanged(before, after) {

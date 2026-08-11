@@ -13,6 +13,7 @@ import (
 
 	tradeModels "candypro/api/internal/models/trade"
 	modelsOrder "candypro/api/internal/models/order"
+	"candypro/api/internal/pkg/eino"
 	"candypro/api/internal/pkg/response"
 	tradeSvc "candypro/api/internal/services/trade"
 
@@ -218,7 +219,7 @@ func processAdminAgentEvent(w gin.ResponseWriter, event *adk.AgentEvent) error {
 			}
 			if len(msg.ToolCalls) > 0 {
 				sseEvent.ToolCalls = msg.ToolCalls
-				sseEvent.DocumentType = mapAdminToolToDocType(msg.ToolCalls[0].Function.Name)
+				sseEvent.DocumentType = mapAdminToolToDocType(msg.ToolCalls[0].Function.Name, msg.ToolCalls[0].Function.Arguments)
 			}
 			sendAdminSSEEvent(w, sseEvent)
 		}
@@ -262,10 +263,18 @@ func processAdminAgentEvent(w gin.ResponseWriter, event *adk.AgentEvent) error {
 	return nil
 }
 
-func mapAdminToolToDocType(toolName string) string {
+func mapAdminToolToDocType(toolName, argsJSON string) string {
 	switch toolName {
-	case "generate_proforma_invoice", "generate_trade_documents":
+	case "generate_proforma_invoice":
 		return tradeModels.DocTypeProformaInvoice
+	case "generate_trade_documents":
+		// A batch may request arbitrary doc types; resolve the anchor from the
+		// tool-call args instead of assuming PROFORMA_INVOICE (aligns with the
+		// system SSE handler).
+		if docType := eino.FirstDocTypeFromArgs(argsJSON); docType != "" {
+			return docType
+		}
+		return eino.FallbackTradeDocumentType
 	case "generate_commercial_invoice":
 		return tradeModels.DocTypeCommercialInvoice
 	case "generate_packing_list":

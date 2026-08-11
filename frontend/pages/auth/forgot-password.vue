@@ -43,6 +43,10 @@
             <span v-else>{{ t('auth.forgot_send') }}</span>
           </button>
 
+          <div v-if="error" class="auth-alert auth-alert--error" role="alert">
+            {{ error }}
+          </div>
+
           <div v-if="success" class="auth-alert auth-alert--success" role="status">
             {{ t('auth.forgot_success') }}
           </div>
@@ -70,6 +74,7 @@ const currentYear = computed(() => new Date().getFullYear())
 const email = ref('')
 const loading = ref(false)
 const success = ref(false)
+const error = ref('')
 
 const config = useRuntimeConfig()
 const baseURL = config.public.apiBase || '/api/v1'
@@ -77,6 +82,7 @@ const baseURL = config.public.apiBase || '/api/v1'
 const handleReset = async () => {
   loading.value = true
   success.value = false
+  error.value = ''
 
   try {
     await $fetch<any>(`${baseURL}/auth/forgot-password`, {
@@ -85,9 +91,11 @@ const handleReset = async () => {
     })
     success.value = true
     email.value = ''
-  } catch {
-    success.value = true
-    email.value = ''
+  } catch (err: any) {
+    // The backend always returns 200 for both known and unknown emails
+    // (anti-enumeration), so a throw here means a network/5xx failure.
+    // Do not claim success on a failed request.
+    error.value = err?.data?.message || t('errors.api.request_failed')
   } finally {
     loading.value = false
   }
