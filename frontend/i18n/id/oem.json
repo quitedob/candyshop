@@ -123,6 +123,45 @@
     "shape": "Bentuk",
     "packaging": "Kemasan",
     "target_market": "Pasar Target",
-    "notes": "Catatan"
+    "notes": "Catatan",
+    "packaging_options": {
+      "bag": {
+        "name": "Kantong Berdiri",
+        "description": "Kemasan fleksibel dengan kunci zip",
+        "moq": "1.000 pcs"
+      },
+      "jar": {
+        "name": "Toples Plastik",
+        "description": "Wadah yang dapat ditutup kembali",
+        "moq": "500 pcs"
+      },
+      "box": {
+        "name": "Kotak Hadiah",
+        "description": "Kotak presentasi premium",
+        "moq": "300 pcs"
+      },
+      "bulk": {
+        "name": "Karung Curah",
+        "description": "Kemasan jumlah besar",
+        "moq": "100 pcs"
+      }
+    },
+    "oem_options": {
+      "flavors": {
+        "summary": "Pilih dari rangkaian kami atau kembangkan kustom",
+        "description": "Kami menawarkan lebih dari 50 rasa buah atau dapat membuat campuran kustom sesuai kebutuhan Anda.",
+        "moq": "3.000 pcs"
+      },
+      "shapes": {
+        "summary": "Bentuk standar atau cetakan kustom",
+        "description": "Dari beruang dan buah klasik hingga bentuk merek unik Anda.",
+        "moq": "5.000 pcs"
+      },
+      "colors": {
+        "summary": "Warna alami atau buatan",
+        "description": "Tersedia berbagai pilihan warna menggunakan ekstrak buah alami atau warna food grade.",
+        "moq": "2.000 pcs"
+      }
+    }
   }
 }

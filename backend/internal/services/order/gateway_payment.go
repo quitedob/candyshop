@@ -65,7 +65,13 @@ func (s *GatewayPaymentService) gateway(method string) (payment.PaymentGateway, 
 	}
 }
 
-// CreateCheckout 创建 pending 支付记录并调用网关 Authorize
+// CreateCheckout persists a pending payment row (with atomic balance check) and
+// THEN calls the gateway to create the intent/checkout. Persisting before the
+// gateway call means a DB failure after gateway success can no longer orphan a
+// collectible intent, and the payment amount is committed to the order's balance
+// while concurrent checkout calls for the same order are serialized so two
+// creates cannot both pass the balance check (M8). If the gateway call fails the
+// persisted row is marked failed instead of leaving an orphaned intent.
 func (s *GatewayPaymentService) CreateCheckout(ctx context.Context, order *modelsOrder.Order, userID, method string, amount float64) (*GatewayCheckoutResult, error) {
 	if s.payments == nil || order == nil {
 		return nil, fmt.Errorf("service_unavailable")
@@ -81,6 +87,24 @@ func (s *GatewayPaymentService) CreateCheckout(ctx context.Context, order *model
 		amount = order.TotalAmount
 	}
 	paymentID := crypto.GenerateID()
+	// Persist the payment row (status pending) first. CreatePaymentWithBalanceCheck
+	// re-reads the order's confirmed/pending payments and inserts inside one DB
+	// transaction, and serializes concurrent creations, so the amount is committed
+	// to the remaining balance before we reach the gateway.
+	rec := &modelsOrder.Payment{
+		ID:        paymentID,
+		OrderID:   order.ID,
+		Amount:    amount,
+		Currency:  order.Currency,
+		Method:    method,
+		Status:    modelsOrder.PaymentRecordStatusPending,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	if err := s.payments.CreatePaymentWithBalanceCheck(ctx, order.TotalAmount, rec); err != nil {
+		return nil, err
+	}
+	// Only now create the gateway intent/checkout.
 	returnURL := strings.TrimRight(s.frontendURL, "/") + "/customer/orders/" + order.ID
 	req := payment.GatewayRequest{
 		Amount:         amount,
@@ -96,22 +120,13 @@ func (s *GatewayPaymentService) CreateCheckout(ctx context.Context, order *model
 	}
 	resp, err := gw.Authorize(ctx, req)
 	if err != nil {
+		// Gateway failed after the row was persisted: mark the row failed rather
+		// than leaving a collectible intent with no matching payment record.
+		_ = s.payments.FailPayment(ctx, paymentID)
 		return nil, err
 	}
 	txID := resp.TransactionID
-	rec := &modelsOrder.Payment{
-		ID:                   paymentID,
-		OrderID:              order.ID,
-		Amount:               amount,
-		Currency:             order.Currency,
-		Method:               method,
-		Status:               modelsOrder.PaymentRecordStatusPending,
-		GatewayTransactionID: &txID,
-		GatewayMetadata:      resp.RawResponse,
-		CreatedAt:            time.Now(),
-		UpdatedAt:            time.Now(),
-	}
-	if err := s.payments.CreatePaymentWithBalanceCheck(ctx, order.TotalAmount, rec); err != nil {
+	if err := s.payments.AttachGatewayResult(ctx, paymentID, txID, resp.RawResponse); err != nil {
 		return nil, err
 	}
 	out := &GatewayCheckoutResult{

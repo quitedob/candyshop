@@ -110,7 +110,25 @@
     "sample_specs": "샘플 사양",
     "sample_moq": "샘플 MOQ",
     "sample_lead_time": "샘플 납기",
-    "sample_price": "샘플 가격"
+    "sample_price": "샘플 가격",
+    "scenarios": {
+      "retail": {
+        "title": "소매 및 슈퍼마켓",
+        "description": "소매 체인과 슈퍼마켓에 적합"
+      },
+      "wholesale": {
+        "title": "도매 및 유통",
+        "description": "도매 및 유통을 위한 대용량 포장"
+      },
+      "gift": {
+        "title": "선물 및 프리미엄",
+        "description": "명절과 프로모션을 위한 아름다운 선물 세트"
+      },
+      "vending": {
+        "title": "자동판매기",
+        "description": "자동판매기에 맞는 크기"
+      }
+    }
   },
   "filters": {
     "title": "제품 필터",
@@ -128,6 +146,8 @@
     "flavor": "맛",
     "shape": "모양",
     "packaging": "패키징",
-    "clear": "필터 초기화"
+    "clear": "필터 초기화",
+    "filled_match": "필링 filled filling 夹心",
+    "vitamin_match": "비타민 vitamin 维生素"
   }
 }

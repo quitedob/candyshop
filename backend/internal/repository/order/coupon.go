@@ -2,7 +2,9 @@ package order
 
 import (
 	modelsOrder "candypro/api/internal/models/order"
+	"candypro/api/internal/pkg/money"
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -20,6 +22,34 @@ type CouponRepository struct {
 // NewCouponRepository creates a new CouponRepository.
 func NewCouponRepository(db *gorm.DB) *CouponRepository {
 	return &CouponRepository{db: db}
+}
+
+// Sentinel errors returned by coupon apply/remove so handlers can map the
+// outcome to the appropriate HTTP status (M3). The caller must use errors.Is
+// to distinguish them from generic failures.
+var (
+	// ErrCouponOrderForbidden indicates the target order does not exist or does
+	// not belong to the caller. Returned instead of gorm.ErrRecordNotFound so a
+	// cross-tenant attempt cannot distinguish "missing" from "not yours".
+	ErrCouponOrderForbidden = errors.New("coupon: order not found or not owned by the caller")
+	// ErrCouponOrderInvalidState indicates the order has moved past the mutable
+	// draft states (pending / pending_confirmation / pending_approval), so its
+	// booked totals can no longer be changed by the customer.
+	ErrCouponOrderInvalidState = errors.New("coupon: order status does not allow coupon changes")
+)
+
+// isCouponMutableOrderStatus reports whether an order is still in a state where
+// coupon changes are permitted. Once an order is paid or leaves the draft-like
+// states its booked subtotal/tax/total are treated as immutable, otherwise a
+// coupon removal after payment could inflate the payable amount (M3).
+func isCouponMutableOrderStatus(status string) bool {
+	switch status {
+	case modelsOrder.OrderStatusPending,
+		modelsOrder.OrderStatusPendingConfirm,
+		modelsOrder.OrderStatusPendingApproval:
+		return true
+	}
+	return false
 }
 
 // CreateCoupon creates a new coupon.
@@ -233,7 +263,10 @@ func (r *CouponRepository) ApplyCouponToCart(ctx context.Context, orderID, userI
 
 		var order modelsOrder.Order
 		if err := tx.Where("id = ? AND user_id = ?", orderID, userID).First(&order).Error; err != nil {
-			return fmt.Errorf("order not found")
+			return ErrCouponOrderForbidden
+		}
+		if !isCouponMutableOrderStatus(order.Status) {
+			return ErrCouponOrderInvalidState
 		}
 
 		if err := r.ValidateCoupon(tx, &coupon, userID, order.Subtotal); err != nil {
@@ -265,15 +298,28 @@ func (r *CouponRepository) ApplyCouponToCart(ctx context.Context, orderID, userI
 		if err := tx.Create(discount).Error; err != nil {
 			return err
 		}
-		// Rebuild TotalAmount from the post-discount subtotal plus existing tax
-		// and shipping. Tax/shipping recalculation against the new net amount
-		// is intentionally left to the checkout pricing pass; this keeps the
-		// repo function focused on persistence and avoids re-resolving rates here.
-		newTotal := order.Subtotal - discountAmount + order.TaxAmount + order.ShippingAmount
+		// M7: tax must be booked on the post-discount net subtotal, never the
+		// gross subtotal — the booked tax base is (subtotal - discount). Tax is
+		// proportional to its base (tax = base × rate), so the discounted base
+		// recomputes the already-booked tax proportionally. Subtotal and
+		// ShippingAmount are left untouched so the invariant
+		// total = subtotal - discount + tax + shipping holds exactly.
+		netSubtotal := order.Subtotal - discountAmount
+		if netSubtotal < 0 {
+			netSubtotal = 0
+		}
+		newTax := order.TaxAmount
+		if order.Subtotal > 0 {
+			newTax = money.RoundMoney(order.TaxAmount * netSubtotal / order.Subtotal)
+		}
+		newTotal := netSubtotal + newTax + order.ShippingAmount
 		if newTotal < 0 {
 			newTotal = 0
 		}
-		return tx.Model(&order).Update("total_amount", newTotal).Error
+		return tx.Model(&order).Updates(map[string]interface{}{
+			"tax_amount":   newTax,
+			"total_amount": newTotal,
+		}).Error
 	})
 	if err != nil {
 		return nil, err
@@ -281,20 +327,67 @@ func (r *CouponRepository) ApplyCouponToCart(ctx context.Context, orderID, userI
 	return discount, nil
 }
 
-// RemoveCouponFromCart removes a coupon discount from an order.
-func (r *CouponRepository) RemoveCouponFromCart(ctx context.Context, orderID string) error {
+// RemoveCouponFromCart removes a coupon discount from an order, refunds the
+// coupon's global usage count, and restores the order totals (M3).
+//
+// Security (M3): the order row is locked and scoped to the owning user
+// (WHERE id = ? AND user_id = ?), so one tenant can never remove another
+// tenant's coupon or mutate another order's total_amount. A status guard
+// refuses removal once the order has moved past the mutable draft states, so a
+// paid/confirmed order's booked total cannot be inflated after payment.
+//
+// Usage symmetry (M3): IncrementCouponUsage is an atomic conditional increment;
+// removal refunds the use with the symmetric conditional decrement (never below
+// 0) in the same transaction. apply+remove therefore no longer permanently
+// burns the global MaxUses cap.
+func (r *CouponRepository) RemoveCouponFromCart(ctx context.Context, orderID, userID string) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var order modelsOrder.Order
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("id = ? AND user_id = ?", orderID, userID).
+			First(&order).Error; err != nil {
+			return ErrCouponOrderForbidden
+		}
+		if !isCouponMutableOrderStatus(order.Status) {
+			return ErrCouponOrderInvalidState
+		}
+
 		var discount modelsOrder.OrderDiscount
 		if err := tx.Where("order_id = ? AND type = ?", orderID, "coupon").First(&discount).Error; err != nil {
 			return fmt.Errorf("no coupon applied")
 		}
-		var order modelsOrder.Order
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", orderID).First(&order).Error; err != nil {
-			return err
+
+		// Refund the coupon's global usage count (never below 0). The WHERE
+		// guard mirrors IncrementCouponUsage's conditional UPDATE, so a
+		// concurrent increment on the same coupon can't drive used_count
+		// negative and this can't refund a use that was never charged.
+		if discount.CouponID != nil {
+			res := tx.Model(&modelsOrder.Coupon{}).
+				Where("id = ? AND used_count > 0", *discount.CouponID).
+				Update("used_count", gorm.Expr("used_count - 1"))
+			if res.Error != nil {
+				return res.Error
+			}
 		}
-		// Restore order total
-		newTotal := order.TotalAmount + discount.Amount
-		if err := tx.Model(&order).Update("total_amount", newTotal).Error; err != nil {
+
+		// Restore totals to the pre-coupon snapshot. Subtotal is the pre-coupon
+		// base (never mutated by ApplyCouponToCart), so net = subtotal - discount.
+		// ApplyCouponToCart booked tax on the discounted net (M7); restoring the
+		// full-subtotal tax uses the inverse proportional recompute so the
+		// invariant total = subtotal + tax + shipping holds again.
+		netSubtotal := order.Subtotal - discount.Amount
+		if netSubtotal < 0 {
+			netSubtotal = 0
+		}
+		restoredTax := order.TaxAmount
+		if order.Subtotal > 0 && netSubtotal > 0 {
+			restoredTax = money.RoundMoney(order.TaxAmount * order.Subtotal / netSubtotal)
+		}
+		newTotal := money.RoundMoney(order.Subtotal + restoredTax + order.ShippingAmount)
+		if err := tx.Model(&order).Updates(map[string]interface{}{
+			"tax_amount":   restoredTax,
+			"total_amount": newTotal,
+		}).Error; err != nil {
 			return err
 		}
 		return tx.Delete(&discount).Error

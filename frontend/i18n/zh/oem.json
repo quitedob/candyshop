@@ -123,6 +123,45 @@
     "shape": "形状",
     "packaging": "包装",
     "target_market": "目标市场",
-    "notes": "备注"
+    "notes": "备注",
+    "packaging_options": {
+      "bag": {
+        "name": "自立袋",
+        "description": "带拉链封口的柔性包装",
+        "moq": "1,000 个"
+      },
+      "jar": {
+        "name": "塑料罐",
+        "description": "可重复密封的容器",
+        "moq": "500 个"
+      },
+      "box": {
+        "name": "礼品盒",
+        "description": "高档展示礼盒",
+        "moq": "300 个"
+      },
+      "bulk": {
+        "name": "散装袋",
+        "description": "大批量包装",
+        "moq": "100 个"
+      }
+    },
+    "oem_options": {
+      "flavors": {
+        "summary": "从我们的现有系列中选择或定制开发",
+        "description": "我们提供超过 50 种水果口味，也可以根据您的要求定制混合配方。",
+        "moq": "3,000 个"
+      },
+      "shapes": {
+        "summary": "标准形状或定制模具",
+        "description": "从经典小熊和水果到您独特的品牌形状。",
+        "moq": "5,000 个"
+      },
+      "colors": {
+        "summary": "天然或合成色素",
+        "description": "使用天然果汁提取物或食品级色素提供多种颜色选择。",
+        "moq": "2,000 个"
+      }
+    }
   }
 }

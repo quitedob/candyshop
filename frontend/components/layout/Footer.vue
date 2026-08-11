@@ -13,7 +13,7 @@
               <Icon name="lucide:mail" size="20" aria-hidden="true" />
               {{ $t('contact.send_inquiry') }}
             </NuxtLink>
-            <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="footer__newsletter-btn footer__newsletter-btn--whatsapp">
+            <a v-if="whatsappUrl" :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="footer__newsletter-btn footer__newsletter-btn--whatsapp">
               <WhatsAppIcon size="20" />
               {{ $t('whatsapp.us') }}
             </a>
@@ -88,7 +88,7 @@
               </li>
               <li class="footer__contact-item">
                 <Icon name="lucide:message-circle" size="16" aria-hidden="true" />
-                <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer">WhatsApp: +86 21 6731 0088</a>
+                <a v-if="whatsappUrl" :href="whatsappUrl" target="_blank" rel="noopener noreferrer">WhatsApp: +86 21 6731 0088</a>
               </li>
               <li class="footer__contact-item">
                 <Icon name="lucide:clock" size="16" aria-hidden="true" />
@@ -163,6 +163,7 @@ const hydrated = ref(false)
 
 const whatsappUrl = computed(() => {
   const number = config.public.whatsappNumber
+  if (!number) return ''
   const message = encodeURIComponent(t('whatsapp.message'))
   return `https://wa.me/${number}?text=${message}`
 })

@@ -56,7 +56,9 @@
         "5000-10000": "5.000 - 10.000 chiếc",
         "10000+": "Hơn 10.000 chiếc"
       }
-    }
+    },
+    "sample_request_message": "Tôi muốn yêu cầu mẫu sản phẩm này.",
+    "whatsapp_interest": "Xin chào, tôi quan tâm đến sản phẩm {name} của bạn. Bạn có thể cung cấp thêm thông tin không?"
   },
   "contact": {
     "title": "Contact Us",

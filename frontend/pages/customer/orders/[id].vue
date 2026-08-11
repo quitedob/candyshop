@@ -1065,7 +1065,9 @@ const uploadPaymentProof = async () => {
   padding: 1.25rem;
   background: var(--color-primary-container);
   border-radius: var(--radius-xl);
-  color: white;
+  /* H4: primary-container flips to a light surface in dark mode, so fixed
+     white text becomes invisible — use the paired on-container token. */
+  color: var(--color-on-primary-container);
 }
 
 .summary-card__label {
@@ -1556,7 +1558,9 @@ const uploadPaymentProof = async () => {
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-secondary {
-  background: white;
+  /* H4: hardcoded white bg + near-white primary text in dark mode was
+     unreadable — use the theme surface token. */
+  background: var(--color-bg);
   color: var(--color-primary);
   border: 1px solid var(--color-border);
 }

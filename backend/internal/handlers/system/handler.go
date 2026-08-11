@@ -9,6 +9,7 @@ import (
 	"candypro/api/internal/pkg/eino"
 	"candypro/api/internal/pkg/eino/retry"
 	einotool "candypro/api/internal/pkg/eino/tool"
+	paypalAdapter "candypro/api/internal/pkg/payment/paypal"
 	stripeAdapter "candypro/api/internal/pkg/payment/stripe"
 	servicesCommon "candypro/api/internal/services/common"
 	tradeService "candypro/api/internal/services/trade"
@@ -30,6 +31,7 @@ type Handler struct {
 	orderProcessingReady  bool
 	checkPointStore       *eino.PostgresCheckPointStore
 	stripeAdapter         *stripeAdapter.Adapter
+	paypalAdapter         *paypalAdapter.Adapter
 }
 
 func NewHandler(cfg *config.Config, svcs *servicesCommon.SystemServices) *Handler {
@@ -46,6 +48,7 @@ func NewHandler(cfg *config.Config, svcs *servicesCommon.SystemServices) *Handle
 			h.aiService = aiSvc
 		}
 		h.stripeAdapter = stripeAdapter.New(cfg.Stripe.SecretKey, cfg.Stripe.WebhookSecret)
+		h.paypalAdapter = paypalAdapter.New(cfg.PayPal.ClientID, cfg.PayPal.ClientSecret, cfg.PayPal.WebhookID, cfg.PayPal.Sandbox)
 	}
 
 	return h

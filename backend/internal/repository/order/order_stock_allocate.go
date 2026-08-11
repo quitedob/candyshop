@@ -366,6 +366,41 @@ func deductLegacyProductStockWithWarehouse(tx *gorm.DB, warehouseID, productID s
 	return []*modelsOrder.StockTransaction{rec}, nil
 }
 
+// restoreFEFOBatches reverses batch-level FEFO reservations for an order. The
+// reserve path (deductFEFOFromBatches) permanently decrements
+// product_batches.quantity; without a matching restore, cancelling an order
+// brings back only the aggregate products.stock_quantity and leaves batch
+// quantities depleted — a later FEFO order then fails "insufficient batch
+// stock" despite aggregate stock being available (M1). It restores exactly the
+// batches recorded in the reservation's stock_transaction rows, so released
+// quantities return to the same lots they were taken from.
+func restoreFEFOBatches(tx *gorm.DB, productID, refID string) error {
+	type batchQty struct {
+		BatchID string
+		Qty     int
+	}
+	var rows []batchQty
+	if err := tx.Model(&modelsOrder.StockTransaction{}).
+		Select("batch_id, COALESCE(SUM(ABS(change)),0) AS qty").
+		Where("reference_id = ? AND product_id = ? AND reason = ? AND batch_id IS NOT NULL AND change < 0",
+			refID, productID, modelsOrder.StockReasonStockReserved).
+		Group("batch_id").
+		Scan(&rows).Error; err != nil {
+		return err
+	}
+	for _, r := range rows {
+		if r.BatchID == "" || r.Qty <= 0 {
+			continue
+		}
+		if err := tx.Model(&modelsProduct.ProductBatch{}).
+			Where("id = ?", r.BatchID).
+			Update("quantity", gorm.Expr("quantity + ?", r.Qty)).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // restoreLegacyProductStock 释放库存：若存在仓级记录则同步增加默认仓行与 product 汇总
 func restoreLegacyProductStock(tx *gorm.DB, productID string, qty int) error {
 	if qty <= 0 {

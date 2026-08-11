@@ -90,9 +90,9 @@
     "energy_kcal": "الطاقة (kcal)",
     "total_fat": "إجمالي الدهون",
     "saturated_fat": "الدهون المشبعة",
-    "carbohydrates": "\u0627\u0644\u0643\u0631\u0628\u0648\u0647\u064A\u062F\u0631\u0627\u062A",
+    "carbohydrates": "الكربوهيدرات",
     "sugars": "السكريات",
-    "protein": "\u0627\u0644\u0628\u0631\u0648\u062A\u064A\u0646",
+    "protein": "البروتين",
     "salt": "الملح",
     "fiber": "الألياف الغذائية",
     "hs_code": "رمز HS",
@@ -102,7 +102,7 @@
     "dietary": "خصائص غذائية",
     "additives": "المُضافات",
     "sweetener_type": "نوع المُحلّي",
-    "cocoa_solids": "\u0645\u0648\u0627\u062F \u0627\u0644\u0643\u0627\u0643\u0627\u0648 \u0627\u0644\u0635\u0644\u0628\u0629",
+    "cocoa_solids": "مواد الكاكاو الصلبة",
     "milk_solids": "مواد الحليب الصلبة",
     "gmo_status": "حالة GMO",
     "may_contain": "قد يحتوي على",
@@ -110,7 +110,25 @@
     "sample_specs": "مواصفات العينة",
     "sample_moq": "الحد الأدنى للعينة",
     "sample_lead_time": "موعد تسليم العينة",
-    "sample_price": "سعر العينة"
+    "sample_price": "سعر العينة",
+    "scenarios": {
+      "retail": {
+        "title": "البيع بالتجزئة والسوبر ماركت",
+        "description": "مثالي لسلاسل البيع بالتجزئة والسوبر ماركت"
+      },
+      "wholesale": {
+        "title": "الجملة والتوزيع",
+        "description": "تغليف بكميات كبيرة للبيع بالجملة والتوزيع"
+      },
+      "gift": {
+        "title": "الهدايا والفاخر",
+        "description": "مجموعات هدايا جميلة للعطلات والعروض الترويجية"
+      },
+      "vending": {
+        "title": "آلة البيع",
+        "description": "بحجم مناسب لآلات البيع الأوتوماتيكية"
+      }
+    }
   },
   "filters": {
     "title": "تصفية المنتجات",
@@ -120,14 +138,16 @@
     "filled": "محشو",
     "4d": "4D",
     "organic": "عضوي",
-    "vitamin": "\u0645\u064F\u062F\u0639\u064E\u0651\u0645 \u0628\u0627\u0644\u0641\u064A\u062A\u0627\u0645\u064A\u0646",
+    "vitamin": "مُدعَّم بالفيتامين",
     "vegan": "نباتي",
-    "gluten_free": "\u062E\u0627\u0644\u064D \u0645\u0646 \u0627\u0644\u063A\u0644\u0648\u062A\u064A\u0646",
+    "gluten_free": "خالٍ من الغلوتين",
     "kosher": "Kosher",
     "color": "اللون",
     "flavor": "النكهة",
     "shape": "الشكل",
     "packaging": "التغليف",
-    "clear": "مسح التصفية"
+    "clear": "مسح التصفية",
+    "filled_match": "محشو filled filling 夹心",
+    "vitamin_match": "فيتامين vitamin 维生素"
   }
 }

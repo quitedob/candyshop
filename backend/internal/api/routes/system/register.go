@@ -18,8 +18,14 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 	pub.POST("/chatbot", h.System.Chatbot)
 	pub.POST("/recommend-products", h.System.RecommendProducts)
 	pub.POST("/search", h.System.AISearch)
-	pub.POST("/stripe-webhook", h.System.HandleStripeWebhook)
-	pub.POST("/paypal-webhook", h.System.HandlePayPalWebhook)
+
+	// Payment webhooks live OUTSIDE the public-AI middleware chain: the AI
+	// disable switch would 503 every webhook when AI routes are turned off, and
+	// the AI rate limiter (15/min/IP) would 429-drop payment confirmations.
+	// Each handler performs its own gateway signature verification instead.
+	webhooks := group.Group("")
+	webhooks.POST("/stripe-webhook", h.System.HandleStripeWebhook)
+	webhooks.POST("/paypal-webhook", h.System.HandlePayPalWebhook)
 
 	systemProtected := group.Group("")
 	systemProtected.Use(middleware.AuthMiddleware(cfg, h.AuthScope.SessionStore()))

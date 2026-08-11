@@ -1,7 +1,8 @@
 <template>
   <div class="inquiry-floating">
-    <!-- WhatsApp Button -->
+    <!-- WhatsApp Button (hidden when no number is configured) -->
     <a
+      v-if="whatsappUrl"
       :href="whatsappUrl"
       target="_blank"
       rel="noopener noreferrer"
@@ -78,9 +79,10 @@ const isInquiryOpen = ref(false)
 const inquireBtnRef = ref<HTMLButtonElement | null>(null)
 const closeBtnRef = ref<HTMLButtonElement | null>(null)
 
-// WhatsApp URL
+// WhatsApp URL ('' when unset — button hidden instead of linking to a placeholder)
 const whatsappUrl = computed(() => {
   const number = config.public.whatsappNumber
+  if (!number) return ''
   const message = encodeURIComponent(t('whatsapp.message'))
   return `https://wa.me/${number}?text=${message}`
 })

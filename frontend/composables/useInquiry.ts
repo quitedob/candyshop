@@ -370,6 +370,7 @@ export const useInquiry = (options: InquiryFormOptions = {}) => {
 export const useQuickInquiry = () => {
   const { $localePath } = useNuxtApp()
   const localePath = $localePath || useLocalePath()
+  const { t } = useI18n()
 
   const openInquiry = (product?: { id?: string; name: string; category: string }, isSample = false) => {
     const router = useRouter()
@@ -390,7 +391,7 @@ export const useQuickInquiry = () => {
       if ('id' in product && product.id) query.productId = product.id
       query.category = product.category
       if (isSample) {
-        query.message = 'I would like to request a sample for this product.'
+        query.message = t('form.sample_request_message')
       }
     }
 

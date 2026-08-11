@@ -100,7 +100,7 @@
           <h2>{{ t('about.cta_title') }}</h2>
           <p>{{ t('about.cta_subtitle') }}</p>
           <div class="cta__actions">
-            <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-highlight">
+            <a v-if="whatsappUrl" :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-highlight">
               <WhatsAppIcon size="20" />
               {{ t('whatsapp.us') }}
             </a>
@@ -182,6 +182,7 @@ const certifications = [
 // WhatsApp URL
 const whatsappUrl = computed(() => {
   const number = config.public.whatsappNumber
+  if (!number) return ''
   const message = encodeURIComponent(t('whatsapp.message'))
   return `https://wa.me/${number}?text=${message}`
 })

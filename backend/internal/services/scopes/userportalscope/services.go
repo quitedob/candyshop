@@ -87,7 +87,7 @@ func New(repos *repositoryCommon.UserPortalRepositories, cfg *config.Config, db 
 		RequisitionList: repos.RequisitionList,
 		Webhook:  order.NewWebhookService(repos.Webhook),
 		EventBus: order.NewEventBus(repos.Event, repos.HookConfig, repos.HookExecution, order.NewWebhookService(repos.Webhook)),
-		Approval: order.NewApprovalService(repos.BuyerOrg, repos.OrgMember, repos.ApprovalAction, repos.Order),
+		Approval: order.NewApprovalService(repos.BuyerOrg, repos.OrgMember, repos.ApprovalAction, repos.Order, productSvc),
 		Channel:  order.NewChannelService(repos.Channel),
 	}
 }

@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	modelsOrder "candypro/api/internal/models/order"
+	"candypro/api/internal/pkg/money"
+	orderRepo "candypro/api/internal/repository/order"
 )
 
 type approvalOrgRepo interface {
@@ -34,6 +36,7 @@ type orderApprovalOps interface {
 	FindByID(ctx context.Context, id string) (*modelsOrder.Order, error)
 	ApprovePendingOrder(ctx context.Context, id string) error
 	ApprovePendingOrderWithAudit(ctx context.Context, id, userID, action, comment string) error
+	ApprovePendingOrderWithModifications(ctx context.Context, id, userID, action, comment string, fin *orderRepo.OrderConfirmFinancials) error
 	CancelPendingApprovalOrder(ctx context.Context, orderID string) error
 	CancelPendingApprovalOrderWithAudit(ctx context.Context, orderID, userID, action, comment string) error
 	Update(ctx context.Context, order *modelsOrder.Order) error
@@ -45,10 +48,18 @@ type ApprovalService struct {
 	memberRepo approvalMemberRepo
 	actionRepo approvalActionRepo
 	orderOps   orderApprovalOps
+	// productCost recomputes COGS when an approval modifies line items (M2).
+	productCost productCostLookup
 }
 
-func NewApprovalService(orgRepo approvalOrgRepo, memberRepo approvalMemberRepo, actionRepo approvalActionRepo, orderOps orderApprovalOps) *ApprovalService {
-	return &ApprovalService{orgRepo: orgRepo, memberRepo: memberRepo, actionRepo: actionRepo, orderOps: orderOps}
+func NewApprovalService(orgRepo approvalOrgRepo, memberRepo approvalMemberRepo, actionRepo approvalActionRepo, orderOps orderApprovalOps, productCost productCostLookup) *ApprovalService {
+	return &ApprovalService{
+		orgRepo:     orgRepo,
+		memberRepo:  memberRepo,
+		actionRepo:  actionRepo,
+		orderOps:    orderOps,
+		productCost: productCost,
+	}
 }
 
 // ShouldRequireApproval checks if an order total exceeds the buyer org's approval threshold.
@@ -244,6 +255,13 @@ func (s *ApprovalService) RejectOrder(ctx context.Context, orderID, userID, comm
 }
 
 // ApproveOrderWithModifications approves after optionally adjusting line items.
+//
+// M2: previously this wrote the modified order, the status flip, and the audit
+// row as three separate calls outside any transaction, never recomputed COGS,
+// and never reconciled reserved stock against the changed quantities. Now the
+// modified financials (items, subtotal, total, COGS) are committed atomically
+// with the status flip and the audit row, and the repository reconciles any
+// already-reserved stock to the modified lines.
 func (s *ApprovalService) ApproveOrderWithModifications(ctx context.Context, orderID, userID, comment string, items []modelsOrder.OrderItem) error {
 	order, err := s.orderOps.FindByID(ctx, orderID)
 	if err != nil {
@@ -259,24 +277,28 @@ func (s *ApprovalService) ApproveOrderWithModifications(ctx context.Context, ord
 	if !can {
 		return fmt.Errorf("user is not authorized to approve this order")
 	}
+
+	action := "approved"
+	var fin *orderRepo.OrderConfirmFinancials
 	if len(items) > 0 {
-		order.Items = items
-		var subtotal float64
+		action = "modified"
+		subtotal := 0.0
 		for _, it := range items {
 			subtotal += float64(it.Quantity) * it.UnitPrice
 		}
-		order.Subtotal = subtotal
-		order.TotalAmount = subtotal + order.TaxAmount + order.ShippingAmount
-		if err := s.orderOps.Update(ctx, order); err != nil {
-			return err
+		totalAmount := money.RoundMoney(subtotal + order.TaxAmount + order.ShippingAmount)
+		cogs := 0.0
+		if s.productCost != nil {
+			cogs = ComputeOrderCOGS(ctx, items, s.productCost)
+		}
+		itemsArray := modelsOrder.OrderItemArray(items)
+		fin = &orderRepo.OrderConfirmFinancials{
+			Items:       &itemsArray,
+			COGS:        &cogs,
+			Subtotal:    &subtotal,
+			TotalAmount: &totalAmount,
+			Currency:    &order.Currency,
 		}
 	}
-	if err := s.orderOps.ApprovePendingOrder(ctx, orderID); err != nil {
-		return err
-	}
-	action := "approved"
-	if len(items) > 0 {
-		action = "modified"
-	}
-	return s.RecordApprovalAction(ctx, orderID, userID, action, comment)
+	return s.orderOps.ApprovePendingOrderWithModifications(ctx, orderID, userID, action, comment, fin)
 }

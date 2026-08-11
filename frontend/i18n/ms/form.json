@@ -56,7 +56,9 @@
         "5000-10000": "5,000 - 10,000 keping",
         "10000+": "10,000+ keping"
       }
-    }
+    },
+    "sample_request_message": "Saya ingin meminta sampel untuk produk ini.",
+    "whatsapp_interest": "Hai, saya berminat dengan produk {name} anda. Bolehkah anda memberikan maklumat lanjut?"
   },
   "contact": {
     "title": "Hubungi Kami",

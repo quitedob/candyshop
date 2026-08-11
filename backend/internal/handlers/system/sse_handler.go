@@ -93,7 +93,7 @@ func (h *Handler) HandleTradeChat(c *gin.Context) {
 	// Enrich query with trade + linked order context when tradeId is provided
 	tradeID := strings.TrimSpace(c.Query("tradeId"))
 	if tradeID != "" {
-		query = h.enrichTradeQuery(c.Request.Context(), tradeID, query)
+		query = h.enrichTradeQuery(c, tradeID, query)
 	}
 
 	ctx := c.Request.Context()
@@ -341,7 +341,10 @@ func sendSSEEvent(w gin.ResponseWriter, event SSEEvent) error {
 }
 
 // enrichTradeQuery 注入贸易头信息及关联订单行项目，供 TradeAgent 使用。
-func (h *Handler) enrichTradeQuery(ctx context.Context, tradeIDStr, query string) string {
+// Ownership is enforced exactly like resolveOrderForUser (IDOR #13): admins may
+// enrich any trade, a customer only their own. A non-owner gets no trade context,
+// so another customer's trade/order pricing cannot leak into an AI response.
+func (h *Handler) enrichTradeQuery(c *gin.Context, tradeIDStr, query string) string {
 	if h.services == nil || h.services.Trade == nil {
 		return fmt.Sprintf("[Trade ID: %s] %s", tradeIDStr, query)
 	}
@@ -349,13 +352,17 @@ func (h *Handler) enrichTradeQuery(ctx context.Context, tradeIDStr, query string
 	if err != nil {
 		return fmt.Sprintf("[Trade ID: %s] %s", tradeIDStr, query)
 	}
-	trade, err := h.services.Trade.GetTransaction(ctx, uint(id))
+	trade, err := h.services.Trade.GetTransaction(c.Request.Context(), uint(id))
 	if err != nil {
+		return fmt.Sprintf("[Trade ID: %s] %s", tradeIDStr, query)
+	}
+	userID, role := authContext(c)
+	if !isAdminPortalRole(role) && strings.TrimSpace(trade.UserID) != userID {
 		return fmt.Sprintf("[Trade ID: %s] %s", tradeIDStr, query)
 	}
 	var order *modelsOrder.Order
 	if h.services.Order != nil && trade.OrderID != nil && strings.TrimSpace(*trade.OrderID) != "" {
-		order, _ = h.services.Order.GetOrder(ctx, strings.TrimSpace(*trade.OrderID))
+		order, _ = h.services.Order.GetOrder(c.Request.Context(), strings.TrimSpace(*trade.OrderID))
 	}
 	if block := tradeSvc.BuildTradeOrderContextBlock(trade, order); block != "" {
 		return block + "\n\nUser question:\n" + query

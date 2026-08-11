@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -144,12 +145,15 @@ func (a *Adapter) postForm(ctx context.Context, path string, params map[string]s
 // stripeAmount converts a float amount to Stripe's smallest-currency-unit integer string.
 // For most currencies this is cents (×100). For zero-decimal currencies (JPY, KRW, etc.),
 // amount is already in the smallest unit.
+//
+// L6: math.Round (round-half-away-from-zero) instead of Sprintf("%.0f", ...),
+// which could round a fractional-cent partial down a cent.
 func stripeAmount(amount float64, currency string) string {
 	cur := strings.ToUpper(currency)
 	if zeroDecimal[cur] {
-		return fmt.Sprintf("%.0f", amount)
+		return fmt.Sprintf("%.0f", math.Round(amount))
 	}
-	return fmt.Sprintf("%.0f", amount*100)
+	return fmt.Sprintf("%.0f", math.Round(amount*100))
 }
 
 var zeroDecimal = map[string]bool{

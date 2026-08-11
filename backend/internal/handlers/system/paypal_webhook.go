@@ -17,11 +17,34 @@ func (h *Handler) HandlePayPalWebhook(c *gin.Context) {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "service_unavailable"})
 		return
 	}
+	if h.paypalAdapter == nil || !h.paypalAdapter.IsConfigured() {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "paypal_not_configured"})
+		return
+	}
 	payload, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "cannot_read_body"})
 		return
 	}
+
+	// Verify the PayPal transmission signature BEFORE any payment mutation.
+	// Previously this endpoint trusted any caller that knew a reference_id and
+	// could falsely confirm/fail payments. Verification fails closed: missing
+	// headers, an unknown webhook id, a stale transmission, or a bad signature
+	// all reject the event.
+	if _, err := h.paypalAdapter.VerifyWebhook(
+		payload,
+		c.GetHeader("PayPal-Transmission-Id"),
+		c.GetHeader("PayPal-Transmission-Time"),
+		c.GetHeader("PayPal-Transmission-Sig"),
+		c.GetHeader("PayPal-Cert-Url"),
+		c.GetHeader("PayPal-Auth-Algo"),
+	); err != nil {
+		log.Printf("paypal webhook: signature verification failed: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_signature"})
+		return
+	}
+
 	var event struct {
 		EventType string `json:"event_type"`
 		Resource  struct {

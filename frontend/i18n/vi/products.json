@@ -110,7 +110,25 @@
     "sample_specs": "Thông số mẫu",
     "sample_moq": "MOQ mẫu",
     "sample_lead_time": "Thời gian mẫu",
-    "sample_price": "Giá mẫu"
+    "sample_price": "Giá mẫu",
+    "scenarios": {
+      "retail": {
+        "title": "Bán lẻ và Siêu thị",
+        "description": "Hoàn hảo cho chuỗi bán lẻ và siêu thị"
+      },
+      "wholesale": {
+        "title": "Bán buôn & Phân phối",
+        "description": "Bao bì số lượng lớn cho bán buôn và phân phối"
+      },
+      "gift": {
+        "title": "Quà tặng & Cao cấp",
+        "description": "Bộ quà tặng đẹp cho ngày lễ và chương trình khuyến mãi"
+      },
+      "vending": {
+        "title": "Máy bán hàng tự động",
+        "description": "Kích thước phù hợp cho máy bán hàng tự động"
+      }
+    }
   },
   "filters": {
     "title": "Lọc sản phẩm",
@@ -128,6 +146,8 @@
     "flavor": "Hương vị",
     "shape": "Hình dạng",
     "packaging": "Bao bì",
-    "clear": "Xóa bộ lọc"
+    "clear": "Xóa bộ lọc",
+    "filled_match": "nhân filled filling 夹心",
+    "vitamin_match": "vitamin 维生素"
   }
 }

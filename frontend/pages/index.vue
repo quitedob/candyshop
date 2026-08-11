@@ -285,7 +285,7 @@
               <Icon name="lucide:send" size="18" />
               {{ orderingCtaLabel }}
             </NuxtLink>
-            <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-lg cta-banner__wa">
+            <a v-if="whatsappUrl" :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-lg cta-banner__wa">
               <WhatsAppIcon size="20" />
               {{ $t('whatsapp.us') }}
             </a>
@@ -335,6 +335,7 @@ const orderingCtaLabel = computed(() => {
 
 const whatsappUrl = computed(() => {
   const number = config.public.whatsappNumber
+  if (!number) return ''
   const message = encodeURIComponent(t('whatsapp.message'))
   return `https://wa.me/${number}?text=${message}`
 })

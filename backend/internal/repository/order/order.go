@@ -349,6 +349,106 @@ func (r *OrderRepository) ApprovePendingOrderWithAudit(ctx context.Context, id, 
 	})
 }
 
+// ApprovePendingOrderWithModifications atomically approves a pending_approval
+// order while applying line-item modifications, recomputed financials, and the
+// audit row in a single transaction (M2). If the order already holds reserved
+// stock, quantities are reconciled to the modified lines (release reductions,
+// reserve increases) so lines don't leak reserved stock or oversell.
+func (r *OrderRepository) ApprovePendingOrderWithModifications(ctx context.Context, id, userID, action, comment string, fin *OrderConfirmFinancials) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var order modelsOrder.Order
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("id = ? AND status = ?", id, modelsOrder.OrderStatusPendingApproval).
+			First(&order).Error; err != nil {
+			return err
+		}
+		now := time.Now()
+
+		if order.StockReserved && fin != nil && fin.Items != nil {
+			var all []*modelsOrder.StockTransaction
+			delta := stockDeltaBetween(order.Items, []modelsOrder.OrderItem(*fin.Items))
+			wid := warehouseIDFromOrder(&order)
+			for productID, diff := range delta {
+				if diff == 0 {
+					continue
+				}
+				var (
+					recs []*modelsOrder.StockTransaction
+					err  error
+				)
+				if diff > 0 {
+					recs, err = reserveStockForOrderLine(tx, wid, productID, diff, modelsOrder.StockReasonOrderUpdated, id, order.UserID, now)
+				} else {
+					recs, err = releaseStockForOrderLine(tx, wid, productID, -diff, modelsOrder.StockReasonOrderUpdated, id, order.UserID, now)
+				}
+				if err != nil {
+					return err
+				}
+				all = append(all, recs...)
+			}
+			if err := writeStockAuditEntries(tx, all); err != nil {
+				return err
+			}
+		}
+
+		updates := map[string]interface{}{
+			"status":     modelsOrder.OrderStatusPendingConfirm,
+			"updated_at": now,
+		}
+		if fin != nil {
+			if fin.Items != nil {
+				updates["items"] = *fin.Items
+			}
+			if fin.COGS != nil {
+				updates["cogs"] = *fin.COGS
+			}
+			if fin.Subtotal != nil {
+				updates["subtotal"] = *fin.Subtotal
+			}
+			if fin.TaxAmount != nil {
+				updates["tax_amount"] = *fin.TaxAmount
+			}
+			if fin.ShippingAmount != nil {
+				updates["shipping_amount"] = *fin.ShippingAmount
+			}
+			if fin.TotalAmount != nil {
+				updates["total_amount"] = *fin.TotalAmount
+			}
+			if fin.Currency != nil && *fin.Currency != "" {
+				updates["currency"] = *fin.Currency
+			}
+		}
+		res := tx.Model(&modelsOrder.Order{}).
+			Where("id = ? AND status = ?", id, modelsOrder.OrderStatusPendingApproval).
+			Updates(updates)
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		return tx.Create(&modelsOrder.ApprovalAction{
+			OrderID: id,
+			UserID:  userID,
+			Action:  action,
+			Comment: comment,
+		}).Error
+	})
+}
+
+// stockDeltaBetween returns per-product quantity deltas moving from old to
+// updated line sets (positive = more reserved, negative = less).
+func stockDeltaBetween(old, updated []modelsOrder.OrderItem) map[string]int {
+	delta := make(map[string]int, len(old)+len(updated))
+	for _, it := range old {
+		delta[it.ProductID] -= it.Quantity
+	}
+	for _, it := range updated {
+		delta[it.ProductID] += it.Quantity
+	}
+	return delta
+}
+
 // CancelPendingApprovalOrder cancels a pending_approval order and releases reserved stock if any.
 func (r *OrderRepository) CancelPendingApprovalOrder(ctx context.Context, orderID string) error {
 	return r.cancelPendingApprovalOrderWithOptionalAudit(ctx, orderID, "", "", "")
@@ -911,6 +1011,16 @@ func releaseStockForOrderLine(tx *gorm.DB, warehouseID, productID string, qty in
 	// Legacy path: restore product stock_quantity directly
 	if err := restoreLegacyProductStock(tx, productID, qty); err != nil {
 		return nil, err
+	}
+	// M1: when FEFO batches exist, the reserve path depleted product_batches.quantity
+	// for the order's lots. Restore the exact batches recorded in the reservation's
+	// stock_transaction rows so later FEFO orders don't fail "insufficient batch
+	// stock" despite aggregate stock being available.
+	var batchCount int64
+	if err := tx.Model(&modelsProduct.ProductBatch{}).Where("product_id = ?", productID).Count(&batchCount).Error; err == nil && batchCount > 0 {
+		if err := restoreFEFOBatches(tx, productID, refID); err != nil {
+			return nil, err
+		}
 	}
 	var p modelsProduct.Product
 	if err := tx.Where("id = ?", productID).First(&p).Error; err != nil {

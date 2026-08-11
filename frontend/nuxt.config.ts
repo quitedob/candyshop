@@ -280,7 +280,9 @@ export default defineNuxtConfig({
       apiBase: process.env.API_BASE_URL || '/api/v1',
       siteUrl: process.env.SITE_URL || 'https://candypro-oem.com',
       defaultOgImage: '/og-default.png',
-      whatsappNumber: process.env.WHATSAPP_NUMBER || '1234567890',
+      // No fake default: an unset number yields '' so no WhatsApp button links
+      // to a placeholder phone. Set WHATSAPP_NUMBER in env.
+      whatsappNumber: process.env.WHATSAPP_NUMBER || '',
       googleMapsApiKey: process.env.NUXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
       enableMultiWarehouse: process.env.NUXT_PUBLIC_ENABLE_MULTI_WAREHOUSE === 'true',
       jwtAccessMinutes: Number(process.env.NUXT_PUBLIC_JWT_ACCESS_MINUTES || 15),

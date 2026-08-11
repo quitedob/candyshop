@@ -3,10 +3,17 @@ package paypal
 import (
 	"bytes"
 	"context"
+	"crypto"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -243,6 +250,140 @@ func (a *Adapter) postJSON(ctx context.Context, path string, payload interface{}
 
 func formatAmount(amount float64) string {
 	return fmt.Sprintf("%.2f", amount)
+}
+
+// VerifyWebhook validates a PayPal webhook transmission against PayPal's
+// signature headers before any payment mutation is performed (mirrors
+// Stripe's ValidateWebhookPayload). Requires the adapter to have been
+// constructed with the registered webhook ID (New's webhookID argument).
+//
+// PayPal signs the concatenation
+//
+//	transmission_id + "|" + transmission_time + "|" + webhook_id + "|" + raw_body
+//
+// with RSA-SHA256 using the public certificate published at PayPal-Cert-Url.
+// The cert URL is restricted to PayPal-owned hosts to avoid SSRF, and the
+// transmission timestamp is required to be within ±5 minutes.
+func (a *Adapter) VerifyWebhook(payload []byte, transmissionID, transmissionTime, transmissionSig, certURL, authAlgo string) ([]byte, error) {
+	if a.webhookID == "" {
+		return nil, fmt.Errorf("paypal: webhook id not configured")
+	}
+	if strings.TrimSpace(transmissionID) == "" || strings.TrimSpace(transmissionTime) == "" || strings.TrimSpace(transmissionSig) == "" || strings.TrimSpace(certURL) == "" {
+		return nil, fmt.Errorf("paypal: missing webhook transmission headers")
+	}
+	algo := strings.TrimSpace(authAlgo)
+	if algo != "" && !strings.EqualFold(algo, "SHA256withRSA") {
+		return nil, fmt.Errorf("paypal: unsupported auth algo: %s", algo)
+	}
+
+	// Only accept certificates from PayPal-owned hosts (SSRF guard).
+	u, err := url.Parse(strings.TrimSpace(certURL))
+	if err != nil {
+		return nil, fmt.Errorf("paypal: invalid cert url: %w", err)
+	}
+	if u.Scheme != "https" {
+		return nil, fmt.Errorf("paypal: cert url must be https")
+	}
+	host := strings.ToLower(u.Hostname())
+	if host != "api.paypal.com" && host != "api.sandbox.paypal.com" {
+		return nil, fmt.Errorf("paypal: cert url host not allowed: %s", host)
+	}
+
+	// Reject stale transmissions.
+	tt, err := time.Parse(time.RFC3339, strings.TrimSpace(transmissionTime))
+	if err != nil {
+		return nil, fmt.Errorf("paypal: invalid transmission time: %w", err)
+	}
+	diff := time.Since(tt)
+	if diff > 5*time.Minute || diff < -5*time.Minute {
+		return nil, fmt.Errorf("paypal: transmission time outside tolerance window")
+	}
+
+	cert, err := a.fetchCert(u.String())
+	if err != nil {
+		return nil, err
+	}
+	pub, ok := cert.PublicKey.(*rsa.PublicKey)
+	if !ok {
+		return nil, fmt.Errorf("paypal: certificate public key is not RSA")
+	}
+
+	message := strings.Join([]string{
+		strings.TrimSpace(transmissionID),
+		strings.TrimSpace(transmissionTime),
+		a.webhookID,
+		string(payload),
+	}, "|")
+
+	// PayPal URL-encodes the signature header value; base64 may omit padding.
+	sig := transmissionSig
+	if unescaped, uerr := url.PathUnescape(transmissionSig); uerr == nil {
+		sig = unescaped
+	}
+	sigBytes, err := base64.StdEncoding.DecodeString(sig)
+	if err != nil {
+		sigBytes, err = base64.RawStdEncoding.DecodeString(sig)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("paypal: decode transmission signature: %w", err)
+	}
+
+	digest := sha256.Sum256([]byte(message))
+	if err := rsa.VerifyPKCS1v15(pub, crypto.SHA256, digest[:], sigBytes); err != nil {
+		return nil, fmt.Errorf("paypal: signature verification failed: %w", err)
+	}
+	return payload, nil
+}
+
+// certCache caches PayPal signing certificates keyed by cert URL. Certs rotate
+// rarely, so a 24h TTL avoids a network round-trip on every webhook.
+var (
+	certCacheMu sync.Mutex
+	certCache   = map[string]certCacheEntry{}
+)
+
+type certCacheEntry struct {
+	cert *x509.Certificate
+	at   time.Time
+}
+
+func (a *Adapter) fetchCert(certURL string) (*x509.Certificate, error) {
+	certCacheMu.Lock()
+	if e, ok := certCache[certURL]; ok && time.Since(e.at) < 24*time.Hour {
+		certCacheMu.Unlock()
+		return e.cert, nil
+	}
+	certCacheMu.Unlock()
+
+	req, err := http.NewRequest(http.MethodGet, certURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := a.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("paypal: fetch cert: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("paypal: fetch cert (%d): %s", resp.StatusCode, certURL)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	block, _ := pem.Decode(body)
+	if block == nil {
+		return nil, fmt.Errorf("paypal: no PEM block in certificate")
+	}
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("paypal: parse certificate: %w", err)
+	}
+
+	certCacheMu.Lock()
+	certCache[certURL] = certCacheEntry{cert: cert, at: time.Now()}
+	certCacheMu.Unlock()
+	return cert, nil
 }
 
 var _ payment.PaymentGateway = (*Adapter)(nil)

@@ -18,7 +18,7 @@
                 <Icon name="lucide:rocket" size="20" />
                 {{ isAuthenticated ? t('oem.start_project') : t('auth.register') }}
               </button>
-              <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-lg">
+              <a v-if="whatsappUrl" :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-lg">
                 <WhatsAppIcon size="20" />
                 {{ t('whatsapp.us') }}
               </a>
@@ -277,7 +277,7 @@
               <Icon name="lucide:rocket" size="20" />
               {{ isAuthenticated ? t('oem.start_project') : t('auth.register') }}
             </button>
-            <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-lg">
+            <a v-if="whatsappUrl" :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-lg">
               <WhatsAppIcon size="20" />
               {{ t('whatsapp.us') }}
             </a>
@@ -439,6 +439,7 @@ const inquireAbout = (solution: any) => {
 
 const whatsappUrl = computed(() => {
   const number = config.public.whatsappNumber
+  if (!number) return ''
   const message = encodeURIComponent(t('whatsapp.message'))
   return `https://wa.me/${number}?text=${message}`
 })

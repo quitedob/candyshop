@@ -2,12 +2,22 @@ package customer
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strings"
 
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
 	countrypkg "candypro/api/internal/pkg/country"
 	"candypro/api/internal/pkg/money"
+
+	"github.com/gin-gonic/gin"
+)
+
+// reprice errors — mapped by the confirm handler to HTTP responses.
+var (
+	errRepriceProductNotFound = errors.New("reprice: product not found")
+	errRepriceNoPrice         = errors.New("reprice: product has no price")
 )
 
 type checkoutPricingInput struct {
@@ -65,6 +75,89 @@ func (h *Handler) computeCheckoutPricing(ctx context.Context, in checkoutPricing
 
 	result.ShippingAmount = money.RoundMoney(result.ShippingAmount)
 	return result
+}
+
+// repriceOrderItems resolves server-authoritative unit prices for order items
+// from the catalog / the user's contract price list. Client-supplied unit
+// prices are never trusted — quantities and specifications are preserved but
+// every price is recomputed (H1/H2: bulk/requisition drafts confirm at zero
+// price, and confirm-time item overrides were accepted without re-pricing).
+// It returns the re-priced items, a product lookup map covering all items, and
+// the recomputed subtotal.
+func (h *Handler) repriceOrderItems(c *gin.Context, userID string, items []modelsOrder.OrderItem, country string) ([]modelsOrder.OrderItem, map[string]modelsProduct.Product, float64, error) {
+	priced := make([]modelsOrder.OrderItem, len(items))
+	copy(priced, items)
+
+	// Resolve the contract price list for the user (if applicable) — mirrors
+	// CustomerCreateOrder so draft and confirm share the same pricing source.
+	var contractPriceListID *string
+	if h.services.Price != nil && h.services.User != nil && h.services.Company != nil {
+		if usr, userErr := h.services.User.GetByID(c.Request.Context(), userID); userErr == nil && usr.CompanyID != nil {
+			if company, compErr := h.services.Company.GetCompany(c.Request.Context(), *usr.CompanyID); compErr == nil && company.PriceListID != nil {
+				contractPriceListID = company.PriceListID
+			}
+		}
+	}
+
+	// Batch-load products for every distinct item id.
+	productByID := make(map[string]modelsProduct.Product, len(priced))
+	uniqueIDs := make([]string, 0, len(priced))
+	idSeen := make(map[string]struct{}, len(priced))
+	for _, it := range priced {
+		pid := strings.TrimSpace(it.ProductID)
+		if pid == "" || it.Quantity < 1 {
+			continue
+		}
+		if _, ok := idSeen[pid]; ok {
+			continue
+		}
+		idSeen[pid] = struct{}{}
+		uniqueIDs = append(uniqueIDs, pid)
+	}
+	if len(uniqueIDs) > 0 {
+		batch, batchErr := h.services.Product.GetProductsByIDs(c.Request.Context(), uniqueIDs)
+		if batchErr != nil {
+			return nil, nil, 0, batchErr
+		}
+		for i := range batch {
+			productByID[batch[i].ID] = batch[i]
+		}
+	}
+
+	subtotal := 0.0
+	for i := range priced {
+		it := &priced[i]
+		pid := strings.TrimSpace(it.ProductID)
+		if pid == "" || it.Quantity < 1 {
+			continue
+		}
+		product, ok := productByID[pid]
+		if !ok {
+			return nil, nil, 0, fmt.Errorf("%w: %s", errRepriceProductNotFound, pid)
+		}
+		if status := strings.ToLower(strings.TrimSpace(product.Status)); status != "" && status != "active" {
+			return nil, nil, 0, fmt.Errorf("%w: %s", errRepriceProductNotFound, pid)
+		}
+		// Price resolution mirrors CustomerCreateOrder: contract price list →
+		// base price → checkout market-cost stack → channel multiplier.
+		var unitPrice float64
+		if contractPriceListID != nil && h.services.Price != nil {
+			if cp, priceErr := h.services.Price.GetPriceForProduct(c.Request.Context(), pid, *contractPriceListID, it.Quantity); priceErr == nil {
+				unitPrice = cp
+			}
+		}
+		if unitPrice <= 0 {
+			unitPrice = product.BasePrice
+		}
+		if unitPrice <= 0 {
+			return nil, nil, 0, fmt.Errorf("%w: %s", errRepriceNoPrice, pid)
+		}
+		unitPrice = h.services.Product.ResolveCheckoutUnitPrice(c.Request.Context(), &product, unitPrice, country)
+		unitPrice = h.applyChannelUnitPrice(c, unitPrice)
+		it.UnitPrice = unitPrice
+		subtotal += float64(it.Quantity) * unitPrice
+	}
+	return priced, productByID, subtotal, nil
 }
 
 // normalizeShippingState 将 US 州全名规范为两字母代码，提高税率匹配率

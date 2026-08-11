@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 )
 
 type paymentRepository interface {
@@ -31,6 +32,15 @@ type paymentRepository interface {
 type PaymentService struct {
 	repo      paymentRepository
 	orderRepo orderRepository
+	// checkoutMu serializes CreatePaymentWithBalanceCheck within this process.
+	// The repo's CreateWithBalanceCheck already re-reads the order's payments and
+	// inserts inside one DB transaction, but without a SELECT ... FOR UPDATE on the
+	// order row two concurrently started transactions can both observe the same
+	// pre-commit snapshot and both pass the balance check (M8). This mutex closes
+	// that window for single-process deployments. Full multi-instance safety needs
+	// a repo-level LockOrderForPayment (SELECT ... FOR UPDATE) in
+	// internal/repository/order/payment.go, which is proposed but not edited here.
+	checkoutMu sync.Mutex
 }
 
 // NewPaymentService creates a new PaymentService.
@@ -57,11 +67,35 @@ func (s *PaymentService) CreatePayment(ctx context.Context, payment *modelsOrder
 }
 
 // CreatePaymentWithBalanceCheck creates a payment with atomic balance enforcement.
+// The mutex serializes the balance-check + insert so concurrent checkout calls for
+// the same order cannot both pass when their combined amount exceeds the remaining
+// balance (M8). The amount is committed to the order's allocated balance before the
+// mutex is released.
 func (s *PaymentService) CreatePaymentWithBalanceCheck(ctx context.Context, orderTotalAmount float64, payment *modelsOrder.Payment) error {
 	if payment.Status == "" {
 		payment.Status = "pending"
 	}
+	s.checkoutMu.Lock()
+	defer s.checkoutMu.Unlock()
 	return s.repo.CreateWithBalanceCheck(ctx, orderTotalAmount, payment)
+}
+
+// AttachGatewayResult records the gateway transaction ID + raw response on a
+// persisted payment row after the gateway authorize call succeeds. The row is
+// created (status pending) BEFORE the gateway call (M8) so a gateway failure can
+// mark it failed instead of orphaning a collectible intent; the transaction ID is
+// back-filled here once the gateway returns.
+func (s *PaymentService) AttachGatewayResult(ctx context.Context, paymentID, txID, raw string) error {
+	pay, err := s.repo.FindByID(ctx, paymentID)
+	if err != nil {
+		return err
+	}
+	if pay.Status != modelsOrder.PaymentRecordStatusPending && pay.Status != modelsOrder.PaymentRecordStatusAuthorized {
+		return fmt.Errorf("cannot attach gateway result to payment with status '%s'", pay.Status)
+	}
+	pay.GatewayTransactionID = &txID
+	pay.GatewayMetadata = raw
+	return s.repo.Update(ctx, pay)
 }
 
 // ConfirmPayment confirms a payment and updates the order's payment status atomically.

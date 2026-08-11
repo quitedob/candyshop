@@ -272,7 +272,7 @@ func (h *Handler) CustomerCreateOrder(c *gin.Context) {
 	if !h.checkCompanyCreditLimit(c, userID, totalAmount) {
 		return
 	}
-	if !h.ensureActiveOrKYBBypassForAmount(c, userID, totalAmount, kyb.LineProductIDs(items)...) {
+	if !h.ensureActiveOrKYBBypassForAmount(c, userID, totalAmount, currency, kyb.LineProductIDs(items)...) {
 		return
 	}
 
@@ -490,33 +490,15 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 		return
 	}
 
-	// 确认时重新计算税/运费（地址或费率可能已变化）
-	// productByID was already populated above with a single batched query.
-	confirmPricing := h.computeCheckoutPricing(c.Request.Context(), checkoutPricingInput{
-		Items:           order.Items,
-		ProductByID:     productByID,
-		ShippingAddress: order.ShippingAddress,
-		Incoterms:       "FOB",
-		Subtotal:        order.Subtotal,
-		Currency:        order.Currency,
-	})
-	if h.services.Channel != nil && confirmPricing.TaxAmount <= 0 {
-		webstoreCh, _ := h.services.Channel.ResolveWebstoreChannel(c.Request.Context())
-		confirmPricing.TaxAmount = h.services.Channel.ComputeTaxAmount(order.Subtotal, webstoreCh, confirmPricing.TaxAmount)
-	}
-	confirmTotal := order.Subtotal + confirmPricing.TaxAmount + confirmPricing.ShippingAmount
-	if !h.ensureActiveOrKYBBypassForAmount(c, userID, confirmTotal, kyb.LineProductIDs(order.Items)...) {
-		return
-	}
-
 	now := time.Now()
 	itemsToConfirm := order.Items
 	if len(parsedReq.Items) > 0 {
 		itemsToConfirm = parsedReq.Items
-		// M-19: customer-supplied items override the server-authoritative draft.
-		// Emit a structured audit log so reconciliation tooling can detect
-		// post-quote line tampering. We don't reject the request — overrides are
-		// allowed for AI draft confirmation flow — but each diff is recorded.
+		// M-19: customer-supplied items may override the server-authoritative
+		// draft. Quantities/specifications are honored, but unit prices are
+		// ALWAYS re-priced server-side below (H2) — a client-supplied unitPrice
+		// can never reach the persisted order. Each diff is still recorded so
+		// reconciliation tooling can detect post-quote line tampering.
 		if itemsDifferFromOrder(order.Items, parsedReq.Items) {
 			slog.Warn("customer confirmed order with overridden items",
 				"orderID", orderID,
@@ -528,13 +510,51 @@ func (h *Handler) CustomerConfirmOrder(c *gin.Context) {
 			)
 		}
 	}
+
+	// H1/H2: re-price every line server-side from the catalog / contract price
+	// list. Bulk, requisition and reorder drafts are created with UnitPrice=0 —
+	// trusting order.Subtotal at confirm would ship goods at ~zero cost. Confirm
+	// overrides are honored for quantity but their unit prices are discarded.
+	repricedItems, repricedProducts, repricedSubtotal, priceErr := h.repriceOrderItems(c, userID, itemsToConfirm, order.ShippingAddress.Country)
+	if priceErr != nil {
+		switch {
+		case errors.Is(priceErr, errRepriceNoPrice):
+			response.ErrorResp(c, http.StatusUnprocessableEntity, "no_price")
+		case errors.Is(priceErr, errRepriceProductNotFound):
+			response.ErrorResp(c, http.StatusNotFound, "product_not_found")
+		default:
+			response.ErrorResp(c, http.StatusInternalServerError, "order_confirm_failed")
+		}
+		return
+	}
+	itemsToConfirm = repricedItems
+	productByID = repricedProducts
+
+	// 确认时重新计算税/运费（地址或费率可能已变化），基于重定价后的行与 subtotal。
+	confirmPricing := h.computeCheckoutPricing(c.Request.Context(), checkoutPricingInput{
+		Items:           itemsToConfirm,
+		ProductByID:     productByID,
+		ShippingAddress: order.ShippingAddress,
+		Incoterms:       "FOB",
+		Subtotal:        repricedSubtotal,
+		Currency:        order.Currency,
+	})
+	if h.services.Channel != nil && confirmPricing.TaxAmount <= 0 {
+		webstoreCh, _ := h.services.Channel.ResolveWebstoreChannel(c.Request.Context())
+		confirmPricing.TaxAmount = h.services.Channel.ComputeTaxAmount(repricedSubtotal, webstoreCh, confirmPricing.TaxAmount)
+	}
+	confirmTotal := repricedSubtotal + confirmPricing.TaxAmount + confirmPricing.ShippingAmount
+	if !h.ensureActiveOrKYBBypassForAmount(c, userID, confirmTotal, order.Currency, kyb.LineProductIDs(itemsToConfirm)...) {
+		return
+	}
+
 	// H-15: compute financials BEFORE the atomic confirm so they land in the
 	// same transaction as the status flip and stock reservation. Previously the
 	// confirm tx and the financial update were separate, leaving stock reserved
 	// with cogs=0 if the second update failed.
 	taxAmount := money.RoundMoney(confirmPricing.TaxAmount)
 	shippingAmount := money.RoundMoney(confirmPricing.ShippingAmount)
-	subtotal := order.Subtotal
+	subtotal := money.RoundMoney(repricedSubtotal)
 	totalAmount := money.RoundMoney(subtotal + taxAmount + shippingAmount)
 	currency := order.Currency
 	if confirmPricing.Currency != "" {

@@ -80,7 +80,7 @@
           <h2>{{ t('cases_detail.cta_title') }}</h2>
           <p>{{ t('cases_detail.cta_subtitle') }}</p>
           <div class="cta__actions">
-            <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-highlight">
+            <a v-if="whatsappUrl" :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-highlight">
               <WhatsAppIcon size="20" />
               {{ t('whatsapp.us') }}
             </a>
@@ -134,6 +134,7 @@ const filteredCases = computed(() => {
 
 const whatsappUrl = computed(() => {
   const number = config.public.whatsappNumber
+  if (!number) return ''
   const message = encodeURIComponent('Hi, I\'m interested in learning about your case studies and success stories.')
   return `https://wa.me/${number}?text=${message}`
 })

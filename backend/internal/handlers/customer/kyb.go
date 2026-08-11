@@ -4,31 +4,63 @@ import (
 	modelsOrder "candypro/api/internal/models/order"
 	"candypro/api/internal/pkg/kyb"
 	"candypro/api/internal/pkg/response"
+	"math"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
-// cartSubtotalUSD calculates cart line total (unit price * quantity). Non-USD lines counted at face value.
-func cartSubtotalUSD(items []modelsOrder.CartItem) float64 {
+// isUSD reports whether a cart/order currency is USD; empty currency is treated
+// as USD, the platform default.
+func isUSD(currency string) bool {
+	c := strings.ToUpper(strings.TrimSpace(currency))
+	return c == "" || c == "USD"
+}
+
+// usdCapValue converts a monetary amount to its USD-equivalent using the
+// configured exchange rates (base USD). Amounts already in USD pass through;
+// empty currency is treated as USD. A currency without a configured rate fails
+// closed (+Inf) so it can never satisfy a USD cap (M6: non-USD bypass).
+func usdCapValue(rates map[string]float64, currency string, amount float64) float64 {
+	cur := strings.ToUpper(strings.TrimSpace(currency))
+	if cur == "" || cur == "USD" {
+		return amount
+	}
+	rate, ok := rates[cur]
+	if !ok || rate <= 0 {
+		return math.Inf(1)
+	}
+	return amount / rate
+}
+
+// cartSubtotalUSD calculates the USD-equivalent cart line total (unit price *
+// quantity) for the KYB cap comparison. Non-USD lines are converted with the
+// configured exchange rates; a line whose currency has no known rate fails
+// closed (+Inf) so a weaker-currency cart can never slip under the USD cap (M6).
+func cartSubtotalUSD(rates map[string]float64, items []modelsOrder.CartItem) float64 {
 	var s float64
 	for _, it := range items {
-		if strings.EqualFold(strings.TrimSpace(it.Currency), "USD") || strings.TrimSpace(it.Currency) == "" {
-			s += float64(it.Quantity) * it.UnitPrice
-		} else {
-			s += float64(it.Quantity) * it.UnitPrice
-		}
+		s += usdCapValue(rates, it.Currency, float64(it.Quantity)*it.UnitPrice)
 	}
 	return s
 }
 
-// projectedCartUSDAfterAdd estimates USD subtotal after adding/merging a line.
-func projectedCartUSDAfterAdd(items []modelsOrder.CartItem, productID string, addQty int, unitPrice float64) float64 {
+// projectedCartUSDAfterAdd estimates the USD subtotal after adding/merging a
+// line. The new line's currency and every existing line's currency must be USD
+// (empty = USD); otherwise the projection fails closed (+Inf) because the total
+// cannot be priced in USD (M6).
+func projectedCartUSDAfterAdd(items []modelsOrder.CartItem, productID string, addQty int, unitPrice float64, currency string) float64 {
+	if !isUSD(currency) {
+		return math.Inf(1)
+	}
 	pid := strings.TrimSpace(productID)
 	var oldQty int
 	var sum float64
 	for _, it := range items {
+		if !isUSD(it.Currency) {
+			return math.Inf(1)
+		}
 		if strings.TrimSpace(it.ProductID) == pid {
 			oldQty = it.Quantity
 			continue
@@ -39,10 +71,14 @@ func projectedCartUSDAfterAdd(items []modelsOrder.CartItem, productID string, ad
 	return sum
 }
 
-// projectedCartUSDAfterQtyChange estimates USD subtotal after changing a line's quantity.
+// projectedCartUSDAfterQtyChange estimates USD subtotal after changing a line's
+// quantity. Any line priced in a non-USD currency fails closed (+Inf) (M6).
 func projectedCartUSDAfterQtyChange(items []modelsOrder.CartItem, itemID uint, newQty int) float64 {
 	var sum float64
 	for _, it := range items {
+		if !isUSD(it.Currency) {
+			return math.Inf(1)
+		}
 		qty := it.Quantity
 		if it.ID == itemID {
 			qty = newQty
@@ -53,7 +89,8 @@ func projectedCartUSDAfterQtyChange(items []modelsOrder.CartItem, itemID uint, n
 }
 
 // ensureActiveOrKYBBypassForAmount allows active users; pending users are subject to KYB bypass limits.
-func (h *Handler) ensureActiveOrKYBBypassForAmount(c *gin.Context, userID string, orderTotalUSD float64, lineProductIDs ...string) bool {
+// currency is the ISO currency the orderTotal is denominated in ("" = USD).
+func (h *Handler) ensureActiveOrKYBBypassForAmount(c *gin.Context, userID string, orderTotal float64, currency string, lineProductIDs ...string) bool {
 	if h.services == nil || h.services.User == nil {
 		response.ServiceUnavailableResp(c)
 		return false
@@ -71,6 +108,13 @@ func (h *Handler) ensureActiveOrKYBBypassForAmount(c *gin.Context, userID string
 		tier.BypassMaxOrderUSD = h.cfg.KYB.BypassMaxOrderUSD
 		tier.BypassSampleMaxOrderUSD = h.cfg.KYB.BypassSampleMaxOrderUSD
 		tier.SampleProductIDs = h.cfg.KYB.SampleProductIDs
+	}
+	// Convert to a common currency (USD) before comparing against the caps.
+	// Non-USD totals use the configured exchange rates; unsupported currencies
+	// fail closed (+Inf) and are never allowed to bypass (M6).
+	orderTotalUSD := orderTotal
+	if h.cfg != nil {
+		orderTotalUSD = usdCapValue(h.cfg.ExchangeRates, currency, orderTotal)
 	}
 	if !kyb.PendingOrderAllowed(tier, orderTotalUSD, lineProductIDs) {
 		response.ErrorResp(c, http.StatusForbidden, "kyb_order_limit_exceeded")

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	modelsOrder "candypro/api/internal/models/order"
+	orderRepo "candypro/api/internal/repository/order"
 	orderSvc "candypro/api/internal/services/order"
 )
 
@@ -45,6 +46,10 @@ func (f *fakeApprovalOrderRepo) Update(_ context.Context, order *modelsOrder.Ord
 }
 
 func (f *fakeApprovalOrderRepo) ApprovePendingOrderWithAudit(_ context.Context, id, _, _, _ string) error {
+	return f.ApprovePendingOrder(context.Background(), id)
+}
+
+func (f *fakeApprovalOrderRepo) ApprovePendingOrderWithModifications(_ context.Context, id, _, _, _ string, _ *orderRepo.OrderConfirmFinancials) error {
 	return f.ApprovePendingOrder(context.Background(), id)
 }
 
@@ -120,7 +125,7 @@ func TestApproveOrderPendingToPendingConfirm(t *testing.T) {
 		purchaser: modelsOrder.OrgMember{UserID: "buyer-1", OrganizationID: 1, Role: modelsOrder.OrgRolePurchaser},
 		approver:  modelsOrder.OrgMember{UserID: "mgr-1", OrganizationID: 1, Role: modelsOrder.OrgRoleApprover},
 	}
-	svc := orderSvc.NewApprovalService(&fakeOrgRepoImpl{}, members, &fakeActionRepo{}, repo)
+	svc := orderSvc.NewApprovalService(&fakeOrgRepoImpl{}, members, &fakeActionRepo{}, repo, nil)
 
 	if err := svc.ApproveOrder(context.Background(), "ord-1", "mgr-1", "ok"); err != nil {
 		t.Fatalf("ApproveOrder failed: %v", err)
@@ -141,7 +146,7 @@ func TestRejectOrderPendingApproval(t *testing.T) {
 		purchaser: modelsOrder.OrgMember{UserID: "buyer-1", OrganizationID: 1, Role: modelsOrder.OrgRolePurchaser},
 		approver:  modelsOrder.OrgMember{UserID: "mgr-1", OrganizationID: 1, Role: modelsOrder.OrgRoleApprover},
 	}
-	svc := orderSvc.NewApprovalService(&fakeOrgRepoImpl{}, members, &fakeActionRepo{}, repo)
+	svc := orderSvc.NewApprovalService(&fakeOrgRepoImpl{}, members, &fakeActionRepo{}, repo, nil)
 
 	if err := svc.RejectOrder(context.Background(), "ord-2", "mgr-1", "budget exceeded"); err != nil {
 		t.Fatalf("RejectOrder failed: %v", err)

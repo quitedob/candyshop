@@ -110,7 +110,25 @@
     "sample_specs": "サンプル仕様",
     "sample_moq": "サンプルMOQ",
     "sample_lead_time": "サンプルリードタイム",
-    "sample_price": "サンプル価格"
+    "sample_price": "サンプル価格",
+    "scenarios": {
+      "retail": {
+        "title": "小売・スーパーマーケット",
+        "description": "小売チェーンやスーパーマーケットに最適"
+      },
+      "wholesale": {
+        "title": "卸売・流通",
+        "description": "卸売・流通向けの大容量パッケージ"
+      },
+      "gift": {
+        "title": "ギフト・プレミアム",
+        "description": "ホリデーやプロモーションに最適なギフトセット"
+      },
+      "vending": {
+        "title": "自動販売機",
+        "description": "自動販売機に適したサイズ"
+      }
+    }
   },
   "filters": {
     "title": "製品を絞り込む",
@@ -128,6 +146,8 @@
     "flavor": "フレーバー",
     "shape": "形状",
     "packaging": "包装",
-    "clear": "フィルターをクリア"
+    "clear": "フィルターをクリア",
+    "filled_match": "フィリング filled filling 夹心",
+    "vitamin_match": "ビタミン vitamin 维生素"
   }
 }

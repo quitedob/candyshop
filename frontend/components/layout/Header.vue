@@ -75,8 +75,9 @@
             </template>
           </ClientOnly>
 
-          <!-- WhatsApp -->
+          <!-- WhatsApp (hidden when no number is configured) -->
           <a
+            v-if="whatsappUrl"
             :href="whatsappUrl"
             target="_blank"
             rel="noopener noreferrer"
@@ -260,6 +261,7 @@ const navItems = [
 
 const whatsappUrl = computed(() => {
   const num = config.public.whatsappNumber
+  if (!num) return ''
   return `https://wa.me/${num}?text=${encodeURIComponent(t('whatsapp.message'))}`
 })
 
@@ -307,7 +309,9 @@ watch(() => route.path, closeMenu)
 
 .header--scrolled,
 .header--menu-open {
-  background: rgba(255, 255, 255, 0.98);
+  /* H4: hardcoded white bg + near-white nav made the scrolled marketing header
+     unreadable in dark mode — use the theme surface token so it adapts. */
+  background: var(--color-bg);
   backdrop-filter: blur(8px);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }

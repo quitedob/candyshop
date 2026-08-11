@@ -110,7 +110,25 @@
     "sample_specs": "Spesifikasi Sampel",
     "sample_moq": "MOQ Sampel",
     "sample_lead_time": "Lead Time Sampel",
-    "sample_price": "Harga Sampel"
+    "sample_price": "Harga Sampel",
+    "scenarios": {
+      "retail": {
+        "title": "Ritel & Supermarket",
+        "description": "Cocok untuk jaringan ritel dan supermarket"
+      },
+      "wholesale": {
+        "title": "Grosir & Distribusi",
+        "description": "Kemasan curah untuk grosir dan distribusi"
+      },
+      "gift": {
+        "title": "Hadiah & Premium",
+        "description": "Paket hadiah cantik untuk hari raya dan promosi"
+      },
+      "vending": {
+        "title": "Mesin Penjual Otomatis",
+        "description": "Ukuran untuk mesin penjual otomatis"
+      }
+    }
   },
   "filters": {
     "title": "Filter Produk",
@@ -128,6 +146,8 @@
     "flavor": "Rasa",
     "shape": "Bentuk",
     "packaging": "Kemasan",
-    "clear": "Hapus Filter"
+    "clear": "Hapus Filter",
+    "filled_match": "isian filled filling 夹心",
+    "vitamin_match": "vitamin 维生素"
   }
 }

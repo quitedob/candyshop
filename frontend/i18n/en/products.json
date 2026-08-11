@@ -110,7 +110,25 @@
     "sample_specs": "Sample Specifications",
     "sample_moq": "Sample MOQ",
     "sample_lead_time": "Sample Lead Time",
-    "sample_price": "Sample Price"
+    "sample_price": "Sample Price",
+    "scenarios": {
+      "retail": {
+        "title": "Retail & Supermarket",
+        "description": "Perfect for retail chains and supermarkets"
+      },
+      "wholesale": {
+        "title": "Wholesale & Distribution",
+        "description": "Bulk packaging for wholesale and distribution"
+      },
+      "gift": {
+        "title": "Gift & Premium",
+        "description": "Beautiful gift sets for holidays and promotions"
+      },
+      "vending": {
+        "title": "Vending Machine",
+        "description": "Sized for automatic vending machines"
+      }
+    }
   },
   "filters": {
     "title": "Filter Products",
@@ -128,6 +146,8 @@
     "flavor": "Flavor",
     "shape": "Shape",
     "packaging": "Packaging",
-    "clear": "Clear Filters"
+    "clear": "Clear Filters",
+    "filled_match": "filled filling 夹心",
+    "vitamin_match": "vitamin 维生素"
   }
 }

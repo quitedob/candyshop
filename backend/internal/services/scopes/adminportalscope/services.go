@@ -114,7 +114,7 @@ func New(repos *repositoryCommon.AdminPortalRepositories, cfg *config.Config, au
 			Tax:              order.NewTaxService(repos.Tax),
 		Notification:     notificationsvc.NewNotificationService(repos.Notification),
 		Webhook:          order.NewWebhookService(repos.Webhook),
-		Approval:         order.NewApprovalService(repos.BuyerOrg, repos.OrgMember, repos.ApprovalAction, repos.Order),
+		Approval:         order.NewApprovalService(repos.BuyerOrg, repos.OrgMember, repos.ApprovalAction, repos.Order, productSvc),
 		HookConfig:       order.NewHookConfigService(repos.HookConfig, repos.HookExecution),
 		EventBus:         order.NewEventBus(repos.Event, repos.HookConfig, repos.HookExecution, order.NewWebhookService(repos.Webhook)),
 	}

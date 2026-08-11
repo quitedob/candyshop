@@ -199,7 +199,7 @@ func (h *Handler) CustomerAIAssistOrder(c *gin.Context) {
 		UpdatedAt: now,
 	}
 
-	if !h.ensureActiveOrKYBBypassAmount(c, userID, order.TotalAmount, kyb.LineProductIDs(items)...) {
+	if !h.ensureActiveOrKYBBypassAmount(c, userID, order.TotalAmount, currency, kyb.LineProductIDs(items)...) {
 		return
 	}
 

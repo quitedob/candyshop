@@ -83,7 +83,7 @@
                 </div>
                 <div>
                   <strong>{{ t('contact.whatsapp') }}</strong>
-                  <p><a :href="whatsappUrl" target="_blank" rel="noopener noreferrer">+86 21 6731 0088</a></p>
+                  <p><a v-if="whatsappUrl" :href="whatsappUrl" target="_blank" rel="noopener noreferrer">+86 21 6731 0088</a></p>
                 </div>
               </div>
 
@@ -187,7 +187,7 @@
             </div>
 
             <!-- WhatsApp CTA -->
-            <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="whatsapp-card">
+            <a v-if="whatsappUrl" :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="whatsapp-card">
               <WhatsAppIcon size="48" />
               <div class="whatsapp-card__content">
                 <h3>{{ t('whatsapp.us') }}</h3>
@@ -324,6 +324,7 @@ const toggleFaq = (index: number) => {
 // WhatsApp URL
 const whatsappUrl = computed(() => {
   const number = config.public.whatsappNumber
+  if (!number) return ''
   const message = encodeURIComponent(t('whatsapp.message'))
   return `https://wa.me/${number}?text=${message}`
 })

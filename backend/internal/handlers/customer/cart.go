@@ -247,9 +247,9 @@ func (h *Handler) CustomerAddToCart(c *gin.Context) {
 		Specifications: req.Specifications,
 	}
 	cartItems, _ := h.services.Cart.GetCart(c.Request.Context(), userID)
-	proj := projectedCartUSDAfterAdd(cartItems, req.ProductID, qty, unitPrice)
+	proj := projectedCartUSDAfterAdd(cartItems, req.ProductID, qty, unitPrice, currency)
 	pids := kyb.CartLineProductIDs(cartItems, req.ProductID)
-	if !h.ensureActiveOrKYBBypassForAmount(c, userID, proj, pids...) {
+	if !h.ensureActiveOrKYBBypassForAmount(c, userID, proj, currency, pids...) {
 		return
 	}
 
@@ -289,7 +289,14 @@ func (h *Handler) CustomerUpdateCartItem(c *gin.Context) {
 
 	cartItems, _ := h.services.Cart.GetCart(c.Request.Context(), userID)
 	proj := projectedCartUSDAfterQtyChange(cartItems, uint(itemID), req.Quantity)
-	if !h.ensureActiveOrKYBBypassForAmount(c, userID, proj, kyb.CartLineProductIDs(cartItems)...) {
+	itemCurrency := ""
+	for _, it := range cartItems {
+		if it.ID == uint(itemID) {
+			itemCurrency = it.Currency
+			break
+		}
+	}
+	if !h.ensureActiveOrKYBBypassForAmount(c, userID, proj, itemCurrency, kyb.CartLineProductIDs(cartItems)...) {
 		return
 	}
 
@@ -528,7 +535,12 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 	hasOfficialEvidence := len(compliance.Violations) == 0 && len(compliance.Warnings) == 0
 	couponCode := strings.TrimSpace(req.CouponCode)
 	if couponCode != "" && h.services.Coupon != nil {
-		if _, _, cerr := h.services.Coupon.PreviewCouponDiscount(c.Request.Context(), couponCode, userID, checkoutTotal); cerr != nil {
+		// M7: validate against the coupon's real tax base — the pre-coupon
+		// subtotal — so MinOrderAmount and CalculateDiscount match the values
+		// ApplyCouponToCart will use (order.Subtotal). Tax and shipping are not
+		// part of the discount base; passing checkoutTotal here would reject or
+		// accept coupons inconsistently with the later apply step.
+		if _, _, cerr := h.services.Coupon.PreviewCouponDiscount(c.Request.Context(), couponCode, userID, subtotal); cerr != nil {
 			response.ErrorResp(c, http.StatusBadRequest, "coupon_apply_failed")
 			return
 		}
@@ -579,7 +591,7 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 	}
 	h.assignOrderWarehouseID(c, &order.WarehouseID)
 
-	if !h.ensureActiveOrKYBBypassForAmount(c, userID, subtotal, kyb.CartLineProductIDs(items)...) {
+	if !h.ensureActiveOrKYBBypassForAmount(c, userID, subtotal, shippingCurrency, kyb.CartLineProductIDs(items)...) {
 		return
 	}
 
@@ -599,8 +611,22 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 	}
 
 	if couponCode != "" && h.services.Coupon != nil {
-		if _, cerr := h.services.Coupon.ApplyCouponToCart(c.Request.Context(), order.ID, userID, couponCode); cerr != nil {
+		disc, cerr := h.services.Coupon.ApplyCouponToCart(c.Request.Context(), order.ID, userID, couponCode)
+		if cerr != nil {
 			slog.Warn("checkout coupon apply failed after order create", "orderId", order.ID, "error", cerr)
+		} else if disc != nil {
+			// M7: mirror the repository's post-discount pricing so the checkout
+			// response snapshot reflects the same net-based tax and total that
+			// ApplyCouponToCart just persisted (total = subtotal - discount +
+			// tax + shipping, tax booked on the discounted subtotal).
+			netSubtotal := order.Subtotal - disc.Amount
+			if netSubtotal < 0 {
+				netSubtotal = 0
+			}
+			if order.Subtotal > 0 {
+				order.TaxAmount = money.RoundMoney(order.TaxAmount * netSubtotal / order.Subtotal)
+			}
+			order.TotalAmount = money.RoundMoney(netSubtotal + order.TaxAmount + order.ShippingAmount)
 		}
 	}
 

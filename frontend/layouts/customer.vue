@@ -465,6 +465,16 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
+/* H4: the sidebar is authored for a dark surface (white text, white logo,
+   translucent-white overlays). Dark mode flips --color-primary-container to a
+   light #e6e1e0, which would render every sidebar label invisible. Keep the
+   sidebar on the dark surface in both themes by re-scoping the token here. */
+.dark .customer-sidebar {
+  --color-primary-container: #1e1b19;
+  --color-primary-container-rgb: 30, 27, 25;
+  --color-on-primary-container: #888380;
+}
+
 .customer-sidebar--collapsed {
   width: 72px;
 }

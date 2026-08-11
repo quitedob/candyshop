@@ -61,7 +61,7 @@
             <NuxtLink :to="localePath('/contact')" class="btn btn-highlight btn-lg">
               {{ $t('contact.send_inquiry') }}
             </NuxtLink>
-            <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-lg">
+            <a v-if="whatsappUrl" :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-lg">
               <WhatsAppIcon size="20" />
               {{ $t('whatsapp.us') }}
             </a>
@@ -112,6 +112,7 @@ const filteredFaqs = computed(() => {
 
 const whatsappUrl = computed(() => {
   const number = config.public.whatsappNumber
+  if (!number) return ''
   const message = encodeURIComponent(t('whatsapp.message'))
   return `https://wa.me/${number}?text=${message}`
 })

@@ -81,7 +81,30 @@ func (r *FulfillmentRepository) Create(ctx context.Context, fulfillment *modelsO
 			return err
 		}
 
-		// Update order status based on fulfillment
+		// Update order status based on fulfillment.
+		//
+		// M4: enforce the order state machine before shipping. The legal flow is
+		// confirmed -> production -> shipped / partially_shipped, so a confirmed
+		// order is advanced to production first, and any state that cannot legally
+		// ship (pending, pending_approval, cancelled, delivered, ...) is rejected
+		// here. This runs inside the same transaction as the fulfillment create and
+		// the order row lock acquired above, keeping the transition atomic.
+		switch order.Status {
+		case modelsOrder.OrderStatusConfirmed:
+			// Advance through production before shipping.
+			if err := tx.Model(&order).Updates(map[string]interface{}{
+				"status":     modelsOrder.OrderStatusProduction,
+				"updated_at": now,
+			}).Error; err != nil {
+				return err
+			}
+			order.Status = modelsOrder.OrderStatusProduction
+		case modelsOrder.OrderStatusProduction, modelsOrder.OrderStatusPartiallyShipped:
+			// Already in a ship-eligible state.
+		default:
+			return fmt.Errorf("order %s cannot be shipped from status %s", order.ID, order.Status)
+		}
+
 		allFulfilled := true
 		anyFulfilled := false
 		for _, oi := range order.Items {
@@ -101,6 +124,10 @@ func (r *FulfillmentRepository) Create(ctx context.Context, fulfillment *modelsO
 			newStatus = modelsOrder.OrderStatusPartiallyShipped
 		}
 		if newStatus != order.Status {
+			// Belt-and-suspenders: the transition matrix must permit this move.
+			if err := modelsOrder.ValidateOrderStatusTransition(order.Status, newStatus); err != nil {
+				return err
+			}
 			if err := tx.Model(&order).Updates(map[string]interface{}{
 				"status":     newStatus,
 				"updated_at": now,

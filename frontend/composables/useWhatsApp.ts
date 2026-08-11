@@ -26,17 +26,20 @@ export const useWhatsApp = () => {
   const { t } = useI18n()
 
   /**
-   * Get the configured WhatsApp number
+   * Get the configured WhatsApp number. Returns '' (never a placeholder) when
+   * unset, so callers must not link to a fake phone.
    */
   const getWhatsAppNumber = (): string => {
-    return config.public.whatsappNumber ? String(config.public.whatsappNumber) : '1234567890'
+    return config.public.whatsappNumber ? String(config.public.whatsappNumber) : ''
   }
 
   /**
-   * Generate a WhatsApp chat link
+   * Generate a WhatsApp chat link. Returns '' when no phone number is
+   * configured so consumers can hide the button instead of linking nowhere.
    */
   const createWhatsAppLink = (options: WhatsAppOptions = {}): string => {
     const phone = options.phone || getWhatsAppNumber()
+    if (!phone) return ''
 
     // Build message
     let message = options.message || t('whatsapp.message')
@@ -57,6 +60,7 @@ export const useWhatsApp = () => {
    */
   const createInquiryLink = (info: WhatsAppContactInfo): string => {
     const phone = info.phone || getWhatsAppNumber()
+    if (!phone) return ''
 
     let message = t('whatsapp.inquiry_intro')
 
@@ -199,6 +203,8 @@ export const useWhatsAppFloating = () => {
 
   const whatsappNumber = ref(getWhatsAppNumber())
   const whatsappUrl = computed(() => createWhatsAppLink())
+  // True only when a real number is configured — buttons should hide otherwise.
+  const hasWhatsApp = computed(() => Boolean(whatsappNumber.value))
 
   // Pulse animation on scroll to draw attention
   const shouldPulse = ref(false)
@@ -231,6 +237,7 @@ export const useWhatsAppFloating = () => {
   return {
     whatsappNumber,
     whatsappUrl,
+    hasWhatsApp,
     shouldPulse,
     triggerPulse,
     handleClick

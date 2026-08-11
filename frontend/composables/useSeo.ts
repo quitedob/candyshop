@@ -250,13 +250,17 @@ export const useLocalBusinessSchema = () => {
     name: 'CandyPro OEM Manufacturing',
     image: new URL('/factory.jpg', siteUrl).href,
     url: siteUrl,
-    telephone: '+86-123-456-7890',
+    // Real company data — keep in sync with pages/contact.vue + Footer. The
+    // previous fabricated telephone/address ("123 Industrial Zone", "Sweet City")
+    // contradicted the contact page and misled search engines.
+    telephone: '+86 21 6731 0088',
+    email: 'sales@candypro.com',
     address: {
       '@type': 'PostalAddress',
-      streetAddress: '123 Industrial Zone',
-      addressLocality: 'Sweet City',
-      addressRegion: 'SC',
-      postalCode: '123456',
+      streetAddress: 'No. 88 Shipin Road, Jinshan District',
+      addressLocality: 'Shanghai',
+      addressRegion: 'SH',
+      postalCode: '201500',
       addressCountry: 'CN'
     },
     geo: {

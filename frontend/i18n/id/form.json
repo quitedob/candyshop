@@ -56,7 +56,9 @@
         "5000-10000": "5.000 - 10.000 pcs",
         "10000+": "10.000+ pcs"
       }
-    }
+    },
+    "sample_request_message": "Saya ingin meminta sampel untuk produk ini.",
+    "whatsapp_interest": "Halo, saya tertarik dengan produk {name} Anda. Bisakah Anda memberikan informasi lebih lanjut?"
   },
   "contact": {
     "title": "Hubungi Kami",

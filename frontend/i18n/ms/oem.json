@@ -123,6 +123,45 @@
     "shape": "Bentuk",
     "packaging": "Pembungkusan",
     "target_market": "Pasaran Sasaran",
-    "notes": "Nota"
+    "notes": "Nota",
+    "packaging_options": {
+      "bag": {
+        "name": "Beg Berdiri",
+        "description": "Pembungkusan fleksibel dengan kunci zip",
+        "moq": "1,000 pcs"
+      },
+      "jar": {
+        "name": "Balang Plastik",
+        "description": "Bekas boleh ditutup semula",
+        "moq": "500 pcs"
+      },
+      "box": {
+        "name": "Kotak Hadiah",
+        "description": "Kotak persembahan premium",
+        "moq": "300 pcs"
+      },
+      "bulk": {
+        "name": "Beg Pukal",
+        "description": "Pembungkusan kuantiti besar",
+        "moq": "100 pcs"
+      }
+    },
+    "oem_options": {
+      "flavors": {
+        "summary": "Pilih daripada julat kami atau bangunkan tersuai",
+        "description": "Kami menawarkan lebih 50 perisa buah atau boleh mencipta campuran tersuai mengikut keperluan anda.",
+        "moq": "3,000 pcs"
+      },
+      "shapes": {
+        "summary": "Bentuk standard atau acuan tersuai",
+        "description": "Daripada beruang dan buah klasik kepada bentuk jenama unik anda.",
+        "moq": "5,000 pcs"
+      },
+      "colors": {
+        "summary": "Warna semula jadi atau tiruan",
+        "description": "Tersedia pelbagai pilihan warna menggunakan ekstrak buah semula jadi atau warna gred makanan.",
+        "moq": "2,000 pcs"
+      }
+    }
   }
 }

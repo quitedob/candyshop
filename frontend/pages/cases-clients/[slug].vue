@@ -152,7 +152,7 @@
             <h2>{{ t('cases_detail.cta_title') }}</h2>
             <p>{{ t('cases_detail.cta_subtitle') }}</p>
             <div class="cta__actions">
-              <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-highlight btn-lg">
+              <a v-if="whatsappUrl" :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-highlight btn-lg">
                 <WhatsAppIcon size="20" />
                 {{ t('whatsapp.us') }}
               </a>
@@ -309,6 +309,7 @@ const breadcrumbItems = computed(() => {
 
 const whatsappUrl = computed(() => {
   const number = config.public.whatsappNumber
+  if (!number) return ''
   const client = tField(caseStudy.value, 'client') || t('cases_detail.fallback_client')
   const message = encodeURIComponent(t('cases_detail.whatsapp_similar', { client }))
   return `https://wa.me/${number}?text=${message}`

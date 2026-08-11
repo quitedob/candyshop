@@ -18,6 +18,7 @@ import (
 	"candypro/api/internal/config"
 	"candypro/api/internal/database"
 	"candypro/api/internal/handlers"
+	modelsOrder "candypro/api/internal/models/order"
 	"candypro/api/internal/pkg/applog"
 	"candypro/api/internal/pkg/eino"
 	"candypro/api/internal/pkg/i18n"
@@ -32,6 +33,13 @@ const (
 	defaultOrderDraftCleanupIntervalMinutes = 5
 	defaultOrderDraftExpireMinutes          = 60
 	defaultOrderDraftCleanupBatchSize       = 100
+
+	// Abandoned cart orders (status pending, unpaid) reserve stock at checkout;
+	// the draft cleanup only sweeps pending_confirmation, so without this worker
+	// an abandoned cart would hold reserved stock forever (M5).
+	defaultAbandonedPendingOrderCleanupIntervalMinutes = 30
+	defaultAbandonedPendingOrderExpireMinutes          = 1440 // 24h
+	defaultAbandonedPendingOrderCleanupBatchSize       = 100
 )
 
 // @title CandyPro OEM API
@@ -167,6 +175,7 @@ func main() {
 	// workerlock.WithLock(...) so only one instance executes per interval.
 	workerLocker := workerlock.NewFromEnv(cfg.Security.RedisURL)
 	stopOrderDraftCleanup := startOrderDraftCleanup(backgroundCtx, svcs, workerLocker)
+	stopAbandonedPendingOrderCleanup := startAbandonedPendingOrderCleanup(backgroundCtx, svcs, workerLocker)
 	stopOutboxRelay := startEventOutboxTradeRelay(backgroundCtx, svcs, workerLocker)
 	stopCheckpointCleanup := startCheckpointCleanup(backgroundCtx, h.System.CheckPointStore(), workerLocker)
 	stopShipmentTrackingSync := startShipmentTrackingSync(backgroundCtx, svcs, workerLocker)
@@ -217,6 +226,7 @@ func main() {
 		h.AuthScope.StopLoginTracker()
 	}
 	stopOrderDraftCleanup()
+	stopAbandonedPendingOrderCleanup()
 	stopOutboxRelay()
 	stopCheckpointCleanup()
 	stopShipmentTrackingSync()
@@ -350,6 +360,151 @@ func startOrderDraftCleanup(ctx context.Context, svcs *servicesCommon.Services, 
 		batchSize,
 	)
 	return cancel
+}
+
+// startAbandonedPendingOrderCleanup runs a companion sweep to the order-draft
+// cleanup. Cart checkout creates status `pending` orders and reserves stock;
+// the draft cleanup only cancels expired pending_confirmation orders, so an
+// abandoned cart order would otherwise hold its reserved stock indefinitely
+// (M5). This worker cancels pending orders older than a configurable TTL that
+// are still unpaid and releases their reserved stock.
+func startAbandonedPendingOrderCleanup(ctx context.Context, svcs *servicesCommon.Services, locker workerlock.Locker) func() {
+	if svcs == nil || svcs.System == nil || svcs.System.Order == nil {
+		return func() {}
+	}
+
+	enabled := getEnvBool("ABANDONED_PENDING_ORDER_CLEANUP_ENABLED", true)
+	if !enabled {
+		log.Println("Abandoned pending order cleanup disabled by ABANDONED_PENDING_ORDER_CLEANUP_ENABLED=false")
+		return func() {}
+	}
+
+	intervalMinutes := getEnvPositiveInt(
+		"ABANDONED_PENDING_ORDER_CLEANUP_INTERVAL_MINUTES",
+		defaultAbandonedPendingOrderCleanupIntervalMinutes,
+	)
+	expireMinutes := getEnvPositiveInt(
+		"ABANDONED_PENDING_ORDER_TTL_MINUTES",
+		defaultAbandonedPendingOrderExpireMinutes,
+	)
+	batchSize := getEnvPositiveInt(
+		"ABANDONED_PENDING_ORDER_CLEANUP_BATCH_SIZE",
+		defaultAbandonedPendingOrderCleanupBatchSize,
+	)
+
+	workerCtx, cancel := context.WithCancel(ctx)
+	interval := time.Duration(intervalMinutes) * time.Minute
+	expire := time.Duration(expireMinutes) * time.Minute
+
+	runCleanup := func() {
+		_, _ = workerlock.WithLock(workerCtx, locker, "abandoned-pending-order-cleanup", interval, func(c context.Context) error {
+			cutoff := time.Now().Add(-expire)
+			released, err := sweepAbandonedPendingOrders(c, svcs, cutoff, batchSize)
+			if err != nil {
+				log.Printf("Warning: abandoned pending order cleanup failed: %v", err)
+				return err
+			}
+			if released > 0 {
+				log.Printf(
+					"Abandoned pending order cleanup cancelled %d abandoned order(s) older than %d minutes",
+					released,
+					expireMinutes,
+				)
+			}
+			return nil
+		})
+	}
+
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		safego.Run("abandoned-pending-order-cleanup.initial", runCleanup)
+		for {
+			select {
+			case <-workerCtx.Done():
+				return
+			case <-ticker.C:
+				safego.Run("abandoned-pending-order-cleanup.tick", runCleanup)
+			}
+		}
+	}()
+
+	log.Printf(
+		"Abandoned pending order cleanup worker started (interval=%dmin ttl=%dmin batch=%d)",
+		intervalMinutes,
+		expireMinutes,
+		batchSize,
+	)
+	return cancel
+}
+
+// sweepAbandonedPendingOrders enumerates pending orders older than cutoff and
+// cancels the ones that are still unpaid (M5). It is deliberately conservative:
+// only orders whose status is still `pending` and whose payment_status is still
+// `unpaid` at mutation time are touched, so an in-flight or confirmed payment is
+// never auto-cancelled. Reserved stock is released before the status flip.
+// Cancelling rows while OFFSET-paginating can skip a few rows on a busy run, but
+// those orders remain pending+unpaid and are picked up on the next tick, so the
+// sweep is eventually consistent.
+func sweepAbandonedPendingOrders(ctx context.Context, svcs *servicesCommon.Services, cutoff time.Time, batchSize int) (int, error) {
+	if svcs == nil || svcs.System == nil || svcs.System.Order == nil {
+		return 0, nil
+	}
+	released := 0
+	page := 1
+	cutoffStr := cutoff.Format(time.RFC3339)
+	for {
+		resp, err := svcs.System.Order.GetOrders(ctx, page, batchSize, modelsOrder.OrderStatusPending, "", "", cutoffStr)
+		if err != nil {
+			return released, err
+		}
+		orders, ok := resp.Data.([]modelsOrder.Order)
+		if !ok || len(orders) == 0 {
+			return released, nil
+		}
+		for i := range orders {
+			// Query-time safety check; cancelAbandonedPendingOrder re-checks the
+			// freshest row before mutating so the payment guard holds.
+			if orders[i].PaymentStatus != modelsOrder.PaymentStatusUnpaid {
+				continue
+			}
+			if err := cancelAbandonedPendingOrder(ctx, svcs, orders[i].ID); err != nil {
+				log.Printf("Warning: failed to cancel abandoned pending order %s: %v", orders[i].ID, err)
+				continue
+			}
+			released++
+		}
+		if len(orders) < batchSize {
+			return released, nil
+		}
+		page++
+	}
+}
+
+// cancelAbandonedPendingOrder re-reads the order for a fresh status/payment
+// snapshot and, if it is still an abandoned unpaid pending order, releases its
+// reserved stock and cancels it. The re-read shrinks the TOCTOU window between
+// the sweep's listing query and the mutation.
+func cancelAbandonedPendingOrder(ctx context.Context, svcs *servicesCommon.Services, orderID string) error {
+	fresh, err := svcs.System.Order.GetOrder(ctx, orderID)
+	if err != nil {
+		return err
+	}
+	if fresh.Status != modelsOrder.OrderStatusPending {
+		return nil
+	}
+	if fresh.PaymentStatus != modelsOrder.PaymentStatusUnpaid {
+		return nil
+	}
+	if fresh.StockReserved {
+		if err := svcs.System.Order.ReleaseOrderStock(ctx, fresh); err != nil {
+			return err
+		}
+	}
+	fresh.Status = modelsOrder.OrderStatusCancelled
+	fresh.StockReserved = false
+	return svcs.System.Order.UpdateOrder(ctx, fresh)
 }
 
 func getEnvBool(key string, defaultValue bool) bool {

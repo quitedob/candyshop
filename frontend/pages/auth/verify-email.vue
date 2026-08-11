@@ -70,8 +70,7 @@
 import { ref, computed, onMounted } from 'vue'
 
 definePageMeta({
-  layout: 'auth',
-  middleware: ['guest']
+  layout: 'auth'
 })
 
 const route = useRoute()

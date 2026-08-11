@@ -241,7 +241,7 @@
           <h2>{{ $t('product.inquire_now') }}</h2>
           <p>{{ $t('form.subtitle') }}</p>
           <div class="cta__actions">
-            <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-highlight">
+            <a v-if="whatsappUrl" :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-highlight">
               <WhatsAppIcon size="20" />
               {{ $t('whatsapp.us') }}
             </a>
@@ -330,11 +330,11 @@ const products = computed(() => {
       }
       if (filter === 'filled') {
         const text = `${tField(p, 'name')} ${tField(p, 'summary')} ${tField(p, 'description')}`.toLowerCase()
-        return text.includes('filled') || text.includes('filling') || text.includes('夹心')
+        return t('filters.filled_match').toLowerCase().split(' ').filter(Boolean).some(kw => text.includes(kw))
       }
       if (filter === 'vitamin') {
         const text = `${tField(p, 'name')} ${tField(p, 'summary')} ${tField(p, 'description')}`.toLowerCase()
-        return text.includes('vitamin') || text.includes('维生素')
+        return t('filters.vitamin_match').toLowerCase().split(' ').filter(Boolean).some(kw => text.includes(kw))
       }
       return true
     })
@@ -436,7 +436,8 @@ const toggleFAQ = (index: number) => {
 // WhatsApp URL
 const whatsappUrl = computed(() => {
   const number = config.public.whatsappNumber
-  const message = encodeURIComponent(`Hi, I'm interested in your ${tField(category.value, 'name')} products. Can you provide more information?`)
+  if (!number) return ''
+  const message = encodeURIComponent(t('form.whatsapp_interest', { name: tField(category.value, 'name') }))
   return `https://wa.me/${number}?text=${message}`
 })
 

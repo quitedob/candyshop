@@ -347,6 +347,15 @@ onUnmounted(() => {
   border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+/* H4: keep the admin sidebar on the dark surface in dark mode (see the same
+   note in customer.vue). The white text/logo are authored against the dark
+   primary-container; the .dark flip to #e6e1e0 would make them invisible. */
+.dark .admin-sidebar {
+  --color-primary-container: #1e1b19;
+  --color-primary-container-rgb: 30, 27, 25;
+  --color-on-primary-container: #888380;
+}
+
 .admin-sidebar--collapsed {
   width: 72px;
 }

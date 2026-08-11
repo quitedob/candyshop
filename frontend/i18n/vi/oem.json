@@ -123,6 +123,45 @@
     "shape": "Hình dạng",
     "packaging": "Bao bì",
     "target_market": "Thị trường mục tiêu",
-    "notes": "Ghi chú"
+    "notes": "Ghi chú",
+    "packaging_options": {
+      "bag": {
+        "name": "Túi đứng",
+        "description": "Bao bì mềm có khóa zip",
+        "moq": "1.000 cái"
+      },
+      "jar": {
+        "name": "Hũ nhựa",
+        "description": "Hộp đậy kín có thể đóng lại",
+        "moq": "500 cái"
+      },
+      "box": {
+        "name": "Hộp quà tặng",
+        "description": "Hộp trình bày cao cấp",
+        "moq": "300 cái"
+      },
+      "bulk": {
+        "name": "Bao số lượng lớn",
+        "description": "Bao bì số lượng lớn",
+        "moq": "100 cái"
+      }
+    },
+    "oem_options": {
+      "flavors": {
+        "summary": "Chọn từ dòng sản phẩm của chúng tôi hoặc phát triển tùy chỉnh",
+        "description": "Chúng tôi cung cấp hơn 50 hương vị trái cây hoặc có thể tạo hỗn hợp tùy chỉnh theo yêu cầu của bạn.",
+        "moq": "3.000 cái"
+      },
+      "shapes": {
+        "summary": "Hình dạng tiêu chuẩn hoặc khuôn tùy chỉnh",
+        "description": "Từ gấu và trái cây cổ điển đến hình dạng thương hiệu độc đáo của bạn.",
+        "moq": "5.000 cái"
+      },
+      "colors": {
+        "summary": "Màu tự nhiên hoặc nhân tạo",
+        "description": "Có sẵn nhiều tùy chọn màu sắc sử dụng chiết xuất trái cây tự nhiên hoặc màu thực phẩm.",
+        "moq": "2.000 cái"
+      }
+    }
   }
 }

@@ -163,12 +163,12 @@
                 class="packaging-card"
               >
                 <div class="packaging-card__image">
-                  <img :src="pkg.image" :alt="pkg.name" />
+                  <img :src="pkg.image" :alt="t(`oem.packaging_options.${pkg.id}.name`)" />
                 </div>
                 <div class="packaging-card__info">
-                  <h4>{{ pkg.name }}</h4>
-                  <p>{{ pkg.description }}</p>
-                  <span class="packaging-card__moq">{{ $t('product.moq_prefix') }}{{ pkg.moq }}</span>
+                  <h4>{{ t(`oem.packaging_options.${pkg.id}.name`) }}</h4>
+                  <p>{{ t(`oem.packaging_options.${pkg.id}.description`) }}</p>
+                  <span class="packaging-card__moq">{{ $t('product.moq_prefix') }}{{ t(`oem.packaging_options.${pkg.id}.moq`) }}</span>
                 </div>
               </div>
             </div>
@@ -215,8 +215,8 @@
             <div class="scenario-card__icon">
               <Icon :name="scenario.icon" size="32" />
             </div>
-            <h4>{{ scenario.title }}</h4>
-            <p>{{ scenario.description }}</p>
+            <h4>{{ t(`product.scenarios.${scenario.id}.title`) }}</h4>
+            <p>{{ t(`product.scenarios.${scenario.id}.description`) }}</p>
           </div>
         </div>
       </div>
@@ -411,112 +411,68 @@ const specRows = computed(() => {
     // Sample Specs
     { label: t('product.sample_moq'), value: p.sampleMOQ || noVal(), type: 'text' },
     { label: t('product.sample_lead_time'), value: p.sampleLeadTime || noVal(), type: 'text' },
-    { label: t('product.sample_price'), value: p.samplePrice ? `$${p.samplePrice}` : noVal(), type: 'text' },
+    { label: t('product.sample_price'), value: p.samplePrice ? `${cur((p as { currency?: string })?.currency)} ${formatNumber(p.samplePrice)}` : noVal(), type: 'text' },
   ]
 })
 
-// Packaging options
+// Packaging options (names/descriptions/MOQ come from oem.packaging_options locale keys)
 const packagingOptions = [
-  {
-    id: 'bag',
-    name: 'Stand-up Pouch',
-    description: 'Flexible packaging with zip lock',
-    moq: '1,000 pcs',
-    image: '/images/packaging/bag.jpg'
-  },
-  {
-    id: 'jar',
-    name: 'Plastic Jar',
-    description: 'Resealable container',
-    moq: '500 pcs',
-    image: '/images/packaging/jar.jpg'
-  },
-  {
-    id: 'box',
-    name: 'Gift Box',
-    description: 'Premium presentation box',
-    moq: '300 pcs',
-    image: '/images/packaging/box.jpg'
-  },
-  {
-    id: 'bulk',
-    name: 'Bulk Bag',
-    description: 'Large quantity packaging',
-    moq: '100 pcs',
-    image: '/images/packaging/bulk.jpg'
-  }
+  { id: 'bag', image: '/images/packaging/bag.jpg' },
+  { id: 'jar', image: '/images/packaging/jar.jpg' },
+  { id: 'box', image: '/images/packaging/box.jpg' },
+  { id: 'bulk', image: '/images/packaging/bulk.jpg' }
 ]
 
-// OEM Options
+// OEM Options (summaries/descriptions/MOQ come from oem.oem_options locale keys)
 const oemOptions = [
   {
     icon: 'lucide:flame',
     title: t('product.flavors'),
-    summary: 'Choose from our range or custom develop',
-    description: 'We offer over 50 fruit flavors or can create custom blends to match your requirements.',
+    summary: t('oem.oem_options.flavors.summary'),
+    description: t('oem.oem_options.flavors.description'),
     choices: [
       { id: 'fruit', label: t('product.flavor_options.fruit_mix'), image: '/images/flavors/fruit.jpg' },
       { id: 'citrus', label: t('product.flavor_options.citrus'), image: '/images/flavors/citrus.jpg' },
       { id: 'berry', label: t('product.flavor_options.berry'), image: '/images/flavors/berry.jpg' },
       { id: 'custom', label: t('product.flavor_options.custom'), image: '/images/flavors/custom.jpg' }
     ],
-    pricing: { moq: '3,000 pcs', leadTime: t('product.category_placeholder_lead') }
+    pricing: { moq: t('oem.oem_options.flavors.moq'), leadTime: t('product.category_placeholder_lead') }
   },
   {
     icon: 'lucide:shape',
     title: t('product.shapes'),
-    summary: 'Standard shapes or custom molds',
-    description: 'From classic bears and fruits to your unique brand shapes.',
+    summary: t('oem.oem_options.shapes.summary'),
+    description: t('oem.oem_options.shapes.description'),
     choices: [
       { id: 'bear', label: t('product.shape_options.bear'), image: '/images/shapes/bear.jpg' },
       { id: 'fruit', label: t('product.shape_options.fruit'), image: '/images/shapes/fruit.jpg' },
       { id: 'letter', label: t('product.shape_options.letter'), image: '/images/shapes/letter.jpg' },
       { id: 'custom', label: t('product.shape_options.custom'), image: '/images/shapes/custom.jpg' }
     ],
-    pricing: { moq: '5,000 pcs', leadTime: t('product.category_placeholder_lead') }
+    pricing: { moq: t('oem.oem_options.shapes.moq'), leadTime: t('product.category_placeholder_lead') }
   },
   {
     icon: 'lucide:palette',
     title: t('product.colors'),
-    summary: 'Natural or artificial colors',
-    description: 'Available in various color options using natural fruit extracts or food-grade colors.',
+    summary: t('oem.oem_options.colors.summary'),
+    description: t('oem.oem_options.colors.description'),
     choices: [
       { id: 'natural', label: t('product.color_options.natural'), image: '/images/colors/natural.jpg' },
       { id: 'vibrant', label: t('product.color_options.vibrant'), image: '/images/colors/vibrant.jpg' },
       { id: 'custom', label: t('product.color_options.custom'), image: '/images/colors/custom.jpg' }
     ],
-    pricing: { moq: '2,000 pcs', leadTime: t('product.category_placeholder_lead') }
+    pricing: { moq: t('oem.oem_options.colors.moq'), leadTime: t('product.category_placeholder_lead') }
   }
 ]
 
 const relatedProducts = computed(() => relatedProductsData.value || [])
 
-// Application scenarios
+// Application scenarios (titles/descriptions come from product.scenarios locale keys)
 const scenarios = [
-  {
-    id: 'retail',
-    icon: 'lucide:shopping-cart',
-    title: 'Retail & Supermarket',
-    description: 'Perfect for retail chains and supermarkets'
-  },
-  {
-    id: 'wholesale',
-    icon: 'lucide:package',
-    title: 'Wholesale & Distribution',
-    description: 'Bulk packaging for wholesale and distribution'
-  },
-  {
-    id: 'gift',
-    icon: 'lucide:gift',
-    title: 'Gift & Premium',
-    description: 'Beautiful gift sets for holidays and promotions'
-  },
-  {
-    id: 'vending',
-    icon: 'lucide:coffee',
-    title: 'Vending Machine',
-    description: 'Sized for automatic vending machines'
-  }
+  { id: 'retail', icon: 'lucide:shopping-cart' },
+  { id: 'wholesale', icon: 'lucide:package' },
+  { id: 'gift', icon: 'lucide:gift' },
+  { id: 'vending', icon: 'lucide:coffee' }
 ]
 
 // Modal functions

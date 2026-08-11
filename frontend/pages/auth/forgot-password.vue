@@ -60,8 +60,7 @@
 import { ref, computed } from 'vue'
 
 definePageMeta({
-  layout: 'auth',
-  middleware: ['auth']
+  layout: 'auth'
 })
 
 const { t } = useI18n()

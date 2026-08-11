@@ -1,9 +1,11 @@
 package customer
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
+	orderRepo "candypro/api/internal/repository/order"
 	"candypro/api/internal/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -70,7 +72,14 @@ func (h *Handler) CustomerApplyCoupon(c *gin.Context) {
 	}
 	discount, err := h.services.Coupon.ApplyCouponToCart(c.Request.Context(), req.OrderID, userID.(string), req.Code)
 	if err != nil {
-		response.ErrorResp(c, http.StatusBadRequest, "coupon_apply_failed")
+		switch {
+		case errors.Is(err, orderRepo.ErrCouponOrderForbidden):
+			response.ErrorResp(c, http.StatusForbidden, "coupon_apply_forbidden")
+		case errors.Is(err, orderRepo.ErrCouponOrderInvalidState):
+			response.ErrorResp(c, http.StatusConflict, "coupon_apply_invalid_state")
+		default:
+			response.ErrorResp(c, http.StatusBadRequest, "coupon_apply_failed")
+		}
 		return
 	}
 	c.JSON(http.StatusOK, discount)
@@ -82,14 +91,28 @@ func (h *Handler) CustomerRemoveCoupon(c *gin.Context) {
 		response.ServiceUnavailableResp(c)
 		return
 	}
+	// M3: the removal must be scoped to the authenticated owner — without the
+	// userID the repository cannot prevent mutating another tenant's order.
+	userID, ok := contextUserID(c)
+	if !ok {
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
 	var req struct {
 		OrderID string `json:"orderId" binding:"required"`
 	}
 	if !response.BindJSONOrInvalid(c, &req) {
 		return
 	}
-	if err := h.services.Coupon.RemoveCouponFromCart(c.Request.Context(), req.OrderID); err != nil {
-		response.ErrorResp(c, http.StatusBadRequest, "coupon_remove_failed")
+	if err := h.services.Coupon.RemoveCouponFromCart(c.Request.Context(), req.OrderID, userID); err != nil {
+		switch {
+		case errors.Is(err, orderRepo.ErrCouponOrderForbidden):
+			response.ErrorResp(c, http.StatusForbidden, "coupon_remove_forbidden")
+		case errors.Is(err, orderRepo.ErrCouponOrderInvalidState):
+			response.ErrorResp(c, http.StatusConflict, "coupon_remove_invalid_state")
+		default:
+			response.ErrorResp(c, http.StatusBadRequest, "coupon_remove_failed")
+		}
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "removed"})

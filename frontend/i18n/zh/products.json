@@ -110,7 +110,25 @@
     "sample_specs": "样品规格",
     "sample_moq": "样品起订量",
     "sample_lead_time": "样品交期",
-    "sample_price": "样品价格"
+    "sample_price": "样品价格",
+    "scenarios": {
+      "retail": {
+        "title": "零售与超市",
+        "description": "非常适合零售连锁店和超市"
+      },
+      "wholesale": {
+        "title": "批发与分销",
+        "description": "为批发和分销提供的大包装"
+      },
+      "gift": {
+        "title": "礼品与高端",
+        "description": "适用于节日和促销的精美礼品套装"
+      },
+      "vending": {
+        "title": "自动售货机",
+        "description": "适合自动售货机的尺寸规格"
+      }
+    }
   },
   "filters": {
     "title": "筛选产品",
@@ -128,6 +146,8 @@
     "flavor": "口味",
     "shape": "形状",
     "packaging": "包装",
-    "clear": "清除筛选"
+    "clear": "清除筛选",
+    "filled_match": "夹心 filled filling",
+    "vitamin_match": "维生素 vitamin"
   }
 }

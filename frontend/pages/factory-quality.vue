@@ -291,7 +291,7 @@
             <NuxtLink :to="localePath('/contact')" class="btn btn-highlight">
               {{ t('factory.schedule_visit') }}
             </NuxtLink>
-            <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
+            <a v-if="whatsappUrl" :href="whatsappUrl" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
               <WhatsAppIcon size="18" />
               {{ t('whatsapp.us') }}
             </a>
@@ -495,6 +495,7 @@ const documents = computed(() => [
 // WhatsApp URL
 const whatsappUrl = computed(() => {
   const number = config.public.whatsappNumber
+  if (!number) return ''
   const message = encodeURIComponent(t('whatsapp.message'))
   return `https://wa.me/${number}?text=${message}`
 })

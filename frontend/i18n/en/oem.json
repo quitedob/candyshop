@@ -123,6 +123,45 @@
     "shape": "Shape",
     "packaging": "Packaging",
     "target_market": "Target Market",
-    "notes": "Notes"
+    "notes": "Notes",
+    "packaging_options": {
+      "bag": {
+        "name": "Stand-up Pouch",
+        "description": "Flexible packaging with zip lock",
+        "moq": "1,000 pcs"
+      },
+      "jar": {
+        "name": "Plastic Jar",
+        "description": "Resealable container",
+        "moq": "500 pcs"
+      },
+      "box": {
+        "name": "Gift Box",
+        "description": "Premium presentation box",
+        "moq": "300 pcs"
+      },
+      "bulk": {
+        "name": "Bulk Bag",
+        "description": "Large quantity packaging",
+        "moq": "100 pcs"
+      }
+    },
+    "oem_options": {
+      "flavors": {
+        "summary": "Choose from our range or custom develop",
+        "description": "We offer over 50 fruit flavors or can create custom blends to match your requirements.",
+        "moq": "3,000 pcs"
+      },
+      "shapes": {
+        "summary": "Standard shapes or custom molds",
+        "description": "From classic bears and fruits to your unique brand shapes.",
+        "moq": "5,000 pcs"
+      },
+      "colors": {
+        "summary": "Natural or artificial colors",
+        "description": "Available in various color options using natural fruit extracts or food-grade colors.",
+        "moq": "2,000 pcs"
+      }
+    }
   }
 }

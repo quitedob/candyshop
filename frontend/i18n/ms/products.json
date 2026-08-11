@@ -110,7 +110,25 @@
     "sample_specs": "Spesifikasi Sampel",
     "sample_moq": "MOQ Sampel",
     "sample_lead_time": "Masa Penghantaran Sampel",
-    "sample_price": "Harga Sampel"
+    "sample_price": "Harga Sampel",
+    "scenarios": {
+      "retail": {
+        "title": "Runcit & Pasar Raya",
+        "description": "Sesuai untuk rangkaian runcit dan pasar raya"
+      },
+      "wholesale": {
+        "title": "Borong & Pengedaran",
+        "description": "Pembungkusan pukal untuk borong dan pengedaran"
+      },
+      "gift": {
+        "title": "Hadiah & Premium",
+        "description": "Set hadiah cantik untuk perayaan dan promosi"
+      },
+      "vending": {
+        "title": "Mesin Layan Diri",
+        "description": "Saiz sesuai untuk mesin layan diri automatik"
+      }
+    }
   },
   "filters": {
     "title": "Tapis Produk",
@@ -128,6 +146,8 @@
     "flavor": "Rasa",
     "shape": "Bentuk",
     "packaging": "Pembungkusan",
-    "clear": "Kosongkan Penapis"
+    "clear": "Kosongkan Penapis",
+    "filled_match": "isian filled filling 夹心",
+    "vitamin_match": "vitamin 维生素"
   }
 }
