@@ -70,7 +70,7 @@ frontend/
 - `docs/changelog/README.md` — index of fix/devlog entries (reverse-chronological); each entry links its source audit report and documents the fix approach, subagent usage, and verification
 - `docs/changelog/drafts/` — per-subagent devlogs from the 2026-08-11 audit fix pass (per-bug fixer + adversarial-arguer workflow)
 - `docs/reports/` — audit reports
-- `docs/planning/` — `todo.md`, `plan.md`, `completed.md`
+- `docs/planning/` — `todo.md`, `plan.md`, `completed.md`, `future-problems.md` (backend & frontend risk register)
 
 > Note: `docs/` is gitignored; the tracked changelog entries are force-added to git (`git add -f`).
 
