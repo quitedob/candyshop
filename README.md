@@ -6,11 +6,11 @@ Professional candy OEM (Original Equipment Manufacturing) B2B platform with admi
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | Nuxt 3.15, Vue 3.5, TypeScript 5.6, Tailwind CSS, @nuxtjs/i18n v9 |
+| Frontend | Nuxt 3.21, Vue 3.5, TypeScript 5.6, Tailwind CSS, @nuxtjs/i18n v10.3 |
 | Backend | Go 1.24.7, Gin 1.10, GORM 1.30, PostgreSQL 15 |
 | Auth | JWT (HS256), Cookie-based tokens |
-| AI | Cloudwego Eino (OpenAI compatible), pgvector |
-| i18n | Chinese (default) + English |
+| AI | Cloudwego Eino (OpenAI-compatible; default model `deepseek-v4-flash`), pgvector |
+| i18n | Chinese (default) + English, 15 DB-backed namespaces |
 | Infra | Docker / docker-compose |
 
 ## Prerequisites
@@ -34,21 +34,21 @@ backend/
   cmd/api/main.go              # Entry point
   internal/
     api/                       # Router + routes (5 scopes)
-    handlers/                  # HTTP layer (70 files)
-    services/                  # Business logic (48 files)
-    repository/                # Data access (39 files)
-    models/                    # Database models (32 files)
+    handlers/                  # HTTP layer (116 files)
+    services/                  # Business logic (72 files)
+    repository/                # Data access (57 files)
+    models/                    # Database models (52 files)
     middleware/                 # Auth, CORS, rate limit, locale, active user
 frontend/
   pages/
-    admin/                     # Admin portal (26 pages)
-    customer/                  # Customer portal (25 pages)
+    admin/                     # Admin portal (41 pages)
+    customer/                  # Customer portal (28 pages)
     auth/                      # Authentication (6 pages)
-    products/, blog/, ...      # Public marketing pages (16 pages)
-  components/                  # Auto-imported (pathPrefix: false)
-  composables/                 # useApi, useAuth, useInquiry, etc.
+    products/, blog/, ...      # Public marketing pages (25 pages)
+  components/                  # Auto-imported (pathPrefix: false), 42 components
+  composables/                 # useApi, useAuth, useInquiry, etc. (24)
   layouts/                     # admin, customer, auth, default
-  i18n/                        # en/ + zh/ locale files
+  i18n/                        # en/ + zh/ — 15 namespaces, DB-backed translations
 ```
 
 ## Architecture
@@ -57,13 +57,22 @@ frontend/
 
 | Scope | Auth | Endpoints | Description |
 |-------|------|-----------|-------------|
-| `public` | None | 23 | Products, categories, OEM, factory, blog, search |
-| `auth` | Mixed | 11 | Login, register, profile, password reset |
-| `user` | JWT + customer | 54 | Customer portal (read open, write needs KYB) |
-| `admin` | JWT + admin | 155 | Full admin management |
-| `system` | Mixed | 7 | AI chatbot, search, recommendations |
+| `public` | None | 26 | Products, categories, OEM, factory, blog, search |
+| `auth` | Mixed | 12 | Login, register, profile, password reset |
+| `user` | JWT + customer | 94 | Customer portal (read open, write needs KYB) |
+| `admin` | JWT + admin | 284 | Full admin management |
+| `system` | Mixed | 14 | AI chatbot, search, recommendations |
 
-**Total: ~268 API endpoints, 77 frontend pages**
+**Total: 430 API endpoints, 100 frontend pages**
+
+## Documentation & Changelog
+
+- `docs/changelog/README.md` — index of fix/devlog entries (reverse-chronological); each entry links its source audit report and documents the fix approach, subagent usage, and verification
+- `docs/changelog/drafts/` — per-subagent devlogs from the 2026-08-11 audit fix pass (per-bug fixer + adversarial-arguer workflow)
+- `docs/reports/` — audit reports
+- `docs/planning/` — `todo.md`, `plan.md`, `completed.md`
+
+> Note: `docs/` is gitignored; the tracked changelog entries are force-added to git (`git add -f`).
 
 ## Roles & Permissions
 
