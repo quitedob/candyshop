@@ -60,7 +60,7 @@ defineProps<Props>()
 .stat {
   text-align: center;
   padding: var(--spacing-lg);
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-lg);
   transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
 }

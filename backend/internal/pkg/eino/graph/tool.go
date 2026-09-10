@@ -33,7 +33,7 @@ func (t *DocPipelineTool) Info(_ context.Context) (*schema.ToolInfo, error) {
 		Name: "generate_trade_documents",
 		Desc: "Generate trade documents (PI, CI, Sales Contract, Packing List, COO, Health Certificate, B/L, SLI, Insurance, Ingredients) " +
 			"for a given trade transaction. Call this when the user wants to create or generate any trade document. " +
-			"Provide trade_id (required), doc_types (list of document types), and optionally buyer_name, seller_name, incoterms, payment_terms, total_amount, currency.",
+			"Provide trade_id (required), doc_types (list of document types), and optionally buyer_name, seller_name, incoterms, payment_terms, total_amount, currency, port_of_loading, port_of_destination.",
 		ParamsOneOf: schema.NewParamsOneOfByParams(map[string]*schema.ParameterInfo{
 			"trade_id":       {Type: schema.Integer, Desc: "Transaction ID (required)", Required: true},
 			"doc_types":      {Type: schema.Array, Desc: "Document types to generate: PROFORMA_INVOICE, COMMERCIAL_INVOICE, SALES_CONTRACT, PACKING_LIST, ORIGIN_CERTIFICATE, HEALTH_CERTIFICATE, BILL_OF_LADING, INGREDIENTS_DECLARATION, SHIPPER_LETTER_OF_INSTRUCTION, INSURANCE_CERTIFICATE", Required: true},
@@ -44,6 +44,8 @@ func (t *DocPipelineTool) Info(_ context.Context) (*schema.ToolInfo, error) {
 			"total_amount":   {Type: schema.Number, Desc: "Total transaction amount"},
 			"currency":       {Type: schema.String, Desc: "Currency code (USD, EUR, CNY)"},
 			"extra_context":  {Type: schema.String, Desc: "Additional business context"},
+			"port_of_loading":     {Type: schema.String, Desc: "Port of loading, e.g. Shanghai"},
+			"port_of_destination": {Type: schema.String, Desc: "Port of destination/discharge"},
 		}),
 	}, nil
 }

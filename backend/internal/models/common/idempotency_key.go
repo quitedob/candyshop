@@ -2,6 +2,10 @@ package common
 
 import "time"
 
+// IdempotencyStatusPending reserves a key before the handler performs effects.
+// It is never an HTTP response status and must not be replayed to a client.
+const IdempotencyStatusPending = 0
+
 // IdempotencyKey records the result of a previous mutating request keyed by a
 // client-supplied `Idempotency-Key` header. Replays return the cached response
 // without re-executing the operation (M-17).

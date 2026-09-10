@@ -48,6 +48,15 @@ func NewTradeAgent(ctx context.Context, chatModel model.ToolCallingChatModel, pe
 		return nil, fmt.Errorf("document pipeline tool: %w", err)
 	}
 
+	// generate_trade_documents is the one state-changing tool without its own DB
+	// approval queue, so it is the tool the HITL review-and-edit gate protects.
+	// High-value document generation (total_amount >= threshold) interrupts for
+	// human review before any TradeDocument rows are written.
+	reviewDocTool := &einotool.InvokableReviewEditTool{
+		InvokableTool:  docGraphTool,
+		RequiresReview: einotool.GenerateTradeDocumentsRequiresReview,
+	}
+
 	// ── Individual tools for non-document operations ──
 	compTool, err := einotool.NewComplianceCheckTool(ctx)
 	if err != nil {
@@ -70,7 +79,7 @@ func NewTradeAgent(ctx context.Context, chatModel model.ToolCallingChatModel, pe
 	}
 
 	tools := []tool.BaseTool{
-		docGraphTool, // Replaces 9 individual doc generation tools
+		reviewDocTool, // Replaces 9 individual doc generation tools
 		compTool,
 		lcTool,
 		trackTool,

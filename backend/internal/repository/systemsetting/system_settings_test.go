@@ -4,20 +4,33 @@ import (
 	"context"
 	"testing"
 
-	"gorm.io/driver/postgres"
+	modelsCommon "candypro/api/internal/models/common"
+
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 
 func TestFindByCategoryGeneral(t *testing.T) {
-	dsn := "host=localhost user=postgres password=1234 dbname=candypro port=5432 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
-		t.Skip("database unavailable:", err)
+		t.Fatal(err)
+	}
+	if err := db.AutoMigrate(&modelsCommon.SystemSetting{}); err != nil {
+		t.Fatal(err)
+	}
+	fixtures := []modelsCommon.SystemSetting{
+		{Key: "site_name", Value: "Test storefront", Category: "general"},
+		{Key: "smtp_host", Value: "localhost", Category: "email"},
+	}
+	if err := db.Create(&fixtures).Error; err != nil {
+		t.Fatal(err)
 	}
 	r := NewSystemSettingRepository(db)
 	settings, err := r.FindByCategory(context.Background(), "general")
 	if err != nil {
 		t.Fatalf("FindByCategory: %v", err)
 	}
-	t.Logf("settings count: %d", len(settings))
+	if len(settings) != 1 || settings[0].Key != "site_name" {
+		t.Fatalf("expected only general settings, got %+v", settings)
+	}
 }

@@ -44,10 +44,10 @@ test.describe('Protected routes redirect', () => {
     expect(page.url()).toContain('/auth/login')
   })
 
-  test('contact page requires auth', async ({ page }) => {
+  test('contact page is available to visitors', async ({ page }) => {
     await page.goto('/contact')
-    await page.waitForURL(/\/auth\/login/, { timeout: 15_000 })
-    expect(page.url()).toContain('/auth/login')
+    await expect(page.locator('h1')).toBeVisible()
+    await expect(page).toHaveURL(/\/contact$/)
   })
 })
 

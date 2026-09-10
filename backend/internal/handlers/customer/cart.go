@@ -4,12 +4,13 @@ import (
 	modelsCommon "candypro/api/internal/models/common"
 	modelsOrder "candypro/api/internal/models/order"
 	modelsProduct "candypro/api/internal/models/product"
-	"candypro/api/internal/pkg/crypto"
 	countrypkg "candypro/api/internal/pkg/country"
+	"candypro/api/internal/pkg/crypto"
 	"candypro/api/internal/pkg/i18n"
 	"candypro/api/internal/pkg/kyb"
 	"candypro/api/internal/pkg/money"
 	"candypro/api/internal/pkg/response"
+	orderService "candypro/api/internal/services/order"
 	"context"
 	"errors"
 	"fmt"
@@ -73,7 +74,7 @@ func (h *Handler) CustomerGetCart(c *gin.Context) {
 	resp["shippingEstimate"] = shipEst
 
 	summary := gin.H{
-		"subtotal": subtotal,
+		"subtotal":     subtotal,
 		"pricingScope": "cart_reference", // 购物车阶段均为参考估算
 	}
 	if taxEst["status"] == feeEstimateComputed {
@@ -605,6 +606,7 @@ func (h *Handler) CustomerCheckoutCart(c *gin.Context) {
 	}
 	if orderStatus == modelsOrder.OrderStatusPending {
 		order.ConfirmedAt = &now
+		order.COGS = orderService.ComputeOrderCOGS(c.Request.Context(), order.Items, h.services.Product)
 	}
 	h.assignOrderWarehouseID(c, &order.WarehouseID)
 

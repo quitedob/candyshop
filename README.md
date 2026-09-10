@@ -57,13 +57,15 @@ frontend/
 
 | Scope | Auth | Endpoints | Description |
 |-------|------|-----------|-------------|
-| `public` | None | 26 | Products, categories, OEM, factory, blog, search |
+| `public` | None | 25 | Products, categories, OEM, factory, blog, search |
 | `auth` | Mixed | 12 | Login, register, profile, password reset |
 | `user` | JWT + customer | 94 | Customer portal (read open, write needs KYB) |
-| `admin` | JWT + admin | 284 | Full admin management |
-| `system` | Mixed | 14 | AI chatbot, search, recommendations |
+| `admin` | JWT + admin | 269 | Full admin management |
+| `system` | Mixed | 16 | AI chatbot, search, recommendations, upload scan hook |
 
-**Total: 430 API endpoints, 100 frontend pages**
+**Default: 416 business API endpoints; 421 routes including uploads, health, readiness, metrics and Swagger.**
+
+The 2026-09-11 source inventory counts distinct HTTP method/path pairs with normal database-backed service wiring, including all eight translation handlers, and `ENABLE_SUPPLIER_PORTAL=false` / `ENABLE_MULTI_WAREHOUSE=false`. The route registrars contain 431 declarations: subtract 16 disabled routes and add the separately registered system scan hook to obtain 416. Enabling both feature flags gives 436 business endpoints. Disabling Swagger changes the overall route total only. Frontend page counts in the directory overview are historical and were not reverified in this inventory.
 
 ## Documentation & Changelog
 

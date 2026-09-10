@@ -138,7 +138,7 @@
             <p class="text-sm font-medium text-gray-500 mb-2">{{ t('customer.inquiries.current_files') }} ({{ inquiry.files.length }})</p>
             <ul class="space-y-1">
               <li v-for="(fileUrl, idx) in inquiry.files" :key="idx" class="text-sm">
-                <a :href="fileUrl" target="_blank" class="text-orange-600 hover:text-orange-500 truncate block">
+                <a :href="fileUrl" target="_blank" rel="noopener noreferrer" class="text-orange-600 hover:text-orange-500 truncate block">
                   <Icon name="heroicons:paper-clip" class="inline h-4 w-4 mr-1" />
                   {{ fileUrl.split('/').pop() || fileUrl }}
                 </a>

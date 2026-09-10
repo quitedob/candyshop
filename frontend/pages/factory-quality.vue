@@ -106,10 +106,10 @@
               <span class="cert-card__issuer">{{ cert.issuer }}</span>
               <span class="cert-card__valid">{{ $t('factory.cert_valid_until', { date: cert.validUntil }) }}</span>
             </div>
-            <button v-if="cert.downloadUrl" class="cert-card__download">
-              <Icon name="lucide:download" size="16" />
-              {{ t('factory.download_cert') }}
-            </button>
+            <NuxtLink :to="localePath('/contact')" class="cert-card__download">
+              <Icon name="lucide:mail" size="16" />
+              {{ t('nav.contact') }}
+            </NuxtLink>
           </div>
         </div>
       </div>
@@ -257,15 +257,14 @@
       <div class="container">
         <div class="section-header">
           <h2>{{ t('factory.documents') }}</h2>
-          <p>{{ t('factory.documents_subtitle') }}</p>
+          <p>{{ t('contact.send_inquiry') }}</p>
         </div>
 
         <div class="downloads__list">
-          <a
+          <NuxtLink
             v-for="doc in documents"
             :key="doc.id"
-            :href="doc.url"
-            :download="doc.filename"
+            :to="localePath('/contact')"
             class="download-item"
           >
             <div class="download-item__icon">
@@ -275,8 +274,9 @@
               <h4>{{ doc.title }}</h4>
               <p>{{ doc.description }}</p>
             </div>
-            <Icon name="lucide:download" size="20" class="download-item__arrow" />
-          </a>
+            <span>{{ t('nav.contact') }}</span>
+            <Icon name="lucide:arrow-right" size="20" class="download-item__arrow" />
+          </NuxtLink>
         </div>
       </div>
     </section>
@@ -319,8 +319,7 @@ const certifications = [
     description: t('factory.cert_haccp_desc'),
     issuer: 'SGS',
     validUntil: '2027',
-    icon: 'lucide:shield-check',
-    downloadUrl: '/certificates/haccp.pdf'
+    icon: 'lucide:shield-check'
   },
   {
     id: 2,
@@ -328,8 +327,7 @@ const certifications = [
     description: t('factory.cert_iso_desc'),
     issuer: 'BSI',
     validUntil: '2027',
-    icon: 'lucide:check-circle-2',
-    downloadUrl: '/certificates/iso22000.pdf'
+    icon: 'lucide:check-circle-2'
   },
   {
     id: 3,
@@ -337,8 +335,7 @@ const certifications = [
     description: t('factory.cert_brc_desc'),
     issuer: 'BRC',
     validUntil: '2026',
-    icon: 'lucide:award',
-    downloadUrl: '/certificates/brc.pdf'
+    icon: 'lucide:award'
   },
   {
     id: 4,
@@ -346,8 +343,7 @@ const certifications = [
     description: t('factory.cert_halal_desc'),
     issuer: 'IFRC',
     validUntil: '2027',
-    icon: 'lucide:star',
-    downloadUrl: '/certificates/halal.pdf'
+    icon: 'lucide:star'
   }
 ]
 
@@ -458,37 +454,27 @@ const documents = computed(() => [
   {
     id: 1,
     title: t('factory.docs.profile'),
-    description: t('factory.docs.profile_desc'),
-    filename: 'company-profile.pdf',
-    url: '/documents/company-profile.pdf'
+    description: t('factory.docs.profile_desc')
   },
   {
     id: 2,
     title: t('factory.docs.catalog'),
-    description: t('factory.docs.catalog_desc'),
-    filename: 'product-catalog.pdf',
-    url: '/documents/product-catalog.pdf'
+    description: t('factory.docs.catalog_desc')
   },
   {
     id: 3,
     title: t('factory.docs.haccp'),
-    description: t('factory.docs.haccp_desc'),
-    filename: 'haccp-certificate.pdf',
-    url: '/certificates/haccp.pdf'
+    description: t('factory.docs.haccp_desc')
   },
   {
     id: 4,
     title: t('factory.docs.iso'),
-    description: t('factory.docs.iso_desc'),
-    filename: 'iso22000-certificate.pdf',
-    url: '/certificates/iso22000.pdf'
+    description: t('factory.docs.iso_desc')
   },
   {
     id: 5,
     title: t('factory.docs.audit'),
-    description: t('factory.docs.audit_desc'),
-    filename: 'audit-report.pdf',
-    url: '/documents/audit-report.pdf'
+    description: t('factory.docs.audit_desc')
   }
 ])
 
@@ -589,7 +575,7 @@ usePageOgImage({
 }
 
 .cert-card {
-  background-color: white;
+  background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   padding: var(--spacing-xl);
@@ -642,7 +628,7 @@ usePageOgImage({
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
   background-color: var(--color-primary);
-  color: white;
+  color: var(--color-text-on-primary);
   border: none;
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
@@ -658,7 +644,7 @@ usePageOgImage({
 }
 
 .quality-stage {
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-xl);
   padding: var(--spacing-xl);
 }
@@ -677,7 +663,7 @@ usePageOgImage({
   width: 40px;
   height: 40px;
   background-color: var(--color-highlight);
-  color: white;
+  color: var(--color-text-on-primary);
   border-radius: var(--radius-full);
   font-weight: 600;
 }
@@ -734,7 +720,7 @@ usePageOgImage({
   height: 56px;
   background-color: var(--color-accent);
   border-radius: var(--radius-full);
-  color: white;
+  color: var(--color-text-on-primary);
   margin-bottom: var(--spacing-sm);
 }
 
@@ -838,7 +824,7 @@ usePageOgImage({
 .timeline-item {
   position: relative;
   padding: var(--spacing-lg);
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-lg);
 }
 
@@ -846,7 +832,7 @@ usePageOgImage({
   display: inline-block;
   padding: var(--spacing-xs) var(--spacing-sm);
   background-color: var(--color-highlight);
-  color: white;
+  color: var(--color-text-on-primary);
   font-weight: 600;
   border-radius: var(--radius-sm);
   margin-bottom: var(--spacing-sm);
@@ -874,7 +860,7 @@ usePageOgImage({
   align-items: center;
   gap: var(--spacing-md);
   padding: var(--spacing-md);
-  background-color: white;
+  background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   text-decoration: none;

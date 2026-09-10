@@ -1,6 +1,7 @@
 package admin
 
 import (
+	modelsAuth "candypro/api/internal/models/auth"
 	modelsCommon "candypro/api/internal/models/common"
 	modelsProduct "candypro/api/internal/models/product"
 	modelsUser "candypro/api/internal/models/user"
@@ -177,8 +178,32 @@ func (h *Handler) AdminDeleteUser(c *gin.Context) {
 	}
 
 	userID := c.Param("id")
-	if _, err := h.services.User.GetByID(c.Request.Context(), userID); err != nil {
+
+	// Only a superadmin may delete users, and no one may delete themselves or
+	// another superadmin (M1).
+	callerID, _ := c.Get("userID")
+	callerIDStr, _ := callerID.(string)
+	if strings.TrimSpace(callerIDStr) == "" {
+		response.ErrorResp(c, http.StatusForbidden, "forbidden")
+		return
+	}
+	caller, err := h.services.User.GetByID(c.Request.Context(), callerIDStr)
+	if err != nil || caller == nil || caller.Role == nil || caller.Role.Name != modelsAuth.SuperAdmin {
+		response.ErrorResp(c, http.StatusForbidden, "forbidden")
+		return
+	}
+	if userID == callerIDStr {
+		response.InvalidResp(c, "cannot_delete_self")
+		return
+	}
+
+	target, err := h.services.User.GetByID(c.Request.Context(), userID)
+	if err != nil {
 		response.ErrorResp(c, http.StatusNotFound, "user_not_found")
+		return
+	}
+	if target.Role != nil && target.Role.Name == modelsAuth.SuperAdmin {
+		response.InvalidResp(c, "cannot_delete_superadmin")
 		return
 	}
 

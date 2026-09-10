@@ -95,6 +95,27 @@ func (r *InvoiceRepository) Update(ctx context.Context, invoice *modelsOrder.Inv
 	return r.db.WithContext(ctx).Save(invoice).Error
 }
 
+// MarkSent marks an invoice as sent with a guarded conditional UPDATE keyed on the
+// currently-loaded status (M3), so a stale/concurrent read cannot re-send or
+// overwrite a newer status. Bumps Version to match Update's optimistic-lock counter.
+func (r *InvoiceRepository) MarkSent(ctx context.Context, id, fromStatus string, sentAt time.Time) error {
+	res := r.db.WithContext(ctx).Model(&modelsOrder.Invoice{}).
+		Where("id = ? AND status = ?", id, fromStatus).
+		Updates(map[string]interface{}{
+			"status":     modelsOrder.InvoiceStatusSent,
+			"sent_at":    sentAt,
+			"updated_at": time.Now(),
+			"version":    gorm.Expr("version + 1"),
+		})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrInvoiceStateMismatch
+	}
+	return nil
+}
+
 // Delete removes an invoice by ID.
 func (r *InvoiceRepository) Delete(ctx context.Context, id string) error {
 	return r.db.WithContext(ctx).Where("id = ?", id).Delete(&modelsOrder.Invoice{}).Error

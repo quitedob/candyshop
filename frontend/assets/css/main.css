@@ -32,6 +32,10 @@
     --color-bg: #ffffff;
     --color-bg-alt: #fdf8f7;
     --color-bg-dark: #f5f0ef;
+    /* Fixed dark surfaces paired with light text in both themes. */
+    --color-inverse-bg: #000000;
+    --color-inverse-bg-alt: #1e1b19;
+    --color-inverse-text: #ffffff;
 
     /* ── Alexandria Palette: Primary-Container (dark, for sidebars) ── */
     --color-primary-container: #1e1b19;
@@ -54,21 +58,21 @@
     --color-text-on-primary: #ffffff;
 
     /* ── Colors - Semantic ── */
-    --color-success: #22c55e;
+    --color-success: #166534;
     --color-warning: #f59e0b;
     --color-error: #ba1a1a;
     --color-info: #3b82f6;
     --color-production: #944a00;
 
     /* ── Colors - Semantic RGB ── */
-    --color-success-rgb: 34, 197, 94;
+    --color-success-rgb: 22, 101, 52;
     --color-warning-rgb: 245, 158, 11;
     --color-error-rgb: 186, 26, 26;
     --color-info-rgb: 59, 130, 246;
     --color-production-rgb: 148, 74, 0;
 
     /* ── Colors - Semantic Hover ── */
-    --color-success-hover: #16a34a;
+    --color-success-hover: #14532d;
     --color-warning-hover: #d97706;
     --color-error-hover: #93000a;
     --color-info-hover: #2563eb;
@@ -160,10 +164,10 @@
     --color-accent-dark: #e07d2a;
     --color-accent-light: #1e1b19;
 
-    --color-highlight: #c2410c;
-    --color-highlight-hover: #d96c1a;
+    --color-highlight: #fd933d;
+    --color-highlight-hover: #ffad6b;
     --color-highlight-light: #3b0900;
-    --color-highlight-rgb: 194, 65, 12;
+    --color-highlight-rgb: 253, 147, 61;
 
     --color-primary-container: #e6e1e0;
     --color-on-primary-container: #4a4643;
@@ -181,7 +185,7 @@
 
     --color-text: #fdf8f7;
     --color-text-light: #d0c4be;
-    --color-text-lighter: #7e7570;
+    --color-text-lighter: #a99c95;
     --color-text-on-primary: #1c1b1b;
 
     --color-success: #4ade80;

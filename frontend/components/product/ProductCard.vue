@@ -218,13 +218,13 @@ const requestSample = () => {
 }
 
 .product-card__badge--halal {
-  background-color: rgba(34, 197, 94, 0.9);
-  color: white;
+  background-color: var(--color-success);
+  color: var(--color-text-on-primary);
 }
 
 .product-card__badge--featured {
-  background-color: rgba(var(--color-highlight-rgb), 0.9);
-  color: white;
+  background-color: var(--color-highlight);
+  color: var(--color-text-on-primary);
 }
 
 .product-card__actions {
@@ -308,7 +308,7 @@ const requestSample = () => {
   border: none;
   border-radius: var(--radius-md);
   background: var(--color-highlight);
-  color: white;
+  color: var(--color-text-on-primary);
   font-weight: 600;
   font-size: var(--text-sm);
   cursor: pointer;

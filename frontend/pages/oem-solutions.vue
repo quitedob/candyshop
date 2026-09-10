@@ -502,7 +502,7 @@ usePageOgImage({
   width: 40px;
   height: 40px;
   background-color: var(--color-highlight);
-  color: white;
+  color: var(--color-text-on-primary);
   border-radius: var(--radius-full);
   font-weight: 600;
   flex-shrink: 0;
@@ -539,21 +539,21 @@ usePageOgImage({
 
 .oem-path {
   padding: var(--spacing-2xl);
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-xl);
   border: 2px solid var(--color-border);
 }
 
 .oem-path--featured {
   border-color: var(--color-highlight);
-  background: linear-gradient(to bottom, #fff5f2 0%, white 20%);
+  background: linear-gradient(to bottom, var(--color-highlight-light) 0%, var(--color-bg) 20%);
 }
 
 .oem-path__badge {
   display: inline-block;
   padding: var(--spacing-xs) var(--spacing-md);
   background-color: var(--color-highlight);
-  color: white;
+  color: var(--color-text-on-primary);
   font-size: var(--text-sm);
   font-weight: 600;
   border-radius: var(--radius-full);
@@ -627,7 +627,7 @@ usePageOgImage({
 }
 
 .solution-card {
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-md);
@@ -654,7 +654,7 @@ usePageOgImage({
 }
 
 .solution-card__moq {
-  color: white;
+  color: var(--color-inverse-text);
   font-size: var(--text-sm);
   font-weight: 500;
 }
@@ -695,7 +695,7 @@ usePageOgImage({
   width: 100%;
   padding: var(--spacing-sm);
   background-color: var(--color-primary);
-  color: white;
+  color: var(--color-text-on-primary);
   border: none;
   border-radius: var(--radius-md);
   font-weight: 500;
@@ -711,7 +711,7 @@ usePageOgImage({
 .moq-table__table {
   width: 100%;
   border-collapse: collapse;
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
@@ -725,7 +725,7 @@ usePageOgImage({
 
 .moq-table__table th {
   background-color: var(--color-primary);
-  color: white;
+  color: var(--color-text-on-primary);
   font-weight: 600;
 }
 
@@ -755,7 +755,7 @@ usePageOgImage({
   height: 48px;
   background-color: var(--color-accent);
   border-radius: var(--radius-full);
-  color: white;
+  color: var(--color-text-on-primary);
   flex-shrink: 0;
 }
 
@@ -777,7 +777,7 @@ usePageOgImage({
   display: inline-block;
   padding: var(--spacing-xs) var(--spacing-sm);
   background-color: var(--color-highlight);
-  color: white;
+  color: var(--color-text-on-primary);
   font-size: var(--text-xs);
   font-weight: 600;
   border-radius: var(--radius-sm);
@@ -837,7 +837,7 @@ usePageOgImage({
   padding: var(--spacing-md);
 }
 .oem-modal {
-  background: white;
+  background: var(--color-bg);
   border-radius: var(--radius-xl);
   max-width: 520px;
   width: 100%;
@@ -880,7 +880,7 @@ usePageOgImage({
   transform: translateX(-50%);
   padding: var(--spacing-md) var(--spacing-xl);
   border-radius: var(--radius-md);
-  color: white;
+  color: var(--color-text-on-primary);
   font-weight: 500;
   z-index: 1001;
   cursor: pointer;

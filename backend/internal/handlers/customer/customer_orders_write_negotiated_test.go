@@ -132,6 +132,9 @@ func (f *fakeInvoiceRepo) FindByStatus(ctx context.Context, status string, page,
 func (f *fakeInvoiceRepo) FindByUserID(ctx context.Context, userID string) ([]modelsOrder.Invoice, error) {
 	return nil, nil
 }
+func (f *fakeInvoiceRepo) MarkSent(ctx context.Context, id, fromStatus string, sentAt time.Time) error {
+	return nil
+}
 
 // buildTestFinancialOrderHandler wires a handler whose order repo persists the
 // confirm financials, so the confirmed order's totals can be asserted.

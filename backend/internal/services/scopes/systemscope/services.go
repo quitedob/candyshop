@@ -39,6 +39,6 @@ func New(repos *repositoryCommon.SystemRepositories, cfg *config.Config, searchS
 		User:            user.NewUserService(repos.User),
 		Payment:         paymentSvc,
 		GatewayPayment:  order.NewGatewayPaymentService(cfg, paymentSvc),
-		QuotationReview: trade.NewQuotationReviewService(repos.QuotationReview),
+		QuotationReview: trade.NewQuotationReviewService(repos.QuotationReview, nil),
 	}
 }

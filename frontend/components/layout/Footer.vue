@@ -184,14 +184,17 @@ onMounted(() => { hydrated.value = true })
 
 <style scoped>
 .footer {
-  background-color: var(--color-primary);
-  color: var(--color-text-on-primary);
+  /* The footer's translucent white copy requires a fixed dark surface. */
+  --footer-newsletter-start: #a9360a;
+  --footer-newsletter-end: #944a00;
+  background-color: var(--color-inverse-bg);
+  color: var(--color-inverse-text);
 }
 
 /* ── Newsletter CTA ── */
 .footer__newsletter {
   padding: var(--spacing-3xl) 0;
-  background: linear-gradient(135deg, var(--color-highlight-hover) 0%, var(--color-accent) 100%);
+  background: linear-gradient(135deg, var(--footer-newsletter-start) 0%, var(--footer-newsletter-end) 100%);
 }
 
 .footer__newsletter-inner {
@@ -202,7 +205,7 @@ onMounted(() => { hydrated.value = true })
 }
 
 .footer__newsletter-content h3 {
-  color: var(--color-text-on-primary);
+  color: var(--color-inverse-text);
   font-size: var(--text-2xl);
   margin-bottom: var(--spacing-xs);
 }
@@ -232,8 +235,7 @@ onMounted(() => { hydrated.value = true })
 
 .footer__newsletter-btn--inquiry {
   background-color: var(--color-bg);
-  /* WCAG AA: #fd933d on white is 2.2:1; use a darker orange for the text. */
-  color: #c2410c;
+  color: var(--color-highlight);
 }
 
 .footer__newsletter-btn--inquiry:hover {
@@ -243,7 +245,7 @@ onMounted(() => { hydrated.value = true })
 
 .footer__newsletter-btn--whatsapp {
   background-color: rgba(0, 0, 0, 0.2);
-  color: var(--color-text-on-primary);
+  color: var(--color-inverse-text);
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
@@ -276,7 +278,7 @@ onMounted(() => { hydrated.value = true })
 
 .footer__logo {
   width: 150px;
-  color: var(--color-text-on-primary);
+  color: var(--color-inverse-text);
 }
 
 .footer__tagline {
@@ -303,7 +305,7 @@ onMounted(() => { hydrated.value = true })
 }
 
 .footer__title {
-  color: var(--color-text-on-primary);
+  color: var(--color-inverse-text);
   font-size: var(--text-sm);
   font-weight: 600;
   text-transform: uppercase;
@@ -373,7 +375,7 @@ onMounted(() => { hydrated.value = true })
   height: 36px;
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-full);
-  color: var(--color-text-on-primary);
+  color: var(--color-inverse-text);
   transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
@@ -433,7 +435,7 @@ onMounted(() => { hydrated.value = true })
 }
 
 .footer__legal a:hover {
-  color: var(--color-text-on-primary);
+  color: var(--color-inverse-text);
 }
 
 .footer__translation-note {
@@ -463,11 +465,11 @@ onMounted(() => { hydrated.value = true })
 }
 
 .footer__lang-btn:hover {
-  color: var(--color-text-on-primary);
+  color: var(--color-inverse-text);
 }
 
 .footer__lang-btn--active {
-  background-color: var(--color-text-on-primary);
+  background-color: var(--color-inverse-text);
   color: var(--color-primary);
 }
 

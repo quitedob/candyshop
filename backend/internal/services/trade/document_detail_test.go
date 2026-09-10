@@ -63,6 +63,9 @@ func (f *fakeDocDetailRepo) CreateSettlement(context.Context, *modelsTrade.Settl
 func (f *fakeDocDetailRepo) UpdateSettlement(context.Context, *modelsTrade.SettlementRecord) error {
 	return nil
 }
+func (f *fakeDocDetailRepo) UpdateSettlementStatus(context.Context, uint, string, string, map[string]interface{}) error {
+	return nil
+}
 func (f *fakeDocDetailRepo) DeleteSettlement(context.Context, uint) error {
 	return nil
 }

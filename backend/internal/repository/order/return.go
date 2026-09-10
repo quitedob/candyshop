@@ -97,6 +97,11 @@ func (r *ReturnRepository) FindByUserID(ctx context.Context, userID string, page
 }
 
 // UpdateStatus transitions a return to a new status with audit fields.
+//
+// The transition is a guarded conditional UPDATE (WHERE id AND status=<expected>) so two
+// concurrent requests cannot both win the same transition — the loser gets
+// ErrReturnStateMismatch. Stock restore happens only after the transition succeeds, inside the
+// same transaction, so it can never run twice.
 func (r *ReturnRepository) UpdateStatus(ctx context.Context, id, status, operatorID, rejectReason string) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var ret modelsOrder.ReturnRequest
@@ -109,65 +114,26 @@ func (r *ReturnRepository) UpdateStatus(ctx context.Context, id, status, operato
 			"status":     status,
 			"updated_at": now,
 		}
+		var expected string
 
 		switch status {
 		case modelsOrder.ReturnStatusApproved:
-			if ret.Status != modelsOrder.ReturnStatusPending {
-				return fmt.Errorf("can only approve pending returns (current: %s)", ret.Status)
-			}
+			expected = modelsOrder.ReturnStatusPending
 			updates["approved_by"] = operatorID
 			updates["approved_at"] = now
 
 		case modelsOrder.ReturnStatusReceived:
-			if ret.Status != modelsOrder.ReturnStatusApproved {
-				return fmt.Errorf("can only receive approved returns (current: %s)", ret.Status)
-			}
+			expected = modelsOrder.ReturnStatusApproved
 			updates["received_by"] = operatorID
 			updates["received_at"] = now
 
 		case modelsOrder.ReturnStatusRefunded:
-			if ret.Status != modelsOrder.ReturnStatusReceived {
-				return fmt.Errorf("can only refund received returns (current: %s)", ret.Status)
-			}
+			expected = modelsOrder.ReturnStatusReceived
 			updates["refunded_by"] = operatorID
 			updates["refunded_at"] = now
 
-			// Restore stock for returned items to the order's warehouse
-			var order modelsOrder.Order
-			if err := tx.Where("id = ?", ret.OrderID).First(&order).Error; err != nil {
-				return err
-			}
-			warehouseID := ""
-			if order.WarehouseID != nil {
-				warehouseID = *order.WarehouseID
-			}
-			if warehouseID == "" {
-				var werr error
-				warehouseID, werr = resolveDefaultWarehouseID(tx, "")
-				if werr != nil {
-					warehouseID = ""
-				}
-			}
-			var items []modelsOrder.ReturnItem
-			if err := tx.Where("return_id = ?", id).Find(&items).Error; err != nil {
-				return err
-			}
-			for _, item := range items {
-				var err error
-				if warehouseID != "" {
-					err = restoreLegacyProductStockWithWarehouse(tx, warehouseID, item.ProductID, item.Quantity)
-				} else {
-					err = restoreLegacyProductStock(tx, item.ProductID, item.Quantity)
-				}
-				if err != nil {
-					return err
-				}
-			}
-
 		case modelsOrder.ReturnStatusRejected:
-			if ret.Status != modelsOrder.ReturnStatusPending {
-				return fmt.Errorf("can only reject pending returns (current: %s)", ret.Status)
-			}
+			expected = modelsOrder.ReturnStatusPending
 			updates["rejected_by"] = operatorID
 			updates["rejected_at"] = now
 			updates["reject_reason"] = rejectReason
@@ -176,6 +142,52 @@ func (r *ReturnRepository) UpdateStatus(ctx context.Context, id, status, operato
 			return fmt.Errorf("unknown return status: %s", status)
 		}
 
-		return tx.Model(&ret).Updates(updates).Error
+		res := tx.Model(&modelsOrder.ReturnRequest{}).
+			Where("id = ? AND status = ?", id, expected).
+			Updates(updates)
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return ErrReturnStateMismatch
+		}
+
+		if status != modelsOrder.ReturnStatusRefunded {
+			return nil
+		}
+
+		// Restore stock for returned items to the order's warehouse. Runs only after the
+		// refund transition above succeeded, so a concurrent second refund cannot double-restore.
+		var order modelsOrder.Order
+		if err := tx.Where("id = ?", ret.OrderID).First(&order).Error; err != nil {
+			return err
+		}
+		warehouseID := ""
+		if order.WarehouseID != nil {
+			warehouseID = *order.WarehouseID
+		}
+		if warehouseID == "" {
+			var werr error
+			warehouseID, werr = resolveDefaultWarehouseID(tx, "")
+			if werr != nil {
+				warehouseID = ""
+			}
+		}
+		var items []modelsOrder.ReturnItem
+		if err := tx.Where("return_id = ?", id).Find(&items).Error; err != nil {
+			return err
+		}
+		for _, item := range items {
+			var err error
+			if warehouseID != "" {
+				err = restoreLegacyProductStockWithWarehouse(tx, warehouseID, item.ProductID, item.Quantity)
+			} else {
+				err = restoreLegacyProductStock(tx, item.ProductID, item.Quantity)
+			}
+			if err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 }

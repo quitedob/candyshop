@@ -8,7 +8,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// BackfillOrderCOGS recalculates inflated COGS (cogs > subtotal) for confirmed+ orders.
+// BackfillOrderCOGS repairs missing or inflated COGS for committed orders using
+// available product costs. Orders without usable cost data remain unchanged.
 func BackfillOrderCOGS(db *gorm.DB) error {
 	if db == nil {
 		return nil
@@ -16,11 +17,16 @@ func BackfillOrderCOGS(db *gorm.DB) error {
 	var orders []modelsOrder.Order
 	statuses := []string{
 		modelsOrder.OrderStatusConfirmed,
-		"production",
+		modelsOrder.OrderStatusProduction,
+		modelsOrder.OrderStatusPartiallyShipped,
 		modelsOrder.OrderStatusShipped,
+		modelsOrder.OrderStatusPartiallyDelivered,
 		modelsOrder.OrderStatusDelivered,
+		modelsOrder.OrderStatusPartiallyReturned,
+		modelsOrder.OrderStatusReturned,
 	}
-	if err := db.Where("status IN ? AND subtotal > 0 AND cogs > subtotal", statuses).Find(&orders).Error; err != nil {
+	if err := db.Where("(status IN ? OR (status = ? AND confirmed_at IS NOT NULL)) AND subtotal > 0 AND (COALESCE(cogs, 0) <= 0 OR cogs > subtotal)",
+		statuses, modelsOrder.OrderStatusPending).Find(&orders).Error; err != nil {
 		return err
 	}
 	if len(orders) == 0 {
@@ -32,13 +38,18 @@ func BackfillOrderCOGS(db *gorm.DB) error {
 	for i := range orders {
 		order := &orders[i]
 		newCOGS := backfillComputeOrderCOGS(db, productCache, order.Items)
-		if newCOGS <= 0 || newCOGS >= order.COGS {
+		if newCOGS <= 0 || (order.COGS > 0 && newCOGS >= order.COGS) {
 			continue
 		}
-		if err := db.Model(&modelsOrder.Order{}).Where("id = ?", order.ID).Update("cogs", newCOGS).Error; err != nil {
-			return err
+		// Avoid overwriting a concurrent financial correction and invalidate stale
+		// editor snapshots whenever a historical cost is repaired.
+		result := db.Model(&modelsOrder.Order{}).
+			Where("id = ? AND version = ? AND (COALESCE(cogs, 0) <= 0 OR cogs > subtotal)", order.ID, order.Version).
+			Updates(map[string]interface{}{"cogs": newCOGS, "version": gorm.Expr("version + 1")})
+		if result.Error != nil {
+			return result.Error
 		}
-		fixed++
+		fixed += result.RowsAffected
 	}
 	if fixed > 0 {
 		log.Printf("Backfilled COGS for %d order(s)", fixed)
@@ -59,14 +70,16 @@ func backfillComputeOrderCOGS(db *gorm.DB, cache map[string]productCOGSCache, it
 			var basePrice, weighted float64
 			if err := db.Raw(`SELECT slug, base_price, weighted_avg_cost FROM products WHERE id = ?`, productID).
 				Row().Scan(&slug, &basePrice, &weighted); err != nil {
-				continue
+				// A partial positive total would stop this order qualifying for the
+				// missing-cost repair after its remaining product data is corrected.
+				return 0
 			}
 			p = productCOGSCache{slug: slug, basePrice: basePrice, weighted: weighted}
 			cache[productID] = p
 		}
 		ref := catalog.COGSReferencePrice(p.slug, p.basePrice, p.weighted)
 		if p.weighted <= 0 || item.UnitPrice <= 0 || ref <= 0 {
-			continue
+			return 0
 		}
 		total += float64(item.Quantity) * item.UnitPrice * (p.weighted / ref)
 	}

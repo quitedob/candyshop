@@ -198,6 +198,8 @@ errors:
   user_create_failed: "Failed to create user"
   user_update_failed: "Failed to update user"
   user_delete_failed: "Failed to delete user"
+  cannot_delete_self: "You cannot delete your own account"
+  cannot_delete_superadmin: "A superadmin account cannot be deleted"
   user_status_update_failed: "Failed to update user status"
   user_role_update_failed: "Failed to update user role"
   user_fetch_failed: "Failed to fetch users"

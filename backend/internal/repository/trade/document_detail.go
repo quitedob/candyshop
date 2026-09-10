@@ -3,6 +3,7 @@ package trade
 import (
 	modelsTrade "candypro/api/internal/models/trade"
 	"context"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -113,6 +114,29 @@ func (r *TradeDocumentDetailRepository) CreateSettlement(ctx context.Context, re
 
 func (r *TradeDocumentDetailRepository) UpdateSettlement(ctx context.Context, record *modelsTrade.SettlementRecord) error {
 	return r.db.WithContext(ctx).Save(record).Error
+}
+
+// UpdateSettlementStatus transitions a settlement status with a guarded conditional
+// UPDATE keyed on the currently-loaded status (M3). extra holds the non-status
+// fields (amount_paid, payment_date, lc_reference) edited alongside the status.
+func (r *TradeDocumentDetailRepository) UpdateSettlementStatus(ctx context.Context, id uint, fromStatus, toStatus string, extra map[string]interface{}) error {
+	updates := map[string]interface{}{
+		"status":     toStatus,
+		"updated_at": time.Now(),
+	}
+	for k, v := range extra {
+		updates[k] = v
+	}
+	res := r.db.WithContext(ctx).Model(&modelsTrade.SettlementRecord{}).
+		Where("id = ? AND status = ?", id, fromStatus).
+		Updates(updates)
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrSettlementStateMismatch
+	}
+	return nil
 }
 
 func (r *TradeDocumentDetailRepository) DeleteSettlement(ctx context.Context, id uint) error {

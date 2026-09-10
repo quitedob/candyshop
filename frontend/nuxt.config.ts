@@ -1,23 +1,27 @@
 import * as process from 'node:process'
-import { createHash } from 'node:crypto'
+import { addPrerenderRoutes, createCmsRouteRules, resolveInternalApiBase } from './build/prerender-routes'
 
 // SWR/ISR 仅用于生产；开发模式走 Vite 实时 SSR，避免 stale dist 与 _payload.json 404
 const isProduction = process.env.NODE_ENV === 'production'
-const cacheRouteRules = isProduction
-  ? {
-      '/products/*': { swr: 3600 },
-      '/products/*/*': { swr: 3600 },
-      '/blog/**': { swr: 3600 },
-      '/cases-clients/**': { swr: 3600 },
-    }
-  : {}
+// Docker/CI image builds need not have access to an application database/API.
+// Opt in only when the build can read the intended public CMS content.
+const prerenderCms = process.env.PRERENDER_CMS === 'true'
+const cmsRouteRules = createCmsRouteRules(prerenderCms, isProduction)
 
 // 首屏前应用主题，避免闪烁；配合 useDarkMode cookie 逻辑
-// Single source of truth for the theme-init inline script. Its SHA-256 is derived from
-// the same constant so the CSP `script-src 'sha256-...'` always matches the emitted
-// inline script — this is what lets us drop 'unsafe-inline' without breaking the script.
+// The CSP server plugin hashes this and Nuxt's inline payloads from each HTML response.
 const themeInitScript = `(function(){try{var m=document.cookie.match(/(?:^|;\\s*)theme=([^;]*)/);var t=m?decodeURIComponent(m[1]):'';var d=t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d)}catch(e){}})();`
-const themeInitHash = `'sha256-${createHash('sha256').update(themeInitScript, 'utf8').digest('base64')}'`
+
+const supportedLocaleCodes = ['en', 'zh', 'ko', 'ar', 'ja', 'th', 'vi', 'id', 'ms']
+const privatePortalRoutePattern = new RegExp(`^/(?:(${supportedLocaleCodes.join('|')})/)?(?:admin|customer|auth)(?:/|$)`)
+const portalRouteRules = Object.fromEntries(
+  ['', ...supportedLocaleCodes.map(locale => `/${locale}`)].flatMap(prefix =>
+    ['admin', 'customer', 'auth'].flatMap(portal => [
+      [`${prefix}/${portal}`, { ssr: false, prerender: false }],
+      [`${prefix}/${portal}/**`, { ssr: false, prerender: false }],
+    ]),
+  ),
+)
 
 // ---------------------------------------------------------------------------
 // Backend API base — server-side SSR fetches (internalApiBase) + client CSP connect-src
@@ -26,17 +30,8 @@ const themeInitHash = `'sha256-${createHash('sha256').update(themeInitScript, 'u
 // bypasses Nitro localFetch (which ignores devProxy). When only BACKEND_URL is set, derive
 // it from there so a production deploy that sets BACKEND_URL but not INTERNAL_API_BASE
 // never has SSR fetches silently hit a build machine's localhost:8080.
-//
-// Build-time side effect: server/plugins/prerender-routes.ts reads INTERNAL_API_BASE
-// straight from process.env during `nuxt build` prerender (its own fallback is hardcoded
-// to localhost:8080/api/v1). Mirroring the derived value into process.env here makes that
-// build-time CMS route enumeration use the same base. It runs at config-load time (before
-// nitro build), is inert at runtime (nuxt.config.ts is not re-executed by the deployed
-// server), and never overrides an explicit INTERNAL_API_BASE.
-if (!process.env.INTERNAL_API_BASE && process.env.BACKEND_URL) {
-  process.env.INTERNAL_API_BASE = `${process.env.BACKEND_URL.replace(/\/+$/, '')}/api/v1`
-}
-const internalApiBase = process.env.INTERNAL_API_BASE || 'http://localhost:8080/api/v1'
+// The build hook and SSR use the same resolved base; config loading does not mutate env.
+const internalApiBase = resolveInternalApiBase(process.env)
 
 // CSP connect-src: the browser calls the API either same-origin (relative /api/v1 goes
 // through the Nitro /api proxy) or, in the documented absolute API_BASE_URL mode, straight
@@ -62,7 +57,7 @@ if (/^https?:\/\//i.test(apiBaseUrl)) {
 // runtime the localhost fallback fails fast (SSR connection refused), never silently.
 const cliCommand = process.argv[2] ?? ''
 const isPrepareOrTypecheck = cliCommand === 'prepare' || cliCommand === 'typecheck'
-if (isProduction && !isPrepareOrTypecheck && !process.env.INTERNAL_API_BASE && !process.env.BACKEND_URL) {
+if (isProduction && !isPrepareOrTypecheck && !process.env.NUXT_INTERNAL_API_BASE && !process.env.INTERNAL_API_BASE && !process.env.BACKEND_URL) {
   console.error('[nuxt.config] WARNING: production build without INTERNAL_API_BASE or BACKEND_URL — SSR fetches will target http://localhost:8080/api/v1 and fail unless a backend runs on this host. Set BACKEND_URL (recommended) or INTERNAL_API_BASE.')
 }
 
@@ -82,40 +77,24 @@ export default defineNuxtConfig({
 
   // Hybrid rendering: marketing SSR/ISR, admin/customer CSR
   routeRules: {
-    '/api/**': {
-      proxy: {
-        to: (process.env.BACKEND_URL || 'http://localhost:8080') + '/api/**',
-      },
-    },
-    '/**': {
-      headers: {
-        // No 'unsafe-inline' in script-src: the only inline script is the theme init,
-        // pinned by its sha256 (computed above from themeInitScript). connect-src is
-        // 'self' plus the configured absolute API origin (see connectSrc above) —
-        // browser-side fetches/WebSockets are same-origin (API through the /api proxy)
-        // or go to that single API origin in the absolute API_BASE_URL mode; PayPal/Stripe
-        // use navigation redirects; Google Maps is an iframe governed by frame-src.
-        'Content-Security-Policy': `default-src 'self'; script-src 'self' ${themeInitHash}; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src ${connectSrc}; object-src 'none'; base-uri 'self'; frame-src 'self' https://www.openstreetmap.org https://www.google.com; form-action 'self'; frame-ancestors 'none'`
-      }
-    },
-    '/admin/**': { ssr: false },
-    '/customer/**': { ssr: false },
-    '/auth/**': { ssr: false },
+    ...portalRouteRules,
     '/supplier/**': { redirect: '/' },
-    '/': { prerender: true },
     '/about': { prerender: true },
     '/faq': { prerender: true },
-    '/products': { prerender: true },
     '/oem-solutions': { prerender: true },
     '/factory-quality': { prerender: true },
     '/privacy': { prerender: true },
     '/terms': { prerender: true },
     '/legal/**': { prerender: true },
-    '/blog': { prerender: true },
-    '/cases-clients': { prerender: true },
-    ...cacheRouteRules,
-    '/sitemap.xml': { prerender: true },
+    ...cmsRouteRules,
+    '/sitemap.xml': { prerender: prerenderCms },
+    '/__sitemap__/**': { prerender: prerenderCms },
     '/__og-image__/**': { prerender: false, index: false },
+  },
+
+  linkChecker: {
+    failOnError: true,
+    excludeLinks: [/^\/_.*$/, privatePortalRoutePattern],
   },
 
   ogImage: {
@@ -351,6 +330,8 @@ export default defineNuxtConfig({
     // `nuxt build`/`nuxt generate`, and at runtime the localhost fallback fails fast
     // (SSR fetch connection refused), never silently.
     internalApiBase,
+    // Script hashes are added per HTML response, including prerendered assets.
+    contentSecurityPolicy: `default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src ${connectSrc}; object-src 'none'; base-uri 'self'; frame-src 'self' https://www.openstreetmap.org https://www.google.com; form-action 'self'; frame-ancestors 'none'`,
   },
 
   // Sitemap — i18n 多 sitemap 模式下顶层 sources 会被忽略，须写入各 locale sitemap
@@ -401,14 +382,21 @@ export default defineNuxtConfig({
 
   // Nitro server
   nitro: {
+    hooks: {
+      'prerender:routes': routes => addPrerenderRoutes(routes, internalApiBase, prerenderCms),
+    },
+    // Development uses the same resolved backend as SSR. Production HTTP/SSE
+    // uses the runtime API route; WebSocket upgrades require edge proxy routing.
     devProxy: {
-      '/api': {
-        target: process.env.API_PROXY_TARGET || 'http://localhost:8080/api',
-        changeOrigin: true
-      }
+      '/api/v1': {
+        target: internalApiBase,
+        changeOrigin: true,
+      },
     },
     prerender: {
-      failOnError: false,
+      failOnError: true,
+      crawlLinks: false,
+      ignore: [privatePortalRoutePattern],
     },
     alias: {
       // Fix nuxt-og-image unenv v2 incompatibility — the module references

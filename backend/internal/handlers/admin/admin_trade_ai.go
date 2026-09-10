@@ -11,9 +11,10 @@ import (
 	"strings"
 	"time"
 
-	tradeModels "candypro/api/internal/models/trade"
 	modelsOrder "candypro/api/internal/models/order"
+	tradeModels "candypro/api/internal/models/trade"
 	"candypro/api/internal/pkg/eino"
+	einotool "candypro/api/internal/pkg/eino/tool"
 	"candypro/api/internal/pkg/response"
 	tradeSvc "candypro/api/internal/services/trade"
 
@@ -82,16 +83,16 @@ func (h *Handler) AdminAIGenerateTradeDocument(c *gin.Context) {
 }
 
 var supportedDocTypes = map[string]string{
-	"PROFORMA_INVOICE":       tradeModels.DocTypeProformaInvoice,
-	"COMMERCIAL_INVOICE":     tradeModels.DocTypeCommercialInvoice,
-	"SALES_CONTRACT":         tradeModels.DocTypeSalesContract,
-	"PACKING_LIST":           tradeModels.DocTypePackingList,
-	"ORIGIN_CERTIFICATE":     tradeModels.DocTypeOriginCertificate,
-	"HEALTH_CERTIFICATE":     tradeModels.DocTypeHealthCertificate,
-	"BILL_OF_LADING":         tradeModels.DocTypeBillOfLading,
-	"INGREDIENTS_DECLARATION": "INGREDIENTS_DECLARATION",
+	"PROFORMA_INVOICE":              tradeModels.DocTypeProformaInvoice,
+	"COMMERCIAL_INVOICE":            tradeModels.DocTypeCommercialInvoice,
+	"SALES_CONTRACT":                tradeModels.DocTypeSalesContract,
+	"PACKING_LIST":                  tradeModels.DocTypePackingList,
+	"ORIGIN_CERTIFICATE":            tradeModels.DocTypeOriginCertificate,
+	"HEALTH_CERTIFICATE":            tradeModels.DocTypeHealthCertificate,
+	"BILL_OF_LADING":                tradeModels.DocTypeBillOfLading,
+	"INGREDIENTS_DECLARATION":       "INGREDIENTS_DECLARATION",
 	"SHIPPER_LETTER_OF_INSTRUCTION": "SHIPPER_LETTER_OF_INSTRUCTION",
-	"INSURANCE_CERTIFICATE":  "INSURANCE_CERTIFICATE",
+	"INSURANCE_CERTIFICATE":         "INSURANCE_CERTIFICATE",
 }
 
 func isSupportedDocType(docType string) bool {
@@ -172,13 +173,16 @@ func (h *Handler) AdminAITradeChat(c *gin.Context) {
 			opts = append(opts, adk.WithChatModelOptions([]model.Option{model.WithTemperature(float32(temp))}))
 		}
 	}
+	// A fresh owned run prevents concurrent conversations overwriting checkpoints.
+	checkpointID := eino.NewOwnedCheckPointID(c.GetString("userID"))
+	opts = append(opts, adk.WithCheckPointID(checkpointID))
 	iter := runner.Query(ctx, query, opts...)
 	for {
 		event, ok := iter.Next()
 		if !ok {
 			break
 		}
-		if err := processAdminAgentEvent(c.Writer, event); err != nil {
+		if err := processAdminAgentEvent(c.Writer, event, checkpointID); err != nil {
 			log.Printf("Admin SSE error: %v", err)
 			break
 		}
@@ -193,9 +197,15 @@ type adminSSEEvent struct {
 	ActionType   string            `json:"action_type,omitempty"`
 	Error        string            `json:"error,omitempty"`
 	DocumentType string            `json:"document_type,omitempty"`
+
+	// HITL review-and-edit resume fields (same shape as the system SSE handler).
+	CheckpointID     string          `json:"checkpoint_id,omitempty"`
+	InterruptID      string          `json:"interrupt_id,omitempty"`
+	InterruptAddress string          `json:"interrupt_address,omitempty"`
+	Review           json.RawMessage `json:"review,omitempty"`
 }
 
-func processAdminAgentEvent(w gin.ResponseWriter, event *adk.AgentEvent) error {
+func processAdminAgentEvent(w gin.ResponseWriter, event *adk.AgentEvent, checkpointID string) error {
 	if event.Err != nil {
 		sendAdminSSEEvent(w, adminSSEEvent{
 			Type:      "error",
@@ -248,11 +258,26 @@ func processAdminAgentEvent(w gin.ResponseWriter, event *adk.AgentEvent) error {
 	if event.Action != nil {
 		if event.Action.Interrupted != nil {
 			for _, ic := range event.Action.Interrupted.InterruptContexts {
-				sendAdminSSEEvent(w, adminSSEEvent{
+				sseEvent := adminSSEEvent{
 					Type:       "action",
 					ActionType: "interrupted",
 					Content:    fmt.Sprintf("%v", ic.Info),
-				})
+				}
+				if info, ok := ic.Info.(*einotool.ReviewEditInfo); ok {
+					sseEvent.CheckpointID = checkpointID
+					sseEvent.InterruptID = ic.ID
+					sseEvent.InterruptAddress = ic.Address.String()
+					if reviewJSON, mErr := json.Marshal(struct {
+						ToolName        string `json:"tool_name"`
+						ArgumentsInJSON string `json:"arguments_in_json"`
+					}{
+						ToolName:        info.ToolName,
+						ArgumentsInJSON: info.ArgumentsInJSON,
+					}); mErr == nil {
+						sseEvent.Review = reviewJSON
+					}
+				}
+				sendAdminSSEEvent(w, sseEvent)
 			}
 		}
 		if event.Action.Exit {

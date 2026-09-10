@@ -372,7 +372,7 @@ usePageOgImage({
 
 .form-card {
   padding: var(--spacing-2xl);
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
 }
@@ -393,7 +393,7 @@ usePageOgImage({
 .social-card,
 .whatsapp-card {
   padding: var(--spacing-xl);
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   margin-bottom: var(--spacing-lg);
@@ -566,7 +566,7 @@ usePageOgImage({
 
 .office-card {
   padding: var(--spacing-xl);
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-lg);
 }
 

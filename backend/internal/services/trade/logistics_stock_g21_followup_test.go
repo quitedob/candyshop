@@ -176,6 +176,9 @@ func (f *dispatchFollowupOrderRepo) FindByID(ctx context.Context, id string) (*m
 func (f *dispatchFollowupOrderRepo) Update(ctx context.Context, order *modelsOrder.Order) error {
 	return nil
 }
+func (f *dispatchFollowupOrderRepo) UpdateStatusGuarded(ctx context.Context, id, fromStatus, toStatus string, extra map[string]interface{}) error {
+	return nil
+}
 
 type dispatchFollowupTradeRepo struct {
 	trans *modelsTrade.TradeTransaction

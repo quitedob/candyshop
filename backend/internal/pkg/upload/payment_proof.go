@@ -32,6 +32,7 @@ func IsAllowedPaymentProof(contentType, filename string) bool {
 		if _, ok := paymentProofMIME[contentType]; ok {
 			return true
 		}
+		return false
 	}
 	ext := strings.ToLower(filepath.Ext(filename))
 	_, ok := paymentProofExt[ext]

@@ -2,15 +2,20 @@ package middleware
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
 
+	"candypro/api/internal/config"
 	modelsCommon "candypro/api/internal/models/common"
+	"candypro/api/internal/pkg/authcookie"
+	"candypro/api/internal/pkg/jwtutil"
 	commonrepo "candypro/api/internal/repository/common"
 
 	"github.com/gin-gonic/gin"
@@ -23,9 +28,33 @@ const IdempotencyHeader = "Idempotency-Key"
 // duplicate-submission windows (form double-click, network retry).
 const idempotencyTTL = 24 * time.Hour
 
-// IdempotencyKeyResolver returns the user identifier to scope the key under.
-// We default to context["userID"] when not provided.
+// idempotencyPersistTimeout bounds recording the result after a client disconnect.
+const idempotencyPersistTimeout = 5 * time.Second
+
+// IdempotencyKeyResolver optionally refines the authenticated key scope.
+// A verified context["userID"] is always required, even when a resolver is supplied.
 type IdempotencyKeyResolver func(c *gin.Context) string
+
+// JWTUserIDResolver returns an IdempotencyKeyResolver that derives the user id from the
+// JWT directly. This helper does not authorize a request or check session revocation.
+// Idempotency must still run after AuthMiddleware and all route authorization.
+func JWTUserIDResolver(cfg *config.Config) IdempotencyKeyResolver {
+	return func(c *gin.Context) string {
+		if uid := c.GetString("userID"); uid != "" {
+			return uid
+		}
+		token := authcookie.TokenFromRequest(c)
+		if token == "" {
+			return ""
+		}
+		claims, err := jwtutil.ValidateJWT(token, cfg.JWT.Secret)
+		if err != nil {
+			return ""
+		}
+		sub, _ := claims["sub"].(string)
+		return sub
+	}
+}
 
 // Idempotency returns a middleware that captures the response of mutating
 // requests carrying an Idempotency-Key header. Replays return the cached
@@ -40,10 +69,12 @@ type IdempotencyKeyResolver func(c *gin.Context) string
 //   - Idempotency-Conflict: true        (added on 409 conflict response)
 //
 // Behaviour matrix:
-//   no header         → bypass middleware, handler runs as usual
-//   first call w/ key → handler runs; response captured and stored
-//   replay same body  → cached response served, handler skipped
-//   replay diff body  → 409 Conflict, handler skipped
+//
+//	no header         → bypass middleware, handler runs as usual
+//	first call w/ key → reserve key, run handler, store completed response
+//	in-flight replay → 409 Conflict, handler skipped
+//	replay same request → cached response served, handler skipped
+//	replay changed body/query → 409 Conflict, handler skipped
 func Idempotency(repo *commonrepo.IdempotencyKeyRepository, resolver IdempotencyKeyResolver) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if repo == nil {
@@ -62,17 +93,16 @@ func Idempotency(repo *commonrepo.IdempotencyKeyRepository, resolver Idempotency
 			c.Next()
 			return
 		}
-		userID := ""
-		if resolver != nil {
-			userID = resolver(c)
-		}
+		userID := c.GetString("userID")
 		if userID == "" {
-			userID = c.GetString("userID")
-		}
-		if userID == "" {
-			// Anonymous requests are not eligible — we can't safely scope the row.
+			// Require a verified authentication context before looking up any key.
 			c.Next()
 			return
+		}
+		if resolver != nil {
+			if resolvedUserID := resolver(c); resolvedUserID != "" {
+				userID = resolvedUserID
+			}
 		}
 
 		// Read body fully so we can hash it and replay on cache hit.
@@ -88,29 +118,52 @@ func Idempotency(repo *commonrepo.IdempotencyKeyRepository, resolver Idempotency
 		}
 		hash := sha256.Sum256(bodyBytes)
 		hashHex := hex.EncodeToString(hash[:])
+		// Query arguments can change a mutation even when its body is identical.
+		requestHash := sha256.Sum256([]byte(c.Request.URL.RawQuery + "\n" + hashHex))
+		hashHex = hex.EncodeToString(requestHash[:])
 
 		method := c.Request.Method
-		path := c.FullPath()
-		if path == "" {
-			path = c.Request.URL.Path
-		}
-
-		// Cache hit?
-		existing, err := repo.Find(c.Request.Context(), userID, method, path, key)
-		if err == nil && existing != nil {
-			if existing.RequestHash != hashHex {
-				c.Header("Idempotency-Replayed", "false")
-				c.Header("Idempotency-Conflict", "true")
-				c.AbortWithStatusJSON(http.StatusConflict, gin.H{
-					"error":   "idempotency_conflict",
-					"message": "Idempotency-Key has already been used with a different request body",
-				})
+		// Use the concrete resource path: /orders/one and /orders/two must not
+		// share a cached result just because Gin maps both to /orders/:id.
+		path := c.Request.URL.EscapedPath()
+		if routeTemplate := c.FullPath(); routeTemplate != "" && routeTemplate != path {
+			// Pre-fix records collapsed concrete resources into the route template.
+			// Their resource identity cannot be recovered, so reject this old key
+			// during rollout rather than replaying it or repeating its effects.
+			legacyRecord, err := repo.Find(c.Request.Context(), userID, method, routeTemplate, key)
+			if err != nil {
+				log.Printf("idempotency legacy lookup failed: %v", err)
+				c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "idempotency_unavailable"})
 				return
 			}
-			c.Header("Idempotency-Replayed", "true")
-			if existing.ResponseCType != "" {
-				c.Header("Content-Type", existing.ResponseCType)
+			if legacyRecord != nil {
+				c.Header("Idempotency-Conflict", "true")
+				c.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": "idempotency_conflict"})
+				return
 			}
+		}
+		rec := &modelsCommon.IdempotencyKey{
+			Key: key, UserID: userID, Method: method, Path: path,
+			RequestHash: hashHex, StatusCode: modelsCommon.IdempotencyStatusPending,
+			CreatedAt: time.Now(), ExpiresAt: time.Now().Add(idempotencyTTL),
+		}
+		existing, err := repo.Reserve(c.Request.Context(), rec)
+		if err != nil {
+			c.Header("Idempotency-Replayed", "false")
+			switch {
+			case errors.Is(err, commonrepo.ErrIdempotencyKeyConflict):
+				c.Header("Idempotency-Conflict", "true")
+				c.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": "idempotency_conflict"})
+			case errors.Is(err, commonrepo.ErrIdempotencyInProgress):
+				c.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": "idempotency_in_progress"})
+			default:
+				log.Printf("idempotency reservation failed: %v", err)
+				c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "idempotency_unavailable"})
+			}
+			return
+		}
+		if existing != nil {
+			c.Header("Idempotency-Replayed", "true")
 			c.Data(existing.StatusCode, existing.ResponseCType, []byte(existing.ResponseBody))
 			c.Abort()
 			return
@@ -126,28 +179,17 @@ func Idempotency(repo *commonrepo.IdempotencyKeyRepository, resolver Idempotency
 		c.Header("Idempotency-Replayed", "false")
 		c.Next()
 
-		// Only cache successful responses (2xx). Errors leave the row absent so
-		// the client can retry safely.
-		status := writer.Status()
-		if status < 200 || status >= 300 {
-			return
-		}
-		rec := &modelsCommon.IdempotencyKey{
-			Key:           key,
-			UserID:        userID,
-			Method:        method,
-			Path:          path,
-			RequestHash:   hashHex,
-			StatusCode:    status,
-			ResponseBody:  writer.body.String(),
-			ResponseCType: writer.Header().Get("Content-Type"),
-			CreatedAt:     time.Now(),
-			ExpiresAt:     time.Now().Add(idempotencyTTL),
-		}
-		if err := repo.Save(c.Request.Context(), rec); err != nil && !errors.Is(err, commonrepo.ErrIdempotencyKeyConflict) {
-			// Non-fatal: the user already received their successful response.
-			// Logging avoids silent loss of a duplicate-prevention record.
-			c.Header("Idempotency-Cache-Error", err.Error())
+		// Cache every completed outcome: a handler may commit an effect before
+		// returning an error, so rerunning failures is not necessarily safe.
+		rec.StatusCode = writer.Status()
+		rec.ResponseBody = writer.body.String()
+		rec.ResponseCType = writer.Header().Get("Content-Type")
+		// Client disconnects must not discard an already committed result.
+		persistContext, cancel := context.WithTimeout(context.WithoutCancel(c.Request.Context()), idempotencyPersistTimeout)
+		defer cancel()
+		if err := repo.Save(persistContext, rec); err != nil {
+			// Retain the pending claim on persistence failure, preventing repeats.
+			log.Printf("idempotency response persistence failed: %v", err)
 		}
 	}
 }

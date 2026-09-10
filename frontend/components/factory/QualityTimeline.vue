@@ -100,7 +100,7 @@ defineProps<Props>()
 
 .timeline-item__content {
   padding: var(--spacing-lg);
-  background-color: white;
+  background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
 }

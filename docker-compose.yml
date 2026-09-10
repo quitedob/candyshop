@@ -98,7 +98,8 @@ services:
       dockerfile: Dockerfile
     container_name: candypro-frontend
     environment:
-      - API_BASE_URL=${API_BASE_URL:-http://api:8080/api/v1}
+      - NUXT_PUBLIC_API_BASE=${NUXT_PUBLIC_API_BASE:-/api/v1}
+      - NUXT_INTERNAL_API_BASE=${NUXT_INTERNAL_API_BASE:-http://api:8080/api/v1}
       - NUXT_PUBLIC_SITE_URL=${SITE_URL:-http://localhost:3000}
     ports:
       - "3000:3000"

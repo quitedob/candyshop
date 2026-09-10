@@ -5,12 +5,11 @@
     :class="`category-card--${variant}`"
   >
     <div class="category-card__image">
-      <img
-        :src="imgSrc"
+      <CategoryImage
+        :src="category.image"
+        :slug="category.slug"
         :alt="tField(category, 'name')"
         class="category-card__img"
-        loading="lazy"
-        @error="handleImageError"
       />
       <div class="category-card__overlay">
         <span class="category-card__count">{{ category.productCount }}+ {{ $t('nav.products') }}</span>
@@ -30,7 +29,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
 import { useLocalePath } from '#i18n'
 import { useTranslation } from '~/composables/useTranslation'
 
@@ -48,27 +46,17 @@ interface Props {
   variant?: 'default' | 'compact' | 'horizontal'
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 
 const localePath = useLocalePath()
 const { tField } = useTranslation()
 
-const FALLBACK = computed(() => `/images/categories/${props.category.slug}.jpg`)
-const imgSrc = ref(props.category.image || FALLBACK.value)
-
-watch(() => props.category.image, (val) => {
-  imgSrc.value = val || FALLBACK.value
-})
-
-const handleImageError = () => {
-  imgSrc.value = FALLBACK.value
-}
 </script>
 
 <style scoped>
 .category-card {
   display: block;
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-xl);
   overflow: hidden;
   box-shadow: var(--shadow-md);
@@ -136,7 +124,7 @@ const handleImageError = () => {
   justify-content: center;
   width: 56px;
   height: 56px;
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-full);
   color: var(--color-primary);
   transform: scale(0.8);
@@ -177,7 +165,7 @@ const handleImageError = () => {
   gap: var(--spacing-xs);
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--color-highlight);
+  color: var(--color-accent);
   transition: gap var(--transition-fast);
 }
 

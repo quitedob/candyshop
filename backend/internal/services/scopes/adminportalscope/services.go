@@ -98,7 +98,7 @@ func New(repos *repositoryCommon.AdminPortalRepositories, cfg *config.Config, au
 		Shipment:         trade.NewShipmentService(repos.Shipment),
 		Logistics:        trade.NewLogisticsService(repos.Shipment, repos.ShipmentEvent, repos.Order, repos.Trade, db),
 		TradeDocDetail:   trade.NewTradeDocumentDetailService(repos.TradeDocDetail),
-		QuotationReview:  trade.NewQuotationReviewService(repos.QuotationReview),
+		QuotationReview:  trade.NewQuotationReviewService(repos.QuotationReview, activitylogSvc.NewActivityLogService(repos.ActivityLog)),
 		ActivityLog:      activitylogSvc.NewActivityLogService(repos.ActivityLog),
 		SystemSetting:    systemsettingSvc.NewSystemSettingService(repos.SystemSetting),
 		StockTransaction: repos.StockTransaction,

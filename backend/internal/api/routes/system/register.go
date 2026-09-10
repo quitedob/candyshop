@@ -34,6 +34,7 @@ func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, 
 		systemProtected.GET("/ai/trade-assistant", h.System.HandleTradeChat)
 		systemProtected.GET("/ai/b2b-coordinator", h.System.HandleB2BCoordinatorChat)
 		systemProtected.GET("/ai/order-processing", h.System.HandleOrderProcessingChat)
+		systemProtected.POST("/ai/resume", middleware.RequireRole(modelsAuth.AdminPortal()...), h.System.ResumeAgent)
 		systemProtected.GET("/ai/config", h.System.SystemAIConfig)
 		systemProtected.POST("/analyze-inquiry", h.System.AnalyzeInquiry)
 		// 生成报价会向模型与响应注入内部成本栈（物流/关税/标签摊销/目标毛利），

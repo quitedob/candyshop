@@ -136,6 +136,32 @@ func (r *OrderRepository) Update(ctx context.Context, order *modelsOrder.Order) 
 	return r.db.WithContext(ctx).Omit("User", "Inquiry").Save(order).Error
 }
 
+// UpdateStatusGuarded transitions an order's status only when it still holds
+// fromStatus (M3). The guarded conditional UPDATE prevents a stale/concurrent read
+// from silently overwriting a newer status. Extra fields (e.g. shipped_at,
+// delivered_at) are applied in the same guarded write.
+func (r *OrderRepository) UpdateStatusGuarded(ctx context.Context, id, fromStatus, toStatus string, extra map[string]interface{}) error {
+	updates := map[string]interface{}{
+		"status":     toStatus,
+		"updated_at": time.Now(),
+	}
+	for k, v := range extra {
+		updates[k] = v
+	}
+	// Status writers must invalidate snapshots held by version-guarded editors.
+	updates["version"] = gorm.Expr("version + 1")
+	res := r.db.WithContext(ctx).Model(&modelsOrder.Order{}).
+		Where("id = ? AND status = ?", id, fromStatus).
+		Updates(updates)
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrOrderStateMismatch
+	}
+	return nil
+}
+
 // ErrOptimisticLockConflict 表示乐观锁版本号不匹配，调用方应重新读取并重试或上报。
 var ErrOptimisticLockConflict = errors.New("optimistic lock conflict")
 
@@ -716,13 +742,14 @@ func (r *OrderRepository) CountByStatuses(ctx context.Context, statuses []string
 	return total, nil
 }
 
-// SumTotalAmount returns sum(total_amount).
+// SumTotalAmount returns gross order value, excluding cancelled and expired orders.
 func (r *OrderRepository) SumTotalAmount(ctx context.Context) (float64, error) {
 	var result struct {
 		Amount float64
 	}
 	if err := r.db.WithContext(ctx).
 		Model(&modelsOrder.Order{}).
+		Where("status NOT IN ?", []string{modelsOrder.OrderStatusCancelled, modelsOrder.OrderStatusExpired}).
 		Select("COALESCE(SUM(total_amount), 0) AS amount").
 		Scan(&result).Error; err != nil {
 		return 0, err
@@ -730,7 +757,7 @@ func (r *OrderRepository) SumTotalAmount(ctx context.Context) (float64, error) {
 	return result.Amount, nil
 }
 
-// SumTotalAmountSince returns sum(total_amount) after given time.
+// SumTotalAmountSince returns the same gross order value after the given time.
 func (r *OrderRepository) SumTotalAmountSince(ctx context.Context, since time.Time) (float64, error) {
 	var result struct {
 		Amount float64
@@ -738,6 +765,7 @@ func (r *OrderRepository) SumTotalAmountSince(ctx context.Context, since time.Ti
 	if err := r.db.WithContext(ctx).
 		Model(&modelsOrder.Order{}).
 		Where("created_at >= ?", since).
+		Where("status NOT IN ?", []string{modelsOrder.OrderStatusCancelled, modelsOrder.OrderStatusExpired}).
 		Select("COALESCE(SUM(total_amount), 0) AS amount").
 		Scan(&result).Error; err != nil {
 		return 0, err
@@ -773,7 +801,8 @@ func (r *OrderRepository) RevenueByMonth(ctx context.Context, months int) ([]map
 	if err := r.db.WithContext(ctx).
 		Model(&modelsOrder.Order{}).
 		Select("TO_CHAR(created_at, 'YYYY-MM') AS month, COALESCE(SUM(total_amount), 0) AS revenue, COUNT(*) AS order_count").
-		Where("created_at >= NOW() - (? * INTERVAL '1 month') AND status != 'cancelled'", months).
+		Where("created_at >= NOW() - (? * INTERVAL '1 month')", months).
+		Where("status NOT IN ?", []string{modelsOrder.OrderStatusCancelled, modelsOrder.OrderStatusExpired}).
 		Group("month").
 		Order("month").
 		Scan(&rows).Error; err != nil {
@@ -801,7 +830,8 @@ func (r *OrderRepository) OrderCountByMonth(ctx context.Context, months int) ([]
 	if err := r.db.WithContext(ctx).
 		Model(&modelsOrder.Order{}).
 		Select("TO_CHAR(created_at, 'YYYY-MM') AS month, COUNT(*) AS count").
-		Where("created_at >= NOW() - (? * INTERVAL '1 month') AND status != 'cancelled'", months).
+		Where("created_at >= NOW() - (? * INTERVAL '1 month')", months).
+		Where("status NOT IN ?", []string{modelsOrder.OrderStatusCancelled, modelsOrder.OrderStatusExpired}).
 		Group("month").
 		Order("month").
 		Scan(&rows).Error; err != nil {
@@ -884,7 +914,8 @@ func (r *OrderRepository) RevenueByDay(ctx context.Context, days int) ([]map[str
 	if err := r.db.WithContext(ctx).
 		Model(&modelsOrder.Order{}).
 		Select("DATE(created_at) AS date, COALESCE(SUM(total_amount), 0) AS revenue").
-		Where("created_at >= NOW() - (? * INTERVAL '1 day') AND status != 'cancelled'", days).
+		Where("created_at >= NOW() - (? * INTERVAL '1 day')", days).
+		Where("status NOT IN ?", []string{modelsOrder.OrderStatusCancelled, modelsOrder.OrderStatusExpired}).
 		Group("date").
 		Order("date").
 		Scan(&rows).Error; err != nil {
@@ -1204,12 +1235,16 @@ type ProfitLossResult struct {
 	Revenue        float64 `json:"revenue"`
 	COGS           float64 `json:"cogs"`
 	ShippingCost   float64 `json:"shippingCost"`
-	GrossProfit     float64 `json:"grossProfit"`
-	GrossMarginPct  float64 `json:"grossMarginPct"`
+	GrossProfit    float64 `json:"grossProfit"`
+	GrossMarginPct float64 `json:"grossMarginPct"`
 	OrderCount     int     `json:"orderCount"`
 }
 
 // ProfitLossByPeriod returns P&L grouped by period (day/week/month).
+// Revenue excludes tax and completed merchandise refunds. Refunds restate the
+// original order period; pending/rejected returns do not affect revenue. The
+// stored COGS and shipping snapshots remain costs: return items do not record a
+// historical cost or recoverable inventory valuation from which to reverse COGS.
 // NOTE: COGS (orders.cogs) is populated at order-confirmation time; historical orders
 // created before COGS tracking was enabled may still report cogs=0, inflating gross margin.
 func (r *OrderRepository) ProfitLossByPeriod(ctx context.Context, groupBy string, periods int) ([]ProfitLossResult, error) {
@@ -1218,48 +1253,64 @@ func (r *OrderRepository) ProfitLossByPeriod(ctx context.Context, groupBy string
 	switch groupBy {
 	case "week":
 		truncate = "week"
-		interval = "week"
+		interval = "1 week"
 	case "day":
 		truncate = "day"
-		interval = "day"
+		interval = "1 day"
 	default:
 		truncate = "month"
-		interval = "month"
+		interval = "1 month"
 	}
 
 	var rows []ProfitLossResult
 	err := r.db.WithContext(ctx).Raw(`
-		SELECT date_trunc(?, o.created_at)::text AS period,
-			COALESCE(SUM(o.total_amount), 0) AS revenue,
-			COALESCE(SUM(o.cogs), 0) AS cogs,
-			COALESCE(SUM(o.shipping_amount), 0) AS shipping_cost,
-			COALESCE(SUM(o.total_amount) - SUM(o.cogs) - SUM(o.shipping_amount), 0) AS gross_profit,
-			CASE WHEN SUM(o.total_amount) > 0
-				THEN ROUND(((SUM(o.total_amount) - SUM(o.cogs) - SUM(o.shipping_amount)) / SUM(o.total_amount) * 100)::numeric, 1)
+		WITH order_financials AS (
+			SELECT o.created_at,
+				COALESCE(o.total_amount, 0) - COALESCE(o.tax_amount, 0) - COALESCE(refunds.amount, 0) AS revenue,
+				COALESCE(o.cogs, 0) AS cogs,
+				COALESCE(o.shipping_amount, 0) AS shipping_cost
+			FROM orders o
+			LEFT JOIN (
+				SELECT return_requests.order_id, SUM(return_items.refund_amount) AS amount
+				FROM return_requests
+				JOIN return_items ON return_items.return_id = return_requests.id
+				WHERE return_requests.status = ?
+				GROUP BY return_requests.order_id
+			) refunds ON refunds.order_id = o.id
+			WHERE o.status NOT IN ?
+				AND o.deleted_at IS NULL
+				AND o.created_at >= date_trunc(?, NOW()) - (? * CAST(? AS interval))
+		)
+		SELECT date_trunc(?, created_at)::text AS period,
+			SUM(revenue) AS revenue,
+			SUM(cogs) AS cogs,
+			SUM(shipping_cost) AS shipping_cost,
+			SUM(revenue - cogs - shipping_cost) AS gross_profit,
+			CASE WHEN SUM(revenue) > 0
+				THEN ROUND((SUM(revenue - cogs - shipping_cost) / SUM(revenue) * 100)::numeric, 1)
 				ELSE 0
 			END AS gross_margin_pct,
-			COUNT(o.id)::int AS order_count
-		FROM orders o
-		WHERE o.status NOT IN ('cancelled', 'expired')
-			AND o.deleted_at IS NULL
-			AND o.created_at >= date_trunc(?, NOW()) - (? * INTERVAL '1 ' || ?)
-		GROUP BY date_trunc(?, o.created_at)
+			COUNT(*)::int AS order_count
+		FROM order_financials
+		GROUP BY period
 		ORDER BY period
-	`, truncate, truncate, periods, interval, truncate).Scan(&rows).Error
+	`, modelsOrder.ReturnStatusRefunded,
+		[]string{modelsOrder.OrderStatusCancelled, modelsOrder.OrderStatusExpired},
+		truncate, periods, interval, truncate).Scan(&rows).Error
 	return rows, err
 }
 
 // ReplenishmentItem holds a single replenishment suggestion.
 type ReplenishmentItem struct {
-	ProductID       string  `json:"productId"`
-	ProductName     string  `json:"productName"`
-	CurrentStock    int     `json:"currentStock"`
-	SafetyStock     int     `json:"safetyStock"`
-	AvgDailySales   float64 `json:"avgDailySales"`
-	InTransit       int     `json:"inTransit"`
-	PendingOrders   int     `json:"pendingOrders"`
-	SuggestedQty    int     `json:"suggestedQty"`
-	CycleDays       int     `json:"cycleDays"`
+	ProductID     string  `json:"productId"`
+	ProductName   string  `json:"productName"`
+	CurrentStock  int     `json:"currentStock"`
+	SafetyStock   int     `json:"safetyStock"`
+	AvgDailySales float64 `json:"avgDailySales"`
+	InTransit     int     `json:"inTransit"`
+	PendingOrders int     `json:"pendingOrders"`
+	SuggestedQty  int     `json:"suggestedQty"`
+	CycleDays     int     `json:"cycleDays"`
 }
 
 // ReplenishmentSuggestions computes smart replenishment for all products.

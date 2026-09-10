@@ -25,6 +25,7 @@ type logisticsShipmentRepo interface {
 	FindByTransactionID(ctx context.Context, transactionID uint) ([]modelsTrade.ShipmentTracking, error)
 	FindTrackable(ctx context.Context, limit int) ([]modelsTrade.ShipmentTracking, error)
 	Update(ctx context.Context, shipment *modelsTrade.ShipmentTracking) error
+	UpdateStatus(ctx context.Context, id uint, fromStatus, toStatus string, extra map[string]interface{}) error
 	Dispatch(ctx context.Context, db *gorm.DB, id uint, dispatchedAt time.Time) (bool, error)
 }
 
@@ -37,6 +38,7 @@ type logisticsEventRepo interface {
 type logisticsOrderRepo interface {
 	FindByID(ctx context.Context, id string) (*modelsOrder.Order, error)
 	Update(ctx context.Context, order *modelsOrder.Order) error
+	UpdateStatusGuarded(ctx context.Context, id, fromStatus, toStatus string, extra map[string]interface{}) error
 }
 
 type logisticsTradeRepo interface {
@@ -220,24 +222,26 @@ func (s *LogisticsService) AddTrackingEvent(ctx context.Context, shipmentID uint
 
 	// Auto-advance shipment status based on event type
 	now := time.Now()
+	fromStatus := shipment.Status
 	needsUpdate := false
 	switch eventType {
 	case modelsTrade.EventInTransit, modelsTrade.EventPickedUp:
 		if shipment.Status == "DISPATCHED" || shipment.Status == "PENDING" {
-			shipment.Status = "IN_TRANSIT"
 			needsUpdate = true
 		}
 	case modelsTrade.EventArrivedAtPort, modelsTrade.EventCustomsCleared, modelsTrade.EventOutForDelivery:
 		if shipment.Status != "IN_TRANSIT" {
-			shipment.Status = "IN_TRANSIT"
 			needsUpdate = true
 		}
 	}
 	if needsUpdate {
-		shipment.UpdatedAt = now
-		if updateErr := s.shipmentRepo.Update(ctx, shipment); updateErr != nil {
+		// M3: guarded conditional UPDATE keyed on the loaded status so a concurrent
+		// writer cannot be silently overwritten.
+		if updateErr := s.shipmentRepo.UpdateStatus(ctx, shipmentID, fromStatus, "IN_TRANSIT", nil); updateErr != nil {
 			return shipment, updateErr
 		}
+		shipment.Status = "IN_TRANSIT"
+		shipment.UpdatedAt = now
 	}
 
 	return shipment, nil
@@ -254,13 +258,13 @@ func (s *LogisticsService) ConfirmDelivery(ctx context.Context, shipmentID uint,
 	}
 
 	now := time.Now()
-	shipment.Status = "DELIVERED"
-	shipment.DeliveredAt = &deliveredAt
-	shipment.DeliveryProofURL = proofURL
-	shipment.SignedBy = signedBy
-	shipment.UpdatedAt = now
-
-	if err := s.shipmentRepo.Update(ctx, shipment); err != nil {
+	// M3: guarded conditional UPDATE keyed on the loaded status so a concurrent
+	// delivery cannot both win.
+	if err := s.shipmentRepo.UpdateStatus(ctx, shipmentID, shipment.Status, "DELIVERED", map[string]interface{}{
+		"delivered_at":       &deliveredAt,
+		"delivery_proof_url": proofURL,
+		"signed_by":          signedBy,
+	}); err != nil {
 		return err
 	}
 
@@ -378,15 +382,16 @@ func (s *LogisticsService) checkAndAdvanceOrderStatus(ctx context.Context, trans
 		)
 		return
 	}
-	order.Status = targetOrderStatus
-	order.UpdatedAt = now
+	extra := map[string]interface{}{}
 	switch targetOrderStatus {
 	case "shipped":
-		order.ShippedAt = &now
+		extra["shipped_at"] = &now
 	case "delivered":
-		order.DeliveredAt = &now
+		extra["delivered_at"] = &now
 	}
-	if err := s.orderRepo.Update(ctx, order); err != nil {
+	// M3: guarded conditional UPDATE keyed on the loaded status so a concurrent
+	// order mutation cannot be silently overwritten by the logistics advance.
+	if err := s.orderRepo.UpdateStatusGuarded(ctx, order.ID, order.Status, targetOrderStatus, extra); err != nil {
 		slog.Warn("advance order status: order update failed", "orderID", order.ID, "targetStatus", targetOrderStatus, "error", err)
 	}
 }
@@ -436,9 +441,10 @@ func (s *LogisticsService) SyncShipmentStatusFromEvents(ctx context.Context, shi
 		}
 		return true, nil
 	default:
-		shipment.Status = newStatus
-		shipment.UpdatedAt = now
-		if err := s.shipmentRepo.Update(ctx, shipment); err != nil {
+		// M3: guarded conditional UPDATE keyed on the loaded status so a concurrent
+		// writer cannot be silently overwritten (IN_TRANSIT / EXCEPTION transition).
+		fromStatus := shipment.Status
+		if err := s.shipmentRepo.UpdateStatus(ctx, shipment.ID, fromStatus, newStatus, nil); err != nil {
 			return false, err
 		}
 		return true, nil

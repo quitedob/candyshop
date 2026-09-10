@@ -18,12 +18,14 @@ type tradeRepository interface {
 	ListTransactionsByUserID(ctx context.Context, userID string, page, pageSize int) ([]modelsTrade.TradeTransaction, int64, error)
 	ListAllTransactions(ctx context.Context, page, pageSize int, status string) ([]modelsTrade.TradeTransaction, int64, error)
 	UpdateTransaction(ctx context.Context, transaction *modelsTrade.TradeTransaction) error
+	UpdateTransactionStatus(ctx context.Context, id uint, fromStatus, toStatus string) error
 	CountTransactionsByOrderID(ctx context.Context, orderID string) (int64, error)
 	GetFirstTransactionByOrderID(ctx context.Context, orderID string) (*modelsTrade.TradeTransaction, error)
 	CreateDocument(ctx context.Context, doc *modelsTrade.TradeDocument) error
 	GetDocumentByID(ctx context.Context, id uint) (*modelsTrade.TradeDocument, error)
 	ListDocumentsByTransactionID(ctx context.Context, transactionID uint) ([]modelsTrade.TradeDocument, error)
 	UpdateDocument(ctx context.Context, doc *modelsTrade.TradeDocument) error
+	UpdateDocumentStatus(ctx context.Context, id uint, fromStatus, toStatus string) error
 	DeleteDocument(ctx context.Context, id uint) error
 	GetComplianceByTransactionID(ctx context.Context, transactionID uint) ([]modelsTrade.ComplianceRequirement, error)
 	UpdateCompliance(ctx context.Context, comp *modelsTrade.ComplianceRequirement) error
@@ -152,6 +154,12 @@ func (s *TradeService) UpdateDocument(ctx context.Context, doc *modelsTrade.Trad
 		if err := modelsTrade.ValidateTradeDocumentStatusTransition(current.Status, doc.Status); err != nil {
 			return err
 		}
+		// M3: guard the status write. When the status actually changes, persist it
+		// via a conditional UPDATE keyed on the loaded status; otherwise fall
+		// through to the full Save for content-only edits.
+		if strings.TrimSpace(current.Status) != strings.TrimSpace(doc.Status) {
+			return s.repo.UpdateDocumentStatus(ctx, doc.ID, current.Status, doc.Status)
+		}
 	}
 	return s.repo.UpdateDocument(ctx, doc)
 }
@@ -184,8 +192,9 @@ func (s *TradeService) UpdateTransactionStatus(ctx context.Context, id uint, sta
 			return fmt.Errorf("cannot transition trade from '%s' to '%s'", prev, next)
 		}
 	}
-	trans.Status = next
-	return s.repo.UpdateTransaction(ctx, trans)
+	// M3: persist via a guarded conditional UPDATE keyed on the loaded status, so a
+	// concurrent/stale reader cannot silently overwrite a newer status.
+	return s.repo.UpdateTransactionStatus(ctx, id, trans.Status, next)
 }
 
 // ListDocuments retrieves all documents for a transaction.

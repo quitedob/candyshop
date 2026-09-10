@@ -148,8 +148,7 @@ const certifications = [
     description: t('about.cert_desc.haccp'),
     issuer: 'SGS',
     validUntil: '2027',
-    badgeUrl: '/certificates/haccp-badge.svg',
-    certificateUrl: '/certificates/haccp.pdf'
+    badgeUrl: '/certificates/haccp-badge.svg'
   },
   {
     id: '2',
@@ -158,8 +157,7 @@ const certifications = [
     description: t('about.cert_desc.iso'),
     issuer: 'BSI',
     validUntil: '2027',
-    badgeUrl: '/certificates/iso-badge.svg',
-    certificateUrl: '/certificates/iso22000.pdf'
+    badgeUrl: '/certificates/iso-badge.svg'
   },
   {
     id: '3',
@@ -168,8 +166,7 @@ const certifications = [
     description: t('about.cert_desc.brc'),
     issuer: 'BRC',
     validUntil: '2026',
-    badgeUrl: '/certificates/brc-badge.svg',
-    certificateUrl: '/certificates/brc.pdf'
+    badgeUrl: '/certificates/brc-badge.svg'
   },
   {
     id: '4',
@@ -178,8 +175,7 @@ const certifications = [
     description: t('about.cert_desc.halal'),
     issuer: 'IFRC',
     validUntil: '2027',
-    badgeUrl: '/certificates/halal-badge.svg',
-    certificateUrl: '/certificates/halal.pdf'
+    badgeUrl: '/certificates/halal-badge.svg'
   }
 ]
 
@@ -258,7 +254,7 @@ usePageOgImage({
 .mvv-card {
   text-align: center;
   padding: var(--spacing-2xl);
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-xl);
 }
 

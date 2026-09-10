@@ -27,6 +27,9 @@ func (f *dispatchFakeOrderRepo) FindByID(ctx context.Context, id string) (*model
 func (f *dispatchFakeOrderRepo) Update(ctx context.Context, order *modelsOrder.Order) error {
 	return nil
 }
+func (f *dispatchFakeOrderRepo) UpdateStatusGuarded(ctx context.Context, id, fromStatus, toStatus string, extra map[string]interface{}) error {
+	return nil
+}
 
 type dispatchFakeTradeRepo struct {
 	trans *modelsTrade.TradeTransaction

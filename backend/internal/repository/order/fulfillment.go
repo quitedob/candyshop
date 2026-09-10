@@ -269,22 +269,39 @@ func (r *FulfillmentRepository) Ship(ctx context.Context, id, trackingNumber, ca
 }
 
 // Deliver marks a fulfillment as delivered.
+//
+// M3: the delivered transition is a guarded conditional UPDATE (WHERE status =
+// shipped) — the guard is the sole authority, so a concurrent/stale read cannot
+// silently overwrite a newer status. The loser gets ErrFulfillmentStateMismatch and
+// never reaches the order-status advance below.
 func (r *FulfillmentRepository) Deliver(ctx context.Context, id string, deliveredAt time.Time) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var f modelsOrder.Fulfillment
-		if err := tx.Where("id = ?", id).First(&f).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", id).First(&f).Error; err != nil {
 			return err
 		}
 		if f.Status != modelsOrder.FulfillmentStatusShipped {
-			return fmt.Errorf("fulfillment %s cannot be delivered from status %s", id, f.Status)
+			return ErrFulfillmentStateMismatch
+		}
+		// Serialize deliveries for different fulfillments of the same order and
+		// validate the fresh order state before changing either record.
+		var order modelsOrder.Order
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", f.OrderID).First(&order).Error; err != nil {
+			return err
 		}
 		updates := map[string]interface{}{
 			"status":       modelsOrder.FulfillmentStatusDelivered,
 			"delivered_at": deliveredAt,
 			"updated_at":   deliveredAt,
 		}
-		if err := tx.Model(&f).Updates(updates).Error; err != nil {
-			return err
+		res := tx.Model(&modelsOrder.Fulfillment{}).
+			Where("id = ? AND status = ?", id, modelsOrder.FulfillmentStatusShipped).
+			Updates(updates)
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return ErrFulfillmentStateMismatch
 		}
 		// Check if all fulfillments for this order are delivered
 		var allFulfillments []modelsOrder.Fulfillment
@@ -293,37 +310,64 @@ func (r *FulfillmentRepository) Deliver(ctx context.Context, id string, delivere
 		}
 		allDelivered := true
 		for _, ff := range allFulfillments {
-			if ff.ID != id && ff.Status != modelsOrder.FulfillmentStatusDelivered {
+			if ff.Status != modelsOrder.FulfillmentStatusDelivered && ff.Status != modelsOrder.FulfillmentStatusCancelled {
 				allDelivered = false
 				break
 			}
 		}
-		if allDelivered {
-			return tx.Model(&modelsOrder.Order{}).Where("id = ?", f.OrderID).
-				Updates(map[string]interface{}{
-					"status":       modelsOrder.OrderStatusDelivered,
-					"delivered_at": deliveredAt,
-					"updated_at":   deliveredAt,
-				}).Error
+		for _, item := range order.Items {
+			if item.FulfilledQuantity < item.Quantity {
+				allDelivered = false
+				break
+			}
 		}
-		// Partial delivery
-		return tx.Model(&modelsOrder.Order{}).Where("id = ?", f.OrderID).
-			Updates(map[string]interface{}{
-				"status":     modelsOrder.OrderStatusPartiallyDelivered,
-				"updated_at": deliveredAt,
-			}).Error
+		nextStatus := modelsOrder.OrderStatusPartiallyDelivered
+		orderUpdates := map[string]interface{}{
+			"updated_at": deliveredAt,
+			"version":    gorm.Expr("version + 1"),
+		}
+		if allDelivered {
+			nextStatus = modelsOrder.OrderStatusDelivered
+			orderUpdates["delivered_at"] = deliveredAt
+		}
+		if err := modelsOrder.ValidateOrderStatusTransition(order.Status, nextStatus); err != nil {
+			return err
+		}
+		orderUpdates["status"] = nextStatus
+		result := tx.Model(&modelsOrder.Order{}).Where("id = ? AND status = ?", order.ID, order.Status).Updates(orderUpdates)
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return ErrOrderStateMismatch
+		}
+		return nil
 	})
 }
 
 // Cancel cancels a fulfillment and restores warehouse stock.
+//
+// The cancel is a guarded conditional UPDATE (WHERE status NOT IN delivered, cancelled) so two
+// concurrent — or sequential — cancels cannot both restore the stock: the loser gets an error
+// and never reaches the restore loop. The in-memory delivered check is replaced by the guard.
 func (r *FulfillmentRepository) Cancel(ctx context.Context, id string) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var f modelsOrder.Fulfillment
 		if err := tx.Where("id = ?", id).First(&f).Error; err != nil {
 			return err
 		}
-		if f.Status == modelsOrder.FulfillmentStatusDelivered {
-			return fmt.Errorf("cannot cancel delivered fulfillment %s", id)
+		res := tx.Model(&modelsOrder.Fulfillment{}).
+			Where("id = ? AND status NOT IN ?", id,
+				[]string{modelsOrder.FulfillmentStatusDelivered, modelsOrder.FulfillmentStatusCancelled}).
+			Updates(map[string]interface{}{
+				"status":     modelsOrder.FulfillmentStatusCancelled,
+				"updated_at": time.Now(),
+			})
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return fmt.Errorf("cannot cancel delivered or already-cancelled fulfillment %s", id)
 		}
 		// Restore warehouse stock
 		var items []modelsOrder.FulfillmentItem
@@ -352,9 +396,6 @@ func (r *FulfillmentRepository) Cancel(ctx context.Context, id string) error {
 		if err := tx.Model(&order).Update("items", itemsJSON).Error; err != nil {
 			return err
 		}
-		return tx.Model(&f).Updates(map[string]interface{}{
-			"status":     modelsOrder.FulfillmentStatusCancelled,
-			"updated_at": time.Now(),
-		}).Error
+		return nil
 	})
 }

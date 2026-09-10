@@ -254,7 +254,7 @@ const resumeAutoplay = () => {
   justify-content: center;
   width: 40px;
   height: 40px;
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-full);
   box-shadow: var(--shadow-md);
   color: var(--color-primary);
@@ -284,7 +284,7 @@ const resumeAutoplay = () => {
   justify-content: center;
   width: 40px;
   height: 40px;
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-full);
   box-shadow: var(--shadow-md);
   color: var(--color-primary);
@@ -314,7 +314,7 @@ const resumeAutoplay = () => {
   width: 80px;
   height: 80px;
   padding: var(--spacing-xs);
-  background-color: white;
+  background-color: var(--color-bg);
   border: 2px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -363,7 +363,7 @@ const resumeAutoplay = () => {
   justify-content: center;
   width: 44px;
   height: 44px;
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-full);
   color: var(--color-text);
   transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);

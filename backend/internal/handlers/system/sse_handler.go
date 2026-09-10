@@ -15,6 +15,7 @@ import (
 	modelsOrder "candypro/api/internal/models/order"
 	"candypro/api/internal/pkg/eino"
 	"candypro/api/internal/pkg/eino/retry"
+	einotool "candypro/api/internal/pkg/eino/tool"
 	"candypro/api/internal/pkg/response"
 	tradeSvc "candypro/api/internal/services/trade"
 
@@ -32,20 +33,36 @@ type SSEEvent struct {
 	ActionType   string            `json:"action_type,omitempty"`
 	Error        string            `json:"error,omitempty"`
 	DocumentType string            `json:"document_type,omitempty"` // UI Anchor
+
+	// HITL review-and-edit resume fields, populated on the "interrupted" action
+	// so a client can call the resume endpoint to approve/disapprove/edit.
+	CheckpointID     string          `json:"checkpoint_id,omitempty"`
+	InterruptID      string          `json:"interrupt_id,omitempty"`
+	InterruptAddress string          `json:"interrupt_address,omitempty"`
+	Review           json.RawMessage `json:"review,omitempty"`
 }
 
 // agentRunOptions reads optional temperature query params and returns Eino run
-// options. temperature is honored per-request; model override is not supported
-// and the frontend no longer sends it — the effective model is read from
-// /system/ai/config (SystemAIConfig), which is the single source of truth.
-func (h *Handler) agentRunOptions(c *gin.Context) []adk.AgentRunOption {
+// options plus the checkpoint ID to persist any interrupt against. temperature is
+// honored per-request; model override is not supported and the frontend no longer
+// sends it — the effective model is read from /system/ai/config (SystemAIConfig),
+// which is the single source of truth.
+func (h *Handler) agentRunOptions(c *gin.Context) ([]adk.AgentRunOption, string) {
 	var opts []adk.AgentRunOption
 	if raw := strings.TrimSpace(c.Query("temperature")); raw != "" {
 		if temp, err := strconv.ParseFloat(raw, 32); err == nil && temp >= 0 && temp <= 2 {
 			opts = append(opts, adk.WithChatModelOptions([]model.Option{model.WithTemperature(float32(temp))}))
 		}
 	}
-	return opts
+	checkpointID := h.conversationCheckpointID(c)
+	opts = append(opts, adk.WithCheckPointID(checkpointID))
+	return opts, checkpointID
+}
+
+// conversationCheckpointID creates an owned run key. The interrupted event
+// returns this opaque ID; conversation/trade query parameters cannot overwrite it.
+func (h *Handler) conversationCheckpointID(c *gin.Context) string {
+	return eino.NewOwnedCheckPointID(c.GetString("userID"))
 }
 
 // SystemAIConfig reports the effective AI configuration to the admin console.
@@ -127,7 +144,7 @@ func (h *Handler) HandleTradeChat(c *gin.Context) {
 	// Create a new runner for each connection with streaming
 	runnerCfg := adk.RunnerConfig{
 		EnableStreaming: true,
-		Agent:          h.tradeAgent,
+		Agent:           h.tradeAgent,
 	}
 	if h.checkPointStore != nil {
 		runnerCfg.CheckPointStore = h.checkPointStore
@@ -142,7 +159,8 @@ func (h *Handler) HandleTradeChat(c *gin.Context) {
 	c.Writer.Flush()
 
 	// Query the runner
-	iter := runner.Query(ctx, query, h.agentRunOptions(c)...)
+	opts, checkpointID := h.agentRunOptions(c)
+	iter := runner.Query(ctx, query, opts...)
 
 	for {
 		event, ok := iter.Next()
@@ -150,7 +168,7 @@ func (h *Handler) HandleTradeChat(c *gin.Context) {
 			break
 		}
 
-		if err := processAgentEvent(ctx, c.Writer, event); err != nil {
+		if err := processAgentEvent(ctx, c.Writer, event, checkpointID); err != nil {
 			log.Printf("SSE Process error: %v", err)
 			break
 		}
@@ -179,7 +197,7 @@ func (h *Handler) HandleB2BCoordinatorChat(c *gin.Context) {
 
 	runnerCfg := adk.RunnerConfig{
 		EnableStreaming: true,
-		Agent:          h.b2bCoordinatorAgent,
+		Agent:           h.b2bCoordinatorAgent,
 	}
 	if h.checkPointStore != nil {
 		runnerCfg.CheckPointStore = h.checkPointStore
@@ -191,13 +209,14 @@ func (h *Handler) HandleB2BCoordinatorChat(c *gin.Context) {
 	c.Writer.Header().Set("Connection", "keep-alive")
 	c.Writer.Flush()
 
-	iter := runner.Query(ctx, query, h.agentRunOptions(c)...)
+	opts, checkpointID := h.agentRunOptions(c)
+	iter := runner.Query(ctx, query, opts...)
 	for {
 		event, ok := iter.Next()
 		if !ok {
 			break
 		}
-		if err := processAgentEvent(ctx, c.Writer, event); err != nil {
+		if err := processAgentEvent(ctx, c.Writer, event, checkpointID); err != nil {
 			log.Printf("B2B Coordinator SSE error: %v", err)
 			break
 		}
@@ -230,7 +249,7 @@ func (h *Handler) HandleOrderProcessingChat(c *gin.Context) {
 
 	runnerCfg := adk.RunnerConfig{
 		EnableStreaming: true,
-		Agent:          h.orderProcessingAgent,
+		Agent:           h.orderProcessingAgent,
 	}
 	if h.checkPointStore != nil {
 		runnerCfg.CheckPointStore = h.checkPointStore
@@ -242,25 +261,27 @@ func (h *Handler) HandleOrderProcessingChat(c *gin.Context) {
 	c.Writer.Header().Set("Connection", "keep-alive")
 	c.Writer.Flush()
 
-	iter := runner.Query(ctx, query, h.agentRunOptions(c)...)
+	opts, checkpointID := h.agentRunOptions(c)
+	iter := runner.Query(ctx, query, opts...)
 	for {
 		event, ok := iter.Next()
 		if !ok {
 			break
 		}
-		if err := processAgentEvent(ctx, c.Writer, event); err != nil {
+		if err := processAgentEvent(ctx, c.Writer, event, checkpointID); err != nil {
 			log.Printf("Order Processing SSE error: %v", err)
 			break
 		}
 	}
 }
 
-func processAgentEvent(ctx context.Context, w gin.ResponseWriter, event *adk.AgentEvent) error {
+func processAgentEvent(ctx context.Context, w gin.ResponseWriter, event *adk.AgentEvent, checkpointID string) error {
 	if event.Err != nil {
+		log.Printf("processAgentEvent: agent event error: %v", event.Err)
 		sendSSEEvent(w, SSEEvent{
 			Type:      "error",
 			AgentName: event.AgentName,
-			Error:     event.Err.Error(),
+			Error:     "internal_error",
 		})
 		return event.Err
 	}
@@ -322,7 +343,8 @@ func processAgentEvent(ctx context.Context, w gin.ResponseWriter, event *adk.Age
 					break
 				}
 				if err != nil {
-					sendSSEEvent(w, SSEEvent{Type: "error", Error: err.Error()})
+					log.Printf("processAgentEvent: message stream chunk error: %v", err)
+					sendSSEEvent(w, SSEEvent{Type: "error", Error: "internal_error"})
 					return err
 				}
 				if chunk.Content != "" {
@@ -340,11 +362,28 @@ func processAgentEvent(ctx context.Context, w gin.ResponseWriter, event *adk.Age
 		if event.Action.Interrupted != nil {
 			for _, ic := range event.Action.Interrupted.InterruptContexts {
 				content := fmt.Sprintf("%v", ic.Info)
-				sendSSEEvent(w, SSEEvent{
+				sseEvent := SSEEvent{
 					Type:       "action",
 					ActionType: "interrupted",
 					Content:    content,
-				})
+				}
+				// Attach resume plumbing for the HITL review-and-edit gate so a
+				// client can approve/disapprove/edit the pending tool call.
+				if info, ok := ic.Info.(*einotool.ReviewEditInfo); ok {
+					sseEvent.CheckpointID = checkpointID
+					sseEvent.InterruptID = ic.ID
+					sseEvent.InterruptAddress = ic.Address.String()
+					if reviewJSON, mErr := json.Marshal(struct {
+						ToolName        string `json:"tool_name"`
+						ArgumentsInJSON string `json:"arguments_in_json"`
+					}{
+						ToolName:        info.ToolName,
+						ArgumentsInJSON: info.ArgumentsInJSON,
+					}); mErr == nil {
+						sseEvent.Review = reviewJSON
+					}
+				}
+				sendSSEEvent(w, sseEvent)
 			}
 		}
 		if event.Action.Exit {

@@ -50,6 +50,13 @@ func NewB2BCoordinatorAgent(ctx context.Context, chatModel model.ToolCallingChat
 		return nil, fmt.Errorf("document pipeline tool: %w", err)
 	}
 
+	// generate_trade_documents is the one state-changing tool without its own DB
+	// approval queue, so it is the tool the HITL review-and-edit gate protects.
+	reviewDocTool := &einotool.InvokableReviewEditTool{
+		InvokableTool:  docGraphTool,
+		RequiresReview: einotool.GenerateTradeDocumentsRequiresReview,
+	}
+
 	// Individual tools
 	compTool, err := einotool.NewComplianceCheckTool(ctx)
 	if err != nil {
@@ -72,7 +79,7 @@ func NewB2BCoordinatorAgent(ctx context.Context, chatModel model.ToolCallingChat
 	}
 
 	coordinatorTools := []tool.BaseTool{
-		docGraphTool,
+		reviewDocTool,
 		compTool,
 		lcTool,
 		trackTool,

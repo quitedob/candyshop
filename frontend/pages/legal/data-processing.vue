@@ -25,14 +25,15 @@
     </section>
 
     <div class="mt-12 flex flex-wrap gap-4 text-sm">
-      <NuxtLink to="/privacy" class="text-orange-600 hover:underline">{{ t('legal.privacy_title') }}</NuxtLink>
-      <NuxtLink to="/terms" class="text-orange-600 hover:underline">{{ t('legal.terms_title') }}</NuxtLink>
+      <NuxtLink :to="localePath('/privacy')" class="text-orange-600 hover:underline">{{ t('legal.privacy_title') }}</NuxtLink>
+      <NuxtLink :to="localePath('/terms')" class="text-orange-600 hover:underline">{{ t('legal.terms_title') }}</NuxtLink>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 const { t } = useI18n()
+const localePath = useLocalePath()
 definePageMeta({ layout: 'default' })
 usePageOgImage({
   title: t('legal.data_processing_title'),

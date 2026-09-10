@@ -9,8 +9,9 @@
     </div>
 
     <!-- Mobile Top Bar -->
-    <header class="customer-mobile-topbar">
+    <header class="customer-mobile-topbar" :inert="isMobileViewport && isMobileNavOpen">
       <button
+        ref="mobileMenuButtonRef"
         type="button"
         class="customer-mobile-topbar__btn"
         :aria-expanded="isMobileNavOpen ? 'true' : 'false'"
@@ -21,7 +22,7 @@
         <Icon name="material-symbols:menu" size="22" aria-hidden="true" />
       </button>
       <span class="customer-mobile-topbar__brand">{{ t('customer.brand') }}</span>
-      <NuxtLink :to="localePath('/customer/cart')" class="customer-mobile-topbar__cart">
+      <NuxtLink :to="localePath('/customer/cart')" class="customer-mobile-topbar__cart" :aria-label="t('customer.nav.cart')">
         <Icon name="material-symbols:shopping-bag" size="22" aria-hidden="true" />
         <span v-if="cartCount > 0" class="customer-mobile-topbar__cart-badge">{{ cartCount }}</span>
       </NuxtLink>
@@ -37,8 +38,15 @@
 
     <!-- Sidebar -->
     <aside
+      ref="mobileSidebarRef"
       :id="customerSidebarId"
       class="customer-sidebar"
+      tabindex="-1"
+      :role="isMobileViewport && isMobileNavOpen ? 'dialog' : undefined"
+      :aria-modal="isMobileViewport && isMobileNavOpen ? 'true' : undefined"
+      :aria-label="t('customer.brand')"
+      :inert="isMobileViewport && !isMobileNavOpen"
+      :aria-hidden="isMobileViewport && !isMobileNavOpen ? 'true' : undefined"
       :class="{
         'customer-sidebar--collapsed': isCollapsed,
         'customer-sidebar--mobile-open': isMobileNavOpen
@@ -46,7 +54,7 @@
     >
       <!-- Header -->
       <div class="customer-sidebar__header">
-        <NuxtLink :to="localePath('/')" class="customer-sidebar__logo" @click="isMobileNavOpen = false">
+        <NuxtLink :to="localePath('/')" class="customer-sidebar__logo" :aria-label="t('customer.brand')" @click="isMobileNavOpen = false">
           <svg viewBox="0 0 180 40" fill="none" class="customer-sidebar__logo-svg" :class="{ 'customer-sidebar__logo-svg--compact': !showNavLabels }">
             <circle cx="20" cy="20" r="16" fill="var(--color-highlight)" opacity="0.2"/>
             <path d="M14 20C14 16.6863 16.6863 14 20 14C23.3137 14 26 16.6863 26 20C26 23.3137 23.3137 26 20 26C16.6863 26 14 23.3137 14 20Z" stroke="var(--color-highlight)" stroke-width="2.5"/>
@@ -64,6 +72,7 @@
           <Icon :name="isCollapsed ? 'material-symbols:chevron-right' : 'material-symbols:chevron-left'" class="customer-sidebar__toggle-icon" aria-hidden="true" />
         </button>
         <button
+          ref="mobileSidebarCloseButtonRef"
           type="button"
           class="customer-sidebar__close"
           :aria-label="t('customer.a11y.closeMenu')"
@@ -155,7 +164,7 @@
     </aside>
 
     <!-- Main Content -->
-    <div class="customer-main">
+    <div class="customer-main" :inert="isMobileViewport && isMobileNavOpen">
       <div class="customer-main__content">
         <!-- Breadcrumb -->
         <div v-if="breadcrumbItems.length > 1" class="customer-breadcrumb">
@@ -186,6 +195,8 @@ const localePath = useLocalePath()
 const { t, locale } = useI18n()
 
 const isMobileNavOpen = ref(false)
+const isMobileViewport = ref(false)
+const { mobileSidebarRef, mobileMenuButtonRef, mobileSidebarCloseButtonRef } = useMobileSidebarFocus(isMobileNavOpen, isMobileViewport)
 const isCollapsed = ref(false)
 const cartCount = ref(0)
 const customerSidebarId = 'customer-sidebar-nav'
@@ -302,7 +313,8 @@ const handleLogout = async () => {
 
 let mediaQuery: MediaQueryList | null = null
 const closeMobileIfDesktop = () => {
-  if (mediaQuery && !mediaQuery.matches) isMobileNavOpen.value = false
+  isMobileViewport.value = !mediaQuery?.matches
+  if (!isMobileViewport.value) isMobileNavOpen.value = false
 }
 
 watch(isCustomer, (ok) => {
@@ -321,14 +333,12 @@ watch(isMobileNavOpen, (open) => {
   if (import.meta.client) document.body.classList.toggle('body-lock', open)
 })
 
-const onEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') isMobileNavOpen.value = false }
-
 onMounted(() => {
   const saved = localStorage.getItem('customer-sidebar-collapsed')
   if (saved) isCollapsed.value = saved === 'true'
   mediaQuery = window.matchMedia('(min-width: 768px)')
+  closeMobileIfDesktop()
   mediaQuery.addEventListener('change', closeMobileIfDesktop)
-  window.addEventListener('keydown', onEscape)
   if (isCustomer.value) fetchCartCount()
 })
 
@@ -338,7 +348,6 @@ watch(isCollapsed, (val) => {
 
 onUnmounted(() => {
   if (mediaQuery) mediaQuery.removeEventListener('change', closeMobileIfDesktop)
-  window.removeEventListener('keydown', onEscape)
   if (import.meta.client) document.body.classList.remove('body-lock')
 })
 </script>

@@ -129,6 +129,7 @@ func (h *Handler) AdminRejectNegotiationOffer(c *gin.Context) {
 		response.ServiceUnavailableResp(c)
 		return
 	}
+	userID := c.GetString("userID")
 	inquiryID := c.Param("id")
 	offerID := c.Param("offerId")
 	offer, err := h.services.Negotiation.RejectOffer(c.Request.Context(), offerID, inquiryID)
@@ -137,5 +138,8 @@ func (h *Handler) AdminRejectNegotiationOffer(c *gin.Context) {
 		response.ErrorResp(c, status, code)
 		return
 	}
+	// L1: record which operator rejected the offer (NegotiationOffer has no
+	// operator column, so the audit log is the only attribution).
+	h.logActivityAudit(c, "negotiation_offer_reject", "negotiation_offer", offerID, "", "rejected", userID)
 	c.JSON(http.StatusOK, gin.H{"success": true, "offer": offer})
 }

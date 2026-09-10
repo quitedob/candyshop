@@ -29,6 +29,7 @@ type tradeDocDetailRepository interface {
 	GetSettlement(ctx context.Context, id uint) (*modelsTrade.SettlementRecord, error)
 	CreateSettlement(ctx context.Context, record *modelsTrade.SettlementRecord) error
 	UpdateSettlement(ctx context.Context, record *modelsTrade.SettlementRecord) error
+	UpdateSettlementStatus(ctx context.Context, id uint, fromStatus, toStatus string, extra map[string]interface{}) error
 	DeleteSettlement(ctx context.Context, id uint) error
 
 	GetProformaInvoice(ctx context.Context, transactionID uint) (*modelsTrade.ProformaInvoice, error)
@@ -153,6 +154,16 @@ func (s *TradeDocumentDetailService) UpdateSettlement(ctx context.Context, recor
 	if err == nil && current != nil {
 		if err := modelsTrade.ValidateSettlementStatusTransition(current.Status, record.Status); err != nil {
 			return err
+		}
+		// M3: guard the status write. When the status changes, persist it via a
+		// conditional UPDATE keyed on the loaded status, carrying the non-status
+		// fields the handler may also have edited.
+		if strings.TrimSpace(current.Status) != strings.TrimSpace(record.Status) {
+			return s.repo.UpdateSettlementStatus(ctx, record.ID, current.Status, record.Status, map[string]interface{}{
+				"amount_paid":  record.AmountPaid,
+				"payment_date": record.PaymentDate,
+				"lc_reference": record.LCReference,
+			})
 		}
 	}
 	return s.repo.UpdateSettlement(ctx, record)

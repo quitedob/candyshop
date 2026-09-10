@@ -129,13 +129,11 @@ func SetupRouter(h *handlers.Handlers, cfg *config.Config, db *gorm.DB) *RouterW
 
 		// User routes (Protected)
 		user := api.Group("/user")
-		user.Use(idempotency)
-		userportalroutes.Register(user, h, cfg, db)
+		userportalroutes.Register(user, h, cfg, db, idempotency)
 
 		// Admin routes (Protected)
 		admin := api.Group("/admin")
-		admin.Use(idempotency)
-		adminportalroutes.Register(admin, h, cfg)
+		adminportalroutes.Register(admin, h, cfg, idempotency)
 
 		// System routes (preferred explicit namespace)
 		system := api.Group("/system")

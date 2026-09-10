@@ -3,15 +3,23 @@ package database
 import (
 	"testing"
 
-	"gorm.io/driver/postgres"
+	modelsCommon "candypro/api/internal/models/common"
+
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 
 func TestEnsureDefaultSystemSettings(t *testing.T) {
-	dsn := "host=localhost user=postgres password=1234 dbname=candypro port=5432 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
-		t.Skip("database unavailable:", err)
+		t.Fatal(err)
+	}
+	if err := db.AutoMigrate(&modelsCommon.SystemSetting{}); err != nil {
+		t.Fatal(err)
+	}
+	configuredSiteName := modelsCommon.SystemSetting{Key: "site_name", Value: "Configured storefront", Category: "general"}
+	if err := db.Create(&configuredSiteName).Error; err != nil {
+		t.Fatal(err)
 	}
 	if err := EnsureDefaultSystemSettings(db); err != nil {
 		t.Fatalf("EnsureDefaultSystemSettings: %v", err)
@@ -22,5 +30,21 @@ func TestEnsureDefaultSystemSettings(t *testing.T) {
 	}
 	if count == 0 {
 		t.Fatalf("expected general settings to be seeded")
+	}
+	if err := EnsureDefaultSystemSettings(db); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Model(&modelsCommon.SystemSetting{}).Count(&count).Error; err != nil {
+		t.Fatal(err)
+	}
+	if count != int64(len(defaultSystemSettings)) {
+		t.Fatalf("default seed must remain idempotent: got %d settings, want %d", count, len(defaultSystemSettings))
+	}
+	var persisted modelsCommon.SystemSetting
+	if err := db.First(&persisted, "key = ?", configuredSiteName.Key).Error; err != nil {
+		t.Fatal(err)
+	}
+	if persisted.Value != configuredSiteName.Value {
+		t.Fatalf("seed overwrote existing configuration: %q", persisted.Value)
 	}
 }

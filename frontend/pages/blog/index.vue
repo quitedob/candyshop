@@ -52,7 +52,7 @@
           class="featured-post__inner"
         >
           <div class="featured-post__image">
-            <img :src="featuredPost.thumbnail" :alt="tField(featuredPost, 'title')" />
+            <img :src="featuredPost.thumbnail || '/images/blog/blog-placeholder.jpg'" :alt="tField(featuredPost, 'title')" />
             <span class="featured-post__badge">{{ t('blog_extra.featured') }}</span>
           </div>
           <div class="featured-post__content">
@@ -87,6 +87,14 @@
           </p>
         </div>
 
+        <ErrorState
+          v-else-if="postsError"
+          :title="t('errors.default')"
+          :message="t('offline_message')"
+          :actionText="t('errors.tryAgain')"
+          @action="refreshPosts"
+        />
+
         <div v-else-if="filteredPosts.length === 0" class="posts__empty">
           <p>{{ t('blog_extra.no_posts') }}</p>
         </div>
@@ -99,7 +107,7 @@
           >
             <NuxtLink :to="localePath(`/blog/${post.slug}`)" class="post-card__link">
               <div class="post-card__image">
-                <img :src="post.thumbnail || '/images/blog-placeholder.jpg'" :alt="tField(post, 'title')" />
+                <img :src="post.thumbnail || '/images/blog/blog-placeholder.jpg'" :alt="tField(post, 'title')" />
                 <span class="post-card__category">{{ getCategoryName(post.category) }}</span>
               </div>
               <div class="post-card__content">
@@ -207,7 +215,7 @@ const allPosts = computed(() => {
 })
 
 // Server-side paginated posts for the grid
-const { data: postsResponse, pending } = await useAsyncData(
+const { data: postsResponse, pending, error: postsError, refresh: refreshPosts } = await useAsyncData(
   () => `blog-posts-${activeCategory.value}-${currentPage.value}`,
   async () => {
     const params: any = { page: currentPage.value, limit }
@@ -327,7 +335,7 @@ usePageOgImage({
   padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--text-sm);
   font-weight: 500;
-  background-color: white;
+  background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   cursor: pointer;
@@ -341,7 +349,7 @@ usePageOgImage({
 .category-tab--active {
   background-color: var(--color-primary);
   border-color: var(--color-primary);
-  color: white;
+  color: var(--color-text-on-primary);
 }
 
 /* Featured Post */
@@ -383,7 +391,7 @@ usePageOgImage({
   left: var(--spacing-md);
   padding: var(--spacing-xs) var(--spacing-md);
   background-color: var(--color-highlight);
-  color: white;
+  color: var(--color-text-on-primary);
   font-size: var(--text-xs);
   font-weight: 600;
   border-radius: var(--radius-sm);
@@ -473,7 +481,7 @@ usePageOgImage({
   padding: var(--spacing-xs) var(--spacing-sm);
   font-size: var(--text-xs);
   font-weight: 600;
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: var(--color-bg);
   border-radius: var(--radius-sm);
   color: var(--color-primary);
 }
@@ -512,7 +520,7 @@ usePageOgImage({
 
 .pagination__btn {
   padding: var(--spacing-sm) var(--spacing-md);
-  background-color: white;
+  background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -534,7 +542,7 @@ usePageOgImage({
   justify-content: center;
   width: 40px;
   height: 40px;
-  background-color: white;
+  background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -543,7 +551,7 @@ usePageOgImage({
 .pagination__page--active {
   background-color: var(--color-primary);
   border-color: var(--color-primary);
-  color: white;
+  color: var(--color-text-on-primary);
 }
 
 /* Contact CTA */

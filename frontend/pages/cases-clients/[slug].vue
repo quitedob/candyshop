@@ -335,7 +335,7 @@ usePageOgImage({
   padding: var(--spacing-xl);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  background-color: white;
+  background-color: var(--color-bg);
   text-align: center;
 }
 
@@ -456,7 +456,7 @@ usePageOgImage({
   align-items: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-md);
-  background-color: white;
+  background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   font-size: var(--text-sm);

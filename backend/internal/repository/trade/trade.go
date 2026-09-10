@@ -3,6 +3,7 @@ package trade
 import (
 	modelsTrade "candypro/api/internal/models/trade"
 	"context"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -16,6 +17,7 @@ type TradeRepository interface {
 	ListTransactionsByUserID(ctx context.Context, userID string, page, pageSize int) ([]modelsTrade.TradeTransaction, int64, error)
 	ListAllTransactions(ctx context.Context, page, pageSize int, status string) ([]modelsTrade.TradeTransaction, int64, error)
 	UpdateTransaction(ctx context.Context, transaction *modelsTrade.TradeTransaction) error
+	UpdateTransactionStatus(ctx context.Context, id uint, fromStatus, toStatus string) error
 	CountTransactionsByOrderID(ctx context.Context, orderID string) (int64, error)
 	GetFirstTransactionByOrderID(ctx context.Context, orderID string) (*modelsTrade.TradeTransaction, error)
 
@@ -25,6 +27,7 @@ type TradeRepository interface {
 	GetDocumentByNumber(ctx context.Context, docNumber string) (*modelsTrade.TradeDocument, error)
 	ListDocumentsByTransactionID(ctx context.Context, transactionID uint) ([]modelsTrade.TradeDocument, error)
 	UpdateDocument(ctx context.Context, doc *modelsTrade.TradeDocument) error
+	UpdateDocumentStatus(ctx context.Context, id uint, fromStatus, toStatus string) error
 	DeleteDocument(ctx context.Context, id uint) error
 
 	// Compliance
@@ -104,6 +107,24 @@ func (r *tradeRepository) UpdateTransaction(ctx context.Context, transaction *mo
 	return r.db.WithContext(ctx).Save(transaction).Error
 }
 
+// UpdateTransactionStatus transitions a transaction status with a guarded
+// conditional UPDATE keyed on the currently-loaded status (M3).
+func (r *tradeRepository) UpdateTransactionStatus(ctx context.Context, id uint, fromStatus, toStatus string) error {
+	res := r.db.WithContext(ctx).Model(&modelsTrade.TradeTransaction{}).
+		Where("id = ? AND status = ?", id, fromStatus).
+		Updates(map[string]interface{}{
+			"status":     toStatus,
+			"updated_at": time.Now(),
+		})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrTradeStateMismatch
+	}
+	return nil
+}
+
 // CountTransactionsByOrderID returns how many trade rows reference the order (idempotency / dedupe).
 func (r *tradeRepository) CountTransactionsByOrderID(ctx context.Context, orderID string) (int64, error) {
 	var n int64
@@ -161,6 +182,24 @@ func (r *tradeRepository) ListDocumentsByTransactionID(ctx context.Context, tran
 // UpdateDocument limits update to a specific document block
 func (r *tradeRepository) UpdateDocument(ctx context.Context, doc *modelsTrade.TradeDocument) error {
 	return r.db.WithContext(ctx).Save(doc).Error
+}
+
+// UpdateDocumentStatus transitions a document status with a guarded conditional
+// UPDATE keyed on the currently-loaded status (M3).
+func (r *tradeRepository) UpdateDocumentStatus(ctx context.Context, id uint, fromStatus, toStatus string) error {
+	res := r.db.WithContext(ctx).Model(&modelsTrade.TradeDocument{}).
+		Where("id = ? AND status = ?", id, fromStatus).
+		Updates(map[string]interface{}{
+			"status":     toStatus,
+			"updated_at": time.Now(),
+		})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrTradeDocumentStateMismatch
+	}
+	return nil
 }
 
 // DeleteDocument removes a document by ID.

@@ -1,8 +1,9 @@
 <template>
   <div class="admin-layout" :class="{ 'dark': isDark }">
     <!-- Mobile top bar -->
-    <header class="admin-mobile-topbar">
+    <header class="admin-mobile-topbar" :inert="isMobileViewport && isMobileNavOpen">
       <button
+        ref="mobileMenuButtonRef"
         type="button"
         class="admin-mobile-topbar__btn"
         :aria-expanded="isMobileNavOpen ? 'true' : 'false'"
@@ -25,7 +26,14 @@
 
     <!-- Sidebar — Alexandria primary-container -->
     <aside
+      ref="mobileSidebarRef"
       class="admin-sidebar"
+      tabindex="-1"
+      :role="isMobileViewport && isMobileNavOpen ? 'dialog' : undefined"
+      :aria-modal="isMobileViewport && isMobileNavOpen ? 'true' : undefined"
+      :aria-label="t('admin.brand')"
+      :inert="isMobileViewport && !isMobileNavOpen"
+      :aria-hidden="isMobileViewport && !isMobileNavOpen ? 'true' : undefined"
       :class="{
         'admin-sidebar--collapsed': isCollapsed,
         'admin-sidebar--mobile-open': isMobileNavOpen
@@ -33,7 +41,7 @@
     >
       <!-- Header -->
       <div class="admin-sidebar__header">
-        <NuxtLink to="/" class="admin-sidebar__logo" @click="isMobileNavOpen = false">
+        <NuxtLink :to="localePath('/')" class="admin-sidebar__logo" :aria-label="t('admin.brand')" @click="isMobileNavOpen = false">
           <svg viewBox="0 0 180 40" fill="none" class="admin-sidebar__logo-svg">
             <circle cx="20" cy="20" r="16" fill="var(--color-highlight)" opacity="0.25"/>
             <path d="M14 20C14 16.6863 16.6863 14 20 14C23.3137 14 26 16.6863 26 20C26 23.3137 23.3137 26 20 26C16.6863 26 14 23.3137 14 20Z" stroke="var(--color-highlight)" stroke-width="2.5"/>
@@ -43,6 +51,7 @@
           </svg>
         </NuxtLink>
         <button
+          ref="mobileSidebarCloseButtonRef"
           type="button"
           class="admin-sidebar__close"
           :aria-label="t('admin.a11y.closeNav')"
@@ -153,7 +162,7 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="admin-main">
+    <main class="admin-main" :inert="isMobileViewport && isMobileNavOpen">
       <div class="admin-main__content">
         <slot />
       </div>
@@ -179,6 +188,8 @@ await useAsyncData(
 
 const isCollapsed = ref(false)
 const isMobileNavOpen = ref(false)
+const isMobileViewport = ref(false)
+const { mobileSidebarRef, mobileMenuButtonRef, mobileSidebarCloseButtonRef } = useMobileSidebarFocus(isMobileNavOpen, isMobileViewport)
 const isSuperAdmin = computed(() => user?.value?.role === 'superadmin')
 const showNavLabels = computed(() => !isCollapsed.value || isMobileNavOpen.value)
 
@@ -249,13 +260,15 @@ const handleLogout = async () => {
 
 let mediaQuery: MediaQueryList | undefined
 const closeMobileIfDesktop = () => {
-  if (mediaQuery && !mediaQuery.matches) isMobileNavOpen.value = false
+  isMobileViewport.value = !mediaQuery?.matches
+  if (!isMobileViewport.value) isMobileNavOpen.value = false
 }
 
 onMounted(async () => {
   const saved = localStorage.getItem('admin-sidebar-collapsed')
   if (saved) isCollapsed.value = saved === 'true'
   mediaQuery = window.matchMedia('(min-width: 768px)')
+  closeMobileIfDesktop()
   mediaQuery.addEventListener('change', closeMobileIfDesktop)
 })
 

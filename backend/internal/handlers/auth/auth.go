@@ -293,10 +293,8 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 
 	userID, err := h.services.Auth.ValidateRefreshToken(c.Request.Context(), refreshTok)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, modelsCommon.ErrorResponse{
-			Error:   "unauthorized",
-			Message: err.Error(),
-		})
+		log.Printf("RefreshToken: validate refresh token failed: %v", err)
+		response.ErrorResp(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 

@@ -1,6 +1,9 @@
 import { computed } from 'vue'
 import { useLocalePath } from '#i18n'
 
+// Session discovery must finish even when the API or its proxy is unavailable.
+const SESSION_REQUEST_TIMEOUT_MS = 5_000
+
 export interface User {
   id: string
   email: string
@@ -80,7 +83,7 @@ export const useAuth = () => {
 
   const refreshAccessToken = async () => {
     try {
-      await authFetch(`${baseURL}/auth/refresh`, { method: 'POST', body: {} })
+      await authFetch(`${baseURL}/auth/refresh`, { method: 'POST', body: {}, timeout: SESSION_REQUEST_TIMEOUT_MS, retry: 0 })
       sessionActive.value = true
       return true
     } catch {
@@ -89,7 +92,7 @@ export const useAuth = () => {
   }
 
   const fetchCurrentUser = async () => {
-    const me = await authFetch<any>(`${baseURL}/auth/me`)
+    const me = await authFetch<any>(`${baseURL}/auth/me`, { timeout: SESSION_REQUEST_TIMEOUT_MS, retry: 0 })
     user.value = mapMeToUser(me)
     sessionActive.value = true
     return user.value
@@ -103,7 +106,13 @@ export const useAuth = () => {
     initialized.value = true
     try {
       await fetchCurrentUser()
-    } catch {
+    } catch (error: any) {
+      // Only expired/missing access credentials can be repaired by a refresh.
+      // Retrying outages would hold protected navigation open for another request.
+      if ((error?.response?.status ?? error?.statusCode) !== 401) {
+        clearAuthState()
+        return
+      }
       const refreshed = await refreshAccessToken()
       if (!refreshed) {
         clearAuthState()

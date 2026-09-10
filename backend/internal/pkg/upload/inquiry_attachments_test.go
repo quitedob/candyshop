@@ -17,6 +17,7 @@ func TestIsAllowedInquiryAttachment(t *testing.T) {
 		{"video/mp4", "demo.mp4", true},
 		{"", "clip.mkv", true},
 		{"application/zip", "archive.zip", false},
+		{"application/zip", "spec.pdf", false},
 	}
 
 	for _, tc := range cases {

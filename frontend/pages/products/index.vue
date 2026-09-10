@@ -30,7 +30,7 @@
             class="category-card"
           >
             <div class="category-card__image">
-              <img :src="category.image" :alt="tField(category, 'name')" loading="lazy" />
+              <CategoryImage :src="category.image" :slug="category.slug" :alt="tField(category, 'name')" />
               <div class="category-card__overlay">
                 <span class="category-card__arrow">
                   <Icon name="lucide:arrow-right" size="24" />
@@ -146,7 +146,7 @@ const categories = computed(() => {
   return data.map(category => ({
     ...category,
     slug: category.slug,
-    image: category.thumbnail || `/images/categories/${category.slug}.jpg`
+    image: category.thumbnail
   }))
 })
 
@@ -163,6 +163,10 @@ usePageOgImage({
   padding-top: calc(var(--header-height) + var(--spacing-2xl));
   text-align: center;
   background: linear-gradient(135deg, #fff5f0 0%, #fef3e2 100%);
+}
+
+.dark .products-hero {
+  background: linear-gradient(135deg, var(--color-bg-alt) 0%, var(--color-bg) 100%);
 }
 
 .products-hero__title {
@@ -193,7 +197,7 @@ usePageOgImage({
 .category-card {
   display: flex;
   flex-direction: column;
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-xl);
   overflow: hidden;
   box-shadow: var(--shadow-md);
@@ -271,7 +275,7 @@ usePageOgImage({
 
 .category-card__count {
   font-size: var(--text-sm);
-  color: var(--color-highlight);
+  color: var(--color-accent);
   font-weight: 500;
   margin-bottom: var(--spacing-sm);
 }

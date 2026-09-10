@@ -46,30 +46,12 @@ interface ArticleSchema {
   }
 }
 
-interface OrganizationSchema {
-  name: string
-  url: string
-  logo: string
-  description: string
-  address?: {
-    streetAddress: string
-    addressLocality: string
-    addressCountry: string
-  }
-  contactPoint?: {
-    contactType: string
-    telephone: string
-    email: string
-  }
-  sameAs?: string[]
-}
-
 export const useSeo = (options: SEOOptions = {}) => {
   const { t } = useI18n()
   const config = useRuntimeConfig()
   const route = useRoute()
 
-  const siteUrl = config.public.siteUrl || 'https://candyfactory.example.com'
+  const siteUrl = config.public.siteUrl || 'https://candypro-oem.com'
   const defaultTitle = t('seo.default_title')
   const defaultDescription = t('seo.default_description')
 
@@ -203,41 +185,6 @@ export const useArticleSchema = (article: {
 }
 
 /**
- * Create organization structured data
- */
-export const useOrganizationSchema = () => {
-  const config = useRuntimeConfig()
-  const siteUrl = config.public.siteUrl
-
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    name: 'CandyPro OEM',
-    url: siteUrl,
-    logo: new URL('/logo.png', siteUrl).href,
-    description: 'Professional OEM candy manufacturer providing private label gummy, hard candy, aerated candy, toffee & compound chocolate for global brands.',
-    address: {
-      '@type': 'PostalAddress',
-      streetAddress: '123 Industrial Zone',
-      addressLocality: 'Sweet City',
-      addressCountry: 'CN'
-    },
-    contactPoint: {
-      '@type': 'ContactPoint',
-      contactType: 'sales',
-      telephone: '+86-123-456-7890',
-      email: 'info@candypro.com',
-      availableLanguage: ['English', 'Chinese']
-    },
-    sameAs: [
-      'https://facebook.com/candypro',
-      'https://linkedin.com/company/candypro',
-      'https://instagram.com/candypro'
-    ]
-  }
-}
-
-/**
  * Create local business structured data
  */
 export const useLocalBusinessSchema = () => {
@@ -251,8 +198,8 @@ export const useLocalBusinessSchema = () => {
     image: new URL('/factory.jpg', siteUrl).href,
     url: siteUrl,
     // Real company data — keep in sync with pages/contact.vue + Footer. The
-    // previous fabricated telephone/address ("123 Industrial Zone", "Sweet City")
-    // contradicted the contact page and misled search engines.
+    // previous fabricated telephone/address contradicted the contact page and
+    // misled search engines.
     telephone: '+86 21 6731 0088',
     email: 'sales@candypro.com',
     address: {
@@ -339,14 +286,13 @@ export const useCombinedSchema = (schemas: Record<string, unknown>[]) => {
  * Set up global organization schema (call once in app.vue)
  */
 export const useGlobalSchema = () => {
-  const orgSchema = useOrganizationSchema()
   const localSchema = useLocalBusinessSchema()
 
   useHead({
     script: [
       {
         type: 'application/ld+json',
-        innerHTML: JSON.stringify([orgSchema, localSchema]),
+        innerHTML: JSON.stringify(localSchema),
         tagPosition: 'head'
       }
     ]

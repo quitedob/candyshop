@@ -84,16 +84,31 @@ func (r *StockTransferRepository) FindByID(ctx context.Context, id string) (*mod
 }
 
 // UpdateStatus updates a transfer's status and executes or reverses stock movement.
+//
+// The transition is a guarded conditional UPDATE excluding terminal states, so two concurrent
+// completions cannot both move the stock — the loser gets an "already terminal" error and never
+// reaches the movement loop.
 func (r *StockTransferRepository) UpdateStatus(ctx context.Context, id, status, operatorID string) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var transfer modelsOrder.StockTransfer
 		if err := tx.Where("id = ?", id).First(&transfer).Error; err != nil {
 			return err
 		}
-		if transfer.Status == modelsOrder.StockTransferStatusCompleted || transfer.Status == modelsOrder.StockTransferStatusCancelled {
+		now := time.Now()
+
+		res := tx.Model(&modelsOrder.StockTransfer{}).
+			Where("id = ? AND status NOT IN ?", id,
+				[]string{modelsOrder.StockTransferStatusCompleted, modelsOrder.StockTransferStatusCancelled}).
+			Updates(map[string]interface{}{
+				"status":     status,
+				"updated_at": now,
+			})
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
 			return fmt.Errorf("transfer %s is already in terminal status %s", id, transfer.Status)
 		}
-		now := time.Now()
 
 		if status == modelsOrder.StockTransferStatusCompleted {
 			var items []modelsOrder.StockTransferItem
@@ -121,10 +136,7 @@ func (r *StockTransferRepository) UpdateStatus(ctx context.Context, id, status, 
 			}
 		}
 
-		return tx.Model(&transfer).Updates(map[string]interface{}{
-			"status":     status,
-			"updated_at": now,
-		}).Error
+		return nil
 	})
 }
 

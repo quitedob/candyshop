@@ -77,7 +77,7 @@
           <Icon name="heroicons:document-check" class="h-5 w-5 text-green-600" />
           <div>
             <p class="text-sm font-medium text-green-800">{{ $t('customer.company.business_license_uploaded') }}</p>
-            <a :href="company.businessLicense" target="_blank" class="text-xs text-green-600 hover:underline">{{ $t('customer.company.view_document') }}</a>
+            <a :href="company.businessLicense" target="_blank" rel="noopener noreferrer" class="text-xs text-green-600 hover:underline">{{ $t('customer.company.view_document') }}</a>
           </div>
         </div>
         <div class="flex items-center gap-3">

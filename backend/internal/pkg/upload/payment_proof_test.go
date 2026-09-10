@@ -12,6 +12,7 @@ func TestIsAllowedPaymentProof(t *testing.T) {
 		{"", "proof.png", true},
 		{"application/msword", "doc.doc", false},
 		{"video/mp4", "clip.mp4", false},
+		{"application/msword", "doc.pdf", false},
 	}
 	for _, tc := range cases {
 		if got := IsAllowedPaymentProof(tc.mime, tc.name); got != tc.want {

@@ -171,7 +171,7 @@ usePageOgImage({
   align-items: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-lg);
-  background-color: white;
+  background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
@@ -189,7 +189,7 @@ usePageOgImage({
 .faq-tab--active {
   background-color: var(--color-highlight);
   border-color: var(--color-highlight);
-  color: white;
+  color: var(--color-text-on-primary);
 }
 
 /* FAQ List */
@@ -200,7 +200,7 @@ usePageOgImage({
 }
 
 .faq-item {
-  background-color: white;
+  background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   overflow: hidden;

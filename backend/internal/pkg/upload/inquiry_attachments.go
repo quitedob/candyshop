@@ -47,6 +47,7 @@ func IsAllowedInquiryAttachment(contentType, filename string, cfgAllowed []strin
 		if _, ok := inquiryExtraMIME[contentType]; ok {
 			return true
 		}
+		return false
 	}
 	ext := strings.ToLower(filepath.Ext(filename))
 	_, ok := inquiryExtToMIME[ext]

@@ -39,7 +39,7 @@
           </div>
 
           <div v-if="category.image" class="category-header__image">
-            <img :src="category.image" :alt="tField(category, 'name')" />
+            <CategoryImage :src="category.image" :slug="categorySlug" :alt="tField(category, 'name')" />
           </div>
         </div>
       </div>
@@ -306,12 +306,12 @@ const category = computed<CategoryDetail>(() => {
       name: te(`product.categories.${categorySlug.value.replace(/-/g, '_')}`) ? t(`product.categories.${categorySlug.value.replace(/-/g, '_')}`) : categorySlug.value,
       description: '',
       productCount: 0,
-      image: `/images/categories/${categorySlug.value}.jpg`
+      image: ''
     }
   }
   return {
     ...data,
-    image: data.thumbnail || `/images/categories/${categorySlug.value}.jpg`
+    image: data.thumbnail
   }
 })
 
@@ -407,7 +407,7 @@ const relatedCategories = computed(() => {
           slug: c.slug,
           name: tField(c, 'name'),
           productCount: c.productCount || 0,
-          image: c.thumbnail || `/images/categories/${c.slug}.jpg`
+          image: c.thumbnail
         }))
     : []
   if (apiCategories.length) return apiCategories
@@ -552,6 +552,12 @@ usePageOgImage({
   width: 100%;
   border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-xl);
+}
+
+.category-header__image :deep(.category-image-placeholder) {
+  aspect-ratio: 16/10;
+  height: auto;
+  border-radius: var(--radius-2xl);
 }
 
 /* Filters */

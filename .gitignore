@@ -29,6 +29,8 @@ go.work
 frontend/.output/
 frontend/.nuxt/
 frontend/node_modules/
+# Local audit captures may contain request credentials and generated builds.
+.audit-evidence/
 # Environment variables
 .env
 .env.local

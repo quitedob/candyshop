@@ -55,6 +55,7 @@
                 :to="localePath(`/customer/products/${item.slug || item.id}`)"
                 class="inquiry-product-chip__link"
                 target="_blank"
+                rel="noopener noreferrer"
               >
                 {{ t('customer.inquiries_new.view_product') }}
                 <Icon name="heroicons:arrow-top-right-on-square" class="h-3.5 w-3.5" aria-hidden="true" />

@@ -303,7 +303,7 @@
             <p class="text-sm font-medium text-gray-700 mb-1">{{ t('admin.inquiryDetail.customer_files') }} ({{ inquiry.files.length }})</p>
             <ul class="space-y-1">
               <li v-for="(f, idx) in inquiry.files" :key="idx" class="text-sm">
-                <a :href="f" target="_blank" class="text-orange-600 hover:text-orange-500">
+                <a :href="f" target="_blank" rel="noopener noreferrer" class="text-orange-600 hover:text-orange-500">
                   <Icon name="heroicons:paper-clip" class="inline h-4 w-4 mr-1" aria-hidden="true" />{{ f.split('/').pop() || f }}
                 </a>
               </li>

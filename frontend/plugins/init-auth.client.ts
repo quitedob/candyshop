@@ -1,5 +1,6 @@
-export default defineNuxtPlugin(async () => {
+export default defineNuxtPlugin((nuxtApp) => {
   const { initAuth } = useAuth()
-  await initAuth()
+  // Public pages must stay interactive during an API outage. Protected routes
+  // still await initAuth in auth middleware before rendering private content.
+  nuxtApp.hook('app:mounted', () => { void initAuth() })
 })
-

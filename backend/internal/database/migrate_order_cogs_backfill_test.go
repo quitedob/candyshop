@@ -37,6 +37,7 @@ func setupBackfillCOGSTestDB(t *testing.T) *gorm.DB {
 			cogs REAL DEFAULT 0,
 			total_amount REAL,
 			currency TEXT DEFAULT 'USD',
+			confirmed_at DATETIME,
 			created_at DATETIME,
 			updated_at DATETIME,
 			version INTEGER DEFAULT 0,
@@ -94,5 +95,125 @@ func TestBackfillOrderCOGS_FixesInflatedOrder(t *testing.T) {
 	want := backfillComputeOrderCOGS(db, map[string]productCOGSCache{}, items)
 	if cogs < want-0.05 || cogs > want+0.05 {
 		t.Fatalf("cogs = %v, want ~%v", cogs, want)
+	}
+}
+
+func TestBackfillOrderCOGS_RepairsMissingCommittedCostsOnly(t *testing.T) {
+	database := setupBackfillCOGSTestDB(t)
+	if err := database.Exec(`INSERT INTO products (id, slug, base_price, weighted_avg_cost)
+		VALUES ('costed-product', 'costed-product', 10, 4), ('uncosted-product', 'uncosted-product', 10, 0)`).Error; err != nil {
+		t.Fatal(err)
+	}
+	confirmedAt := time.Now()
+	for _, fixture := range []struct {
+		name        string
+		status      string
+		productID   string
+		confirmedAt *time.Time
+		initialCOGS float64
+		deletedAt   *time.Time
+		wantCOGS    float64
+	}{
+		{"confirmed", modelsOrder.OrderStatusConfirmed, "costed-product", &confirmedAt, 0, nil, 8},
+		{"production", modelsOrder.OrderStatusProduction, "costed-product", &confirmedAt, 0, nil, 8},
+		{"partially-shipped", modelsOrder.OrderStatusPartiallyShipped, "costed-product", &confirmedAt, 0, nil, 8},
+		{"delivered", modelsOrder.OrderStatusDelivered, "costed-product", &confirmedAt, 0, nil, 8},
+		{"returned", modelsOrder.OrderStatusReturned, "costed-product", &confirmedAt, 0, nil, 8},
+		{"committed-cart", modelsOrder.OrderStatusPending, "costed-product", &confirmedAt, 0, nil, 8},
+		{"uncommitted-cart", modelsOrder.OrderStatusPending, "costed-product", nil, 0, nil, 0},
+		{"draft", modelsOrder.OrderStatusPendingConfirm, "costed-product", nil, 0, nil, 0},
+		{"approval", modelsOrder.OrderStatusPendingApproval, "costed-product", nil, 0, nil, 0},
+		{"cancelled", modelsOrder.OrderStatusCancelled, "costed-product", &confirmedAt, 0, nil, 0},
+		{"expired", modelsOrder.OrderStatusExpired, "costed-product", nil, 0, nil, 0},
+		{"existing-cost", modelsOrder.OrderStatusConfirmed, "costed-product", &confirmedAt, 6, nil, 6},
+		{"unknown-cost", modelsOrder.OrderStatusConfirmed, "uncosted-product", &confirmedAt, 0, nil, 0},
+		{"missing-product", modelsOrder.OrderStatusConfirmed, "missing-product", &confirmedAt, 0, nil, 0},
+		{"deleted", modelsOrder.OrderStatusConfirmed, "costed-product", &confirmedAt, 0, &confirmedAt, 0},
+	} {
+		t.Run(fixture.name, func(t *testing.T) {
+			itemsJSON, err := json.Marshal([]modelsOrder.OrderItem{{ProductID: fixture.productID, Quantity: 2, UnitPrice: 10}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := database.Exec(`INSERT INTO orders (id, order_number, user_id, status, items, subtotal, cogs,
+				confirmed_at, deleted_at) VALUES (?, ?, 'buyer', ?, ?, 20, ?, ?, ?)`, fixture.name, fixture.name,
+				fixture.status, itemsJSON, fixture.initialCOGS, fixture.confirmedAt, fixture.deletedAt).Error; err != nil {
+				t.Fatal(err)
+			}
+			if err := BackfillOrderCOGS(database); err != nil {
+				t.Fatal(err)
+			}
+			// A second startup must not reprice already repaired orders or bump
+			// their version again.
+			if err := BackfillOrderCOGS(database); err != nil {
+				t.Fatal(err)
+			}
+			var persisted struct {
+				COGS    float64
+				Version int
+			}
+			if err := database.Raw(`SELECT cogs, version FROM orders WHERE id = ?`, fixture.name).Scan(&persisted).Error; err != nil {
+				t.Fatal(err)
+			}
+			wantVersion := 0
+			if fixture.wantCOGS != fixture.initialCOGS {
+				wantVersion = 1
+			}
+			if persisted.COGS != fixture.wantCOGS || persisted.Version != wantVersion {
+				t.Fatalf("backfilled snapshot = %+v, want COGS %v and version %d", persisted, fixture.wantCOGS, wantVersion)
+			}
+		})
+	}
+}
+
+func TestBackfillOrderCOGS_RetriesOrdersWithIncompleteCostData(t *testing.T) {
+	database := setupBackfillCOGSTestDB(t)
+	if err := database.Exec(`INSERT INTO products (id, slug, base_price, weighted_avg_cost)
+		VALUES ('known-cost', 'known-cost', 10, 4)`).Error; err != nil {
+		t.Fatal(err)
+	}
+	itemsJSON, err := json.Marshal([]modelsOrder.OrderItem{
+		{ProductID: "known-cost", Quantity: 2, UnitPrice: 10},
+		{ProductID: "missing-cost", Quantity: 2, UnitPrice: 10},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := database.Exec(`INSERT INTO orders (id, order_number, user_id, status, items, subtotal, cogs)
+		VALUES ('incomplete-order', 'INCOMPLETE-ORDER', 'buyer', ?, ?, 40, 0)`,
+		modelsOrder.OrderStatusConfirmed, itemsJSON).Error; err != nil {
+		t.Fatal(err)
+	}
+	for _, productCorrection := range []string{
+		// First the product is absent, then present but still lacks its cost.
+		`SELECT 1`,
+		`INSERT INTO products (id, slug, base_price, weighted_avg_cost) VALUES ('missing-cost', 'missing-cost', 10, 0)`,
+	} {
+		if err := database.Exec(productCorrection).Error; err != nil {
+			t.Fatal(err)
+		}
+		if err := BackfillOrderCOGS(database); err != nil {
+			t.Fatal(err)
+		}
+		var partialCost float64
+		if err := database.Raw(`SELECT cogs FROM orders WHERE id = 'incomplete-order'`).Scan(&partialCost).Error; err != nil {
+			t.Fatal(err)
+		}
+		if partialCost != 0 {
+			t.Fatalf("incomplete data must not finalize a partial cost: got %v", partialCost)
+		}
+	}
+	if err := database.Exec(`UPDATE products SET weighted_avg_cost = 3 WHERE id = 'missing-cost'`).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := BackfillOrderCOGS(database); err != nil {
+		t.Fatal(err)
+	}
+	var completedCost float64
+	if err := database.Raw(`SELECT cogs FROM orders WHERE id = 'incomplete-order'`).Scan(&completedCost).Error; err != nil {
+		t.Fatal(err)
+	}
+	if completedCost != 14 {
+		t.Fatalf("expected later repair to include both products (2 × 4 + 2 × 3), got %v", completedCost)
 	}
 }

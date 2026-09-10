@@ -13,6 +13,8 @@ RUN npm ci
 COPY . .
 
 # Build the application
+ARG BACKEND_URL=http://api:8080
+ENV BACKEND_URL=${BACKEND_URL}
 RUN npm run build
 
 # Production stage

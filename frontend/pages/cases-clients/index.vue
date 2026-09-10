@@ -192,7 +192,7 @@ usePageOgImage({
   padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--text-sm);
   font-weight: 500;
-  background-color: white;
+  background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   cursor: pointer;
@@ -206,7 +206,7 @@ usePageOgImage({
 .filter-tab--active {
   background-color: var(--color-primary);
   border-color: var(--color-primary);
-  color: white;
+  color: var(--color-text-on-primary);
 }
 
 /* Cases Grid */
@@ -218,7 +218,7 @@ usePageOgImage({
 
 .case-card {
   display: block;
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-xl);
   overflow: hidden;
   box-shadow: var(--shadow-md);

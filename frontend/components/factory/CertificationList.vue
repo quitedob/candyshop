@@ -48,6 +48,10 @@
           <Icon name="lucide:download" size="16" />
           {{ t('factory.download') }}
         </a>
+        <NuxtLink v-else :to="localePath('/contact')" class="cert-item__download">
+          <Icon name="lucide:mail" size="16" />
+          {{ t('nav.contact') }}
+        </NuxtLink>
         <button
           v-if="cert.verifyUrl"
           @click="openVerify(cert)"
@@ -83,6 +87,7 @@ interface Props {
 defineProps<Props>()
 
 const { t } = useI18n()
+const localePath = useLocalePath()
 
 const getAbbreviation = (name: string) => {
   return name.split(' ').map(word => word[0]).join('').substring(0, 4)
@@ -112,7 +117,7 @@ const openVerify = (cert: Certification) => {
   display: flex;
   gap: var(--spacing-md);
   padding: var(--spacing-lg);
-  background-color: white;
+  background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);

@@ -53,11 +53,12 @@ func (h *Handler) decideQuotationReview(c *gin.Context, status string) {
 		response.InvalidResp(c, "invalid_quotation_review_id")
 		return
 	}
+	userID := c.GetString("userID")
 	var req struct {
 		Notes string `json:"notes"`
 	}
 	_ = c.ShouldBindJSON(&req) // notes is optional; ignore bind errors
-	if err := h.services.QuotationReview.Decide(c.Request.Context(), id, status, req.Notes); err != nil {
+	if err := h.services.QuotationReview.Decide(c.Request.Context(), id, status, req.Notes, userID); err != nil {
 		response.ErrorResp(c, http.StatusConflict, "quotation_review_decision_failed")
 		return
 	}

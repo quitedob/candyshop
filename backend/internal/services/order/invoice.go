@@ -15,6 +15,7 @@ type invoiceRepository interface {
 	FindByTradeID(ctx context.Context, tradeID uint) ([]modelsOrder.Invoice, error)
 	Create(ctx context.Context, invoice *modelsOrder.Invoice) error
 	Update(ctx context.Context, invoice *modelsOrder.Invoice) error
+	MarkSent(ctx context.Context, id, fromStatus string, sentAt time.Time) error
 	Delete(ctx context.Context, id string) error
 	Stats(ctx context.Context) (map[string]int64, error)
 	SumByStatus(ctx context.Context, status string) (float64, error)
@@ -118,11 +119,13 @@ func (s *InvoiceService) SendInvoice(ctx context.Context, id string) (*modelsOrd
 		return nil, errors.New("cannot send a voided invoice")
 	}
 	now := time.Now()
-	invoice.Status = modelsOrder.InvoiceStatusSent
-	invoice.SentAt = &now
-	if err := s.repo.Update(ctx, invoice); err != nil {
+	// M3: guard the send transition with a conditional UPDATE keyed on the loaded
+	// status so a concurrent/stale reader cannot re-send or overwrite a newer status.
+	if err := s.repo.MarkSent(ctx, id, invoice.Status, now); err != nil {
 		return nil, err
 	}
+	invoice.Status = modelsOrder.InvoiceStatusSent
+	invoice.SentAt = &now
 	return invoice, nil
 }
 

@@ -129,7 +129,7 @@
             :to="localePath(`/blog/${related.slug}`)"
             class="related-post"
           >
-            <img :src="related.thumbnail || '/images/blog-placeholder.jpg'" :alt="tField(related, 'title')" />
+            <img :src="related.thumbnail || '/images/blog/blog-placeholder.jpg'" :alt="tField(related, 'title')" />
             <div class="related-post__content">
               <span class="related-post__category">{{ getCategoryName(related.category) }}</span>
               <h4>{{ tField(related, 'title') }}</h4>
@@ -173,6 +173,8 @@ const config = useRuntimeConfig()
 const { getPost, getRelatedPosts } = useApi()
 const { sanitize } = useSanitizer()
 
+definePageMeta({ key: route => route.path })
+
 const copied = ref(false)
 const slug = computed(() => route.params.slug as string)
 
@@ -183,7 +185,11 @@ const { data: postData, error: postError } = await useAsyncData(
 )
 
 if (postError.value) {
-  throw createError({ statusCode: 404, statusMessage: 'Post Not Found' })
+  const statusCode = postError.value.statusCode || 503
+  throw createError({
+    statusCode,
+    statusMessage: statusCode === 404 ? 'Post Not Found' : 'Unable to Load Post',
+  })
 }
 
 const { data: relatedData } = await useAsyncData(
@@ -239,8 +245,8 @@ const categories = computed(() => {
 })
 
 const breadcrumbItems = computed(() => [
-  { label: t('blog.title'), to: '/blog' },
-  { label: getCategoryName(post.value.category), to: `/blog?category=${post.value.category}` },
+  { label: t('blog.title'), to: localePath('/blog') },
+  { label: getCategoryName(post.value.category), to: `${localePath('/blog')}?category=${encodeURIComponent(post.value.category)}` },
   { label: tField(post.value, 'title') }
 ])
 
@@ -257,7 +263,7 @@ const getCategoryName = (categoryId: string) => {
 const { formatDate } = useDisplay()
 const fmtDate = (dateString: string) => formatDate(dateString, { month: 'long', day: 'numeric', year: 'numeric' })
 
-const fullUrl = computed(() => `${config.public.siteUrl}/blog/${slug.value}`)
+const fullUrl = computed(() => `${config.public.siteUrl}${localePath(`/blog/${slug.value}`)}`)
 
 const shareOnSocial = (platform: string, title: string, url: string) => {
   const encodedTitle = encodeURIComponent(title)
@@ -328,7 +334,7 @@ usePageOgImage({
   font-size: var(--text-sm);
   font-weight: 600;
   background-color: var(--color-accent);
-  color: white;
+  color: var(--color-text-on-primary);
   border-radius: var(--radius-full);
   margin-bottom: var(--spacing-md);
 }
@@ -511,7 +517,7 @@ usePageOgImage({
   display: flex;
   gap: var(--spacing-lg);
   padding: var(--spacing-xl);
-  background-color: white;
+  background-color: var(--color-bg);
   border-radius: var(--radius-lg);
 }
 
@@ -607,4 +613,3 @@ usePageOgImage({
   flex-wrap: wrap;
 }
 </style>
-

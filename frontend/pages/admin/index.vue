@@ -225,8 +225,8 @@ const reportColumnMap: Record<string, { key: string; label: string }[]> = {
   'profit-loss': [
     { key: 'period', label: t('admin.reports.col_month') },
     { key: 'revenue', label: t('admin.reports.col_revenue') },
-    { key: 'cost', label: t('admin.reports.col_cost') },
-    { key: 'profit', label: t('admin.reports.col_profit') },
+    { key: 'cogs', label: t('admin.reports.col_cost') },
+    { key: 'grossProfit', label: t('admin.reports.col_profit') },
   ],
   replenishment: [
     { key: 'productName', label: t('admin.reports.col_product') },
@@ -247,7 +247,7 @@ const reportColumns = computed(() => reportColumnMap[activeReport.value] || [])
 const formatCell = (row: any, key: string) => {
   const val = row[key] ?? row[key.replace(/([A-Z])/g, '_$1').toLowerCase()]
   if (val == null) return '—'
-  if (typeof val === 'number' && ['revenue', 'cost', 'profit', 'monetary'].includes(key)) return `$${formatNumber(val)}`
+  if (typeof val === 'number' && ['revenue', 'cogs', 'grossProfit', 'monetary'].includes(key)) return `$${formatNumber(val)}`
   if (key === 'conversionRate' && typeof val === 'number') return `${val.toFixed(1)}%`
   return String(val)
 }

@@ -64,6 +64,29 @@ func (r *ShipmentRepository) Update(ctx context.Context, shipment *modelsTrade.S
 	return r.db.WithContext(ctx).Save(shipment).Error
 }
 
+// UpdateStatus transitions a shipment's status with a guarded conditional UPDATE
+// keyed on the currently-loaded status (M3). extra holds additional fields to set
+// in the same guarded write.
+func (r *ShipmentRepository) UpdateStatus(ctx context.Context, id uint, fromStatus, toStatus string, extra map[string]interface{}) error {
+	updates := map[string]interface{}{
+		"status":     toStatus,
+		"updated_at": time.Now(),
+	}
+	for k, v := range extra {
+		updates[k] = v
+	}
+	res := r.db.WithContext(ctx).Model(&modelsTrade.ShipmentTracking{}).
+		Where("id = ? AND status = ?", id, fromStatus).
+		Updates(updates)
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrShipmentStateMismatch
+	}
+	return nil
+}
+
 // Dispatch atomically transitions a PENDING shipment to DISPATCHED using a
 // conditional UPDATE ... WHERE id=? AND status='PENDING' (mirrors the optimistic
 // lock in QuotationReviewRepository.UpdateStatus). It runs against the provided db

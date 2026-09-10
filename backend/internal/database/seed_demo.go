@@ -47,7 +47,7 @@ func SeedDemoWorkspace(db *gorm.DB) error {
 
 	pwd := strings.TrimSpace(os.Getenv("SEED_DEMO_PASSWORD"))
 	if pwd == "" {
-		pwd = "DemoBuyer123!"
+		return fmt.Errorf("missing SEED_DEMO_PASSWORD for demo workspace seed")
 	}
 	hash, err := password.HashPassword(pwd)
 	if err != nil {
@@ -281,7 +281,7 @@ func SeedDemoWorkspace(db *gorm.DB) error {
 	// --- Seed demo trade documents ---
 	seedDemoTradeDocuments(db, tradeID, orderConfirmed, now)
 
-	log.Printf("Demo workspace: buyer %s / ops %s (password from SEED_DEMO_PASSWORD or default DemoBuyer123!)", buyer.Email, ops.Email)
+	log.Printf("Demo workspace: buyer %s / ops %s (password from SEED_DEMO_PASSWORD)", buyer.Email, ops.Email)
 	return nil
 }
 
@@ -520,6 +520,11 @@ func upsertDemoUser(db *gorm.DB, u *modelsUser.User) error {
 }
 
 func upsertDemoOrder(db *gorm.DB, o *modelsOrder.Order) error {
+	// Demo orders are created after startup backfills, so confirmed snapshots
+	// must carry their costs on the first seed rather than require a restart.
+	if o.ConfirmedAt != nil && o.COGS <= 0 {
+		o.COGS = backfillComputeOrderCOGS(db, map[string]productCOGSCache{}, o.Items)
+	}
 	var cur modelsOrder.Order
 	err := db.Where("id = ?", o.ID).First(&cur).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -534,6 +539,9 @@ func upsertDemoOrder(db *gorm.DB, o *modelsOrder.Order) error {
 	cur.Items = o.Items
 	cur.Subtotal = o.Subtotal
 	cur.TotalAmount = o.TotalAmount
+	if cur.COGS <= 0 && o.COGS > 0 {
+		cur.COGS = o.COGS
+	}
 	cur.Currency = o.Currency
 	cur.ShippingAddress = o.ShippingAddress
 	cur.InquiryID = o.InquiryID
@@ -542,5 +550,6 @@ func upsertDemoOrder(db *gorm.DB, o *modelsOrder.Order) error {
 		cur.ConfirmedAt = o.ConfirmedAt
 	}
 	cur.UpdatedAt = time.Now()
+	cur.Version++
 	return db.Omit("User", "Inquiry").Save(&cur).Error
 }

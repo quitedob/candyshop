@@ -10,11 +10,12 @@ import (
 )
 
 // Register wires admin portal routes under /api/v1/admin.
-func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config) {
+func Register(group *gin.RouterGroup, h *handlers.Handlers, cfg *config.Config, afterAuthorization ...gin.HandlerFunc) {
 	group.Use(middleware.AuthMiddleware(cfg, h.AuthScope.SessionStore()))
 	group.Use(middleware.RequireRole(modelsAuth.AdminPortal()...))
 	group.Use(middleware.AttachAdminPermissions())
 	group.Use(middleware.RequireAdminWritePermission())
+	group.Use(afterAuthorization...)
 
 	// Dashboard — @frontend: admin/index
 	group.GET("/dashboard", h.AdminPortal.GetDashboard)

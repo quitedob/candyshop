@@ -582,10 +582,7 @@ export const useApi = () => {
         formData.append(key, String(value))
       }
     })
-    return fetchApi<InquiryResponse>('/user/inquiries', {
-      method: 'POST',
-      body: formData
-    })
+    return POST<InquiryResponse>('/user/inquiries', formData)
   }
 
   /**
@@ -802,10 +799,7 @@ export const useApi = () => {
 
   // Customer - Inquiries
   const customerUploadInquiryAttachment = (inquiryId: string, formData: FormData) => {
-    return fetchApi<any>(`/user/inquiries/${inquiryId}/attachments`, {
-      method: 'POST',
-      body: formData
-    })
+    return POST<any>(`/user/inquiries/${inquiryId}/attachments`, formData)
   }
   const customerConfirmInquiry = (inquiryId: string, data: any) => POST<any>(`/user/inquiries/${inquiryId}/confirm`, data)
 
@@ -835,7 +829,7 @@ export const useApi = () => {
       if (data.certifications?.length) formData.append('certifications', data.certifications.join(','))
       if (data.moq) formData.append('moq', String(data.moq))
       data.files.forEach((file) => formData.append('files', file))
-      return fetchApi<any>('/user/oem-projects', { method: 'POST', body: formData })
+      return POST<any>('/user/oem-projects', formData)
     }
     return POST<any>('/user/oem-projects', {
       productName: data.productName,
@@ -852,7 +846,7 @@ export const useApi = () => {
     })
   }
   const customerUploadOemProjectAttachment = (projectId: string, formData: FormData) =>
-    fetchApi<any>(`/user/oem-projects/${projectId}/attachments`, { method: 'POST', body: formData })
+    POST<any>(`/user/oem-projects/${projectId}/attachments`, formData)
   const customerGetOemProject = (id: string) => GET<any>(`/user/oem-projects/${id}`)
 
   // Customer - Shipments
@@ -863,19 +857,13 @@ export const useApi = () => {
     shipmentId: number | string,
     formData: FormData
   ) =>
-    fetchApi<any>(`/user/trades/${tradeId}/shipments/${shipmentId}/attachments`, {
-      method: 'POST',
-      body: formData,
-    })
+    POST<any>(`/user/trades/${tradeId}/shipments/${shipmentId}/attachments`, formData)
   const customerGetShipmentTimeline = (tradeId: number | string, shipmentId: number | string) =>
     GET<any>(`/user/trades/${tradeId}/shipments/${shipmentId}/timeline`)
 
   // Customer - Payments
   const customerUploadPaymentProof = (orderId: string, formData: FormData) => {
-    return fetchApi<any>(`/user/orders/${orderId}/payments`, {
-      method: 'POST',
-      body: formData
-    })
+    return POST<any>(`/user/orders/${orderId}/payments`, formData)
   }
 
   const customerCreateGatewayPayment = (orderId: string, body: { method: string; amount?: number }) =>
@@ -890,7 +878,7 @@ export const useApi = () => {
       const formData = new FormData()
       if (payload.message?.trim()) formData.append('message', payload.message.trim())
       payload.files.forEach((f) => formData.append('files', f))
-      return fetchApi<any>(`/user/orders/${orderId}/messages`, { method: 'POST', body: formData })
+      return POST<any>(`/user/orders/${orderId}/messages`, formData)
     }
     return POST<any>(`/user/orders/${orderId}/messages`, { message: payload.message?.trim() || '' })
   }
@@ -926,13 +914,10 @@ export const useApi = () => {
   const importInventoryXlsx = (file: File) => {
     const formData = new FormData()
     formData.append('file', file)
-    return fetchApi<any>('/admin/inventory/import-xlsx', {
-      method: 'POST',
-      body: formData
-    })
+    return POST<any>('/admin/inventory/import-xlsx', formData)
   }
   const applyInventoryImport = (data: { rows: any[]; imageColumns: string[] }) => {
-    return fetchApi<any>('/admin/inventory/import-xlsx/apply', { method: 'POST', body: JSON.stringify(data) })
+    return POST<any>('/admin/inventory/import-xlsx/apply', data)
   }
 
   // Admin - XLSX export & translate
@@ -953,10 +938,10 @@ export const useApi = () => {
   }
 
   const batchUpdateInventory = (ids: string[], updates: Record<string, any>) => {
-    return fetchApi<any>('/admin/inventory/batch-update', { method: 'POST', body: JSON.stringify({ ids, updates }) })
+    return POST<any>('/admin/inventory/batch-update', { ids, updates })
   }
   const batchDeleteInventory = (ids: string[]) => {
-    return fetchApi<any>('/admin/inventory/batch-delete', { method: 'POST', body: JSON.stringify({ ids }) })
+    return POST<any>('/admin/inventory/batch-delete', { ids })
   }
 
   // Admin - Shipments

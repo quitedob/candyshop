@@ -83,7 +83,7 @@
         <div v-else class="categories__grid">
           <NuxtLink v-for="category in categories" :key="category.slug" :to="localePath(category.to)" class="cat-card">
             <div class="cat-card__img">
-              <img :src="category.image" :alt="tField(category, 'name')" loading="lazy" />
+              <CategoryImage :src="category.image" :slug="category.slug" :alt="tField(category, 'name')" />
               <div class="cat-card__overlay">
                 <span class="cat-card__arrow"><Icon name="lucide:arrow-right" size="20" /></span>
               </div>
@@ -363,7 +363,7 @@ const categories = computed(() => {
     slug: category.slug,
     to: `/products/${category.slug}`,
     count: category.productCount || 0,
-    image: category.thumbnail || `/images/categories/${category.slug}.jpg`
+    image: category.thumbnail
   }))
 })
 
@@ -464,7 +464,7 @@ const toggleFaq = (index: number) => {
 .hero__bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(160deg, #fffbf5 0%, #fff7ed 40%, #ffedd5 100%);
+  background: linear-gradient(160deg, var(--color-bg) 0%, var(--color-bg-alt) 40%, var(--color-highlight-light) 100%);
 }
 
 .hero__pattern {
@@ -593,7 +593,7 @@ const toggleFaq = (index: number) => {
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  background: white;
+  background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
@@ -638,7 +638,7 @@ const toggleFaq = (index: number) => {
   align-items: center;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
-  background: white;
+  background: var(--color-bg);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   font-size: var(--text-sm);
@@ -677,7 +677,7 @@ const toggleFaq = (index: number) => {
 
 .cat-card {
   display: block;
-  background: white;
+  background: var(--color-bg);
   border-radius: var(--radius-xl);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
@@ -731,7 +731,7 @@ const toggleFaq = (index: number) => {
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: white;
+  background: var(--color-bg);
   border-radius: var(--radius-full);
   color: var(--color-highlight);
   transform: translateY(8px);
@@ -768,7 +768,7 @@ const toggleFaq = (index: number) => {
 }
 
 .why-card {
-  background: white;
+  background: var(--color-bg);
   padding: var(--spacing-xl) var(--spacing-lg);
   border-radius: var(--radius-xl);
   border: 1px solid var(--color-border-light);
@@ -818,7 +818,7 @@ const toggleFaq = (index: number) => {
   align-items: center;
   gap: var(--spacing-md);
   padding: var(--spacing-lg);
-  background: white;
+  background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
@@ -1047,7 +1047,7 @@ const toggleFaq = (index: number) => {
 .region-card {
   text-align: center;
   padding: var(--spacing-xl) var(--spacing-lg);
-  background: white;
+  background: var(--color-bg);
   border-radius: var(--radius-xl);
   border: 1px solid var(--color-border-light);
   transition: background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
@@ -1173,7 +1173,7 @@ const toggleFaq = (index: number) => {
 .cta-banner__bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 50%, var(--color-primary) 100%);
+  background: linear-gradient(135deg, var(--color-inverse-bg) 0%, var(--color-inverse-bg-alt) 50%, var(--color-inverse-bg) 100%);
 }
 
 .cta-banner__bg::before {

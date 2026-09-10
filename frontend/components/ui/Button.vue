@@ -4,6 +4,7 @@
     :to="to"
     :href="href"
     :target="target"
+    :rel="target === '_blank' ? 'noopener noreferrer' : undefined"
     :type="tag === 'button' ? nativeType : undefined"
     :disabled="disabled || loading"
     :aria-label="ariaLabel"
