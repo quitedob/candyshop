@@ -9,6 +9,7 @@
 bin/
 dist/
 nul
+.ssh/
 # Test binary, built with `go test`
 *.test
 CLAUDE.md
